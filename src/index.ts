@@ -14,10 +14,17 @@ export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/ope
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 
+// Persistence
+export { usePersist, type UsePersistOptions } from './composables/usePersist'
+
 // Types
 export type {
   Message,
   MessageRole,
+  MessageContent,
+  ContentPart,
+  TextPart,
+  ImageUrlPart,
   Tool,
   ToolCall,
   ChatRequest,

@@ -8,6 +8,24 @@
 /** Role of a message participant. */
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool'
 
+/** A text part of a multimodal message. */
+export interface TextPart {
+  type: 'text'
+  text: string
+}
+
+/** An image part of a multimodal message. `url` may be an https URL or a data: URL. */
+export interface ImageUrlPart {
+  type: 'image_url'
+  image_url: { url: string; detail?: 'low' | 'high' | 'auto' }
+}
+
+/** One piece of a multimodal message. */
+export type ContentPart = TextPart | ImageUrlPart
+
+/** Content can be plain text (the common case) or a list of content parts. */
+export type MessageContent = string | ContentPart[]
+
 /** A function/tool the model may call. OpenAI-compatible schema. */
 export interface Tool {
   type: 'function'
@@ -32,7 +50,7 @@ export interface ToolCall {
 export interface Message {
   id: string
   role: MessageRole
-  content: string
+  content: MessageContent
   name?: string
   toolCallId?: string
   toolCalls?: ToolCall[]

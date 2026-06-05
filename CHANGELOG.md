@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-alpha.1] - 2026-06-05
+
+### Added
+- **Anthropic Claude provider** — full chat and completion support; streaming via
+  Anthropic's `content_block_delta` SSE events. `useEmbedding` with this
+  provider throws a clear `AiHooksError` (Anthropic has no embeddings API).
+- **`usePersist` composable** — wires any ref to localStorage with versioned
+  keys, custom serialize/deserialize, and SSR safety.
+- **localStorage persistence for `useChat`** — new `persist: { key, version? }`
+  option. `clear()` removes the entry.
+- **Vision / multimodal input** — `Message.content` now accepts
+  `string | ContentPart[]`. The OpenAI provider passes ContentPart through;
+  the Anthropic provider converts `image_url` parts to Anthropic's
+  `image` content block (with automatic data-URL → base64 conversion).
+- **Tool calling foundation** — `tools` and `toolChoice` options on `useChat`.
+  Streaming `tool_calls` deltas are accumulated onto the assistant message
+  via the internal `mergeDeltas` helper.
+- **VitePress documentation site** under `docs/` — landing page, getting
+  started, providers guide, and reference docs for every composable. Run
+  with `pnpm docs:dev` and build with `pnpm docs:build`.
+- More tests (42 total, up from 15)
+
 ## [0.1.0] - 2026-06-05
 
 ### Added

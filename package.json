@@ -27,7 +27,10 @@
     "typecheck": "vue-tsc -p tsconfig.build.json",
     "lint": "eslint . --ext .ts,.vue",
     "format": "prettier --write \"src/**/*.{ts,vue}\" \"tests/**/*.ts\"",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
     "vue",
@@ -69,7 +72,8 @@
     "vite": "^5.1.0",
     "vitest": "^1.4.0",
     "vue": "^3.4.0",
-    "vue-tsc": "^2.0.0"
+    "vue-tsc": "^2.0.0",
+    "vitepress": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

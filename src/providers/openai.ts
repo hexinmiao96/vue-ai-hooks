@@ -65,6 +65,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
   function serializeMessages(messages: Message[]) {
     return messages.map((m) => {
+      // Pass through ContentPart[] as-is; OpenAI's wire format is the same shape.
       const out: Record<string, unknown> = { role: m.role, content: m.content }
       if (m.name) out.name = m.name
       if (m.toolCallId) out.tool_call_id = m.toolCallId

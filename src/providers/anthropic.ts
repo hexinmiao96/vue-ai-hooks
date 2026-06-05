@@ -3,9 +3,11 @@ import type {
   ChatChunk,
   ChatRequest,
   CompletionRequest,
+  ContentPart,
   EmbeddingRequest,
   EmbeddingResult,
-  Message
+  Message,
+  MessageContent
 } from '../types'
 import { parseSSE } from '../utils/stream'
 import { requestJson } from '../utils/fetch'
@@ -87,6 +89,30 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     return `${b}${p}`
   }
 
+  function toAnthropicContent(content: MessageContent): string | Array<Record<string, unknown>> {
+    if (typeof content === 'string') return content
+    return content.map((p) => toAnthropicPart(p))
+  }
+
+  function toAnthropicPart(part: ContentPart): Record<string, unknown> {
+    if (part.type === 'text') {
+      return { type: 'text', text: part.text }
+    }
+    // ImageUrlPart
+    const url = part.image_url.url
+    if (url.startsWith('data:')) {
+      // data:<mediatype>;base64,<data>
+      const match = url.match(/^data:([^;]+);base64,(.*)$/s)
+      if (match) {
+        return {
+          type: 'image',
+          source: { type: 'base64', media_type: match[1], data: match[2] }
+        }
+      }
+    }
+    return { type: 'image', source: { type: 'url', url } }
+  }
+
   function splitMessages(messages: Message[]): {
     system?: string
     messages: Array<{ role: 'user' | 'assistant'; content: string | unknown[] }>
@@ -95,9 +121,11 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     const others: Array<{ role: 'user' | 'assistant'; content: string | unknown[] }> = []
     for (const m of messages) {
       if (m.role === 'system') {
-        if (m.content) systemParts.push(m.content)
+        if (typeof m.content === 'string' && m.content) {
+          systemParts.push(m.content)
+        }
       } else if (m.role === 'user' || m.role === 'assistant') {
-        others.push({ role: m.role, content: m.content })
+        others.push({ role: m.role, content: toAnthropicContent(m.content) })
       }
       // 'tool' role is not part of Anthropic's API; skip silently for now.
     }

@@ -1,7 +1,9 @@
+import { mergeDeltas as mergeD } from './_tc_merge'
+
 import { ref, shallowRef, type Ref } from 'vue'
 import { usePersist } from './usePersist'
 import type { ChatProvider } from '../providers/types'
-import type { ChatRequest, Message, MessageRole } from '../types'
+import type { ChatRequest, Message, MessageRole, Tool } from '../types'
 import { createId } from '../utils/id'
 import { AiHooksError } from '../types'
 
@@ -10,14 +12,9 @@ export interface UseChatOptions {
   initialMessages?: Message[]
   defaultRequest?: Partial<ChatRequest>
   id?: string
-  /**
-   * Persist `messages` to localStorage. On mount, restores from storage if the
-   * key exists. On every change, writes back. `clear()` removes the entry.
-   */
-  persist?: {
-    key: string
-    version?: number
-  }
+  persist?: { key: string; version?: number }
+  tools?: Tool[]
+  toolChoice?: ChatRequest['toolChoice']
   onUpdate?: (m: Message) => void
   onFinish?: (m: Message) => void
   onError?: (e: Error) => void
@@ -39,60 +36,74 @@ export interface UseChatReturn {
 const empty = [] as Message[]
 
 export function useChat(options: UseChatOptions): UseChatReturn {
-  const { provider: providedProvider, initialMessages = empty, defaultRequest = {}, onUpdate, onFinish, onError, persist } = options
-
-  if (!providedProvider) {
-    throw new Error('useChat requires a provider option')
-  }
+  const {
+    provider: providedProvider,
+    initialMessages = empty,
+    defaultRequest = {},
+    onUpdate,
+    onFinish,
+    onError,
+    persist,
+    tools: defaultTools,
+    toolChoice: defaultToolChoice
+  } = options
+  if (!providedProvider) throw new Error('useChat requires a provider option')
   const provider = providedProvider
-
   const messages = ref<Message[]>([...initialMessages]) as Ref<Message[]>
   const input = ref('')
-  // Wire up persistence AFTER initial state, so a stored value overrides initialMessages
-  const persistence = persist ? usePersist(messages, {
-    key: persist.key,
-    version: persist.version,
-    onError: (e) => { error.value = e }
-  }) : null
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
   const abortController = shallowRef<AbortController | null>(null)
+  const persistence = persist
+    ? usePersist(messages, {
+        key: persist.key,
+        version: persist.version,
+        onError: (e) => {
+          error.value = e
+        }
+      })
+    : null
 
   function setMessages(next: Message[]) {
     messages.value = [...next]
   }
-
   function clear() {
     if (abortController.value) abortController.value.abort()
     abortController.value = null
     messages.value = []
     error.value = null
     isLoading.value = false
-    input.value = ''
+    input.value = ""
     persistence?.clear()
   }
-
   function stop() {
     if (abortController.value) abortController.value.abort()
     abortController.value = null
     isLoading.value = false
   }
-
   function buildAssistant(): Message {
     return {
-      id: createId('assistant'),
-      role: 'assistant' as MessageRole,
-      content: '',
+      id: createId("assistant"),
+      role: "assistant" as MessageRole,
+      content: "",
       createdAt: new Date()
     }
   }
+
   async function streamReply(assistant: Message, request: ChatRequest) {
     const controller = new AbortController()
     abortController.value = controller
     isLoading.value = true
     error.value = null
     try {
-      const stream = await provider.chat({ ...defaultRequest, ...request, signal: controller.signal })
+      const mergedRequest: ChatRequest = {
+        ...defaultRequest,
+        ...(defaultTools && !request.tools ? { tools: defaultTools } : {}),
+        ...(defaultToolChoice && !request.toolChoice ? { toolChoice: defaultToolChoice } : {}),
+        ...request,
+        signal: controller.signal
+      }
+      const stream = await provider.chat(mergedRequest)
       for await (const chunk of stream) {
         if (chunk.content) {
           assistant.content += chunk.content
@@ -105,6 +116,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
             ]
           }
           onUpdate?.({ ...assistant })
+        }
+        if (chunk.toolCalls?.length) {
+          assistant.toolCalls = mergeD(assistant.toolCalls, chunk.toolCalls)
+          const tIdx = messages.value.findIndex((m) => m.id === assistant.id)
+          if (tIdx >= 0) {
+            messages.value = [
+              ...messages.value.slice(0, tIdx),
+              { ...assistant },
+              ...messages.value.slice(tIdx + 1)
+            ]
+          }
         }
         if (chunk.finishReason) {
           assistant.metadata = { ...(assistant.metadata ?? {}), finishReason: chunk.finishReason }
@@ -121,7 +143,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       onFinish?.({ ...assistant })
     } catch (err) {
       const e = err instanceof Error ? err : new Error(String(err))
-      if ((e as { name?: string }).name === 'AbortError' || controller.signal.aborted) {
+      if ((e as { name?: string }).name === "AbortError" || controller.signal.aborted) {
         onFinish?.({ ...assistant })
         return
       }
@@ -133,10 +155,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       isLoading.value = false
     }
   }
+
   async function append(content: string | Message, requestOptions: Partial<ChatRequest> = {}) {
     const userMessage: Message =
-      typeof content === 'string'
-        ? { id: createId('user'), role: 'user', content, createdAt: new Date() }
+      typeof content === "string"
+        ? { id: createId("user"), role: "user", content, createdAt: new Date() }
         : { ...content, id: content.id || createId(content.role) }
     const assistant = buildAssistant()
     messages.value = [...messages.value, userMessage, assistant]
@@ -145,21 +168,19 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       ...requestOptions
     })
   }
-
   async function reload() {
     const lastAssistantIdx = [...messages.value]
       .map((m, i) => ({ m, i }))
       .reverse()
-      .find(({ m }) => m.role === 'assistant')?.i
+      .find(({ m }) => m.role === "assistant")?.i
     if (lastAssistantIdx === undefined) {
-      throw new AiHooksError('reload() called with no assistant message to re-run')
+      throw new AiHooksError("reload() called with no assistant message to re-run")
     }
     const truncated = messages.value.slice(0, lastAssistantIdx)
     const assistant = buildAssistant()
     messages.value = [...truncated, assistant]
     await streamReply(assistant, { messages: truncated })
   }
-
   return {
     messages,
     input,
