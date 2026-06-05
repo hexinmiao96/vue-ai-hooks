@@ -11,6 +11,7 @@ export { useEmbedding, type UseEmbeddingOptions, type UseEmbeddingReturn } from 
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'
+export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 
 // Types

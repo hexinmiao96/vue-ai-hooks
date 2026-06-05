@@ -1,4 +1,5 @@
 import { ref, shallowRef, type Ref } from 'vue'
+import { usePersist } from './usePersist'
 import type { ChatProvider } from '../providers/types'
 import type { ChatRequest, Message, MessageRole } from '../types'
 import { createId } from '../utils/id'
@@ -9,6 +10,14 @@ export interface UseChatOptions {
   initialMessages?: Message[]
   defaultRequest?: Partial<ChatRequest>
   id?: string
+  /**
+   * Persist `messages` to localStorage. On mount, restores from storage if the
+   * key exists. On every change, writes back. `clear()` removes the entry.
+   */
+  persist?: {
+    key: string
+    version?: number
+  }
   onUpdate?: (m: Message) => void
   onFinish?: (m: Message) => void
   onError?: (e: Error) => void
@@ -30,7 +39,7 @@ export interface UseChatReturn {
 const empty = [] as Message[]
 
 export function useChat(options: UseChatOptions): UseChatReturn {
-  const { provider: providedProvider, initialMessages = empty, defaultRequest = {}, onUpdate, onFinish, onError } = options
+  const { provider: providedProvider, initialMessages = empty, defaultRequest = {}, onUpdate, onFinish, onError, persist } = options
 
   if (!providedProvider) {
     throw new Error('useChat requires a provider option')
@@ -39,6 +48,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
 
   const messages = ref<Message[]>([...initialMessages]) as Ref<Message[]>
   const input = ref('')
+  // Wire up persistence AFTER initial state, so a stored value overrides initialMessages
+  const persistence = persist ? usePersist(messages, {
+    key: persist.key,
+    version: persist.version,
+    onError: (e) => { error.value = e }
+  }) : null
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
   const abortController = shallowRef<AbortController | null>(null)
@@ -54,6 +69,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     error.value = null
     isLoading.value = false
     input.value = ''
+    persistence?.clear()
   }
 
   function stop() {
