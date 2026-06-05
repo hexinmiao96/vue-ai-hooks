@@ -38,7 +38,7 @@ describe('useChat', () => {
   })
 
   it('throws if no provider is given', () => {
-    expect(() => useChat({} as any)).toThrow(/requires a `provider`/)
+    expect(() => useChat({} as any)).toThrow(/requires a provider option/)
   })
 
   it('starts with empty messages by default', () => {

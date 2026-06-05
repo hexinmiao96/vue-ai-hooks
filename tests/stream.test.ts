@@ -37,12 +37,11 @@ describe('parseSSE', () => {
   })
 
   it('handles chunks split mid-line', async () => {
-    const response = makeResponse(['data: {"a', ':1}\n\n'])
+    const response = makeResponse(['data: {"a":1', '}\n\n'])
     const out: unknown[] = []
     for await (const ev of parseSSE(response)) {
       out.push(ev)
     }
-    expect(out).toEqual([{ 'a:1': undefined }])
-    // The point is: even when a chunk is split, we still produce exactly one event.
+    expect(out).toEqual([{ a: 1 }])
   })
 })
