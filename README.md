@@ -1,5 +1,7 @@
 # vue-ai-hooks
 
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
 > Vue 3 Composable library for building AI-powered applications.
 > Streaming-first, multi-provider, fully typed.
 
