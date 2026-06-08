@@ -25,7 +25,7 @@ export async function* parseSSE(
       }
       const { done, value } = await reader.read()
       if (done) break
-      buffer += decoder.decode(value, { stream: true })
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
       let sepIndex: number
       // SSE events are separated by a blank line (\n\n).

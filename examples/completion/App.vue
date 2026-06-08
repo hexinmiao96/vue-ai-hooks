@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useCompletion, openai } from 'vue-ai-hooks'
 
 const provider = openai({

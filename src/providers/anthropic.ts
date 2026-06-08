@@ -73,7 +73,8 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     defaultModel = 'claude-3-5-sonnet-20241022',
     maxTokens: defaultMaxTokens = 1024,
     anthropicVersion = '2023-06-01',
-    headers: extraHeaders = {}
+    headers: extraHeaders = {},
+    fetch: fetcher
   } = config
 
   const baseHeaders: Record<string, string> = {
@@ -159,7 +160,8 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
       method: 'POST',
       headers: { ...baseHeaders, ...request.headers },
       body: JSON.stringify(body),
-      signal: request.signal
+      signal: request.signal,
+      fetcher
     })
 
     if (request.stream === false) {

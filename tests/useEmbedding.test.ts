@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { useEmbedding, type ChatProvider } from '../src/composables/useEmbedding'
+import { useEmbedding } from '../src/composables/useEmbedding'
+import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk } from '../src/types'
 
 function fakeProvider(vectors: number[][]): ChatProvider {

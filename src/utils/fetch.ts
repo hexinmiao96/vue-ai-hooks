@@ -7,9 +7,14 @@ import { AiHooksError } from '../types'
  */
 export async function requestJson(
   url: string,
-  init: RequestInit & { timeoutMs?: number } = {}
+  init: RequestInit & { timeoutMs?: number; fetcher?: typeof fetch } = {}
 ): Promise<Response> {
-  const { timeoutMs, signal: externalSignal, ...rest } = init
+  const { timeoutMs, signal: externalSignal, fetcher, ...rest } = init
+  const requestFetch =
+    fetcher ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined)
+  if (!requestFetch) {
+    throw new AiHooksError('No fetch implementation available')
+  }
 
   const controller = new AbortController()
   const onAbort = () => controller.abort()
@@ -23,7 +28,7 @@ export async function requestJson(
   }
 
   try {
-    const response = await fetch(url, { ...rest, signal: controller.signal })
+    const response = await requestFetch(url, { ...rest, signal: controller.signal })
     if (!response.ok) {
       let body: unknown
       try {

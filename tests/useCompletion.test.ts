@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { useCompletion, type ChatProvider } from '../src/composables/useCompletion'
+import { useCompletion } from '../src/composables/useCompletion'
+import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk } from '../src/types'
 
 function fakeProvider(text: string): ChatProvider {

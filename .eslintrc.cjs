@@ -21,5 +21,14 @@ module.exports = {
     'vue/multi-word-component-names': 'off',
     'no-console': ['warn', { allow: ['warn', 'error'] }]
   },
+  overrides: [
+    {
+      files: ['*.ts', '*.vue'],
+      rules: {
+        'no-undef': 'off',
+        'no-unused-vars': 'off'
+      }
+    }
+  ],
   ignorePatterns: ['dist', 'node_modules', 'coverage']
 }

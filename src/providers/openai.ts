@@ -48,7 +48,8 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     defaultModel,
     chatPath = '/chat/completions',
     completionPath = '/completions',
-    embeddingPath = '/embeddings'
+    embeddingPath = '/embeddings',
+    fetch: fetcher
   } = config
 
   const baseHeaders: Record<string, string> = {
@@ -114,7 +115,8 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         method: 'POST',
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
-        signal
+        signal,
+        fetcher
       })
 
       if (!stream) {
@@ -174,7 +176,8 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         method: 'POST',
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
-        signal
+        signal,
+        fetcher
       })
 
       if (!stream) {
@@ -205,7 +208,8 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         method: 'POST',
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
-        signal
+        signal,
+        fetcher
       })
 
       const data = (await response.json()) as {

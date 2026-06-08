@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { nextTick } from 'vue'
-import { useChat, type ChatProvider } from '../src/composables/useChat'
+import { useChat } from '../src/composables/useChat'
+import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk, ChatRequest } from '../src/types'
 
 /**
@@ -75,6 +75,35 @@ describe('useChat', () => {
     expect(assistant.content).toBe('Hello, world')
     expect(assistant.metadata?.finishReason).toBe('stop')
     expect(isLoading.value).toBe(false)
+  })
+
+  it('sends the latest user message to the provider only once', async () => {
+    let capturedRequest: ChatRequest | undefined
+    const provider: ChatProvider = {
+      id: 'capture',
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        capturedRequest = request
+        return (async function* () {
+          yield { content: 'ok' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { append } = useChat({
+      provider,
+      initialMessages: [{ id: 'system-1', role: 'system', content: 'Be brief.' }]
+    })
+    await append('ping')
+
+    expect(capturedRequest?.messages.map((m) => m.content)).toEqual(['Be brief.', 'ping'])
   })
 
   it('stop() cancels an in-flight stream', async () => {

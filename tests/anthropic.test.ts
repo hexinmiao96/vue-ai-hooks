@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { anthropic, type AnthropicConfig } from '../src/providers/anthropic'
+import { anthropic } from '../src/providers/anthropic'
 import { AiHooksError } from '../src/types'
 
 /** Build a fake Response with a streamed body containing the given SSE chunks. */
@@ -75,7 +75,7 @@ describe('anthropic provider', () => {
     expect(chunks.join('')).toBe('hi')
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toContain('/v1/messages')
     const headers = init.headers as Record<string, string>
     expect(headers['x-api-key']).toBe('sk-ant-test')
@@ -102,8 +102,10 @@ describe('anthropic provider', () => {
         { id: 'u1', role: 'user', content: 'go' }
       ]
     })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.system).toBe('A\n\nB')
   })
 
@@ -115,8 +117,10 @@ describe('anthropic provider', () => {
     )
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({ messages: [{ id: 'u1', role: 'user', content: 'hi' }] })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.system).toBeUndefined()
   })
 
@@ -146,7 +150,9 @@ describe('anthropic provider', () => {
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({ messages: [{ id: 'u1', role: 'user', content: 'hi' }] })
     await expect(async () => {
-      for await (const _ of stream) { /* drain */ }
+      for await (const chunk of stream) {
+        void chunk
+      }
     }).rejects.toThrow(/invalid_request_error/)
   })
 
@@ -169,7 +175,28 @@ describe('anthropic provider', () => {
       out += chunk
     }
     expect(out).toBe('done')
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages).toEqual([{ role: 'user', content: 'Say done' }])
+  })
+
+  it('uses the custom fetch implementation from config', async () => {
+    const customFetch = vi.fn(async () =>
+      sseResponse([
+        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"custom"}}' }
+      ])
+    )
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error('global fetch should not be used')
+    }) as unknown as typeof fetch
+
+    const p = anthropic({ apiKey: 'k', fetch: customFetch as unknown as typeof fetch })
+    const stream = await p.chat({ messages: [{ id: 'u1', role: 'user', content: 'hi' }] })
+    let out = ''
+    for await (const chunk of stream) {
+      out += chunk.content ?? ''
+    }
+
+    expect(out).toBe('custom')
+    expect(customFetch).toHaveBeenCalledTimes(1)
   })
 })

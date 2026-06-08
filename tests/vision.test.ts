@@ -43,8 +43,10 @@ describe('OpenAI vision support', () => {
         }
       ]
     })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages[0].role).toBe('user')
     expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'What is in this image?' },
@@ -58,9 +60,30 @@ describe('OpenAI vision support', () => {
     )
     const p = openai({ apiKey: 'k' })
     const stream = await p.chat({ messages: [{ id: 'm', role: 'user', content: 'hi' }] })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages[0].content).toBe('hi')
+  })
+
+  it('uses the custom fetch implementation from config', async () => {
+    const customFetch = vi.fn(async () =>
+      sseResponse([{ data: '{"choices":[{"delta":{"content":"custom"}}]}' }])
+    )
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error('global fetch should not be used')
+    }) as unknown as typeof fetch
+
+    const p = openai({ apiKey: 'k', fetch: customFetch as unknown as typeof fetch })
+    const stream = await p.chat({ messages: [{ id: 'm', role: 'user', content: 'hi' }] })
+    let out = ''
+    for await (const chunk of stream) {
+      out += chunk.content ?? ''
+    }
+
+    expect(out).toBe('custom')
+    expect(customFetch).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -76,8 +99,10 @@ describe('Anthropic vision support', () => {
     const stream = await p.chat({
       messages: [{ id: 'm', role: 'user', content: [{ type: 'text', text: 'hello' }] }]
     })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages[0].content).toEqual([{ type: 'text', text: 'hello' }])
   })
 
@@ -96,8 +121,10 @@ describe('Anthropic vision support', () => {
         ]
       }]
     })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'see' },
       { type: 'image', source: { type: 'url', url: 'https://example.com/x.png' } }
@@ -117,8 +144,10 @@ describe('Anthropic vision support', () => {
         content: [{ type: 'image_url', image_url: { url: dataUrl } }]
       }]
     })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     const image = body.messages[0].content[0]
     expect(image.type).toBe('image')
     expect(image.source.type).toBe('base64')
@@ -132,8 +161,10 @@ describe('Anthropic vision support', () => {
     )
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({ messages: [{ id: 'm', role: 'user', content: 'hi' }] })
-    for await (const _ of stream) { /* drain */ }
-    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string)
+    for await (const chunk of stream) {
+      void chunk
+    }
+    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
     expect(body.messages[0].content).toBe('hi')
   })
 })

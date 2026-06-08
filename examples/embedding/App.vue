@@ -7,7 +7,7 @@ const provider = openai({
   baseURL: import.meta.env.VITE_OPENAI_BASE_URL
 })
 
-const { embed, embeddings, isLoading, error } = useEmbedding({ provider })
+const { embed, isLoading, error } = useEmbedding({ provider })
 
 const a = ref('A cat sat on the mat.')
 const b = ref('A kitten rested on the rug.')

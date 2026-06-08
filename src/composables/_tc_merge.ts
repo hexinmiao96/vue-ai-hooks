@@ -2,7 +2,7 @@
 import type { ToolCall } from '../types'
 
 export interface ToolCallDelta {
-  index: number
+  index?: number
   id?: string
   type?: 'function'
   function?: { name?: string; arguments?: string }

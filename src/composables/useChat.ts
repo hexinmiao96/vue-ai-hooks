@@ -164,7 +164,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const assistant = buildAssistant()
     messages.value = [...messages.value, userMessage, assistant]
     await streamReply(assistant, {
-      messages: messages.value.filter((m) => m.id !== assistant.id).concat(userMessage),
+      messages: messages.value.filter((m) => m.id !== assistant.id),
       ...requestOptions
     })
   }
