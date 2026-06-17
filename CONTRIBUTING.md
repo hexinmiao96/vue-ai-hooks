@@ -20,6 +20,7 @@ pnpm test:watch   # watch mode
 pnpm typecheck    # vue-tsc strict check
 pnpm lint         # eslint
 pnpm build        # type-check + bundle to dist/
+pnpm example:chat # run the chat example app
 ```
 
 ## Project layout
@@ -64,6 +65,19 @@ implementation. Most providers that follow the OpenAI REST spec can use
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) loosely.
 `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:` are all fine prefixes.
+
+## Publishing
+
+This package publishes through npm Trusted Publishing from GitHub Actions.
+Configure npm with these trusted publisher settings before pushing a release tag:
+
+- Publisher: GitHub Actions
+- Organization or user: `hexinmiao96`
+- Repository: `vue-ai-hooks`
+- Workflow filename: `publish.yml`
+- Allowed action: `npm publish`
+
+Then create and push a tag matching `package.json`, for example `v0.2.0`.
 
 ## Pull request flow
 

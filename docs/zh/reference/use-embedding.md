@@ -33,6 +33,8 @@ console.log(result.embeddings) // number[][]
 | `error` | `Ref<Error \| null>` | 最近一次错误。 |
 | `result` | `Ref<EmbeddingResult \| null>` | 最近一次完整结果，包括 usage 统计。 |
 | `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | 生成 embeddings。 |
+| `stop()` | `() => void` | 中止当前请求。 |
+| `clear()` | `() => void` | 重置 embeddings、result 和 error，也会中止当前请求。 |
 | `abortController` | `Ref<AbortController \| null>` | 暴露给高级用法。 |
 
 ## 说明

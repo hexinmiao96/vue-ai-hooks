@@ -21,6 +21,8 @@ const { messages, append, isLoading, stop } = useChat({
 | `defaultRequest` | `Partial<ChatRequest>` | `{}` | Default options merged into every chat request. |
 | `tools` | `Tool[]` | — | Default tool list. Override per-call by passing `tools` to `append()`. |
 | `toolChoice` | `'auto' \| 'none' \| 'required' \| { ... }` | — | Default tool choice. |
+| `toolHandlers` | `Record<string, ToolCallHandler>` | — | Local handlers for automatic tool execution. |
+| `maxToolRoundtrips` | `number` | `1` | Maximum automatic tool-call rounds after a user message. |
 | `persist` | `{ key: string; version?: number }` | — | Auto-save to localStorage. |
 | `onUpdate` | `(m: Message) => void` | — | Called for every streamed chunk update. |
 | `onFinish` | `(m: Message) => void` | — | Called once the assistant message is finished. |
@@ -43,9 +45,10 @@ const { messages, append, isLoading, stop } = useChat({
 
 ## Tool calling
 
-When you pass `tools`, the model can choose to call a function instead of (or in
-addition to) replying with text. The function call lands on the assistant
-message as `toolCalls`:
+When you pass `tools`, the model can choose to call a function instead of replying
+with text. If you also pass `toolHandlers`, `useChat` parses the arguments,
+executes the matching local handler, appends the `tool` message, and continues
+the conversation automatically:
 
 ```ts
 const { messages, append } = useChat({
@@ -63,31 +66,25 @@ const { messages, append } = useChat({
         }
       }
     }
-  ]
+  ],
+  toolHandlers: {
+    async getWeather(args) {
+      const { city } = args as { city: string }
+      return { city, temp: 22, conditions: 'sunny' }
+    }
+  }
 })
 
 await append("What's the weather in Tokyo?")
 
-const last = messages.value.at(-1)
-if (last?.role === 'assistant' && last.toolCalls?.length) {
-  for (const call of last.toolCalls) {
-    if (call.function.name === 'getWeather') {
-      const args = JSON.parse(call.function.arguments)
-      // ... execute the function ...
-      // then send a tool result back:
-      await append({
-        id: `tool-${call.id}`,
-        role: 'tool',
-        content: JSON.stringify({ temp: 22, conditions: 'sunny' }),
-        toolCallId: call.id
-      })
-    }
-  }
-}
+console.log(messages.value.map((m) => m.role))
+// ['user', 'assistant', 'tool', 'assistant']
 ```
 
 The library handles the streaming accumulation of `tool_calls` deltas into the
-final `toolCalls[]` on the assistant message.
+final `toolCalls[]` on the assistant message. If a model calls a tool that has no
+registered handler, or a handler throws, `append()` rejects and `error.value` is
+set.
 
 ## Vision input
 

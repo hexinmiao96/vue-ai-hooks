@@ -70,6 +70,7 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
         stream: true
       })
       for await (const delta of stream) {
+        if (controller.signal.aborted) break
         completion.value += delta
       }
       onFinish?.(completion.value)

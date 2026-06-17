@@ -21,6 +21,8 @@ const { messages, append, isLoading, stop } = useChat({
 | `defaultRequest` | `Partial<ChatRequest>` | `{}` | 合并到每次聊天请求中的默认选项。 |
 | `tools` | `Tool[]` | - | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。 |
 | `toolChoice` | `'auto' \| 'none' \| 'required' \| { ... }` | - | 默认工具选择策略。 |
+| `toolHandlers` | `Record<string, ToolCallHandler>` | - | 用于自动执行工具调用的本地 handler。 |
+| `maxToolRoundtrips` | `number` | `1` | 用户消息之后最多自动执行几轮工具调用。 |
 | `persist` | `{ key: string; version?: number }` | - | 自动保存到 localStorage。 |
 | `onUpdate` | `(m: Message) => void` | - | 每次流式片段更新时调用。 |
 | `onFinish` | `(m: Message) => void` | - | 助手消息完成时调用一次。 |
@@ -43,7 +45,7 @@ const { messages, append, isLoading, stop } = useChat({
 
 ## Tool calling
 
-传入 `tools` 后，模型可以选择调用函数，而不是只返回文本。函数调用结果会以 `toolCalls` 的形式出现在 assistant 消息上：
+传入 `tools` 后，模型可以选择调用函数，而不是只返回文本。如果同时传入 `toolHandlers`，`useChat` 会解析参数、执行匹配的本地 handler、追加 `tool` 消息，并自动继续下一轮模型请求：
 
 ```ts
 const { messages, append } = useChat({
@@ -61,30 +63,22 @@ const { messages, append } = useChat({
         }
       }
     }
-  ]
+  ],
+  toolHandlers: {
+    async getWeather(args) {
+      const { city } = args as { city: string }
+      return { city, temp: 22, conditions: 'sunny' }
+    }
+  }
 })
 
 await append("What's the weather in Tokyo?")
 
-const last = messages.value.at(-1)
-if (last?.role === 'assistant' && last.toolCalls?.length) {
-  for (const call of last.toolCalls) {
-    if (call.function.name === 'getWeather') {
-      const args = JSON.parse(call.function.arguments)
-      // ... execute the function ...
-      // then send a tool result back:
-      await append({
-        id: `tool-${call.id}`,
-        role: 'tool',
-        content: JSON.stringify({ temp: 22, conditions: 'sunny' }),
-        toolCallId: call.id
-      })
-    }
-  }
-}
+console.log(messages.value.map((m) => m.role))
+// ['user', 'assistant', 'tool', 'assistant']
 ```
 
-库会把流式返回的 `tool_calls` delta 累积成 assistant 消息上的最终 `toolCalls[]`。
+库会把流式返回的 `tool_calls` delta 累积成 assistant 消息上的最终 `toolCalls[]`。如果模型调用了未注册的工具，或者 handler 抛错，`append()` 会 reject，并写入 `error.value`。
 
 ## 视觉输入
 

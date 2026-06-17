@@ -10,6 +10,9 @@ hero:
       text: 快速开始
       link: /zh/guide/getting-started
     - theme: alt
+      text: 示例
+      link: /zh/examples/
+    - theme: alt
       text: 查看 GitHub
       link: https://github.com/hexinmiao96/vue-ai-hooks
 

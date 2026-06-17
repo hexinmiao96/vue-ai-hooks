@@ -4,6 +4,9 @@ node_modules
 
 # Build output
 dist
+docs/.vitepress/cache
+.playwright-cli
+output
 *.tsbuildinfo
 
 # Editor

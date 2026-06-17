@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 const rootNav = [
   { text: 'Guide', link: '/guide/getting-started' },
+  { text: 'Examples', link: '/examples/' },
   { text: 'Reference', link: '/reference/use-chat' },
   { text: 'GitHub', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
 ]
@@ -14,6 +15,12 @@ const rootSidebar = {
         { text: 'Getting started', link: '/guide/getting-started' },
         { text: 'Providers', link: '/guide/providers' }
       ]
+    }
+  ],
+  '/examples/': [
+    {
+      text: 'Examples',
+      items: [{ text: 'Overview', link: '/examples/' }]
     }
   ],
   '/reference/': [
@@ -30,6 +37,7 @@ const rootSidebar = {
 
 const zhNav = [
   { text: '指南', link: '/zh/guide/getting-started' },
+  { text: '示例', link: '/zh/examples/' },
   { text: '参考', link: '/zh/reference/use-chat' },
   { text: 'GitHub', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
 ]
@@ -42,6 +50,12 @@ const zhSidebar = {
         { text: '快速开始', link: '/zh/guide/getting-started' },
         { text: 'Provider', link: '/zh/guide/providers' }
       ]
+    }
+  ],
+  '/zh/examples/': [
+    {
+      text: '示例',
+      items: [{ text: '总览', link: '/zh/examples/' }]
     }
   ],
   '/zh/reference/': [
@@ -62,6 +76,16 @@ export default defineConfig({
   lang: 'en-US',
   lastUpdated: true,
   cleanUrls: true,
+  head: [
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: '/favicon.svg'
+      }
+    ]
+  ],
   locales: {
     root: {
       label: 'English',

@@ -41,22 +41,32 @@ async function run() {
 <template>
   <main class="embed">
     <h1>vue-ai-hooks · useEmbedding</h1>
-    <p v-if="error" class="error">{{ error.message }}</p>
+    <p
+      v-if="error"
+      class="error"
+    >
+      {{ error.message }}
+    </p>
 
     <div class="inputs">
-      <label>A: <input v-model="a" /></label>
-      <label>B: <input v-model="b" /></label>
-      <label>C: <input v-model="c" /></label>
+      <label>A: <input v-model="a"></label>
+      <label>B: <input v-model="b"></label>
+      <label>C: <input v-model="c"></label>
     </div>
 
-    <button :disabled="isLoading" @click="run">Compute embeddings</button>
+    <button
+      :disabled="isLoading"
+      @click="run"
+    >
+      Compute embeddings
+    </button>
 
     <table v-if="similarities">
-      <thead><tr><th></th><th>A</th><th>B</th><th>C</th></tr></thead>
+      <thead><tr><th /><th>A</th><th>B</th><th>C</th></tr></thead>
       <tbody>
         <tr><th>A</th><td>1.00</td><td>{{ similarities.ab.toFixed(3) }}</td><td>{{ similarities.ac.toFixed(3) }}</td></tr>
-        <tr><th>B</th><td></td><td>1.00</td><td>{{ similarities.bc.toFixed(3) }}</td></tr>
-        <tr><th>C</th><td></td><td></td><td>1.00</td></tr>
+        <tr><th>B</th><td /><td>1.00</td><td>{{ similarities.bc.toFixed(3) }}</td></tr>
+        <tr><th>C</th><td /><td /><td>1.00</td></tr>
       </tbody>
     </table>
   </main>

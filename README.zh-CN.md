@@ -36,6 +36,7 @@ const { messages, input, append, isLoading, stop } = useChat({
 - **三个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`
 - **默认支持流式响应**：SSE 解析、AbortController 和响应式状态都已处理好
 - **多 Provider**：OpenAI、Azure OpenAI、DeepSeek、Moonshot、智谱、Ollama、vLLM，以及任何 OpenAI-compatible API
+- **Tool calling helper**：注册本地 handler 后，`useChat` 会自动执行工具并继续模型轮次
 - **TypeScript 优先**：严格模式、无 `any` 泄漏、完整 IDE 自动补全
 - **小而轻**：除 Vue 本身外没有运行时依赖
 - **已测试**：Vitest + happy-dom，并提供可复制的 fake provider
@@ -144,26 +145,27 @@ import type { ChatProvider } from 'vue-ai-hooks'
 ```bash
 pnpm install
 echo "VITE_OPENAI_KEY=sk-..." > .env
-pnpm --filter example-chat dev
+pnpm example:chat
 ```
 
 ## 项目状态
 
-这是 **v0.1.0**，是一个可工作的基础版本，但还不是功能完备版本。目前已包含：
+这是 **v0.2.0**，是一个可工作的基础版本，但还不是功能完备版本。目前已包含：
 
 - Chat 流式响应、中止、消息历史
 - 单次补全
 - Embedding
 - OpenAI + OpenAI-compatible Provider
+- Anthropic Claude Provider
+- 多模态图片输入
+- localStorage 持久化
+- Tool-calling helper
 - 测试、CI、示例
 
-计划中的 **v0.2**：
+下一步计划：
 
-- Anthropic Claude Provider
-- Tool-calling / function-calling helper
-- 持久化会话（localStorage adapter）
 - 用于检查流的 Vue DevTools tab
-- 视觉输入 composable
+- 更多 Provider 和生产级增强
 
 ## 贡献
 

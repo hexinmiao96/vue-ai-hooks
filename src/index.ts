@@ -5,9 +5,23 @@
  */
 
 // Composables
-export { useChat, type UseChatOptions, type UseChatReturn } from './composables/useChat'
-export { useCompletion, type UseCompletionOptions, type UseCompletionReturn } from './composables/useCompletion'
-export { useEmbedding, type UseEmbeddingOptions, type UseEmbeddingReturn } from './composables/useEmbedding'
+export {
+  useChat,
+  type ToolCallHandler,
+  type ToolCallHandlerContext,
+  type UseChatOptions,
+  type UseChatReturn
+} from './composables/useChat'
+export {
+  useCompletion,
+  type UseCompletionOptions,
+  type UseCompletionReturn
+} from './composables/useCompletion'
+export {
+  useEmbedding,
+  type UseEmbeddingOptions,
+  type UseEmbeddingReturn
+} from './composables/useEmbedding'
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'

@@ -10,6 +10,9 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
+      text: Examples
+      link: /examples/
+    - theme: alt
       text: View on GitHub
       link: https://github.com/hexinmiao96/vue-ai-hooks
 

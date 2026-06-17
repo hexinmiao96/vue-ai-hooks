@@ -32,7 +32,12 @@ async function send() {
 <template>
   <main class="chat">
     <h1>vue-ai-hooks · useChat</h1>
-    <p v-if="error" class="error">{{ error.message }}</p>
+    <p
+      v-if="error"
+      class="error"
+    >
+      {{ error.message }}
+    </p>
 
     <section class="messages">
       <article
@@ -53,8 +58,18 @@ async function send() {
         @keydown.enter.exact.prevent="send"
       />
       <div class="actions">
-        <button :disabled="isLoading" @click="send">Send</button>
-        <button :disabled="!isLoading" @click="stop">Stop</button>
+        <button
+          :disabled="isLoading"
+          @click="send"
+        >
+          Send
+        </button>
+        <button
+          :disabled="!isLoading"
+          @click="stop"
+        >
+          Stop
+        </button>
       </div>
     </div>
   </main>

@@ -25,6 +25,25 @@ describe('mergeDeltas (tool-call accumulator)', () => {
     expect(out[0].function.arguments).toBe('{"city":"SF"}')
   })
 
+  it('appends function name fragments', () => {
+    const out = mergeDeltas(
+      [{ id: 'call_1', type: 'function', function: { name: 'get_', arguments: '' } }],
+      [{ index: 0, function: { name: 'weather' } }]
+    )
+
+    expect(out[0].function.name).toBe('get_weather')
+  })
+
+  it('does not duplicate a repeated full function name', () => {
+    const out = mergeDeltas(
+      [{ id: 'call_1', type: 'function', function: { name: 'get_weather', arguments: '{"city":' } }],
+      [{ index: 0, function: { name: 'get_weather', arguments: '"SF"}' } }]
+    )
+
+    expect(out[0].function.name).toBe('get_weather')
+    expect(out[0].function.arguments).toBe('{"city":"SF"}')
+  })
+
   it('handles multiple parallel tool calls by index', () => {
     const out = mergeDeltas(undefined, [
       { index: 0, id: 'a', function: { name: 'f1', arguments: '{"x":' } },

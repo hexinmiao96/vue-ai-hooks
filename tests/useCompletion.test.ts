@@ -45,4 +45,43 @@ describe('useCompletion', () => {
     stop()
     expect(isLoading.value).toBe(false)
   })
+
+  it('does not append chunks yielded after stop()', async () => {
+    let resolveFirstChunk: () => void = () => {}
+    const firstChunk = new Promise<void>((resolve) => {
+      resolveFirstChunk = resolve
+    })
+    const provider: ChatProvider = {
+      id: 'abort-aware',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        return (async function* () {
+          yield { content: '' }
+        })()
+      },
+      async completion(request): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield 'a'
+          resolveFirstChunk()
+          await new Promise<void>((resolve) => {
+            request.signal?.addEventListener('abort', () => resolve(), { once: true })
+          })
+          yield 'b'
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { complete, completion, stop } = useCompletion({ provider })
+
+    const resultPromise = complete('say hi')
+    await firstChunk
+    expect(completion.value).toBe('a')
+
+    stop()
+    const result = await resultPromise
+
+    expect(result).toBe('a')
+    expect(completion.value).toBe('a')
+  })
 })

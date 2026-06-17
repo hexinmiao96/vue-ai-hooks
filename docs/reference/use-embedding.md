@@ -33,6 +33,8 @@ console.log(result.embeddings) // number[][]
 | `error` | `Ref<Error \| null>` | Last error. |
 | `result` | `Ref<EmbeddingResult \| null>` | The most recent full result, including usage stats. |
 | `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | Generate embeddings. |
+| `stop()` | `() => void` | Abort the in-flight request. |
+| `clear()` | `() => void` | Reset embeddings, result, and error. Also aborts the in-flight request. |
 | `abortController` | `Ref<AbortController \| null>` | Exposed for advanced use cases. |
 
 ## Notes

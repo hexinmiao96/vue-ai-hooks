@@ -1,11 +1,12 @@
 {
   "name": "vue-ai-hooks",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0",
   "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,7 +22,11 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -p tsconfig.build.json && vite build",
+    "example:chat": "vite --config examples/chat/vite.config.ts",
+    "example:completion": "vite --config examples/completion/vite.config.ts",
+    "example:embedding": "vite --config examples/embedding/vite.config.ts",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "pnpm clean && vue-tsc -p tsconfig.build.json && vite build",
     "typecheck:all": "vue-tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

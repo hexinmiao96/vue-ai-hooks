@@ -40,6 +40,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🎯 **Three composables, one mental model** — `useChat`, `useCompletion`, `useEmbedding`
 - 🌊 **Streaming by default** — SSE parsing, AbortController, and reactivity handled for you
 - 🔌 **Multi-provider** — OpenAI, Azure OpenAI, DeepSeek, Moonshot, Zhipu, Ollama, vLLM, any OpenAI-compatible API
+- 🧰 **Tool calling helpers** — register local handlers and let `useChat` continue the model round-trip
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
 - ⚡ **Tiny** — zero runtime deps beyond Vue itself
 - 🧪 **Tested** — Vitest + happy-dom, with fake providers you can copy
@@ -168,26 +169,27 @@ To run them:
 ```bash
 pnpm install
 echo "VITE_OPENAI_KEY=sk-..." > .env
-pnpm --filter example-chat dev
+pnpm example:chat
 ```
 
 ## Project status
 
-This is **v0.1.0** — a working foundation, not feature-complete. What's in:
+This is **v0.2.0** — a working foundation, not feature-complete. What's in:
 
 - ✅ Chat with streaming, abort, message history
 - ✅ Single-shot completion
 - ✅ Embedding
 - ✅ OpenAI + OpenAI-compatible provider
+- ✅ Anthropic Claude provider
+- ✅ Multimodal image input
+- ✅ localStorage persistence
+- ✅ Tool-calling helpers
 - ✅ Tests, CI, examples
 
-What we're planning for **v0.2**:
+What we're planning next:
 
-- 🔜 Anthropic Claude provider
-- 🔜 Tool-calling / function-calling helpers
-- 🔜 Persisted conversations (localStorage adapter)
 - 🔜 Vue DevTools tab for inspecting streams
-- 🔜 A composable for vision (image inputs)
+- 🔜 More providers and production hardening
 
 ## Contributing
 

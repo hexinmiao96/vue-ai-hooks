@@ -15,6 +15,8 @@ export interface UseEmbeddingReturn {
   error: Ref<Error | null>
   result: Ref<EmbeddingResult | null>
   embed: (input: string | string[], options?: Partial<EmbeddingRequest>) => Promise<EmbeddingResult>
+  stop: () => void
+  clear: () => void
   abortController: Ref<AbortController | null>
 }
 
@@ -37,6 +39,25 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
   const result = shallowRef<EmbeddingResult | null>(null)
   const abortController = shallowRef<AbortController | null>(null)
 
+  function stop() {
+    if (abortController.value) abortController.value.abort()
+    abortController.value = null
+    isLoading.value = false
+  }
+
+  function clear() {
+    stop()
+    embeddings.value = []
+    result.value = null
+    error.value = null
+  }
+
+  function createAbortError(): Error {
+    const e = new Error('Embedding request aborted')
+    e.name = 'AbortError'
+    return e
+  }
+
   async function embed(input: string | string[], requestOptions: Partial<EmbeddingRequest> = {}) {
     const controller = new AbortController()
     abortController.value = controller
@@ -50,12 +71,18 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
         input,
         signal: controller.signal
       })
+      if (controller.signal.aborted) {
+        throw createAbortError()
+      }
       embeddings.value = res.embeddings
       result.value = res
       onSuccess?.(res)
       return res
     } catch (err) {
       const e = err instanceof Error ? err : new Error(String(err))
+      if ((e as { name?: string }).name === 'AbortError' || controller.signal.aborted) {
+        throw e
+      }
       error.value = e
       onError?.(e)
       throw e
@@ -71,6 +98,8 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     error,
     result,
     embed,
+    stop,
+    clear,
     abortController
   }
 }

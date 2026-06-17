@@ -16,19 +16,41 @@ async function run() {
 <template>
   <main class="completion">
     <h1>vue-ai-hooks · useCompletion</h1>
-    <p v-if="error" class="error">{{ error.message }}</p>
+    <p
+      v-if="error"
+      class="error"
+    >
+      {{ error.message }}
+    </p>
 
     <label>
       Prompt
-      <textarea v-model="input" rows="4" placeholder="Write a haiku about TypeScript" />
+      <textarea
+        v-model="input"
+        rows="4"
+        placeholder="Write a haiku about TypeScript"
+      />
     </label>
 
     <div class="actions">
-      <button :disabled="isLoading" @click="run">Complete</button>
-      <button :disabled="!isLoading" @click="stop">Stop</button>
+      <button
+        :disabled="isLoading"
+        @click="run"
+      >
+        Complete
+      </button>
+      <button
+        :disabled="!isLoading"
+        @click="stop"
+      >
+        Stop
+      </button>
     </div>
 
-    <article class="output" v-if="completion">
+    <article
+      v-if="completion"
+      class="output"
+    >
       {{ completion }}
     </article>
   </main>
