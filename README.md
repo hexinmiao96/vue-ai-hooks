@@ -122,6 +122,20 @@ useChat({
 })
 ```
 
+For OpenRouter specifically, the dedicated helper is shorter:
+
+```ts
+import { useChat, openrouter } from 'vue-ai-hooks'
+
+useChat({
+  provider: openrouter({
+    apiKey: import.meta.env.VITE_OPENROUTER_API_KEY,
+    siteUrl: 'https://your-app.example.com',
+    appName: 'My App'
+  })
+})
+```
+
 Add a new provider in one file by implementing `ChatProvider`:
 
 ```ts
@@ -168,7 +182,7 @@ To run them:
 
 ```bash
 pnpm install
-echo "VITE_OPENAI_KEY=sk-..." > .env
+cp examples/.env.example .env
 pnpm example:chat
 ```
 
@@ -180,6 +194,7 @@ This is **v0.2.0** — a working foundation, not feature-complete. What's in:
 - ✅ Single-shot completion
 - ✅ Embedding
 - ✅ OpenAI + OpenAI-compatible provider
+- ✅ OpenRouter provider
 - ✅ Anthropic Claude provider
 - ✅ Multimodal image input
 - ✅ localStorage persistence

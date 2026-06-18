@@ -58,7 +58,7 @@ Every provider implements the same `ChatProvider` interface. To use a non-OpenAI
 service, swap the factory:
 
 ```ts
-import { useChat, anthropic, openaiCompatible } from 'vue-ai-hooks'
+import { useChat, anthropic, openaiCompatible, openrouter } from 'vue-ai-hooks'
 
 // Anthropic Claude
 const { messages, append } = useChat({
@@ -72,6 +72,11 @@ const { messages: messages2, append: append2 } = useChat({
     apiKey: 'sk-...',
     baseURL: 'https://api.deepseek.com/v1'
   })
+})
+
+// OpenRouter via dedicated helper
+const { messages: messages3, append: append3 } = useChat({
+  provider: openrouter({ apiKey: import.meta.env.VITE_OPENROUTER_API_KEY })
 })
 ```
 

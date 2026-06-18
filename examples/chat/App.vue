@@ -1,29 +1,59 @@
 <script setup lang="ts">
-import { useChat, openai } from 'vue-ai-hooks'
+import { useChat, openai, openrouter } from 'vue-ai-hooks'
 
 /**
- * Basic streaming chat example.
+ * Runtime provider selection for the chat example:
+ * - `VITE_CHAT_PROVIDER=openrouter` selects openrouter.
+ * - any other value (or missing value) defaults to openai.
  *
- * To run:
+ * - openai: created via `openai` and reads `VITE_OPENAI_KEY` + optional
+ *   `VITE_OPENAI_BASE_URL`.
+ * - openrouter: created via `openrouter` and reads `VITE_OPENROUTER_*` vars.
+ *
+ * Start the demo:
  *   pnpm install
- *   pnpm --filter example-chat dev
+ *   pnpm example:chat
  *   open http://localhost:5174
- *
- * Set VITE_OPENAI_KEY in your .env, or pass the key explicitly.
  */
-const provider = openai({
-  apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-  baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-})
+const providerType = import.meta.env.VITE_CHAT_PROVIDER === 'openrouter' ? 'openrouter' : 'openai'
+/**
+ * Build the concrete provider instance used by this example so the compose logic
+ * stays explicit and easy to compare in logs and screenshots.
+ */
+const provider = providerType === 'openrouter'
+  ? openrouter({
+      // Keep app-scoped identity headers configurable for OpenRouter quotas/rules.
+      apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || '',
+      defaultModel: import.meta.env.VITE_OPENROUTER_DEFAULT_MODEL || 'openai/gpt-4o-mini',
+      siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
+      appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
+    })
+  : openai({
+      // Default path is https://api.openai.com/v1 if baseURL is omitted.
+      apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+      baseURL: import.meta.env.VITE_OPENAI_BASE_URL
+    })
 
+// useChat returns both message stream state and imperative controls.
+// - messages/input: render + editor binding
+// - isLoading: controls request button states
+// - append/stop: send and cancel lifecycle hooks
+// - error: synchronous rendering of transport/composition failures
 const { messages, input, isLoading, append, stop, error } = useChat({
   provider,
   onError: (e) => console.error('chat error:', e)
 })
 
+/**
+ * Send current input as a new user message when valid and idle.
+ *
+ * This guard prevents accidental empty submits and duplicate in-flight requests.
+ */
 async function send() {
   const text = input.value.trim()
+  // Ignore empty input or duplicate sends while a request is already running.
   if (!text || isLoading.value) return
+  // Reset input before request to keep the textarea snappy after Enter/Send.
   input.value = ''
   await append(text)
 }
@@ -37,6 +67,9 @@ async function send() {
       class="error"
     >
       {{ error.message }}
+    </p>
+    <p class="provider-badge">
+      Provider: {{ providerType }}
     </p>
 
     <section class="messages">
@@ -88,4 +121,5 @@ textarea { width: 100%; padding: 8px; font: inherit; }
 .actions { display: flex; gap: 8px; }
 button { padding: 8px 16px; }
 .error { color: #b00020; }
+.provider-badge { margin: 0 0 12px; font-size: 12px; color: #334155; }
 </style>

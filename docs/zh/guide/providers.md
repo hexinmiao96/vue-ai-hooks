@@ -34,6 +34,23 @@ openaiCompatible({
 
 和 `openai` 基本一致，但 `baseURL` 是必填项。适用于任何遵循 OpenAI REST 约定的服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 `/v1` shim、vLLM、LiteLLM 等。
 
+### `openrouter`
+
+```ts
+import { openrouter } from 'vue-ai-hooks'
+
+openrouter({
+  apiKey: 'sk-or-v1-...',
+  defaultModel: 'openai/gpt-4o',
+  siteUrl: 'https://your-app.example.com',
+  appName: 'My App'
+})
+```
+
+`openrouter` 是一个 `openaiCompatible` 的轻量封装，默认基于
+`https://openrouter.ai/api/v1`，并自动带上 OpenRouter 常用的
+`HTTP-Referer` 与 `X-Title` 请求头。
+
 ### `anthropic`
 
 ```ts

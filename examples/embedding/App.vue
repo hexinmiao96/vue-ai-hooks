@@ -1,12 +1,44 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useEmbedding, openai } from 'vue-ai-hooks'
+import { useEmbedding, openai, openrouter } from 'vue-ai-hooks'
 
-const provider = openai({
-  apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-  baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-})
+/**
+ * Runtime provider selection for the embedding example:
+ * - check `VITE_EXAMPLE_PROVIDER` first;
+ * - if it is not `openrouter`, check `VITE_CHAT_PROVIDER` for compatibility;
+ * - otherwise default to `openai`.
+ *
+ * - openai: uses `openai` with `VITE_OPENAI_KEY` + optional `VITE_OPENAI_BASE_URL`.
+ * - openrouter: uses `openrouter` with `VITE_OPENROUTER_*` variables.
+ *
+ * Sharing the same resolution logic keeps parity between all examples.
+ */
+const selectedProvider = import.meta.env.VITE_EXAMPLE_PROVIDER === 'openrouter' || import.meta.env.VITE_CHAT_PROVIDER === 'openrouter'
+  ? 'openrouter'
+  : 'openai'
+/**
+ * Build the concrete provider instance used by this example.
+ * The ternary keeps provider-specific credentials and OpenRouter attribution
+ * metadata aligned with the completion/chat demos.
+ */
+const provider = selectedProvider === 'openrouter'
+  ? openrouter({
+      // Keep app-scoped identity headers configurable for OpenRouter quotas/rules.
+      apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || '',
+      defaultModel: import.meta.env.VITE_OPENROUTER_DEFAULT_MODEL || 'text-embedding-3-small',
+      siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
+      appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
+    })
+    : openai({
+      // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
+      apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+      baseURL: import.meta.env.VITE_OPENAI_BASE_URL
+    })
 
+// useEmbedding returns embedding vectors and request lifecycle state.
+// - embed: executes one batch embedding request
+// - isLoading: disables repeated submissions
+// - error: renders provider/model request issues
 const { embed, isLoading, error } = useEmbedding({ provider })
 
 const a = ref('A cat sat on the mat.')
@@ -15,7 +47,15 @@ const c = ref('Quantum mechanics is hard.')
 
 const similarities = ref<{ ab: number; ac: number; bc: number } | null>(null)
 
+/**
+ * Compute cosine similarity for the demo's pairwise matrix.
+ *
+ * Values in [0,1] are treated as similarity where larger means closer.
+ */
 function cosine(x: number[], y: number[]): number {
+  // Cosine = dot(x,y)/(||x|| * ||y||), used only for quick local vector
+  // comparison in the demo. No numerical safety checks are needed for short,
+  // controlled-length vectors in UI display mode.
   let dot = 0
   let nx = 0
   let ny = 0
@@ -27,8 +67,13 @@ function cosine(x: number[], y: number[]): number {
   return dot / (Math.sqrt(nx) * Math.sqrt(ny))
 }
 
+/**
+ * Request embeddings for three input texts, then render pairwise similarity.
+ */
 async function run() {
   const result = await embed([a.value, b.value, c.value])
+  // Only render the matrix when all three vectors are returned; prevents partial
+  // or malformed responses from producing invalid DOM state.
   if (result.embeddings.length !== 3) return
   similarities.value = {
     ab: cosine(result.embeddings[0], result.embeddings[1]),
@@ -46,6 +91,9 @@ async function run() {
       class="error"
     >
       {{ error.message }}
+    </p>
+    <p class="provider-badge">
+      Provider: {{ selectedProvider }}
     </p>
 
     <div class="inputs">
@@ -81,4 +129,5 @@ button { padding: 8px 16px; margin: 12px 0; }
 table { border-collapse: collapse; margin-top: 12px; }
 th, td { border: 1px solid #ddd; padding: 6px 12px; text-align: right; }
 .error { color: #b00020; }
+.provider-badge { margin: 0 0 12px; font-size: 12px; color: #334155; }
 </style>

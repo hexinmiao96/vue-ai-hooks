@@ -25,6 +25,9 @@ export {
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'
+// OpenRouter is exposed as a first-class provider entry that keeps OpenAI-compatible
+// request behavior while injecting OpenRouter-specific headers automatically.
+export { openrouter, type OpenRouterConfig } from './providers/openrouter'
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 

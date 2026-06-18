@@ -53,7 +53,7 @@ const { messages, append, clear } = useChat({
 每个 Provider 都实现同一个 `ChatProvider` 接口。要使用非 OpenAI 服务，只需要替换工厂函数：
 
 ```ts
-import { useChat, anthropic, openaiCompatible } from 'vue-ai-hooks'
+import { useChat, anthropic, openaiCompatible, openrouter } from 'vue-ai-hooks'
 
 // Anthropic Claude
 const { messages, append } = useChat({
@@ -67,6 +67,11 @@ const { messages: messages2, append: append2 } = useChat({
     apiKey: 'sk-...',
     baseURL: 'https://api.deepseek.com/v1'
   })
+})
+
+// OpenRouter 直连
+const { messages: messages3, append: append3 } = useChat({
+  provider: openrouter({ apiKey: import.meta.env.VITE_OPENROUTER_API_KEY })
 })
 ```
 

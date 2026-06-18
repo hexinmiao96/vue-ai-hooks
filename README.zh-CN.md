@@ -117,6 +117,20 @@ useChat({
 })
 ```
 
+如果是 OpenRouter，可以直接使用内置 helper：
+
+```ts
+import { useChat, openrouter } from 'vue-ai-hooks'
+
+useChat({
+  provider: openrouter({
+    apiKey: import.meta.env.VITE_OPENROUTER_API_KEY,
+    siteUrl: 'https://your-app.example.com',
+    appName: 'My App'
+  })
+})
+```
+
 新增 Provider 只需要实现 `ChatProvider`：
 
 ```ts
@@ -144,7 +158,7 @@ import type { ChatProvider } from 'vue-ai-hooks'
 
 ```bash
 pnpm install
-echo "VITE_OPENAI_KEY=sk-..." > .env
+cp examples/.env.example .env
 pnpm example:chat
 ```
 

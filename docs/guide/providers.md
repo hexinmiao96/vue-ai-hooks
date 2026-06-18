@@ -40,6 +40,23 @@ Identical to `openai` but takes a `baseURL` as a required argument. Works with a
 service that follows the OpenAI REST conventions — DeepSeek, Moonshot, Zhipu,
 Ollama's `/v1` shim, vLLM, LiteLLM, etc.
 
+### `openrouter`
+
+```ts
+import { openrouter } from 'vue-ai-hooks'
+
+openrouter({
+  apiKey: 'sk-or-v1-...',
+  defaultModel: 'openai/gpt-4o',
+  siteUrl: 'https://your-app.example.com',
+  appName: 'My App'
+})
+```
+
+`openrouter` is a small convenience wrapper around `openaiCompatible` using
+`https://openrouter.ai/api/v1` by default and the headers (`HTTP-Referer`,
+`X-Title`) that OpenRouter commonly uses.
+
 ### `anthropic`
 
 ```ts
