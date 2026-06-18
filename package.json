@@ -56,7 +56,7 @@
   "author": "hexinmiao96",
   "repository": {
     "type": "git",
-    "url": "https://github.com/hexinmiao96/vue-ai-hooks.git"
+    "url": "git+https://github.com/hexinmiao96/vue-ai-hooks.git"
   },
   "bugs": {
     "url": "https://github.com/hexinmiao96/vue-ai-hooks/issues"
