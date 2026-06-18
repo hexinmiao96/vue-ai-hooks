@@ -9,7 +9,12 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
  * fields, OpenRouter commonly requires these optional headers.
  * In practice it is used as a thin, opinionated wrapper around `openaiCompatible`.
  */
-export interface OpenRouterConfig extends OpenAiLikeConfig {
+export interface OpenRouterConfig extends Omit<OpenAiLikeConfig, 'baseURL'> {
+  /**
+   * Optional override for proxies or self-hosted OpenRouter-compatible gateways.
+   * Defaults to `https://openrouter.ai/api/v1`.
+   */
+  baseURL?: string
   /**
    * Optional app site URL for provider analytics/restrictions.
    * Sent as `HTTP-Referer`.
@@ -36,7 +41,7 @@ export interface OpenRouterConfig extends OpenAiLikeConfig {
 export function openrouter(config: OpenRouterConfig): ChatProvider {
   // Keep generic OpenAI-compatible options intact and peel out OpenRouter-only
   // settings for later header composition.
-  const { siteUrl, appName, headers: extraHeaders = {}, ...rest } = config
+  const { siteUrl, appName, headers: extraHeaders = {}, baseURL = OPENROUTER_BASE_URL, ...rest } = config
   // Build the final request headers in one place so callers get a predictable
   // composition model:
   // - base custom headers are preserved,
@@ -54,7 +59,7 @@ export function openrouter(config: OpenRouterConfig): ChatProvider {
   // headers are specialized here.
   const baseProvider = openaiCompatible({
     ...rest,
-    baseURL: OPENROUTER_BASE_URL,
+    baseURL,
     headers
   })
 

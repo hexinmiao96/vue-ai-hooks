@@ -2,9 +2,11 @@
 import { computed, onUnmounted, shallowRef } from 'vue'
 
 const props = defineProps<{
+  id?: string
   title: string
   description: string
   code: string
+  anchorLabel?: string
   previewLabel: string
   codeLabel: string
   copyLabel: string
@@ -64,11 +66,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="demo-block">
+  <section
+    :id="id"
+    class="demo-block"
+  >
     <header class="demo-block__header">
       <div class="demo-block__copy">
         <h3 class="demo-block__title">
-          {{ title }}
+          <span>{{ title }}</span>
+          <a
+            v-if="id"
+            class="demo-block__anchor"
+            :href="`#${id}`"
+            :aria-label="anchorLabel || title"
+          >
+            #
+          </a>
         </h3>
         <p class="demo-block__description">
           {{ description }}
@@ -149,12 +162,38 @@ onUnmounted(() => {
 }
 
 .demo-block__title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin: 0;
   color: var(--demo-ink);
   font-size: 1.125rem;
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: 0;
+}
+
+.demo-block__anchor {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  min-height: 32px;
+  border-radius: 6px;
+  color: var(--demo-muted);
+  font-size: 0.9375rem;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.demo-block__anchor:hover {
+  color: var(--demo-brand);
+  background: var(--demo-subtle);
+}
+
+.demo-block__anchor:focus-visible {
+  outline: 2px solid var(--demo-focus);
+  outline-offset: 2px;
 }
 
 .demo-block__description {
@@ -289,6 +328,13 @@ onUnmounted(() => {
   font-family: var(--vp-font-family-mono);
   font-variant-ligatures: none;
   white-space: pre;
+}
+
+@media (pointer: coarse) {
+  .demo-block__anchor {
+    width: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (min-width: 768px) {

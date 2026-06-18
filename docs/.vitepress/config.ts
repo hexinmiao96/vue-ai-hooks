@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 const rootNav = [
   { text: 'Guide', link: '/guide/getting-started' },
-  { text: 'Examples', link: '/examples/' },
+  { text: '示例', link: '/examples/' },
   { text: 'Reference', link: '/reference/use-chat' },
   { text: 'GitHub', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
 ]
@@ -19,8 +19,8 @@ const rootSidebar = {
   ],
   '/examples/': [
     {
-      text: 'Examples',
-      items: [{ text: 'Overview', link: '/examples/' }]
+      text: '示例',
+      items: [{ text: '总览', link: '/examples/' }]
     }
   ],
   '/reference/': [

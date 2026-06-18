@@ -80,7 +80,7 @@ describe('openrouter provider', () => {
     }
 
     // Consume stream output to exercise the same read path as real consumers.
-    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, options] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
     const headers = options.headers as Record<string, string>
     const body = JSON.parse(options.body as string)
 
@@ -103,7 +103,7 @@ describe('openrouter provider', () => {
     // If provider ignores the override, this test will throw.
     const customFetch = vi.fn(async () =>
       jsonResponse({
-        choices: [{ message: { content: 'custom' }, finish_reason: 'stop' }],
+        choices: [{ text: 'custom' }],
         usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 }
       })
     )
@@ -112,7 +112,7 @@ describe('openrouter provider', () => {
     }) as unknown as typeof fetch
 
     const p = openrouter({ apiKey: 'k', fetch: customFetch as unknown as typeof fetch })
-    const stream = await p.completion({ prompt: 'hi' })
+    const stream = await p.completion({ prompt: 'hi', stream: false })
     let out = ''
     // Act: consume the completion stream produced by p.completion.
     for await (const chunk of stream) {

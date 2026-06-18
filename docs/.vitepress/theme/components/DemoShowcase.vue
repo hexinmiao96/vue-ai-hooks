@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import DemoBlock from './DemoBlock.vue'
 
 type Locale = 'en' | 'zh'
+type DemoHref = '#chat-demo' | '#completion-demo' | '#embedding-demo'
 
 const props = withDefaults(defineProps<{ locale?: Locale }>(), {
   locale: 'en'
@@ -57,11 +58,18 @@ const copy = {
     copyLabel: 'Copy',
     copiedLabel: 'Copied',
     copyFailedLabel: 'Copy failed',
+    demoNavLabel: 'Demo shortcuts',
+    anchorLabel: 'Link to this demo',
     status: 'Ready',
     heroStats: [
       { label: 'Composables', value: '3' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
+    ],
+    demoLinks: [
+      { label: 'Chat', href: '#chat-demo' },
+      { label: 'Completion', href: '#completion-demo' },
+      { label: 'Embedding', href: '#embedding-demo' }
     ],
     demosTitle: 'Composables',
     chat: {
@@ -132,11 +140,18 @@ const copy = {
     copyLabel: '复制',
     copiedLabel: '已复制',
     copyFailedLabel: '复制失败',
+    demoNavLabel: '示例快捷导航',
+    anchorLabel: '跳转到此示例',
     status: '就绪',
     heroStats: [
       { label: '组合式函数', value: '3' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
+    ],
+    demoLinks: [
+      { label: '对话', href: '#chat-demo' },
+      { label: '补全', href: '#completion-demo' },
+      { label: 'Embedding', href: '#embedding-demo' }
     ],
     demosTitle: '组合式函数',
     chat: {
@@ -191,6 +206,56 @@ const copy = {
 }
 
 const content = computed(() => copy[props.locale])
+const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
+const demoIds = ['chat-demo', 'completion-demo', 'embedding-demo'] as const
+
+let demoObserver: IntersectionObserver | undefined
+
+function toDemoHref(hash: string): DemoHref | undefined {
+  return demoIds.map((id) => `#${id}` as DemoHref).find((href) => href === hash)
+}
+
+function setActiveDemo(href: string) {
+  const demoHref = toDemoHref(href)
+  if (demoHref) activeDemoHref.value = demoHref
+}
+
+function syncActiveDemoFromHash() {
+  if (typeof window === 'undefined') return
+  setActiveDemo(window.location.hash)
+}
+
+onMounted(() => {
+  syncActiveDemoFromHash()
+  window.addEventListener('hashchange', syncActiveDemoFromHash)
+
+  if (!('IntersectionObserver' in window)) return
+
+  demoObserver = new IntersectionObserver(
+    (entries) => {
+      const visibleEntry = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top))[0]
+      if (visibleEntry instanceof IntersectionObserverEntry) {
+        setActiveDemo(`#${visibleEntry.target.id}`)
+      }
+    },
+    {
+      rootMargin: '-120px 0px -55% 0px',
+      threshold: [0, 0.25, 0.5, 1]
+    }
+  )
+
+  demoIds.forEach((id) => {
+    const node = document.getElementById(id)
+    if (node) demoObserver?.observe(node)
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', syncActiveDemoFromHash)
+  demoObserver?.disconnect()
+})
 </script>
 
 <template>
@@ -243,15 +308,33 @@ const content = computed(() => copy[props.locale])
       </div>
     </section>
 
+    <nav
+      class="showcase-nav"
+      :aria-label="content.demoNavLabel"
+    >
+      <a
+        v-for="link in content.demoLinks"
+        :key="link.href"
+        :href="link.href"
+        :class="{ 'is-active': activeDemoHref === link.href }"
+        :aria-current="activeDemoHref === link.href ? 'true' : undefined"
+        @click="setActiveDemo(link.href)"
+      >
+        {{ link.label }}
+      </a>
+    </nav>
+
     <section
       id="composable-demos"
       class="demo-stack"
       :aria-label="content.demosTitle"
     >
       <DemoBlock
+        id="chat-demo"
         :title="content.chat.title"
         :description="content.chat.description"
         :code="chatCode"
+        :anchor-label="content.anchorLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
@@ -289,9 +372,11 @@ const content = computed(() => copy[props.locale])
       </DemoBlock>
 
       <DemoBlock
+        id="completion-demo"
         :title="content.completion.title"
         :description="content.completion.description"
         :code="completionCode"
+        :anchor-label="content.anchorLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
@@ -322,9 +407,11 @@ const content = computed(() => copy[props.locale])
       </DemoBlock>
 
       <DemoBlock
+        id="embedding-demo"
         :title="content.embedding.title"
         :description="content.embedding.description"
         :code="embeddingCode"
+        :anchor-label="content.anchorLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
@@ -585,6 +672,45 @@ const content = computed(() => copy[props.locale])
   font-weight: 780;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+}
+
+.showcase-nav {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-surface);
+}
+
+.showcase-nav a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 6px;
+  color: var(--demo-muted);
+  font-size: 0.875rem;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.showcase-nav a:hover {
+  color: var(--demo-brand);
+  background: var(--demo-subtle);
+}
+
+.showcase-nav a.is-active {
+  background: var(--demo-brand-soft);
+  color: var(--demo-brand);
+}
+
+.showcase-nav a:focus-visible {
+  outline: 2px solid var(--demo-focus);
+  outline-offset: 2px;
 }
 
 .demo-stack {
@@ -929,6 +1055,12 @@ const content = computed(() => copy[props.locale])
   }
 }
 
+@media (pointer: coarse) {
+  .showcase-nav a {
+    min-height: 44px;
+  }
+}
+
 @media (min-width: 768px) {
   .showcase-hero {
     grid-template-columns: minmax(0, 1fr) 360px;
@@ -943,6 +1075,12 @@ const content = computed(() => copy[props.locale])
 
   .api-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .showcase-nav {
+    width: max-content;
   }
 }
 </style>

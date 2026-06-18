@@ -10,7 +10,7 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
-      text: Examples
+      text: 示例
       link: /examples/
     - theme: alt
       text: View on GitHub

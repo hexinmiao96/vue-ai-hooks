@@ -1,6 +1,6 @@
 ---
-title: Examples
-description: Elegant vue-ai-hooks demos for chat, completion, and embeddings.
+title: 示例
+description: 面向 chat、completion 和 embedding 的精致 vue-ai-hooks 示例页。
 aside: false
 pageClass: demo-page
 ---
@@ -9,4 +9,4 @@ pageClass: demo-page
 import DemoShowcase from '../.vitepress/theme/components/DemoShowcase.vue'
 </script>
 
-<DemoShowcase locale="en" />
+<DemoShowcase locale="zh" />
