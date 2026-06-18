@@ -116,7 +116,8 @@ export default defineConfig({
         lightModeSwitchTitle: '切换到浅色模式',
         darkModeSwitchTitle: '切换到深色模式',
         sidebarMenuLabel: '菜单',
-        returnToTopLabel: '返回顶部'
+        returnToTopLabel: '返回顶部',
+        skipToContentLabel: '跳转到内容'
       }
     }
   },
@@ -125,6 +126,20 @@ export default defineConfig({
     sidebar: rootSidebar,
     socialLinks: [
       { icon: 'github', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
-    ]
+    ],
+    langMenuLabel: '多语言',
+    darkModeSwitchLabel: '外观',
+    lightModeSwitchTitle: '切换到浅色模式',
+    darkModeSwitchTitle: '切换到深色模式',
+    sidebarMenuLabel: '菜单',
+    returnToTopLabel: '返回顶部',
+    skipToContentLabel: '跳转到内容',
+    docFooter: {
+      prev: '上一页',
+      next: '下一页'
+    },
+    lastUpdated: {
+      text: '最后更新'
+    }
   }
 })

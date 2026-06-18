@@ -2,14 +2,36 @@
 import { computed, onMounted, onUnmounted, shallowRef } from 'vue'
 import DemoBlock from './DemoBlock.vue'
 
-type Locale = 'en' | 'zh'
-type DemoHref = '#chat-demo' | '#completion-demo' | '#embedding-demo'
+type LocaleKey = 'en' | 'zh'
+type DemoHref =
+  | '#chat-demo'
+  | '#completion-demo'
+  | '#embedding-demo'
+  | '#chat-demo-api'
+  | '#completion-demo-api'
+  | '#embedding-demo-api'
+  | '#chat-demo-api-props'
+  | '#chat-demo-api-methods'
+  | '#completion-demo-api-props'
+  | '#completion-demo-api-methods'
+  | '#embedding-demo-api-props'
+  | '#embedding-demo-api-methods'
+type NavLink = {
+  label: string
+  href: DemoHref
+}
 
-const props = withDefaults(defineProps<{ locale?: Locale }>(), {
-  locale: 'en'
+const props = withDefaults(defineProps<{ locale?: string }>(), {
+  locale: 'zh'
 })
 
-const chatCode = `const { messages, input, append, stop, reload, clear } = useChat({
+const localeKey = computed<LocaleKey>(() =>
+  props.locale.startsWith('zh') ? 'zh' : 'en'
+)
+
+const codeSamples = {
+  en: {
+    chat: `const { messages, input, append, stop, reload, clear } = useChat({
   provider,
   toolHandlers: {
     getWeather: async ({ city }) => ({ city, temperature: 23 })
@@ -19,9 +41,8 @@ const chatCode = `const { messages, input, append, stop, reload, clear } = useCh
 async function send() {
   if (!input.value.trim()) return
   await append(input.value)
-}`
-
-const completionCode = `const { completion, input, complete, stop, clear, isLoading } = useCompletion({
+}`,
+    completion: `const { completion, input: prompt, complete, stop, clear, isLoading } = useCompletion({
   provider,
   defaultRequest: {
     model: 'gpt-4o-mini',
@@ -29,9 +50,8 @@ const completionCode = `const { completion, input, complete, stop, clear, isLoad
   }
 })
 
-await complete('Write a concise release note for a Vue composable.')`
-
-const embeddingCode = `const { embed, embeddings, result, stop, clear } = useEmbedding({
+await complete('Write a concise release note for a Vue composable.')`,
+    embedding: `const { embed, embeddings, result, stop, clear } = useEmbedding({
   provider,
   onSuccess: (res) => {
     console.log('tokens:', res.usage?.totalTokens)
@@ -43,6 +63,47 @@ await embed([
   'Semantic search over documents',
   'A recipe for iced coffee'
 ])`
+  },
+  zh: {
+    chat: `// 创建聊天会话，拿到消息列表与操作函数
+const { messages: 消息列表, input: 输入文本, append, stop, reload, clear } = useChat({
+  provider,
+  toolHandlers: {
+    getWeather: async ({ city }) => ({ city, temperature: 23 })
+  }
+})
+
+// 绑定发送逻辑：过滤空白后追加一条消息
+async function send() {
+  if (!输入文本.value.trim()) return
+  await append(输入文本.value)
+}`,
+    completion: `const { completion: 补全结果, input: 输入文本, complete, stop, clear, isLoading } = useCompletion({
+  provider,
+  defaultRequest: {
+    model: 'gpt-4o-mini',
+    temperature: 0.6
+  }
+})
+
+// model 与 temperature 使用项目默认模型策略可按需覆盖
+// 给出一段可供发布说明复用的提示词
+await complete('为新的 useEmbedding.clear() 接口补充一段发布说明。')`,
+    embedding: `const { embed, embeddings: 向量列表, result: 向量结果, stop, clear } = useEmbedding({
+  provider,
+  onSuccess: (res) => {
+    console.log('令牌数:', res.usage?.totalTokens)
+  }
+})
+
+// 一次性对多段文本做向量化，方便后续相似度对比
+await embed([
+  'Vue 场景下的流式对话状态',
+  '文档语义检索',
+  '冰咖啡配方向量化片段'
+])`
+  }
+}
 
 const copy = {
   en: {
@@ -54,11 +115,14 @@ const copy = {
     secondaryAction: 'Read guide',
     secondaryHref: '/guide/getting-started',
     previewLabel: 'Preview',
+    panelLabel: 'Demo panel',
     codeLabel: 'Code',
     copyLabel: 'Copy',
     copiedLabel: 'Copied',
     copyFailedLabel: 'Copy failed',
     demoNavLabel: 'Demo shortcuts',
+    demoNavTitle: 'Navigation',
+    apiNavTitle: 'API',
     anchorLabel: 'Link to this demo',
     status: 'Ready',
     heroStats: [
@@ -71,34 +135,199 @@ const copy = {
       { label: 'Completion', href: '#completion-demo' },
       { label: 'Embedding', href: '#embedding-demo' }
     ],
+    apiLinks: [
+      { label: 'useChat API', href: '#chat-demo-api' },
+      { label: 'useChat Properties', href: '#chat-demo-api-props' },
+      { label: 'useChat Methods', href: '#chat-demo-api-methods' },
+      { label: 'useCompletion API', href: '#completion-demo-api' },
+      { label: 'useCompletion Properties', href: '#completion-demo-api-props' },
+      { label: 'useCompletion Methods', href: '#completion-demo-api-methods' },
+      { label: 'useEmbedding API', href: '#embedding-demo-api' },
+      { label: 'useEmbedding Properties', href: '#embedding-demo-api-props' },
+      { label: 'useEmbedding Methods', href: '#embedding-demo-api-methods' }
+    ] as NavLink[],
     demosTitle: 'Composables',
     chat: {
       title: 'Streaming chat',
+      topbarTitle: 'useChat',
       description:
         'A production chat surface with message history, stream controls, reload, clear, and tool-call affordances.',
+      roleUser: 'user',
+      roleAssistant: 'assistant',
+      composerLabel: 'chat composer',
       user: 'Plan a focused Vue docs page.',
       assistant:
         'Use a three-part structure: hero context, live composable demos, and compact API notes. Keep the implementation provider-agnostic.',
+      actions: ['Stop', 'Reload', 'Clear'],
       tool: 'Tool call resolved: getWeather({ city: "Hangzhou" })',
-      composer: 'Ask about providers, tools, or persistence'
+      composer: 'Ask about providers, tools, or persistence',
+      apiRef: {
+        title: 'useChat API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: 'required',
+            description: 'Provider adapter used to send chat completions.'
+          },
+          {
+            name: 'options',
+            type: 'UseChatOptions',
+            required: 'optional',
+            description: 'Optional overrides for defaults such as message history and tool handlers.'
+          }
+        ],
+        methods: [
+          {
+            name: 'append',
+            type: '(input: string): Promise<void>',
+            description: 'Append the current input and start a stream for the new message.'
+          },
+          {
+            name: 'reload',
+            type: '(): Promise<void>',
+            description: 'Re-run the latest request using current state and latest input.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort all active stream requests for this composable.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Reset chat messages and error state.'
+          }
+        ]
+      }
     },
     completion: {
       title: 'Text completion',
+      topbarTitle: 'useCompletion',
       description:
         'A writing assistant pattern for prompts that return one streamed text result with stop and reset controls.',
+      promptLabel: 'Prompt',
       prompt: 'Write a release note for the new useEmbedding.clear() API.',
+      resultLabel: 'Result',
       output:
         'Added clear() to reset embedding vectors, the last result, and errors while aborting any active request.',
-      metric: '42 tokens'
+      metric: '42 tokens',
+      footerActions: 'complete - stop - clear',
+      apiRef: {
+        title: 'useCompletion API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: 'required',
+            description: 'Provider adapter used to complete text prompts.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'CompletionRequest',
+            required: 'optional',
+            description: 'Default request payload merged into each completion call.'
+          }
+        ],
+        methods: [
+          {
+            name: 'complete',
+            type: '(prompt: string): Promise<void>',
+            description: 'Send a prompt and stream a text completion result.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the in-flight completion request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear completion result, error state, and loading flag.'
+          }
+        ]
+      }
     },
     embedding: {
       title: 'Embedding similarity',
+      topbarTitle: 'useEmbedding',
       description:
         'A semantic matching layout that shows batched input, vector state, usage metadata, and a similarity matrix.',
       rows: ['Chat state', 'Semantic search', 'Coffee recipe'],
-      usage: '3 inputs - 128 dimensions - 87 tokens'
+      usage: '3 inputs - 128 dimensions - 87 tokens',
+      apiRef: {
+        title: 'useEmbedding API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: 'required',
+            description: 'Provider adapter used to compute text embeddings.'
+          },
+          {
+            name: 'onSuccess',
+            type: '(res: EmbeddingResponse) => void',
+            required: 'optional',
+            description: 'Callback invoked when the embedding request succeeds.'
+          }
+        ],
+        methods: [
+          {
+            name: 'embed',
+            type: '(inputs: string[]): Promise<void>',
+            description: 'Request embeddings for a batch of text inputs.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active embedding request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear embeddings, result, and current error.'
+          }
+        ]
+      }
     },
     apiTitle: 'API surface',
+    apiSectionLabel: 'API Reference',
     apiIntro:
       'Each composable keeps the same mental model: source state, async action, loading/error state, and small imperative controls.',
     apiRows: [
@@ -129,18 +358,21 @@ const copy = {
   },
   zh: {
     heroKicker: '示例',
-    heroTitle: '更接近组件库文档的 AI 组合式函数 Demo',
+    heroTitle: '更接近组件库文档的 AI 组合式函数示例',
     heroIntro:
       '用 Element Plus 那类文档体验来组织示例：预览清晰、代码紧凑、状态明确，常用 API 在同一页能扫完。',
     primaryAction: '查看组合式函数',
     secondaryAction: '阅读指南',
     secondaryHref: '/zh/guide/getting-started',
     previewLabel: '预览',
+    panelLabel: '示例面板',
     codeLabel: '代码',
     copyLabel: '复制',
     copiedLabel: '已复制',
     copyFailedLabel: '复制失败',
     demoNavLabel: '示例快捷导航',
+    demoNavTitle: '页面导航',
+    apiNavTitle: 'API 列表',
     anchorLabel: '跳转到此示例',
     status: '就绪',
     heroStats: [
@@ -151,49 +383,216 @@ const copy = {
     demoLinks: [
       { label: '对话', href: '#chat-demo' },
       { label: '补全', href: '#completion-demo' },
-      { label: 'Embedding', href: '#embedding-demo' }
+      { label: '向量检索', href: '#embedding-demo' }
     ],
+    apiLinks: [
+      { label: 'useChat 接口', href: '#chat-demo-api' },
+      { label: 'useChat 参数', href: '#chat-demo-api-props' },
+      { label: 'useChat 方法', href: '#chat-demo-api-methods' },
+      { label: 'useCompletion 接口', href: '#completion-demo-api' },
+      { label: 'useCompletion 参数', href: '#completion-demo-api-props' },
+      { label: 'useCompletion 方法', href: '#completion-demo-api-methods' },
+      { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
+      { label: 'useEmbedding 参数', href: '#embedding-demo-api-props' },
+      { label: 'useEmbedding 方法', href: '#embedding-demo-api-methods' }
+    ] as NavLink[],
     demosTitle: '组合式函数',
     chat: {
       title: '流式对话',
+      topbarTitle: 'useChat（流式对话）',
       description: '用于产品聊天界面的完整形态：消息历史、流控制、重新生成、清空以及工具调用提示。',
+      roleUser: '用户',
+      roleAssistant: '助手',
+      composerLabel: '输入区',
       user: '规划一个聚焦的 Vue 文档示例页。',
-      assistant: '可以分成三段：顶部语境、组合式函数 demo、紧凑 API 说明。实现保持 provider 无关。',
-      tool: '工具调用已完成：getWeather({ city: "Hangzhou" })',
-      composer: '询问 Provider、工具调用或持久化'
+      assistant:
+        '可以分成三段：顶部语境、组合式函数示例、紧凑 API 说明。实现保持提供者无关。',
+      actions: ['终止', '重新加载', '清空'],
+      tool: '工具调用已完成：getWeather({ city: "杭州" })',
+      composer: '询问模型服务商、工具调用或持久化',
+      apiRef: {
+        title: 'useChat 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: '必填',
+            description: '用于发送对话请求的适配器。'
+          },
+          {
+            name: 'options',
+            type: 'UseChatOptions',
+            required: '可选',
+            description: '可选配置，包括历史记录管理与工具调用处理。'
+          }
+        ],
+        methods: [
+          {
+            name: 'append',
+            type: '（输入: string）: Promise<void>',
+            description: '提交当前输入并发起一次新的流式消息。'
+          },
+          {
+            name: 'reload',
+            type: '（）：Promise<void>',
+            description: '使用当前状态和输入重新发起最近一次请求。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中止当前 useChat 的进行中流请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清空消息列表并重置错误状态。'
+          }
+        ]
+      }
     },
     completion: {
       title: '文本补全',
+      topbarTitle: 'useCompletion（文本补全）',
       description: '适合提示词到单段文本的写作助手模式，展示流式结果、中止和重置控制。',
+      promptLabel: '提示词',
       prompt: '为新的 useEmbedding.clear() API 写一段发布说明。',
-      output: '新增 clear()，可重置 embedding 向量、最近结果和错误，并中止当前请求。',
-      metric: '42 tokens'
+      resultLabel: '输出结果',
+      output: '新增 clear()，可重置向量化结果、最近结果和错误，并中止当前请求。',
+      metric: '42 个标记',
+      footerActions: '完成 - 停止 - 重置',
+      apiRef: {
+        title: 'useCompletion 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: '必填',
+            description: '用于发送补全请求的适配器。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'CompletionRequest',
+            required: '可选',
+            description: '每次补全调用都会合并的默认请求参数。'
+          }
+        ],
+        methods: [
+          {
+            name: 'complete',
+            type: '（prompt: string）：Promise<void>',
+            description: '提交提示词并流式返回文本补全结果。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中止当前进行中的补全请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理补全结果、错误信息和 loading 状态。'
+          }
+        ]
+      }
     },
     embedding: {
-      title: 'Embedding 相似度',
-      description: '面向语义匹配的展示布局，包含批量输入、向量状态、usage 元数据和相似度矩阵。',
+      title: '向量相似度',
+      topbarTitle: 'useEmbedding（向量检索）',
+      description: '面向语义匹配的展示布局，包含批量输入、向量状态、使用量元数据和相似度矩阵。',
       rows: ['对话状态', '语义搜索', '冰咖啡配方'],
-      usage: '3 条输入 - 128 维 - 87 tokens'
+      usage: '3 条输入 - 128 维 - 87 个标记',
+      apiRef: {
+        title: 'useEmbedding 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: '必填',
+            description: '用于生成文本 embedding 的提供者适配器。'
+          },
+          {
+            name: 'onSuccess',
+            type: '(res: EmbeddingResponse) => void',
+            required: '可选',
+            description: '向量计算成功后触发的回调。'
+          }
+        ],
+        methods: [
+          {
+            name: 'embed',
+            type: '（inputs: string[]): Promise<void>',
+            description: '批量发送文本以生成 embedding。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中断当前向量化请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理 embeddings、结果和当前错误状态。'
+          }
+        ]
+      }
     },
-    apiTitle: 'API 轮廓',
-    apiIntro: '三个组合式函数保持同一套心智模型：状态、异步动作、loading/error 和少量命令式控制。',
+    apiTitle: 'API 结构',
+    apiSectionLabel: 'API 参考',
+    apiIntro:
+      '三个组合式函数保持同一套心智模型：状态、异步动作、加载中状态和错误状态，以及少量命令式控制。',
     apiRows: [
       {
         name: 'useChat',
-        state: 'messages, input, isLoading, error',
-        actions: 'append, reload, stop, clear',
+        state: 'messages（消息）、input（输入）、isLoading（加载中）、error（错误）',
+        actions: 'append 追加, reload 重新加载, stop 停止, clear 清空',
         fit: '对话界面、工具调用、消息持久化'
       },
       {
         name: 'useCompletion',
-        state: 'completion, input, isLoading, error',
-        actions: 'complete, stop, clear',
+        state: 'completion（补全结果）、input（输入）、isLoading（加载中）、error（错误）',
+        actions: 'complete 生成, stop 停止, clear 清空',
         fit: '提示词生成文本、写作工具'
       },
       {
         name: 'useEmbedding',
-        state: 'embeddings, result, isLoading, error',
-        actions: 'embed, stop, clear',
+        state: 'embeddings（向量列表）、result（结果）、isLoading（加载中）、error（错误）',
+        actions: 'embed 向量化, stop 停止, clear 清空',
         fit: '搜索、聚类、相似度计算'
       }
     ],
@@ -205,14 +604,31 @@ const copy = {
   }
 }
 
-const content = computed(() => copy[props.locale])
+const content = computed(() => copy[localeKey.value])
+const chatCode = computed(() => codeSamples[localeKey.value].chat)
+const completionCode = computed(() => codeSamples[localeKey.value].completion)
+const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
-const demoIds = ['chat-demo', 'completion-demo', 'embedding-demo'] as const
+const sectionIds: DemoHref[] = [
+  '#chat-demo',
+  '#completion-demo',
+  '#embedding-demo',
+  '#chat-demo-api',
+  '#completion-demo-api',
+  '#embedding-demo-api',
+  '#chat-demo-api-props',
+  '#chat-demo-api-methods',
+  '#completion-demo-api-props',
+  '#completion-demo-api-methods',
+  '#embedding-demo-api-props',
+  '#embedding-demo-api-methods'
+]
+const sectionTargetIds = sectionIds.map((href) => href.slice(1))
 
 let demoObserver: IntersectionObserver | undefined
 
 function toDemoHref(hash: string): DemoHref | undefined {
-  return demoIds.map((id) => `#${id}` as DemoHref).find((href) => href === hash)
+  return sectionIds.find((href) => href === hash)
 }
 
 function setActiveDemo(href: string) {
@@ -246,7 +662,7 @@ onMounted(() => {
     }
   )
 
-  demoIds.forEach((id) => {
+  sectionTargetIds.forEach((id) => {
     const node = document.getElementById(id)
     if (node) demoObserver?.observe(node)
   })
@@ -308,51 +724,73 @@ onUnmounted(() => {
       </div>
     </section>
 
-    <nav
-      class="showcase-nav"
-      :aria-label="content.demoNavLabel"
-    >
-      <a
-        v-for="link in content.demoLinks"
-        :key="link.href"
-        :href="link.href"
-        :class="{ 'is-active': activeDemoHref === link.href }"
-        :aria-current="activeDemoHref === link.href ? 'true' : undefined"
-        @click="setActiveDemo(link.href)"
+    <div class="showcase-layout">
+      <nav
+        class="showcase-nav"
+        :aria-label="content.demoNavLabel"
       >
-        {{ link.label }}
-      </a>
-    </nav>
-
-    <section
-      id="composable-demos"
-      class="demo-stack"
-      :aria-label="content.demosTitle"
-    >
+        <div class="showcase-nav__group">
+          <span class="showcase-nav__title">{{ content.demoNavTitle }}</span>
+          <a
+            v-for="link in content.demoLinks"
+            :key="link.href"
+            :href="link.href"
+            :class="{ 'is-active': activeDemoHref === link.href }"
+            :aria-current="activeDemoHref === link.href ? 'true' : undefined"
+            @click="setActiveDemo(link.href)"
+          >
+            {{ link.label }}
+          </a>
+        </div>
+        <div class="showcase-nav__group">
+          <span class="showcase-nav__title">{{ content.apiNavTitle }}</span>
+          <a
+            v-for="link in content.apiLinks"
+            :key="link.href"
+            :href="link.href"
+            :class="{ 'is-active': activeDemoHref === link.href }"
+            :aria-current="activeDemoHref === link.href ? 'true' : undefined"
+            @click="setActiveDemo(link.href)"
+          >
+            {{ link.label }}
+          </a>
+        </div>
+      </nav>
+      <section
+        id="composable-demos"
+        class="demo-stack"
+        :aria-label="content.demosTitle"
+      >
       <DemoBlock
         id="chat-demo"
+        api-title-id="chat-demo-api"
+        api-props-section-id="chat-demo-api-props"
+        api-methods-section-id="chat-demo-api-methods"
         :title="content.chat.title"
         :description="content.chat.description"
         :code="chatCode"
         :anchor-label="content.anchorLabel"
+        :panel-label="content.panelLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
         :copied-label="content.copiedLabel"
         :copy-failed-label="content.copyFailedLabel"
+        :api-aria-label="content.apiSectionLabel"
+        :api-ref="content.chat.apiRef"
       >
         <div class="chat-preview">
           <div class="preview-topbar">
             <span class="preview-topbar__mark" />
-            <span>useChat</span>
+            <span>{{ content.chat.topbarTitle }}</span>
           </div>
           <div class="chat-preview__body">
             <article class="chat-message is-user">
-              <span class="chat-message__role">user</span>
+              <span class="chat-message__role">{{ content.chat.roleUser }}</span>
               <p>{{ content.chat.user }}</p>
             </article>
             <article class="chat-message is-assistant">
-              <span class="chat-message__role">assistant</span>
+              <span class="chat-message__role">{{ content.chat.roleAssistant }}</span>
               <p>{{ content.chat.assistant }}</p>
             </article>
             <div class="tool-call">
@@ -361,11 +799,11 @@ onUnmounted(() => {
             </div>
           </div>
           <footer class="chat-composer">
-            <span>{{ content.chat.composer }}</span>
+            <span>{{ content.chat.composerLabel }}：{{ content.chat.composer }}</span>
             <span class="command-row">
-              <span>Stop</span>
-              <span>Reload</span>
-              <span>Clear</span>
+              <span v-for="action in content.chat.actions" :key="action">
+                {{ action }}
+              </span>
             </span>
           </footer>
         </div>
@@ -373,27 +811,33 @@ onUnmounted(() => {
 
       <DemoBlock
         id="completion-demo"
+        api-title-id="completion-demo-api"
+        api-props-section-id="completion-demo-api-props"
+        api-methods-section-id="completion-demo-api-methods"
         :title="content.completion.title"
         :description="content.completion.description"
         :code="completionCode"
         :anchor-label="content.anchorLabel"
+        :panel-label="content.panelLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
         :copied-label="content.copiedLabel"
         :copy-failed-label="content.copyFailedLabel"
+        :api-aria-label="content.apiSectionLabel"
+        :api-ref="content.completion.apiRef"
       >
         <div class="completion-preview">
           <div class="preview-topbar">
             <span class="preview-topbar__mark is-amber" />
-            <span>useCompletion</span>
+            <span>{{ content.completion.topbarTitle }}</span>
           </div>
           <div class="completion-editor">
-            <span class="field-label">Prompt</span>
+            <span class="field-label">{{ content.completion.promptLabel }}</span>
             <p>{{ content.completion.prompt }}</p>
           </div>
           <article class="completion-output">
-            <span class="field-label">Result</span>
+            <span class="field-label">{{ content.completion.resultLabel }}</span>
             <p>{{ content.completion.output }}</p>
             <div class="completion-output__meter">
               <span />
@@ -401,27 +845,33 @@ onUnmounted(() => {
           </article>
           <footer class="preview-footer">
             <span>{{ content.completion.metric }}</span>
-            <span>complete - stop - clear</span>
+            <span>{{ content.completion.footerActions }}</span>
           </footer>
         </div>
       </DemoBlock>
 
       <DemoBlock
         id="embedding-demo"
+        api-title-id="embedding-demo-api"
+        api-props-section-id="embedding-demo-api-props"
+        api-methods-section-id="embedding-demo-api-methods"
         :title="content.embedding.title"
         :description="content.embedding.description"
         :code="embeddingCode"
         :anchor-label="content.anchorLabel"
+        :panel-label="content.panelLabel"
         :preview-label="content.previewLabel"
         :code-label="content.codeLabel"
         :copy-label="content.copyLabel"
         :copied-label="content.copiedLabel"
         :copy-failed-label="content.copyFailedLabel"
+        :api-aria-label="content.apiSectionLabel"
+        :api-ref="content.embedding.apiRef"
       >
         <div class="embedding-preview">
           <div class="preview-topbar">
             <span class="preview-topbar__mark is-green" />
-            <span>useEmbedding</span>
+            <span>{{ content.embedding.topbarTitle }}</span>
           </div>
           <div class="embedding-list">
             <div
@@ -473,7 +923,8 @@ onUnmounted(() => {
           </footer>
         </div>
       </DemoBlock>
-    </section>
+      </section>
+    </div>
 
     <section class="api-section">
       <div class="api-section__header">
@@ -675,8 +1126,8 @@ onUnmounted(() => {
 }
 
 .showcase-nav {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  gap: 10px;
   overflow-x: auto;
   width: 100%;
   padding: 8px;
@@ -685,11 +1136,33 @@ onUnmounted(() => {
   background: var(--demo-surface);
 }
 
+.showcase-nav__group {
+  display: grid;
+  gap: 6px;
+}
+
+.showcase-nav__group + .showcase-nav__group {
+  border-top: 1px dashed var(--demo-border);
+  padding-top: 8px;
+}
+
+.showcase-nav__title {
+  padding: 4px 8px 6px;
+  color: var(--demo-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+}
+
+.showcase-nav__group .showcase-nav__title {
+  margin-bottom: 4px;
+  padding: 2px 0 0;
+}
+
 .showcase-nav a {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
-  min-height: 38px;
+  align-self: stretch;
+  min-height: 36px;
   padding: 0 12px;
   border-radius: 6px;
   color: var(--demo-muted);
@@ -711,6 +1184,12 @@ onUnmounted(() => {
 .showcase-nav a:focus-visible {
   outline: 2px solid var(--demo-focus);
   outline-offset: 2px;
+}
+
+.showcase-layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
 }
 
 .demo-stack {
@@ -1079,8 +1558,24 @@ onUnmounted(() => {
 }
 
 @media (min-width: 1024px) {
+  .showcase-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+    align-items: start;
+  }
+
   .showcase-nav {
-    width: max-content;
+    position: sticky;
+    top: 82px;
+    align-self: start;
+  }
+
+  .showcase-nav a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .showcase-nav {
+    width: 220px;
   }
 }
 </style>

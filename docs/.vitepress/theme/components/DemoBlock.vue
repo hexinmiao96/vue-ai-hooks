@@ -1,18 +1,58 @@
 <script setup lang="ts">
 import { computed, onUnmounted, shallowRef } from 'vue'
 
-const props = defineProps<{
+type ApiRefEntry = {
+  name: string
+  type?: string
+  required?: 'required' | 'optional' | string
+  description: string
+}
+
+type ApiRef = {
+  title: string
+  propsTitle: string
+  methodsTitle: string
+  propsHeaders?: {
+    name: string
+    type: string
+    required: string
+    description: string
+  }
+  methodsHeaders?: {
+    name: string
+    description: string
+  }
+  props: ApiRefEntry[]
+  methods: ApiRefEntry[]
+}
+
+const props = withDefaults(defineProps<{
   id?: string
   title: string
   description: string
   code: string
   anchorLabel?: string
+  apiTitleId?: string
+  apiPropsSectionId?: string
+  apiMethodsSectionId?: string
+  panelLabel?: string
   previewLabel: string
   codeLabel: string
   copyLabel: string
   copiedLabel: string
   copyFailedLabel: string
-}>()
+  apiRef?: ApiRef
+  apiAriaLabel?: string
+}>(), {
+  anchorLabel: '跳转到此示例',
+  panelLabel: '示例面板',
+  previewLabel: '预览',
+  codeLabel: '代码',
+  copyLabel: '复制',
+  copiedLabel: '已复制',
+  copyFailedLabel: '复制失败',
+  apiAriaLabel: 'API 参考'
+})
 
 const activePanel = shallowRef<'preview' | 'code'>('preview')
 const copyState = shallowRef<'idle' | 'copied' | 'failed'>('idle')
@@ -90,7 +130,7 @@ onUnmounted(() => {
 
       <div
         class="demo-block__switch"
-        aria-label="Demo panel"
+        :aria-label="panelLabel || '示例面板'"
       >
         <button
           class="demo-block__switch-button"
@@ -138,6 +178,88 @@ onUnmounted(() => {
         <pre class="demo-block__code"><code>{{ code }}</code></pre>
       </div>
     </div>
+    <section
+      v-if="apiRef"
+      class="demo-block__api"
+      :aria-label="apiAriaLabel || 'API 参考'"
+    >
+      <h4
+        :id="apiTitleId"
+        class="demo-block__api-title"
+      >
+        {{ apiRef.title }}
+      </h4>
+      <div class="api-ref__section">
+        <h5
+          :id="apiPropsSectionId"
+          class="api-ref__section-title"
+        >
+          {{ apiRef.propsTitle }}
+        </h5>
+        <div class="api-ref__table-wrap">
+          <table class="api-ref__table">
+            <thead>
+              <tr>
+                <th>{{ apiRef.propsHeaders?.name || '参数名' }}</th>
+                <th>{{ apiRef.propsHeaders?.type || '类型' }}</th>
+                <th>{{ apiRef.propsHeaders?.required || '必需' }}</th>
+                <th>{{ apiRef.propsHeaders?.description || '说明' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in apiRef.props" :key="item.name">
+                <td>
+                  <span class="api-ref__name-text">{{ item.name }}</span>
+                </td>
+                <td>
+                  <span class="api-ref__type">{{ item.type || '-' }}</span>
+                </td>
+                <td>
+                  <span class="api-ref__tag">{{ item.required || '-' }}</span>
+                </td>
+                <td>
+                  <span class="api-ref__desc">{{ item.description }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="api-ref__section">
+        <h5
+          :id="apiMethodsSectionId"
+          class="api-ref__section-title"
+        >
+          {{ apiRef.methodsTitle }}
+        </h5>
+        <div class="api-ref__table-wrap">
+          <table class="api-ref__table">
+            <thead>
+              <tr>
+                <th>{{ apiRef.methodsHeaders?.name || '方法名' }}</th>
+                <th>{{ apiRef.methodsHeaders?.description || '说明' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in apiRef.methods" :key="item.name">
+                <td>
+                  <span class="api-ref__name-text">{{ item.name }}</span>
+                  <span
+                    v-if="item.type"
+                    class="api-ref__type"
+                  >
+                    {{ item.type }}
+                  </span>
+                </td>
+                <td>
+                  <span class="api-ref__desc">{{ item.description }}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -251,6 +373,22 @@ onUnmounted(() => {
   min-height: 360px;
 }
 
+.demo-block__api {
+  padding: 18px 20px 22px;
+  border-top: 1px solid var(--demo-border);
+  display: grid;
+  gap: 14px;
+  background: var(--demo-surface);
+}
+
+.demo-block__api-title {
+  margin: 0;
+  color: var(--demo-brand);
+  font-size: 0.9375rem;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
 .demo-block__preview {
   min-height: 360px;
   padding: 20px;
@@ -328,6 +466,128 @@ onUnmounted(() => {
   font-family: var(--vp-font-family-mono);
   font-variant-ligatures: none;
   white-space: pre;
+}
+
+.api-ref__section-title {
+  margin: 0;
+  color: var(--demo-ink);
+  font-size: 0.8125rem;
+  font-weight: 760;
+}
+
+.api-ref__section + .api-ref__section {
+  border-top: 1px dashed var(--demo-border);
+  padding-top: 12px;
+}
+
+.api-ref__table-wrap {
+  overflow-x: auto;
+  margin-top: 8px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+}
+
+.api-ref__table-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+
+.api-ref__table-wrap::-webkit-scrollbar-thumb {
+  background: var(--demo-border);
+  border-radius: 999px;
+}
+
+.api-ref__table {
+  margin-top: 10px;
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
+  min-width: 620px;
+}
+
+.api-ref__table th,
+.api-ref__table td {
+  vertical-align: top;
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--demo-border);
+  line-height: 1.5;
+}
+
+.api-ref__table th {
+  color: var(--demo-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+  background: var(--demo-surface);
+  border-bottom: 1px solid var(--demo-border);
+}
+
+.api-ref__table th,
+.api-ref__table td {
+  font-variant-numeric: tabular-nums;
+}
+
+.api-ref__table th:first-child {
+  width: 24%;
+}
+
+.api-ref__table th:nth-child(2) {
+  width: 18%;
+}
+
+.api-ref__table th:nth-child(3) {
+  width: 18%;
+}
+
+.api-ref__table td:first-child {
+  width: 24%;
+}
+
+.api-ref__table td:nth-child(2) {
+  width: 18%;
+}
+
+.api-ref__table td:nth-child(3) {
+  width: 18%;
+}
+
+.api-ref__table tr:nth-child(even) td {
+  background: var(--demo-subtle);
+}
+
+.api-ref__name-text {
+  color: var(--demo-ink);
+  font-size: 0.875rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.api-ref__type,
+.api-ref__tag {
+  color: var(--demo-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.api-ref__type {
+  margin-left: 8px;
+}
+
+.api-ref__desc {
+  color: var(--demo-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.api-ref__tag {
+  border: 1px solid var(--demo-border);
+  border-radius: 999px;
+  padding: 1px 8px;
 }
 
 @media (pointer: coarse) {
