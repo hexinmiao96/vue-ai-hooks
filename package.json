@@ -1,6 +1,6 @@
 {
   "name": "vue-ai-hooks",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "main": "./dist/index.cjs",

@@ -188,7 +188,7 @@ pnpm example:chat
 
 ## Project status
 
-This is **v0.2.0** — a working foundation, not feature-complete. What's in:
+This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 
 - ✅ Chat with streaming, abort, message history
 - ✅ Single-shot completion

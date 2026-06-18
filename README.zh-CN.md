@@ -164,12 +164,13 @@ pnpm example:chat
 
 ## 项目状态
 
-这是 **v0.2.0**，是一个可工作的基础版本，但还不是功能完备版本。目前已包含：
+这是 **v0.2.1**，是一个可工作的基础版本，但还不是功能完备版本。目前已包含：
 
 - Chat 流式响应、中止、消息历史
 - 单次补全
 - Embedding
 - OpenAI + OpenAI-compatible Provider
+- OpenRouter Provider
 - Anthropic Claude Provider
 - 多模态图片输入
 - localStorage 持久化
