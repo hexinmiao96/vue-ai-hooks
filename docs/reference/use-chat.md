@@ -2,6 +2,9 @@
 
 The core composable for streaming chat completions.
 
+Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
+`ToolCallHandler`, and `ToolCallHandlerContext`.
+
 ## Usage
 
 ```ts
@@ -14,34 +17,34 @@ const { messages, append, isLoading, stop } = useChat({
 
 ## Options
 
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `provider` | `ChatProvider` | required | The provider to use. |
-| `initialMessages` | `Message[]` | `[]` | Seed the message history. |
-| `defaultRequest` | `Partial<ChatRequest>` | `{}` | Default options merged into every chat request. |
-| `tools` | `Tool[]` | — | Default tool list. Override per-call by passing `tools` to `append()`. |
-| `toolChoice` | `'auto' \| 'none' \| 'required' \| { ... }` | — | Default tool choice. |
-| `toolHandlers` | `Record<string, ToolCallHandler>` | — | Local handlers for automatic tool execution. |
-| `maxToolRoundtrips` | `number` | `1` | Maximum automatic tool-call rounds after a user message. |
-| `persist` | `{ key: string; version?: number }` | — | Auto-save to localStorage. |
-| `onUpdate` | `(m: Message) => void` | — | Called for every streamed chunk update. |
-| `onFinish` | `(m: Message) => void` | — | Called once the assistant message is finished. |
-| `onError` | `(e: Error) => void` | — | Called on any error; falls back to `error` ref. |
+| Name                | Type                                        | Default  | Description                                                            |
+| ------------------- | ------------------------------------------- | -------- | ---------------------------------------------------------------------- |
+| `provider`          | `ChatProvider`                              | required | The provider to use.                                                   |
+| `initialMessages`   | `Message[]`                                 | `[]`     | Seed the message history.                                              |
+| `defaultRequest`    | `Partial<ChatRequest>`                      | `{}`     | Default options merged into every chat request.                        |
+| `tools`             | `Tool[]`                                    | —        | Default tool list. Override per-call by passing `tools` to `append()`. |
+| `toolChoice`        | `'auto' \| 'none' \| 'required' \| { ... }` | —        | Default tool choice.                                                   |
+| `toolHandlers`      | `Record<string, ToolCallHandler>`           | —        | Local handlers for automatic tool execution.                           |
+| `maxToolRoundtrips` | `number`                                    | `1`      | Maximum automatic tool-call rounds after a user message.               |
+| `persist`           | `{ key: string; version?: number }`         | —        | Auto-save to localStorage.                                             |
+| `onUpdate`          | `(m: Message) => void`                      | —        | Called for every streamed chunk update.                                |
+| `onFinish`          | `(m: Message) => void`                      | —        | Called once the assistant message is finished.                         |
+| `onError`           | `(e: Error) => void`                        | —        | Called on any error; falls back to `error` ref.                        |
 
 ## Return value
 
-| Property | Type | Description |
-|---|---|---|
-| `messages` | `Ref<Message[]>` | Full message history (user, assistant, system, tool). |
-| `input` | `Ref<string>` | Bound to your composer; not auto-cleared. |
-| `isLoading` | `Ref<boolean>` | True while a stream is in flight. |
-| `error` | `Ref<Error \| null>` | Last error, cleared on next `append`. |
-| `append(content, opts?)` | `(string \| Message, Partial<ChatRequest>) => Promise<void>` | Send a message and stream the reply. |
-| `reload()` | `() => Promise<void>` | Re-run the last assistant turn. |
-| `stop()` | `() => void` | Abort the in-flight stream. |
-| `setMessages(messages)` | `(Message[]) => void` | Replace history (e.g. on restore). |
-| `clear()` | `() => void` | Reset to empty state. With `persist`, also removes the storage entry. |
-| `abortController` | `Ref<AbortController \| null>` | Exposed for advanced use cases. |
+| Property                 | Type                                                         | Description                                                           |
+| ------------------------ | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `messages`               | `Ref<Message[]>`                                             | Full message history (user, assistant, system, tool).                 |
+| `input`                  | `Ref<string>`                                                | Bound to your composer; not auto-cleared.                             |
+| `isLoading`              | `Ref<boolean>`                                               | True while a stream is in flight.                                     |
+| `error`                  | `Ref<Error \| null>`                                         | Last error, cleared on next `append`.                                 |
+| `append(content, opts?)` | `(string \| Message, Partial<ChatRequest>) => Promise<void>` | Send a message and stream the reply.                                  |
+| `reload()`               | `() => Promise<void>`                                        | Re-run the last assistant turn.                                       |
+| `stop()`                 | `() => void`                                                 | Abort the in-flight stream.                                           |
+| `setMessages(messages)`  | `(Message[]) => void`                                        | Replace history (e.g. on restore).                                    |
+| `clear()`                | `() => void`                                                 | Reset to empty state. With `persist`, also removes the storage entry. |
+| `abortController`        | `Ref<AbortController \| null>`                               | Exposed for advanced use cases.                                       |
 
 ## Tool calling
 

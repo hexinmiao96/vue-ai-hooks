@@ -19,6 +19,14 @@ function sseResponse(events: Array<{ event?: string; data: string }>): Response 
   return new Response(body, { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
 }
 
+/** Build a fake JSON Response for non-streaming Anthropic calls. */
+function jsonResponse(data: unknown): Response {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}
+
 /** Helper to mock global fetch. */
 function mockFetchOnce(response: Response | Error) {
   const fn = vi.fn(async () => {
@@ -88,10 +96,81 @@ describe('anthropic provider', () => {
     expect(body.stream).toBe(true)
   })
 
+  it('maps non-stream chat responses and serializes optional request fields', async () => {
+    const fetchMock = mockFetchOnce(
+      jsonResponse({
+        content: [{ type: 'image' }, { type: 'text', text: 'full answer' }],
+        stop_reason: 'stop_sequence',
+        usage: { input_tokens: 7, output_tokens: 3 }
+      })
+    )
+
+    const p = anthropic({
+      apiKey: 'sk-ant-test',
+      baseURL: 'https://proxy.example.test/api/',
+      defaultModel: 'claude-custom',
+      maxTokens: 777,
+      anthropicVersion: '2024-01-01',
+      headers: { 'X-Provider': 'provider' }
+    })
+    const stream = await p.chat({
+      messages: [
+        { id: 's1', role: 'system', content: 'System prompt' },
+        { id: 'u1', role: 'user', content: 'Hello' },
+        { id: 'a1', role: 'assistant', content: 'Previous answer' },
+        { id: 't1', role: 'tool', content: 'Tool result' }
+      ],
+      temperature: 0.4,
+      topP: 0.8,
+      stop: 'END',
+      user: 'user-123',
+      stream: false,
+      headers: { 'X-Request': 'request' }
+    })
+
+    const chunks = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+    const body = JSON.parse(init.body as string)
+
+    expect(url).toBe('https://proxy.example.test/api/v1/messages')
+    expect(headers['x-api-key']).toBe('sk-ant-test')
+    expect(headers['anthropic-version']).toBe('2024-01-01')
+    expect(headers['X-Provider']).toBe('provider')
+    expect(headers['X-Request']).toBe('request')
+    expect(body).toMatchObject({
+      model: 'claude-custom',
+      max_tokens: 777,
+      stream: false,
+      system: 'System prompt',
+      temperature: 0.4,
+      top_p: 0.8,
+      stop_sequences: ['END'],
+      metadata: { user_id: 'user-123' }
+    })
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'Hello' },
+      { role: 'assistant', content: 'Previous answer' }
+    ])
+    expect(chunks).toEqual([
+      {
+        content: 'full answer',
+        finishReason: 'stop',
+        usage: { promptTokens: 7, completionTokens: 3, totalTokens: 10 }
+      }
+    ])
+  })
+
   it('joins multiple system messages with double newline', async () => {
     const fetchMock = mockFetchOnce(
       sseResponse([
-        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}' }
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
       ])
     )
     const p = anthropic({ apiKey: 'k' })
@@ -105,14 +184,18 @@ describe('anthropic provider', () => {
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.system).toBe('A\n\nB')
   })
 
   it('omits system field when there are no system messages', async () => {
     const fetchMock = mockFetchOnce(
       sseResponse([
-        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}' }
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}'
+        }
       ])
     )
     const p = anthropic({ apiKey: 'k' })
@@ -120,14 +203,18 @@ describe('anthropic provider', () => {
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.system).toBeUndefined()
   })
 
   it('maps Anthropic stop reasons to our finishReason', async () => {
     const fetchMock = mockFetchOnce(
       sseResponse([
-        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}' },
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"x"}}'
+        },
         { data: '{"type":"message_delta","delta":{"stop_reason":"max_tokens"}}' }
       ])
     )
@@ -138,6 +225,24 @@ describe('anthropic provider', () => {
       if (c.finishReason) finishReason = c.finishReason
     }
     expect(finishReason).toBe('length')
+    void fetchMock
+  })
+
+  it('maps tool_use and unknown stop reasons predictably', async () => {
+    const fetchMock = mockFetchOnce(
+      sseResponse([
+        { data: '{"type":"message_delta","delta":{"stop_reason":"tool_use"}}' },
+        { data: '{"type":"message_delta","delta":{"stop_reason":"unknown_reason"}}' }
+      ])
+    )
+    const p = anthropic({ apiKey: 'k' })
+    const stream = await p.chat({ messages: [{ id: 'u1', role: 'user', content: 'hi' }] })
+    const reasons: Array<string | null | undefined> = []
+    for await (const c of stream) {
+      if (c.finishReason) reasons.push(c.finishReason)
+    }
+
+    expect(reasons).toEqual(['tool_calls', 'stop'])
     void fetchMock
   })
 
@@ -165,7 +270,9 @@ describe('anthropic provider', () => {
   it('completion() routes through chat() with a user message', async () => {
     const fetchMock = mockFetchOnce(
       sseResponse([
-        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"done"}}' }
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"done"}}'
+        }
       ])
     )
     const p = anthropic({ apiKey: 'k' })
@@ -175,14 +282,18 @@ describe('anthropic provider', () => {
       out += chunk
     }
     expect(out).toBe('done')
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages).toEqual([{ role: 'user', content: 'Say done' }])
   })
 
   it('uses the custom fetch implementation from config', async () => {
     const customFetch = vi.fn(async () =>
       sseResponse([
-        { data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"custom"}}' }
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"custom"}}'
+        }
       ])
     )
     globalThis.fetch = vi.fn(async () => {
@@ -198,5 +309,36 @@ describe('anthropic provider', () => {
 
     expect(out).toBe('custom')
     expect(customFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to url image source when a data URL is not base64 encoded', async () => {
+    const fetchMock = mockFetchOnce(
+      sseResponse([
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
+      ])
+    )
+    const p = anthropic({ apiKey: 'k' })
+    const stream = await p.chat({
+      messages: [
+        {
+          id: 'u1',
+          role: 'user',
+          content: [{ type: 'image_url', image_url: { url: 'data:image/png,not-base64' } }]
+        }
+      ]
+    })
+
+    for await (const chunk of stream) {
+      void chunk
+    }
+
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
+    expect(body.messages[0].content).toEqual([
+      { type: 'image', source: { type: 'url', url: 'data:image/png,not-base64' } }
+    ])
   })
 })

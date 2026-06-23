@@ -13,27 +13,30 @@ import { useEmbedding, openai, openrouter } from 'vue-ai-hooks'
  *
  * Sharing the same resolution logic keeps parity between all examples.
  */
-const selectedProvider = import.meta.env.VITE_EXAMPLE_PROVIDER === 'openrouter' || import.meta.env.VITE_CHAT_PROVIDER === 'openrouter'
-  ? 'openrouter'
-  : 'openai'
+const selectedProvider =
+  import.meta.env.VITE_EXAMPLE_PROVIDER === 'openrouter' ||
+  import.meta.env.VITE_CHAT_PROVIDER === 'openrouter'
+    ? 'openrouter'
+    : 'openai'
 /**
  * Build the concrete provider instance used by this example.
  * The ternary keeps provider-specific credentials and OpenRouter attribution
  * metadata aligned with the completion/chat demos.
  */
-const provider = selectedProvider === 'openrouter'
-  ? openrouter({
-      // Keep app-scoped identity headers configurable for OpenRouter quotas/rules.
-      apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || '',
-      defaultModel: import.meta.env.VITE_OPENROUTER_DEFAULT_MODEL || 'text-embedding-3-small',
-      siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
-      appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
-    })
+const provider =
+  selectedProvider === 'openrouter'
+    ? openrouter({
+        // Keep app-scoped identity headers configurable for OpenRouter quotas/rules.
+        apiKey: import.meta.env.VITE_OPENROUTER_API_KEY || '',
+        defaultModel: import.meta.env.VITE_OPENROUTER_DEFAULT_MODEL || 'text-embedding-3-small',
+        siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
+        appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
+      })
     : openai({
-      // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
-      apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-      baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-    })
+        // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
+        apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+        baseURL: import.meta.env.VITE_OPENAI_BASE_URL
+      })
 
 // useEmbedding returns embedding vectors and request lifecycle state.
 // - embed: executes one batch embedding request
@@ -86,48 +89,92 @@ async function run() {
 <template>
   <main class="embed">
     <h1>vue-ai-hooks · useEmbedding</h1>
-    <p
-      v-if="error"
-      class="error"
-    >
+    <p v-if="error" class="error">
       {{ error.message }}
     </p>
-    <p class="provider-badge">
-      Provider: {{ selectedProvider }}
-    </p>
+    <p class="provider-badge">Provider: {{ selectedProvider }}</p>
 
     <div class="inputs">
-      <label>A: <input v-model="a"></label>
-      <label>B: <input v-model="b"></label>
-      <label>C: <input v-model="c"></label>
+      <label>A: <input v-model="a" /></label>
+      <label>B: <input v-model="b" /></label>
+      <label>C: <input v-model="c" /></label>
     </div>
 
-    <button
-      :disabled="isLoading"
-      @click="run"
-    >
-      Compute embeddings
-    </button>
+    <button :disabled="isLoading" @click="run">Compute embeddings</button>
 
     <table v-if="similarities">
-      <thead><tr><th /><th>A</th><th>B</th><th>C</th></tr></thead>
+      <thead>
+        <tr>
+          <th />
+          <th>A</th>
+          <th>B</th>
+          <th>C</th>
+        </tr>
+      </thead>
       <tbody>
-        <tr><th>A</th><td>1.00</td><td>{{ similarities.ab.toFixed(3) }}</td><td>{{ similarities.ac.toFixed(3) }}</td></tr>
-        <tr><th>B</th><td /><td>1.00</td><td>{{ similarities.bc.toFixed(3) }}</td></tr>
-        <tr><th>C</th><td /><td /><td>1.00</td></tr>
+        <tr>
+          <th>A</th>
+          <td>1.00</td>
+          <td>{{ similarities.ab.toFixed(3) }}</td>
+          <td>{{ similarities.ac.toFixed(3) }}</td>
+        </tr>
+        <tr>
+          <th>B</th>
+          <td />
+          <td>1.00</td>
+          <td>{{ similarities.bc.toFixed(3) }}</td>
+        </tr>
+        <tr>
+          <th>C</th>
+          <td />
+          <td />
+          <td>1.00</td>
+        </tr>
       </tbody>
     </table>
   </main>
 </template>
 
 <style scoped>
-.embed { max-width: 720px; margin: 32px auto; font-family: system-ui, sans-serif; }
-h1 { font-size: 18px; }
-.inputs { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
-input { width: 100%; padding: 6px; font: inherit; }
-button { padding: 8px 16px; margin: 12px 0; }
-table { border-collapse: collapse; margin-top: 12px; }
-th, td { border: 1px solid #ddd; padding: 6px 12px; text-align: right; }
-.error { color: #b00020; }
-.provider-badge { margin: 0 0 12px; font-size: 12px; color: #334155; }
+.embed {
+  max-width: 720px;
+  margin: 32px auto;
+  font-family: system-ui, sans-serif;
+}
+h1 {
+  font-size: 18px;
+}
+.inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0;
+}
+input {
+  width: 100%;
+  padding: 6px;
+  font: inherit;
+}
+button {
+  padding: 8px 16px;
+  margin: 12px 0;
+}
+table {
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  text-align: right;
+}
+.error {
+  color: #b00020;
+}
+.provider-badge {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #334155;
+}
 </style>

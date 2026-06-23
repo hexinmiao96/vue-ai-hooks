@@ -1,0 +1,3 @@
+# Semble should index the library surface, examples, tests, and scripts.
+# VitePress internals are large/generated enough to slow project-wide retrieval.
+docs/.vitepress/

@@ -136,7 +136,14 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
       return (async function* () {
         for await (const raw of parseSSE(response, signal)) {
-          const choice = (raw as { choices?: Array<{ delta?: { content?: string; tool_calls?: ChatChunk['toolCalls'] }; finish_reason?: ChatChunk['finishReason'] }> }).choices?.[0]
+          const choice = (
+            raw as {
+              choices?: Array<{
+                delta?: { content?: string; tool_calls?: ChatChunk['toolCalls'] }
+                finish_reason?: ChatChunk['finishReason']
+              }>
+            }
+          ).choices?.[0]
           if (!choice) continue
           const usage = (raw as { usage?: ChatChunk['usage'] }).usage
           yield {

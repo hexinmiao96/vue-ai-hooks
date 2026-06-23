@@ -212,7 +212,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
   }
 
   async function completion(request: CompletionRequest): Promise<AsyncIterable<string>> {
-    return (async function* (this: ChatProvider) {
+    return async function* (this: ChatProvider) {
       const stream = await this.chat({
         ...request,
         messages: [{ id: 'prompt', role: 'user', content: request.prompt }]
@@ -220,7 +220,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
       for await (const chunk of stream) {
         if (chunk.content) yield chunk.content
       }
-    }).call(providerObject)
+    }.call(providerObject)
   }
 
   async function embedding(): Promise<EmbeddingResult> {

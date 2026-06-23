@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+output
+docs/.vitepress/cache
+docs/.vitepress/dist
+*.tsbuildinfo
+pnpm-lock.yaml

@@ -18,7 +18,7 @@ export type ToolCallHandler = (
 ) => unknown | Promise<unknown>
 
 export interface UseChatOptions {
-  provider?: ChatProvider
+  provider: ChatProvider
   initialMessages?: Message[]
   defaultRequest?: Partial<ChatRequest>
   id?: string

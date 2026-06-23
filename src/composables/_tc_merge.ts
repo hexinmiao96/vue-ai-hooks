@@ -16,7 +16,10 @@ function mergeName(current: string, next: string): string {
 }
 
 /** Merge streaming tool_call deltas (OpenAI format) into a stable array. */
-export function mergeDeltas(existing: ToolCall[] | undefined, delta: ToolCallDelta[] | undefined): ToolCall[] {
+export function mergeDeltas(
+  existing: ToolCall[] | undefined,
+  delta: ToolCallDelta[] | undefined
+): ToolCall[] {
   const acc = existing ? [...existing] : []
   for (const d of delta ?? []) {
     const idx = d.index
@@ -29,7 +32,8 @@ export function mergeDeltas(existing: ToolCall[] | undefined, delta: ToolCallDel
       }
     } else {
       if (d.id) acc[idx].id = d.id
-      if (d.function?.name) acc[idx].function.name = mergeName(acc[idx].function.name, d.function.name)
+      if (d.function?.name)
+        acc[idx].function.name = mergeName(acc[idx].function.name, d.function.name)
       if (d.function?.arguments) acc[idx].function.arguments += d.function.arguments
     }
   }

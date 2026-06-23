@@ -236,7 +236,7 @@ watchPostEffect(() => {
   width: 1px;
   height: 24px;
   background-color: var(--vp-c-divider);
-  content: "";
+  content: '';
 }
 
 .menu + .appearance::before,

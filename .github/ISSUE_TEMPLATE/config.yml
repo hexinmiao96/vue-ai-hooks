@@ -3,3 +3,9 @@ contact_links:
   - name: Discussions
     url: https://github.com/hexinmiao96/vue-ai-hooks/discussions
     about: General questions and show-and-tell
+  - name: Support guide
+    url: https://github.com/hexinmiao96/vue-ai-hooks/blob/main/SUPPORT.md
+    about: Usage questions, provider setup help, and support channel guidance
+  - name: Security policy
+    url: https://github.com/hexinmiao96/vue-ai-hooks/blob/main/SECURITY.md
+    about: Private reporting process for vulnerabilities and provider key safety

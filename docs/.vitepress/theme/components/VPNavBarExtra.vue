@@ -31,10 +31,12 @@ const extraNavLabel = computed(() =>
 const localizedCurrentLangLabel = computed(() => {
   if (!isChineseDemoContext.value) return currentLang.value.label
 
-  return {
-    English: '英文',
-    简体中文: '简体中文'
-  }[currentLang.value.label] || currentLang.value.label
+  return (
+    {
+      English: '英文',
+      简体中文: '简体中文'
+    }[currentLang.value.label] || currentLang.value.label
+  )
 })
 
 const localizedLocaleLinks = computed(() =>
@@ -52,15 +54,8 @@ const appearanceLabel = computed(() =>
 </script>
 
 <template>
-  <VPFlyout
-    v-if="hasExtraContent"
-    class="VPNavBarExtra"
-    :label="extraNavLabel"
-  >
-    <div
-      v-if="localeLinks.length && currentLang.label"
-      class="group translations"
-    >
+  <VPFlyout v-if="hasExtraContent" class="VPNavBarExtra" :label="extraNavLabel">
+    <div v-if="localeLinks.length && currentLang.label" class="group translations">
       <p class="trans-title">{{ localizedCurrentLangLabel }}</p>
 
       <template v-for="locale in localizedLocaleLinks" :key="locale.link">
@@ -69,11 +64,7 @@ const appearanceLabel = computed(() =>
     </div>
 
     <div
-      v-if="
-        site.appearance &&
-        site.appearance !== 'force-dark' &&
-        site.appearance !== 'force-auto'
-      "
+      v-if="site.appearance && site.appearance !== 'force-dark' && site.appearance !== 'force-auto'"
       class="group"
     >
       <div class="item appearance">

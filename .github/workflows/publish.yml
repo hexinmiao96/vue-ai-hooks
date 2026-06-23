@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,14 +12,16 @@ permissions:
 jobs:
   publish:
     name: Publish package
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 8.15.9
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -40,25 +41,68 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           test "v${version}" = "$GITHUB_REF_NAME"
 
+      - name: Security audit
+        run: pnpm security:audit
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Secrets
+        run: pnpm secrets:check
+
+      - name: Source hygiene
+        run: pnpm source:hygiene
+
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck:all
 
+      - name: Test hygiene
+        run: pnpm test:hygiene
+
       - name: Test
-        run: pnpm test
+        run: pnpm test:coverage
 
       - name: Build
         run: pnpm build
 
-      - name: Configure npm token
-        run: |
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            npm config set //registry.npmjs.org/:_authToken "${NPM_TOKEN}"
-          fi
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Dist
+        run: pnpm dist:check
+
+      - name: Size
+        run: pnpm size:check
+
+      - name: Package
+        run: pnpm pack:check
+
+      - name: Install
+        run: pnpm install:check
+
+      - name: Changelog
+        run: pnpm changelog:check
+
+      - name: Metadata
+        run: pnpm metadata:check
+
+      - name: Community health
+        run: pnpm community:check
+
+      - name: Workflows
+        run: pnpm workflows:check
+
+      - name: API docs
+        run: pnpm api:check
+
+      - name: Links
+        run: pnpm links:check
+
+      - name: Examples
+        run: pnpm examples:build
+
+      - name: Docs
+        run: pnpm docs:build
 
       - name: Publish
-        run: npm publish --access public
+        run: npm publish --access public --provenance

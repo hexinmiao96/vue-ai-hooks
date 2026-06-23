@@ -11,12 +11,20 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'happy-dom',
+    environment: 'jsdom',
     include: ['tests/**/*.test.ts'],
     coverage: {
+      all: false,
       provider: 'v8',
       reporter: ['text', 'html'],
-      exclude: ['**/node_modules/**', '**/dist/**', '**/*.config.*']
+      include: ['src/**/*.ts'],
+      exclude: ['**/node_modules/**', '**/dist/**', '**/*.config.*'],
+      thresholds: {
+        statements: 98,
+        branches: 90,
+        functions: 96,
+        lines: 98
+      }
     }
   }
 })

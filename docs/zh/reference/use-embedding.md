@@ -2,6 +2,8 @@
 
 用于生成文本 embedding 的 Vue 3 组合式函数。
 
+公开 TypeScript 类型：`UseEmbeddingOptions` 和 `UseEmbeddingReturn`。
+
 ## 用法
 
 ```ts
@@ -17,25 +19,25 @@ console.log(result.embeddings) // number[][]
 
 ## 选项
 
-| 名称 | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `provider` | `ChatProvider` | 必填 | 要使用的 Provider。 |
-| `defaultRequest` | `Partial<EmbeddingRequest>` | `{}` | 默认请求选项。 |
-| `onSuccess` | `(result: EmbeddingResult) => void` | - | embedding 成功时调用。 |
-| `onError` | `(e: Error) => void` | - | 发生错误时调用。 |
+| 名称             | 类型                                | 默认值 | 说明                   |
+| ---------------- | ----------------------------------- | ------ | ---------------------- |
+| `provider`       | `ChatProvider`                      | 必填   | 要使用的 Provider。    |
+| `defaultRequest` | `Partial<EmbeddingRequest>`         | `{}`   | 默认请求选项。         |
+| `onSuccess`      | `(result: EmbeddingResult) => void` | -      | embedding 成功时调用。 |
+| `onError`        | `(e: Error) => void`                | -      | 发生错误时调用。       |
 
 ## 返回值
 
-| 属性 | 类型 | 说明 |
-|---|---|---|
-| `embeddings` | `Ref<number[][]>` | 最近一次生成的 embedding 向量。 |
-| `isLoading` | `Ref<boolean>` | 请求进行中时为 true。 |
-| `error` | `Ref<Error \| null>` | 最近一次错误。 |
-| `result` | `Ref<EmbeddingResult \| null>` | 最近一次完整结果，包括 usage 统计。 |
-| `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | 生成 embeddings。 |
-| `stop()` | `() => void` | 中止当前请求。 |
-| `clear()` | `() => void` | 重置 embeddings、result 和 error，也会中止当前请求。 |
-| `abortController` | `Ref<AbortController \| null>` | 暴露给高级用法。 |
+| 属性                  | 类型                                                                          | 说明                                                 |
+| --------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `embeddings`          | `Ref<number[][]>`                                                             | 最近一次生成的 embedding 向量。                      |
+| `isLoading`           | `Ref<boolean>`                                                                | 请求进行中时为 true。                                |
+| `error`               | `Ref<Error \| null>`                                                          | 最近一次错误。                                       |
+| `result`              | `Ref<EmbeddingResult \| null>`                                                | 最近一次完整结果，包括 usage 统计。                  |
+| `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | 生成 embeddings。                                    |
+| `stop()`              | `() => void`                                                                  | 中止当前请求。                                       |
+| `clear()`             | `() => void`                                                                  | 重置 embeddings、result 和 error，也会中止当前请求。 |
+| `abortController`     | `Ref<AbortController \| null>`                                                | 暴露给高级用法。                                     |
 
 ## 说明
 

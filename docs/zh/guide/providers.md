@@ -2,6 +2,10 @@
 
 **Provider** 会把框架无关的请求类型转换为某个厂商的真实接口格式。组合式函数不关心你使用哪个 Provider，它们只依赖统一的 `ChatProvider` 接口。
 
+::: warning 生产环境请把 API key 放在服务端
+Provider 的 `apiKey` 是密钥。如果在浏览器应用中通过 `import.meta.env` 传入，用户可以看到它。生产环境应通过你的后端或边缘代理转发请求，并在那里注入上游服务凭据。
+:::
+
 ## 内置 Provider
 
 ### `openai`
@@ -12,8 +16,8 @@ import { openai } from 'vue-ai-hooks'
 openai({
   apiKey: 'sk-...',
   // 可选：
-  baseURL: 'https://api.openai.com/v1',  // 默认值
-  defaultModel: 'gpt-4o-mini',           // 默认值
+  baseURL: 'https://api.openai.com/v1', // 默认值
+  defaultModel: 'gpt-4o-mini', // 默认值
   headers: { 'OpenAI-Organization': '...' }
 })
 ```
@@ -59,9 +63,9 @@ import { anthropic } from 'vue-ai-hooks'
 anthropic({
   apiKey: 'sk-ant-...',
   // 可选：
-  baseURL: 'https://api.anthropic.com',  // 默认值
+  baseURL: 'https://api.anthropic.com', // 默认值
   defaultModel: 'claude-3-5-sonnet-20241022',
-  maxTokens: 1024,                        // Anthropic 要求该字段
+  maxTokens: 1024, // Anthropic 要求该字段
   anthropicVersion: '2023-06-01'
 })
 ```

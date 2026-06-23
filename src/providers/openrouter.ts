@@ -41,7 +41,13 @@ export interface OpenRouterConfig extends Omit<OpenAiLikeConfig, 'baseURL'> {
 export function openrouter(config: OpenRouterConfig): ChatProvider {
   // Keep generic OpenAI-compatible options intact and peel out OpenRouter-only
   // settings for later header composition.
-  const { siteUrl, appName, headers: extraHeaders = {}, baseURL = OPENROUTER_BASE_URL, ...rest } = config
+  const {
+    siteUrl,
+    appName,
+    headers: extraHeaders = {},
+    baseURL = OPENROUTER_BASE_URL,
+    ...rest
+  } = config
   // Build the final request headers in one place so callers get a predictable
   // composition model:
   // - base custom headers are preserved,

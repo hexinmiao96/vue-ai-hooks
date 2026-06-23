@@ -25,9 +25,7 @@ const props = withDefaults(defineProps<{ locale?: string }>(), {
   locale: 'zh'
 })
 
-const localeKey = computed<LocaleKey>(() =>
-  props.locale.startsWith('zh') ? 'zh' : 'en'
-)
+const localeKey = computed<LocaleKey>(() => (props.locale.startsWith('zh') ? 'zh' : 'en'))
 
 const codeSamples = {
   en: {
@@ -186,7 +184,8 @@ const copy = {
             name: 'options',
             type: 'UseChatOptions',
             required: 'optional',
-            description: 'Optional overrides for defaults such as message history and tool handlers.'
+            description:
+              'Optional overrides for defaults such as message history and tool handlers.'
           }
         ],
         methods: [
@@ -405,8 +404,7 @@ const copy = {
       roleAssistant: '助手',
       composerLabel: '输入区',
       user: '规划一个聚焦的 Vue 文档示例页。',
-      assistant:
-        '可以分成三段：顶部语境、组合式函数示例、紧凑 API 说明。实现保持提供者无关。',
+      assistant: '可以分成三段：顶部语境、组合式函数示例、紧凑 API 说明。实现保持提供者无关。',
       actions: ['终止', '重新加载', '清空'],
       tool: '工具调用已完成：getWeather({ city: "杭州" })',
       composer: '询问模型服务商、工具调用或持久化',
@@ -675,10 +673,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main
-    class="demo-showcase"
-    :lang="props.locale === 'zh' ? 'zh-CN' : 'en'"
-  >
+  <main class="demo-showcase" :lang="props.locale === 'zh' ? 'zh-CN' : 'en'">
     <section class="showcase-hero">
       <div class="showcase-hero__copy">
         <p class="showcase-hero__kicker">
@@ -691,16 +686,10 @@ onUnmounted(() => {
           {{ content.heroIntro }}
         </p>
         <div class="showcase-hero__actions">
-          <a
-            class="showcase-link is-primary"
-            href="#composable-demos"
-          >
+          <a class="showcase-link is-primary" href="#composable-demos">
             {{ content.primaryAction }}
           </a>
-          <a
-            class="showcase-link"
-            :href="content.secondaryHref"
-          >
+          <a class="showcase-link" :href="content.secondaryHref">
             {{ content.secondaryAction }}
           </a>
         </div>
@@ -712,11 +701,7 @@ onUnmounted(() => {
           <span>{{ content.status }}</span>
         </div>
         <dl class="showcase-brief__stats">
-          <div
-            v-for="item in content.heroStats"
-            :key="item.label"
-            class="showcase-brief__stat"
-          >
+          <div v-for="item in content.heroStats" :key="item.label" class="showcase-brief__stat">
             <dt>{{ item.label }}</dt>
             <dd>{{ item.value }}</dd>
           </div>
@@ -725,10 +710,7 @@ onUnmounted(() => {
     </section>
 
     <div class="showcase-layout">
-      <nav
-        class="showcase-nav"
-        :aria-label="content.demoNavLabel"
-      >
+      <nav class="showcase-nav" :aria-label="content.demoNavLabel">
         <div class="showcase-nav__group">
           <span class="showcase-nav__title">{{ content.demoNavTitle }}</span>
           <a
@@ -756,173 +738,165 @@ onUnmounted(() => {
           </a>
         </div>
       </nav>
-      <section
-        id="composable-demos"
-        class="demo-stack"
-        :aria-label="content.demosTitle"
-      >
-      <DemoBlock
-        id="chat-demo"
-        api-title-id="chat-demo-api"
-        api-props-section-id="chat-demo-api-props"
-        api-methods-section-id="chat-demo-api-methods"
-        :title="content.chat.title"
-        :description="content.chat.description"
-        :code="chatCode"
-        :anchor-label="content.anchorLabel"
-        :panel-label="content.panelLabel"
-        :preview-label="content.previewLabel"
-        :code-label="content.codeLabel"
-        :copy-label="content.copyLabel"
-        :copied-label="content.copiedLabel"
-        :copy-failed-label="content.copyFailedLabel"
-        :api-aria-label="content.apiSectionLabel"
-        :api-ref="content.chat.apiRef"
-      >
-        <div class="chat-preview">
-          <div class="preview-topbar">
-            <span class="preview-topbar__mark" />
-            <span>{{ content.chat.topbarTitle }}</span>
-          </div>
-          <div class="chat-preview__body">
-            <article class="chat-message is-user">
-              <span class="chat-message__role">{{ content.chat.roleUser }}</span>
-              <p>{{ content.chat.user }}</p>
-            </article>
-            <article class="chat-message is-assistant">
-              <span class="chat-message__role">{{ content.chat.roleAssistant }}</span>
-              <p>{{ content.chat.assistant }}</p>
-            </article>
-            <div class="tool-call">
-              <span class="tool-call__status" />
-              <span>{{ content.chat.tool }}</span>
+      <section id="composable-demos" class="demo-stack" :aria-label="content.demosTitle">
+        <DemoBlock
+          id="chat-demo"
+          api-title-id="chat-demo-api"
+          api-props-section-id="chat-demo-api-props"
+          api-methods-section-id="chat-demo-api-methods"
+          :title="content.chat.title"
+          :description="content.chat.description"
+          :code="chatCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.chat.apiRef"
+        >
+          <div class="chat-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark" />
+              <span>{{ content.chat.topbarTitle }}</span>
             </div>
-          </div>
-          <footer class="chat-composer">
-            <span>{{ content.chat.composerLabel }}：{{ content.chat.composer }}</span>
-            <span class="command-row">
-              <span v-for="action in content.chat.actions" :key="action">
-                {{ action }}
+            <div class="chat-preview__body">
+              <article class="chat-message is-user">
+                <span class="chat-message__role">{{ content.chat.roleUser }}</span>
+                <p>{{ content.chat.user }}</p>
+              </article>
+              <article class="chat-message is-assistant">
+                <span class="chat-message__role">{{ content.chat.roleAssistant }}</span>
+                <p>{{ content.chat.assistant }}</p>
+              </article>
+              <div class="tool-call">
+                <span class="tool-call__status" />
+                <span>{{ content.chat.tool }}</span>
+              </div>
+            </div>
+            <footer class="chat-composer">
+              <span>{{ content.chat.composerLabel }}：{{ content.chat.composer }}</span>
+              <span class="command-row">
+                <span v-for="action in content.chat.actions" :key="action">
+                  {{ action }}
+                </span>
               </span>
-            </span>
-          </footer>
-        </div>
-      </DemoBlock>
+            </footer>
+          </div>
+        </DemoBlock>
 
-      <DemoBlock
-        id="completion-demo"
-        api-title-id="completion-demo-api"
-        api-props-section-id="completion-demo-api-props"
-        api-methods-section-id="completion-demo-api-methods"
-        :title="content.completion.title"
-        :description="content.completion.description"
-        :code="completionCode"
-        :anchor-label="content.anchorLabel"
-        :panel-label="content.panelLabel"
-        :preview-label="content.previewLabel"
-        :code-label="content.codeLabel"
-        :copy-label="content.copyLabel"
-        :copied-label="content.copiedLabel"
-        :copy-failed-label="content.copyFailedLabel"
-        :api-aria-label="content.apiSectionLabel"
-        :api-ref="content.completion.apiRef"
-      >
-        <div class="completion-preview">
-          <div class="preview-topbar">
-            <span class="preview-topbar__mark is-amber" />
-            <span>{{ content.completion.topbarTitle }}</span>
-          </div>
-          <div class="completion-editor">
-            <span class="field-label">{{ content.completion.promptLabel }}</span>
-            <p>{{ content.completion.prompt }}</p>
-          </div>
-          <article class="completion-output">
-            <span class="field-label">{{ content.completion.resultLabel }}</span>
-            <p>{{ content.completion.output }}</p>
-            <div class="completion-output__meter">
-              <span />
+        <DemoBlock
+          id="completion-demo"
+          api-title-id="completion-demo-api"
+          api-props-section-id="completion-demo-api-props"
+          api-methods-section-id="completion-demo-api-methods"
+          :title="content.completion.title"
+          :description="content.completion.description"
+          :code="completionCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.completion.apiRef"
+        >
+          <div class="completion-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-amber" />
+              <span>{{ content.completion.topbarTitle }}</span>
             </div>
-          </article>
-          <footer class="preview-footer">
-            <span>{{ content.completion.metric }}</span>
-            <span>{{ content.completion.footerActions }}</span>
-          </footer>
-        </div>
-      </DemoBlock>
+            <div class="completion-editor">
+              <span class="field-label">{{ content.completion.promptLabel }}</span>
+              <p>{{ content.completion.prompt }}</p>
+            </div>
+            <article class="completion-output">
+              <span class="field-label">{{ content.completion.resultLabel }}</span>
+              <p>{{ content.completion.output }}</p>
+              <div class="completion-output__meter">
+                <span />
+              </div>
+            </article>
+            <footer class="preview-footer">
+              <span>{{ content.completion.metric }}</span>
+              <span>{{ content.completion.footerActions }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
 
-      <DemoBlock
-        id="embedding-demo"
-        api-title-id="embedding-demo-api"
-        api-props-section-id="embedding-demo-api-props"
-        api-methods-section-id="embedding-demo-api-methods"
-        :title="content.embedding.title"
-        :description="content.embedding.description"
-        :code="embeddingCode"
-        :anchor-label="content.anchorLabel"
-        :panel-label="content.panelLabel"
-        :preview-label="content.previewLabel"
-        :code-label="content.codeLabel"
-        :copy-label="content.copyLabel"
-        :copied-label="content.copiedLabel"
-        :copy-failed-label="content.copyFailedLabel"
-        :api-aria-label="content.apiSectionLabel"
-        :api-ref="content.embedding.apiRef"
-      >
-        <div class="embedding-preview">
-          <div class="preview-topbar">
-            <span class="preview-topbar__mark is-green" />
-            <span>{{ content.embedding.topbarTitle }}</span>
-          </div>
-          <div class="embedding-list">
-            <div
-              v-for="row in content.embedding.rows"
-              :key="row"
-              class="embedding-row"
-            >
-              <span>{{ row }}</span>
-              <span class="vector-bars">
-                <i class="is-wide" />
-                <i />
-                <i class="is-mid" />
-                <i class="is-short" />
-              </span>
+        <DemoBlock
+          id="embedding-demo"
+          api-title-id="embedding-demo-api"
+          api-props-section-id="embedding-demo-api-props"
+          api-methods-section-id="embedding-demo-api-methods"
+          :title="content.embedding.title"
+          :description="content.embedding.description"
+          :code="embeddingCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.embedding.apiRef"
+        >
+          <div class="embedding-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-green" />
+              <span>{{ content.embedding.topbarTitle }}</span>
             </div>
+            <div class="embedding-list">
+              <div v-for="row in content.embedding.rows" :key="row" class="embedding-row">
+                <span>{{ row }}</span>
+                <span class="vector-bars">
+                  <i class="is-wide" />
+                  <i />
+                  <i class="is-mid" />
+                  <i class="is-short" />
+                </span>
+              </div>
+            </div>
+            <table class="similarity-table">
+              <thead>
+                <tr>
+                  <th />
+                  <th>A</th>
+                  <th>B</th>
+                  <th>C</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>A</th>
+                  <td>1.00</td>
+                  <td>0.86</td>
+                  <td>0.18</td>
+                </tr>
+                <tr>
+                  <th>B</th>
+                  <td>0.86</td>
+                  <td>1.00</td>
+                  <td>0.22</td>
+                </tr>
+                <tr>
+                  <th>C</th>
+                  <td>0.18</td>
+                  <td>0.22</td>
+                  <td>1.00</td>
+                </tr>
+              </tbody>
+            </table>
+            <footer class="preview-footer">
+              <span>{{ content.embedding.usage }}</span>
+            </footer>
           </div>
-          <table class="similarity-table">
-            <thead>
-              <tr>
-                <th />
-                <th>A</th>
-                <th>B</th>
-                <th>C</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <th>A</th>
-                <td>1.00</td>
-                <td>0.86</td>
-                <td>0.18</td>
-              </tr>
-              <tr>
-                <th>B</th>
-                <td>0.86</td>
-                <td>1.00</td>
-                <td>0.22</td>
-              </tr>
-              <tr>
-                <th>C</th>
-                <td>0.18</td>
-                <td>0.22</td>
-                <td>1.00</td>
-              </tr>
-            </tbody>
-          </table>
-          <footer class="preview-footer">
-            <span>{{ content.embedding.usage }}</span>
-          </footer>
-        </div>
-      </DemoBlock>
+        </DemoBlock>
       </section>
     </div>
 
@@ -932,11 +906,7 @@ onUnmounted(() => {
         <p>{{ content.apiIntro }}</p>
       </div>
       <div class="api-grid">
-        <article
-          v-for="row in content.apiRows"
-          :key="row.name"
-          class="api-card"
-        >
+        <article v-for="row in content.apiRows" :key="row.name" class="api-card">
           <h3>{{ row.name }}</h3>
           <dl>
             <div>

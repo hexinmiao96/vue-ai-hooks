@@ -11,7 +11,8 @@ export async function requestJson(
 ): Promise<Response> {
   const { timeoutMs, signal: externalSignal, fetcher, ...rest } = init
   const requestFetch =
-    fetcher ?? (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined)
+    fetcher ??
+    (typeof globalThis.fetch === 'function' ? globalThis.fetch.bind(globalThis) : undefined)
   if (!requestFetch) {
     throw new AiHooksError('No fetch implementation available')
   }
@@ -31,10 +32,11 @@ export async function requestJson(
     const response = await requestFetch(url, { ...rest, signal: controller.signal })
     if (!response.ok) {
       let body: unknown
+      const rawBody = await response.text().catch(() => undefined)
       try {
-        body = await response.json()
+        body = rawBody ? JSON.parse(rawBody) : undefined
       } catch {
-        body = await response.text().catch(() => undefined)
+        body = rawBody
       }
       throw new AiHooksError(
         `Request failed with status ${response.status} ${response.statusText}`,

@@ -1,0 +1,9 @@
+# Default maintainer for repository changes.
+* @hexinmiao96
+
+# High-impact project surfaces.
+.github/ @hexinmiao96
+src/ @hexinmiao96
+scripts/ @hexinmiao96
+docs/ @hexinmiao96
+examples/ @hexinmiao96

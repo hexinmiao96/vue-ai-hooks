@@ -18,10 +18,12 @@ const isChineseDemoContext = computed(() => {
 const localizedCurrentLangLabel = computed(() => {
   if (!isChineseDemoContext.value) return currentLang.value.label
 
-  return {
-    English: '英文',
-    简体中文: '简体中文'
-  }[currentLang.value.label] || currentLang.value.label
+  return (
+    {
+      English: '英文',
+      简体中文: '简体中文'
+    }[currentLang.value.label] || currentLang.value.label
+  )
 })
 
 const localizedLocaleLinks = computed(() =>

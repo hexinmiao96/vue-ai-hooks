@@ -23,8 +23,13 @@ function mockFetchOnce(response: Response) {
 }
 
 describe('OpenAI vision support', () => {
-  beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
 
   it('passes ContentPart[] through to the wire format', async () => {
     const fetchMock = mockFetchOnce(
@@ -46,7 +51,9 @@ describe('OpenAI vision support', () => {
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages[0].role).toBe('user')
     expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'What is in this image?' },
@@ -63,7 +70,9 @@ describe('OpenAI vision support', () => {
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages[0].content).toBe('hi')
   })
 
@@ -88,12 +97,21 @@ describe('OpenAI vision support', () => {
 })
 
 describe('Anthropic vision support', () => {
-  beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
 
   it('converts text part to Anthropic text block', async () => {
     const fetchMock = mockFetchOnce(
-      sseResponse([{ data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}' }])
+      sseResponse([
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
+      ])
     )
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({
@@ -102,29 +120,39 @@ describe('Anthropic vision support', () => {
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages[0].content).toEqual([{ type: 'text', text: 'hello' }])
   })
 
   it('converts https image URL to Anthropic url source', async () => {
     const fetchMock = mockFetchOnce(
-      sseResponse([{ data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}' }])
+      sseResponse([
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
+      ])
     )
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({
-      messages: [{
-        id: 'm',
-        role: 'user',
-        content: [
-          { type: 'text', text: 'see' },
-          { type: 'image_url', image_url: { url: 'https://example.com/x.png' } }
-        ]
-      }]
+      messages: [
+        {
+          id: 'm',
+          role: 'user',
+          content: [
+            { type: 'text', text: 'see' },
+            { type: 'image_url', image_url: { url: 'https://example.com/x.png' } }
+          ]
+        }
+      ]
     })
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages[0].content).toEqual([
       { type: 'text', text: 'see' },
       { type: 'image', source: { type: 'url', url: 'https://example.com/x.png' } }
@@ -133,21 +161,30 @@ describe('Anthropic vision support', () => {
 
   it('converts data URL to Anthropic base64 source with correct media_type', async () => {
     const fetchMock = mockFetchOnce(
-      sseResponse([{ data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}' }])
+      sseResponse([
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
+      ])
     )
     const p = anthropic({ apiKey: 'k' })
-    const dataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/AAAZ4gk3AAAAAXRSTlPM0jRW/QAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII='
+    const dataUrl =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEX/AAAZ4gk3AAAAAXRSTlPM0jRW/QAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII='
     const stream = await p.chat({
-      messages: [{
-        id: 'm',
-        role: 'user',
-        content: [{ type: 'image_url', image_url: { url: dataUrl } }]
-      }]
+      messages: [
+        {
+          id: 'm',
+          role: 'user',
+          content: [{ type: 'image_url', image_url: { url: dataUrl } }]
+        }
+      ]
     })
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     const image = body.messages[0].content[0]
     expect(image.type).toBe('image')
     expect(image.source.type).toBe('base64')
@@ -157,14 +194,20 @@ describe('Anthropic vision support', () => {
 
   it('passes plain string content through unchanged', async () => {
     const fetchMock = mockFetchOnce(
-      sseResponse([{ data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}' }])
+      sseResponse([
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ok"}}'
+        }
+      ])
     )
     const p = anthropic({ apiKey: 'k' })
     const stream = await p.chat({ messages: [{ id: 'm', role: 'user', content: 'hi' }] })
     for await (const chunk of stream) {
       void chunk
     }
-    const body = JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
     expect(body.messages[0].content).toBe('hi')
   })
 })

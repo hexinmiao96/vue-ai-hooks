@@ -2,6 +2,8 @@
 
 Vue 3 composable for single-shot streaming completions.
 
+Public TypeScript types: `UseCompletionOptions` and `UseCompletionReturn`.
+
 ## Usage
 
 ```ts
@@ -16,26 +18,26 @@ await complete('Write a haiku about TypeScript:')
 
 ## Options
 
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| `provider` | `ChatProvider` | required | The provider to use. |
-| `initialCompletion` | `string` | `''` | Seed the completion. |
-| `defaultRequest` | `Partial<CompletionRequest>` | `{}` | Default options. |
-| `onFinish` | `(completion: string) => void` | — | Called once the completion is finished. |
-| `onError` | `(e: Error) => void` | — | Called on any error. |
+| Name                | Type                           | Default  | Description                             |
+| ------------------- | ------------------------------ | -------- | --------------------------------------- |
+| `provider`          | `ChatProvider`                 | required | The provider to use.                    |
+| `initialCompletion` | `string`                       | `''`     | Seed the completion.                    |
+| `defaultRequest`    | `Partial<CompletionRequest>`   | `{}`     | Default options.                        |
+| `onFinish`          | `(completion: string) => void` | —        | Called once the completion is finished. |
+| `onError`           | `(e: Error) => void`           | —        | Called on any error.                    |
 
 ## Return value
 
-| Property | Type | Description |
-|---|---|---|
-| `completion` | `Ref<string>` | The current completion (grows during streaming). |
-| `input` | `Ref<string>` | The prompt, if not passed inline to `complete()`. |
-| `isLoading` | `Ref<boolean>` | True while a stream is in flight. |
-| `error` | `Ref<Error \| null>` | Last error. |
-| `complete(prompt?, opts?)` | `(string?, Partial<CompletionRequest>) => Promise<string>` | Run a completion. Resolves to the final string. |
-| `stop()` | `() => void` | Abort the in-flight stream. |
-| `setCompletion(value)` | `(string) => void` | Replace the completion (e.g. on reset). |
-| `abortController` | `Ref<AbortController \| null>` | Exposed for advanced use cases. |
+| Property                   | Type                                                       | Description                                       |
+| -------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
+| `completion`               | `Ref<string>`                                              | The current completion (grows during streaming).  |
+| `input`                    | `Ref<string>`                                              | The prompt, if not passed inline to `complete()`. |
+| `isLoading`                | `Ref<boolean>`                                             | True while a stream is in flight.                 |
+| `error`                    | `Ref<Error \| null>`                                       | Last error.                                       |
+| `complete(prompt?, opts?)` | `(string?, Partial<CompletionRequest>) => Promise<string>` | Run a completion. Resolves to the final string.   |
+| `stop()`                   | `() => void`                                               | Abort the in-flight stream.                       |
+| `setCompletion(value)`     | `(string) => void`                                         | Replace the completion (e.g. on reset).           |
+| `abortController`          | `Ref<AbortController \| null>`                             | Exposed for advanced use cases.                   |
 
 ## Notes
 

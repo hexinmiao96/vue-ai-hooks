@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useChat } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
-import type { ChatChunk, ChatRequest } from '../src/types'
+import type { ChatChunk, ChatRequest, Message } from '../src/types'
 
 /**
  * Build a fake ChatProvider that yields the chunks you pass in.
@@ -64,7 +64,9 @@ describe('useChat', () => {
   })
 
   it('throws if no provider is given', () => {
-    expect(() => useChat({} as any)).toThrow(/requires a provider option/)
+    expect(() => useChat({ provider: undefined as unknown as ChatProvider })).toThrow(
+      /requires a provider option/
+    )
   })
 
   it('starts with empty messages by default', () => {
@@ -130,6 +132,90 @@ describe('useChat', () => {
     await append('ping')
 
     expect(capturedRequest?.messages.map((m) => m.content)).toEqual(['Be brief.', 'ping'])
+  })
+
+  it('accepts a message object and reports update and finish callbacks', async () => {
+    const onUpdate = vi.fn()
+    const onFinish = vi.fn()
+    const { append, messages } = useChat({
+      provider: fakeProvider([{ content: 'ok' }, { finishReason: 'stop' }]),
+      onUpdate,
+      onFinish
+    })
+
+    await append({ id: '', role: 'user', content: 'from object' } as Message)
+
+    expect(messages.value[0]).toMatchObject({
+      role: 'user',
+      content: 'from object'
+    })
+    expect(messages.value[0].id).not.toBe('')
+    expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ content: 'ok' }))
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: 'assistant',
+        content: 'ok',
+        metadata: { finishReason: 'stop' }
+      })
+    )
+  })
+
+  it('passes default request options, tools, and toolChoice to the provider', async () => {
+    const requests: ChatRequest[] = []
+    const weatherTool = {
+      type: 'function' as const,
+      function: {
+        name: 'getWeather',
+        parameters: {
+          type: 'object',
+          properties: { city: { type: 'string' } }
+        }
+      }
+    }
+    const provider = fakeTurnProvider([[{ content: 'ok' }]], requests)
+    const { append } = useChat({
+      provider,
+      defaultRequest: { model: 'default-model', temperature: 0.1 },
+      tools: [weatherTool],
+      toolChoice: 'auto'
+    })
+
+    await append('weather?')
+
+    expect(requests[0]).toMatchObject({
+      model: 'default-model',
+      temperature: 0.1,
+      tools: [weatherTool],
+      toolChoice: 'auto'
+    })
+    expect(requests[0].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('normalizes provider errors and calls onError', async () => {
+    const onError = vi.fn()
+    const provider: ChatProvider = {
+      id: 'failing-chat',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        throw 'chat failed'
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { append, error, isLoading } = useChat({ provider, onError })
+
+    await expect(append('fail')).rejects.toThrow('chat failed')
+
+    expect(error.value).toBeInstanceOf(Error)
+    expect(error.value?.message).toBe('chat failed')
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledWith(error.value)
+    expect(isLoading.value).toBe(false)
   })
 
   it('stop() cancels an in-flight stream', async () => {
@@ -220,6 +306,34 @@ describe('useChat', () => {
     clear()
     expect(messages.value).toEqual([])
     expect(input.value).toBe('')
+  })
+
+  it('reloads the last assistant turn from the prior messages', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider([[{ content: 'new answer' }]], requests)
+    const { messages, reload } = useChat({
+      provider,
+      initialMessages: [
+        { id: 'u1', role: 'user', content: 'question' },
+        { id: 'a1', role: 'assistant', content: 'old answer' },
+        { id: 'u2', role: 'user', content: 'later message' }
+      ]
+    })
+
+    await reload()
+
+    expect(requests[0].messages.map((m) => m.content)).toEqual(['question'])
+    expect(messages.value.map((m) => m.role)).toEqual(['user', 'assistant'])
+    expect(messages.value[1].content).toBe('new answer')
+  })
+
+  it('throws when reload() has no assistant message to re-run', async () => {
+    const { reload } = useChat({
+      provider: fakeProvider([]),
+      initialMessages: [{ id: 'u1', role: 'user', content: 'question' }]
+    })
+
+    await expect(reload()).rejects.toThrow(/no assistant message/)
   })
 
   it('executes tool handlers and continues the conversation', async () => {

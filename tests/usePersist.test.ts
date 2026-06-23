@@ -6,12 +6,24 @@ import { usePersist } from '../src/composables/usePersist'
 function memoryStorage(): Storage {
   const data = new Map<string, string>()
   return {
-    get length() { return data.size },
-    clear() { data.clear() },
-    getItem(k) { return data.get(k) ?? null },
-    key(i) { return Array.from(data.keys())[i] ?? null },
-    removeItem(k) { data.delete(k) },
-    setItem(k, v) { data.set(k, v) }
+    get length() {
+      return data.size
+    },
+    clear() {
+      data.clear()
+    },
+    getItem(k) {
+      return data.get(k) ?? null
+    },
+    key(i) {
+      return Array.from(data.keys())[i] ?? null
+    },
+    removeItem(k) {
+      data.delete(k)
+    },
+    setItem(k, v) {
+      data.set(k, v)
+    }
   } as Storage
 }
 
@@ -66,10 +78,49 @@ describe('usePersist', () => {
     expect(storage.getItem('my-key')).toBeNull()
   })
 
+  it('uses custom serialization and deserialization', async () => {
+    const storage = memoryStorage()
+    storage.setItem('profile', JSON.stringify({ text: 'saved' }))
+    const source = ref({ value: 'fallback' })
+    usePersist(source, {
+      key: 'profile',
+      storage,
+      serialize(value) {
+        return { text: value.value }
+      },
+      deserialize(raw) {
+        return { value: (raw as { text: string }).text }
+      }
+    })
+
+    expect(source.value).toEqual({ value: 'saved' })
+
+    source.value = { value: 'next' }
+    await nextTick()
+
+    expect(JSON.parse(storage.getItem('profile') as string)).toEqual({ text: 'next' })
+  })
+
+  it('keeps the current value when deserialize returns null', () => {
+    const storage = memoryStorage()
+    storage.setItem('my-key', JSON.stringify(['discard']))
+    const source = ref<string[]>(['fallback'])
+
+    usePersist(source, {
+      key: 'my-key',
+      storage,
+      deserialize: () => null
+    })
+
+    expect(source.value).toEqual(['fallback'])
+  })
+
   it('reports save errors via onError', async () => {
     const failingStorage: Storage = {
       ...memoryStorage(),
-      setItem() { throw new Error('quota') }
+      setItem() {
+        throw new Error('quota')
+      }
     } as Storage
     const errors: Error[] = []
     const source = ref<string[]>(['x'])
@@ -80,15 +131,49 @@ describe('usePersist', () => {
     expect(errors[0].message).toBe('quota')
   })
 
+  it('normalizes non-Error save failures before calling onError', async () => {
+    const failingStorage: Storage = {
+      ...memoryStorage(),
+      setItem() {
+        throw 'quota string'
+      }
+    } as Storage
+    const errors: Error[] = []
+    const source = ref<string[]>(['x'])
+    usePersist(source, { key: 'k', storage: failingStorage, onError: (e) => errors.push(e) })
+
+    source.value = ['x', 'y']
+    await nextTick()
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toBeInstanceOf(Error)
+    expect(errors[0].message).toBe('quota string')
+  })
+
   it('silently ignores load errors (does not throw)', () => {
     const badStorage: Storage = {
       ...memoryStorage(),
-      getItem() { return 'not-json' }
+      getItem() {
+        return 'not-json'
+      }
     } as Storage
     const source = ref<string[]>(['fallback'])
     // Should not throw
     usePersist(source, { key: 'k', storage: badStorage })
     expect(source.value).toEqual(['fallback'])
+  })
+
+  it('ignores remove errors during clear()', () => {
+    const failingStorage: Storage = {
+      ...memoryStorage(),
+      removeItem() {
+        throw new Error('remove failed')
+      }
+    } as Storage
+    const source = ref<string[]>(['x'])
+    const { clear } = usePersist(source, { key: 'k', storage: failingStorage })
+
+    expect(() => clear()).not.toThrow()
   })
 
   it('works without storage (SSR / no window)', () => {

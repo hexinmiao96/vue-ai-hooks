@@ -75,21 +75,10 @@ watch(
 </script>
 
 <template>
-  <aside
-    v-if="hasSidebar"
-    class="VPSidebar"
-    :class="{ open }"
-    ref="navEl"
-    @click.stop
-  >
+  <aside v-if="hasSidebar" class="VPSidebar" :class="{ open }" ref="navEl" @click.stop>
     <div class="curtain" />
 
-    <nav
-      class="nav"
-      id="VPSidebarNav"
-      aria-labelledby="sidebar-aria-label"
-      tabindex="-1"
-    >
+    <nav class="nav" id="VPSidebarNav" aria-labelledby="sidebar-aria-label" tabindex="-1">
       <span class="visually-hidden" id="sidebar-aria-label">
         {{ sidebarNavigationLabel }}
       </span>
@@ -117,7 +106,9 @@ watch(
   overflow-x: hidden;
   overflow-y: auto;
   transform: translateX(-100%);
-  transition: opacity 0.5s, transform 0.25s ease;
+  transition:
+    opacity 0.5s,
+    transform 0.25s ease;
   overscroll-behavior: contain;
 }
 
@@ -125,7 +116,8 @@ watch(
   opacity: 1;
   visibility: visible;
   transform: translateX(0);
-  transition: opacity 0.25s,
+  transition:
+    opacity 0.25s,
     transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 

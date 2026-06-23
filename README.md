@@ -6,9 +6,12 @@
 > Streaming-first, multi-provider, fully typed.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/vue-ai-hooks.svg)](https://www.npmjs.com/package/vue-ai-hooks)
+[![Bundle size](https://img.shields.io/bundlephobia/minzip/vue-ai-hooks)](https://bundlephobia.com/package/vue-ai-hooks)
 [![Vue 3](https://img.shields.io/badge/vue-3.4+-42b883.svg)](https://vuejs.org)
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178c6.svg)](https://www.typescriptlang.org)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
 [Axios](https://axios-http.com) to the LLM world. Three composables, pluggable
@@ -28,12 +31,12 @@ const { messages, input, append, isLoading, stop } = useChat({
 
 The AI-in-Vue story is currently fragmented. Options today:
 
-| Library | Tradeoff |
-|---|---|
-| **Vercel AI SDK** | React-first; Vue support is unofficial and lags behind |
-| **LangChain.js** | Powerful but heavy; opinionated chains, lots of magic |
+| Library                       | Tradeoff                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| **Vercel AI SDK**             | React-first; Vue support is unofficial and lags behind                   |
+| **LangChain.js**              | Powerful but heavy; opinionated chains, lots of magic                    |
 | **Direct fetch + manual SSE** | Works, but you re-implement aborts, retries, and state for every project |
-| **vue-ai-hooks** | A focused, framework-native SDK with the boring parts done |
+| **vue-ai-hooks**              | A focused, framework-native SDK with the boring parts done               |
 
 ## Features
 
@@ -43,7 +46,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🧰 **Tool calling helpers** — register local handlers and let `useChat` continue the model round-trip
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
 - ⚡ **Tiny** — zero runtime deps beyond Vue itself
-- 🧪 **Tested** — Vitest + happy-dom, with fake providers you can copy
+- 🧪 **Tested** — Vitest + jsdom, with fake providers you can copy
 - 📦 **Tree-shakable** — ESM and CJS, named exports, no side effects
 
 ## Installation
@@ -57,6 +60,25 @@ yarn add vue-ai-hooks
 ```
 
 Peer dependency: `vue@^3.4.0`.
+
+## Runtime requirements
+
+- Vue 3.4 or newer.
+- Modern browser APIs for client-side usage: `fetch`, `AbortController`,
+  `ReadableStream`, and Server-Sent Events.
+- Node.js 18.18 or newer for development, tests, examples, and docs builds.
+
+Older browsers or constrained runtimes should provide compatible polyfills or
+call provider APIs through a backend or edge proxy. For server rendering notes,
+see the [SSR and Nuxt guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/ssr.md).
+
+## Security note
+
+Any `VITE_*` key in a browser app is visible to users. The examples are fine for
+local demos, prototypes, or tightly restricted provider keys, but production apps
+should call your own backend or edge proxy and keep upstream API keys server-side.
+
+To report a vulnerability, follow the process in [`SECURITY.md`](./SECURITY.md).
 
 ## Quick start
 
@@ -76,7 +98,15 @@ const { messages, input, append, isLoading, stop, error } = useChat({
     {{ m.content }}
   </div>
   <textarea v-model="input" />
-  <button :disabled="isLoading" @click="append(input); input = ''">Send</button>
+  <button
+    :disabled="isLoading"
+    @click="
+      append(input)
+      input = ''
+    "
+  >
+    Send
+  </button>
   <button :disabled="!isLoading" @click="stop">Stop</button>
 </template>
 ```
@@ -152,27 +182,36 @@ Then open a PR — the hook layer stays untouched.
 
 Returns a reactive bundle for managing a streaming chat conversation.
 
-| Return | Type | Description |
-|---|---|---|
-| `messages` | `Ref<Message[]>` | Full message history (user, assistant, system, tool) |
-| `input` | `Ref<string>` | Bound to your composer; not auto-cleared |
-| `isLoading` | `Ref<boolean>` | True while a stream is in flight |
-| `error` | `Ref<Error \| null>` | Last error, cleared on next `append` |
-| `append(content, opts?)` | `(string \| Message, Partial<ChatRequest>) => Promise<void>` | Send a message and stream the reply |
-| `reload()` | `() => Promise<void>` | Re-run the last assistant turn |
-| `stop()` | `() => void` | Abort the in-flight stream |
-| `setMessages(messages)` | `(Message[]) => void` | Replace history (e.g. on restore) |
-| `clear()` | `() => void` | Reset to empty state |
-| `abortController` | `Ref<AbortController \| null>` | Exposed for advanced use cases |
+| Return                   | Type                                                         | Description                                          |
+| ------------------------ | ------------------------------------------------------------ | ---------------------------------------------------- |
+| `messages`               | `Ref<Message[]>`                                             | Full message history (user, assistant, system, tool) |
+| `input`                  | `Ref<string>`                                                | Bound to your composer; not auto-cleared             |
+| `isLoading`              | `Ref<boolean>`                                               | True while a stream is in flight                     |
+| `error`                  | `Ref<Error \| null>`                                         | Last error, cleared on next `append`                 |
+| `append(content, opts?)` | `(string \| Message, Partial<ChatRequest>) => Promise<void>` | Send a message and stream the reply                  |
+| `reload()`               | `() => Promise<void>`                                        | Re-run the last assistant turn                       |
+| `stop()`                 | `() => void`                                                 | Abort the in-flight stream                           |
+| `setMessages(messages)`  | `(Message[]) => void`                                        | Replace history (e.g. on restore)                    |
+| `clear()`                | `() => void`                                                 | Reset to empty state                                 |
+| `abortController`        | `Ref<AbortController \| null>`                               | Exposed for advanced use cases                       |
 
 ### `useCompletion(options)` / `useEmbedding(options)`
 
 Same shape, scoped to single-shot completions and embedding vectors respectively.
-See [the source](./src/composables/) for full type definitions.
+
+### `usePersist(source, options)`
+
+Persists any Vue `Ref` to `localStorage`, with optional versioning and custom
+serialization. `useChat({ persist })` uses it internally. See the
+[usePersist reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-persist.md) for details.
+
+See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),
+and [public types](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/types.md) for full type definitions.
+For upgrade guarantees, see the [API stability guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/api-stability.md).
 
 ## Examples
 
-Three runnable examples live in [`examples/`](./examples):
+Three runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — minimal streaming chat UI
 - `examples/completion` — single-shot completion form
@@ -182,9 +221,12 @@ To run them:
 
 ```bash
 pnpm install
-cp examples/.env.example .env
+cp .env.example .env
 pnpm example:chat
 ```
+
+For deterministic component and composable tests without live provider calls, see
+the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/testing.md).
 
 ## Project status
 
@@ -199,20 +241,33 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Multimodal image input
 - ✅ localStorage persistence
 - ✅ Tool-calling helpers
-- ✅ Tests, CI, examples
+- ✅ Quality gates for tests, coverage, build, package contents, install smoke tests, examples, and docs
 
 What we're planning next:
 
 - 🔜 Vue DevTools tab for inspecting streams
 - 🔜 More providers and production hardening
 
+## Known limitations
+
+- Browser examples expose `VITE_*` values by design; production apps should proxy
+  provider requests through a backend or edge runtime.
+- Tool calling helpers execute local handlers, but sandboxing and permission
+  prompts are application responsibilities.
+- Provider adapters cover common API shapes; provider-specific retries, rate
+  limits, and observability should be handled by the host app when needed.
+
 ## Contributing
 
-Contributions are very welcome. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for
-the workflow, and the [open issues](../../issues) for things that need hands.
+Contributions are very welcome. See [`CONTRIBUTING.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md) for
+the workflow, read the [`CODE_OF_CONDUCT.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CODE_OF_CONDUCT.md), and check the
+[open issues](https://github.com/hexinmiao96/vue-ai-hooks/issues) for things
+that need hands.
+
+For usage questions or support channels, see [`SUPPORT.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/SUPPORT.md).
 
 Adding a new provider is the single best first contribution — it's one file,
-a small interface, and high-value. See [`src/providers/openai.ts`](./src/providers/openai.ts)
+a small interface, and high-value. See [`src/providers/openai.ts`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/src/providers/openai.ts)
 for the reference implementation.
 
 ## License

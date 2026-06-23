@@ -24,11 +24,13 @@ const demoMenuItems = computed(() => {
   if (!isChineseDemoContext.value) return navItems
 
   const translate = (text: string): string => {
-    return {
-      Guide: '指南',
-      Reference: '参考',
-      GitHub: '代码仓库'
-    }[text] || text
+    return (
+      {
+        Guide: '指南',
+        Reference: '参考',
+        GitHub: '代码仓库'
+      }[text] || text
+    )
   }
 
   return navItems.map((item) => {
@@ -42,24 +44,16 @@ const demoMenuItems = computed(() => {
     return item
   })
 })
-
 </script>
 
 <template>
-  <nav
-    aria-labelledby="main-nav-aria-label"
-    class="VPNavBarMenu"
-  >
+  <nav aria-labelledby="main-nav-aria-label" class="VPNavBarMenu">
     <span id="main-nav-aria-label" class="visually-hidden">
       {{ mainNavLabel }}
     </span>
     <template v-for="item in demoMenuItems" :key="JSON.stringify(item)">
       <VPNavBarMenuLink v-if="'link' in item" :item="item" />
-      <component
-        v-else-if="'component' in item"
-        :is="item.component"
-        v-bind="item.props"
-      />
+      <component v-else-if="'component' in item" :is="item.component" v-bind="item.props" />
       <VPNavBarMenuGroup v-else :item="item" />
     </template>
   </nav>

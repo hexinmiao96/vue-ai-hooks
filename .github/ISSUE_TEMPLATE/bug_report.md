@@ -10,9 +10,15 @@ assignees: ''
 
 <!-- A clear, one-line description of the bug -->
 
-## Reproduction
+## Minimal reproduction
 
-<!-- Minimal steps to reproduce. Code snippet preferred. -->
+<!-- Link a minimal GitHub repo, StackBlitz, or isolated code sample. -->
+
+Link:
+
+## Steps to reproduce
+
+<!-- Keep this small and deterministic. -->
 
 ```ts
 // your code here
@@ -31,8 +37,11 @@ assignees: ''
 - vue-ai-hooks version:
 - Vue version:
 - Node version:
+- Package manager and version:
+- Bundler / framework:
 - Provider (OpenAI / DeepSeek / custom):
 - Browser / runtime (if relevant):
+- OS:
 
 ## Anything else
 

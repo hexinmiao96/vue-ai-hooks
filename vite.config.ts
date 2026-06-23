@@ -11,12 +11,12 @@ export default defineConfig({
   },
   build: {
     emptyOutDir: false,
+    sourcemap: true,
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'VueAiHooks',
       fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
-      formats: ['es', 'cjs'],
-      sourcemap: true
+      formats: ['es', 'cjs']
     },
     rollupOptions: {
       external: ['vue'],

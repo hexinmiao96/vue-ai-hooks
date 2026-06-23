@@ -4,6 +4,12 @@ A **provider** translates framework-agnostic request types into a specific vendo
 wire format. The composables don't care which provider you use; they only see the
 `ChatProvider` interface.
 
+::: warning Keep API keys server-side in production
+Provider `apiKey` values are secrets. If you pass them from `import.meta.env` in
+a browser app, users can see them. For production, route requests through your
+own backend or edge proxy and inject provider credentials there.
+:::
+
 ## Built-in providers
 
 ### `openai`
@@ -14,8 +20,8 @@ import { openai } from 'vue-ai-hooks'
 openai({
   apiKey: 'sk-...',
   // optional:
-  baseURL: 'https://api.openai.com/v1',  // default
-  defaultModel: 'gpt-4o-mini',           // default
+  baseURL: 'https://api.openai.com/v1', // default
+  defaultModel: 'gpt-4o-mini', // default
   headers: { 'OpenAI-Organization': '...' }
 })
 ```
@@ -65,9 +71,9 @@ import { anthropic } from 'vue-ai-hooks'
 anthropic({
   apiKey: 'sk-ant-...',
   // optional:
-  baseURL: 'https://api.anthropic.com',  // default
+  baseURL: 'https://api.anthropic.com', // default
   defaultModel: 'claude-3-5-sonnet-20241022',
-  maxTokens: 1024,                        // Anthropic requires this
+  maxTokens: 1024, // Anthropic requires this
   anthropicVersion: '2023-06-01'
 })
 ```

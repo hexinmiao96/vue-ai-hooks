@@ -4,13 +4,27 @@ import { mergeDeltas } from '../src/composables/_tc_merge'
 describe('mergeDeltas (tool-call accumulator)', () => {
   it('returns existing when delta is empty', () => {
     expect(mergeDeltas(undefined, undefined)).toEqual([])
-    expect(mergeDeltas([{ id: 'a', type: 'function', function: { name: 'x', arguments: '{}' } }], undefined))
-      .toEqual([{ id: 'a', type: 'function', function: { name: 'x', arguments: '{}' } }])
+    expect(
+      mergeDeltas(
+        [{ id: 'a', type: 'function', function: { name: 'x', arguments: '{}' } }],
+        undefined
+      )
+    ).toEqual([{ id: 'a', type: 'function', function: { name: 'x', arguments: '{}' } }])
   })
 
   it('creates a new entry on first delta with an id', () => {
-    const out = mergeDeltas(undefined, [{ index: 0, id: 'call_1', function: { name: 'get_weather' } }])
-    expect(out).toEqual([{ id: 'call_1', type: 'function', function: { name: 'get_weather', arguments: '' } }])
+    const out = mergeDeltas(undefined, [
+      { index: 0, id: 'call_1', function: { name: 'get_weather' } }
+    ])
+    expect(out).toEqual([
+      { id: 'call_1', type: 'function', function: { name: 'get_weather', arguments: '' } }
+    ])
+  })
+
+  it('creates a new entry with default fields when the first delta is sparse', () => {
+    const out = mergeDeltas(undefined, [{ index: 0 }])
+
+    expect(out).toEqual([{ id: '', type: 'function', function: { name: '', arguments: '' } }])
   })
 
   it('appends to the arguments string across chunks', () => {
@@ -34,9 +48,30 @@ describe('mergeDeltas (tool-call accumulator)', () => {
     expect(out[0].function.name).toBe('get_weather')
   })
 
+  it('expands a partial function name when the next chunk includes the full name', () => {
+    const out = mergeDeltas(
+      [{ id: 'call_1', type: 'function', function: { name: 'get', arguments: '' } }],
+      [{ index: 0, id: 'call_2', function: { name: 'get_weather' } }]
+    )
+
+    expect(out[0].id).toBe('call_2')
+    expect(out[0].function.name).toBe('get_weather')
+  })
+
+  it('sets the function name directly when the current name is empty', () => {
+    const out = mergeDeltas(
+      [{ id: 'call_1', type: 'function', function: { name: '', arguments: '' } }],
+      [{ index: 0, function: { name: 'get_weather' } }]
+    )
+
+    expect(out[0].function.name).toBe('get_weather')
+  })
+
   it('does not duplicate a repeated full function name', () => {
     const out = mergeDeltas(
-      [{ id: 'call_1', type: 'function', function: { name: 'get_weather', arguments: '{"city":' } }],
+      [
+        { id: 'call_1', type: 'function', function: { name: 'get_weather', arguments: '{"city":' } }
+      ],
       [{ index: 0, function: { name: 'get_weather', arguments: '"SF"}' } }]
     )
 

@@ -2,9 +2,9 @@
 layout: home
 
 hero:
-  name: "vue-ai-hooks"
-  text: "面向 AI 应用的 Vue 3 组合式函数库"
-  tagline: "流式优先、多 Provider、完整类型支持。"
+  name: 'vue-ai-hooks'
+  text: '面向 AI 应用的 Vue 3 组合式函数库'
+  tagline: '流式优先、多 Provider、完整类型支持。'
   actions:
     - theme: brand
       text: 快速开始
@@ -28,5 +28,5 @@ features:
   - title: 小而轻
     details: 除 Vue 本身外没有运行时依赖。支持 tree-shaking、ESM 和 CJS、命名导出，无副作用。
   - title: 已测试
-    details: 使用 Vitest + happy-dom，并提供可复制的 fake provider，方便你快速编写自己的测试。
+    details: 使用 Vitest + jsdom，并提供可复制的 fake provider，方便你快速编写自己的测试。
 ---

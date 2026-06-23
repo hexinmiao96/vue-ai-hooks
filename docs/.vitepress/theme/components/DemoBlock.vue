@@ -26,33 +26,36 @@ type ApiRef = {
   methods: ApiRefEntry[]
 }
 
-const props = withDefaults(defineProps<{
-  id?: string
-  title: string
-  description: string
-  code: string
-  anchorLabel?: string
-  apiTitleId?: string
-  apiPropsSectionId?: string
-  apiMethodsSectionId?: string
-  panelLabel?: string
-  previewLabel: string
-  codeLabel: string
-  copyLabel: string
-  copiedLabel: string
-  copyFailedLabel: string
-  apiRef?: ApiRef
-  apiAriaLabel?: string
-}>(), {
-  anchorLabel: '跳转到此示例',
-  panelLabel: '示例面板',
-  previewLabel: '预览',
-  codeLabel: '代码',
-  copyLabel: '复制',
-  copiedLabel: '已复制',
-  copyFailedLabel: '复制失败',
-  apiAriaLabel: 'API 参考'
-})
+const props = withDefaults(
+  defineProps<{
+    id?: string
+    title: string
+    description: string
+    code: string
+    anchorLabel?: string
+    apiTitleId?: string
+    apiPropsSectionId?: string
+    apiMethodsSectionId?: string
+    panelLabel?: string
+    previewLabel: string
+    codeLabel: string
+    copyLabel: string
+    copiedLabel: string
+    copyFailedLabel: string
+    apiRef?: ApiRef
+    apiAriaLabel?: string
+  }>(),
+  {
+    anchorLabel: '跳转到此示例',
+    panelLabel: '示例面板',
+    previewLabel: '预览',
+    codeLabel: '代码',
+    copyLabel: '复制',
+    copiedLabel: '已复制',
+    copyFailedLabel: '复制失败',
+    apiAriaLabel: 'API 参考'
+  }
+)
 
 const activePanel = shallowRef<'preview' | 'code'>('preview')
 const copyState = shallowRef<'idle' | 'copied' | 'failed'>('idle')
@@ -106,10 +109,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section
-    :id="id"
-    class="demo-block"
-  >
+  <section :id="id" class="demo-block">
     <header class="demo-block__header">
       <div class="demo-block__copy">
         <h3 class="demo-block__title">
@@ -128,10 +128,7 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div
-        class="demo-block__switch"
-        :aria-label="panelLabel || '示例面板'"
-      >
+      <div class="demo-block__switch" :aria-label="panelLabel || '示例面板'">
         <button
           class="demo-block__switch-button"
           :class="{ 'is-active': activePanel === 'preview' }"
@@ -154,16 +151,10 @@ onUnmounted(() => {
     </header>
 
     <div class="demo-block__surface">
-      <div
-        v-show="activePanel === 'preview'"
-        class="demo-block__preview"
-      >
+      <div v-show="activePanel === 'preview'" class="demo-block__preview">
         <slot />
       </div>
-      <div
-        v-show="activePanel === 'code'"
-        class="demo-block__code-panel"
-      >
+      <div v-show="activePanel === 'code'" class="demo-block__code-panel">
         <button
           class="demo-block__copy-button"
           :class="{
@@ -178,22 +169,12 @@ onUnmounted(() => {
         <pre class="demo-block__code"><code>{{ code }}</code></pre>
       </div>
     </div>
-    <section
-      v-if="apiRef"
-      class="demo-block__api"
-      :aria-label="apiAriaLabel || 'API 参考'"
-    >
-      <h4
-        :id="apiTitleId"
-        class="demo-block__api-title"
-      >
+    <section v-if="apiRef" class="demo-block__api" :aria-label="apiAriaLabel || 'API 参考'">
+      <h4 :id="apiTitleId" class="demo-block__api-title">
         {{ apiRef.title }}
       </h4>
       <div class="api-ref__section">
-        <h5
-          :id="apiPropsSectionId"
-          class="api-ref__section-title"
-        >
+        <h5 :id="apiPropsSectionId" class="api-ref__section-title">
           {{ apiRef.propsTitle }}
         </h5>
         <div class="api-ref__table-wrap">
@@ -226,10 +207,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div class="api-ref__section">
-        <h5
-          :id="apiMethodsSectionId"
-          class="api-ref__section-title"
-        >
+        <h5 :id="apiMethodsSectionId" class="api-ref__section-title">
           {{ apiRef.methodsTitle }}
         </h5>
         <div class="api-ref__table-wrap">
@@ -244,10 +222,7 @@ onUnmounted(() => {
               <tr v-for="item in apiRef.methods" :key="item.name">
                 <td>
                   <span class="api-ref__name-text">{{ item.name }}</span>
-                  <span
-                    v-if="item.type"
-                    class="api-ref__type"
-                  >
+                  <span v-if="item.type" class="api-ref__type">
                     {{ item.type }}
                   </span>
                 </td>
@@ -394,8 +369,7 @@ onUnmounted(() => {
   padding: 20px;
   background:
     linear-gradient(var(--demo-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--demo-grid) 1px, transparent 1px),
-    var(--demo-canvas);
+    linear-gradient(90deg, var(--demo-grid) 1px, transparent 1px), var(--demo-canvas);
   background-size: 28px 28px;
 }
 

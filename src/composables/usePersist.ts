@@ -44,7 +44,10 @@ export interface UsePersistOptions<T> {
  * const { clear } = usePersist(messages, { key: 'my-chat' })
  * ```
  */
-export function usePersist<T>(source: Ref<T>, options: UsePersistOptions<T>): {
+export function usePersist<T>(
+  source: Ref<T>,
+  options: UsePersistOptions<T>
+): {
   clear: () => void
 } {
   const { key, version, serialize, deserialize, storage, onError } = options

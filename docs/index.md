@@ -2,9 +2,9 @@
 layout: home
 
 hero:
-  name: "vue-ai-hooks"
-  text: "Vue 3 Composable library for AI applications"
-  tagline: "Streaming-first, multi-provider, fully typed."
+  name: 'vue-ai-hooks'
+  text: 'Vue 3 Composable library for AI applications'
+  tagline: 'Streaming-first, multi-provider, fully typed.'
   actions:
     - theme: brand
       text: Get Started
@@ -28,5 +28,5 @@ features:
   - title: Tiny
     details: Zero runtime dependencies beyond Vue itself. Tree-shakable ESM and CJS, named exports, no side effects.
   - title: Tested
-    details: Vitest + happy-dom, with copy-paste fake providers so you can write your own tests in seconds.
+    details: Vitest + jsdom, with copy-paste fake providers so you can write your own tests in seconds.
 ---

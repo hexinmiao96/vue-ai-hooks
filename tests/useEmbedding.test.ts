@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { useEmbedding } from '../src/composables/useEmbedding'
 import type { ChatProvider } from '../src/providers/types'
-import type { ChatChunk } from '../src/types'
+import type { ChatChunk, EmbeddingRequest } from '../src/types'
 
 function fakeProvider(vectors: number[][]): ChatProvider {
   return {
@@ -26,6 +26,23 @@ function fakeProvider(vectors: number[][]): ChatProvider {
   }
 }
 
+function fakeEmbeddingProvider(embedding: ChatProvider['embedding']): ChatProvider {
+  return {
+    id: 'fake-embedding',
+    async chat(): Promise<AsyncIterable<ChatChunk>> {
+      return (async function* () {
+        yield {}
+      })()
+    },
+    async completion(): Promise<AsyncIterable<string>> {
+      return (async function* () {
+        yield ''
+      })()
+    },
+    embedding
+  }
+}
+
 describe('useEmbedding', () => {
   it('returns embeddings for the given input', async () => {
     const vec = [0.1, 0.2, 0.3]
@@ -45,6 +62,54 @@ describe('useEmbedding', () => {
     })
     await embed(['a', 'b'])
     expect(embeddings.value).toHaveLength(2)
+  })
+
+  it('merges request defaults and calls onSuccess with the final result', async () => {
+    const requests: EmbeddingRequest[] = []
+    const onSuccess = vi.fn()
+    const provider = fakeEmbeddingProvider(async (request) => {
+      requests.push(request)
+      return {
+        embeddings: [[0.5, 0.6]],
+        model: 'runtime-model',
+        usage: { promptTokens: 2, totalTokens: 2 }
+      }
+    })
+    const { embed, result, error, isLoading } = useEmbedding({
+      provider,
+      defaultRequest: { model: 'default-model' },
+      onSuccess
+    })
+    const requestOptions = { input: 'ignored input', model: 'runtime-model' }
+
+    const res = await embed(['a', 'b'], requestOptions)
+
+    expect(requests[0]).toMatchObject({
+      input: ['a', 'b'],
+      model: 'runtime-model'
+    })
+    expect(requests[0]?.signal).toBeInstanceOf(AbortSignal)
+    expect(result.value).toBe(res)
+    expect(error.value).toBeNull()
+    expect(isLoading.value).toBe(false)
+    expect(onSuccess).toHaveBeenCalledOnce()
+    expect(onSuccess).toHaveBeenCalledWith(res)
+  })
+
+  it('normalizes embedding errors and calls onError', async () => {
+    const onError = vi.fn()
+    const provider = fakeEmbeddingProvider(async () => {
+      throw 'embedding failed'
+    })
+    const { embed, error, isLoading } = useEmbedding({ provider, onError })
+
+    await expect(embed('bad input')).rejects.toThrow('embedding failed')
+
+    expect(error.value).toBeInstanceOf(Error)
+    expect(error.value?.message).toBe('embedding failed')
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledWith(error.value)
+    expect(isLoading.value).toBe(false)
   })
 
   it('stop() aborts the in-flight request and clears loading state', async () => {

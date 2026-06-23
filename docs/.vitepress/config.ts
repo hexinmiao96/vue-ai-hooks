@@ -13,7 +13,11 @@ const rootSidebar = {
       text: 'Introduction',
       items: [
         { text: 'Getting started', link: '/guide/getting-started' },
-        { text: 'Providers', link: '/guide/providers' }
+        { text: 'Providers', link: '/guide/providers' },
+        { text: 'API stability', link: '/guide/api-stability' },
+        { text: 'SSR and Nuxt', link: '/guide/ssr' },
+        { text: 'Testing', link: '/guide/testing' },
+        { text: 'Troubleshooting', link: '/guide/troubleshooting' }
       ]
     }
   ],
@@ -29,7 +33,15 @@ const rootSidebar = {
       items: [
         { text: 'useChat', link: '/reference/use-chat' },
         { text: 'useCompletion', link: '/reference/use-completion' },
-        { text: 'useEmbedding', link: '/reference/use-embedding' }
+        { text: 'useEmbedding', link: '/reference/use-embedding' },
+        { text: 'usePersist', link: '/reference/use-persist' }
+      ]
+    },
+    {
+      text: 'Core API',
+      items: [
+        { text: 'Providers', link: '/reference/providers' },
+        { text: 'Public types', link: '/reference/types' }
       ]
     }
   ]
@@ -48,7 +60,11 @@ const zhSidebar = {
       text: '入门',
       items: [
         { text: '快速开始', link: '/zh/guide/getting-started' },
-        { text: 'Provider', link: '/zh/guide/providers' }
+        { text: 'Provider', link: '/zh/guide/providers' },
+        { text: 'API 稳定性', link: '/zh/guide/api-stability' },
+        { text: 'SSR 和 Nuxt', link: '/zh/guide/ssr' },
+        { text: '测试', link: '/zh/guide/testing' },
+        { text: '故障排查', link: '/zh/guide/troubleshooting' }
       ]
     }
   ],
@@ -64,7 +80,15 @@ const zhSidebar = {
       items: [
         { text: 'useChat', link: '/zh/reference/use-chat' },
         { text: 'useCompletion', link: '/zh/reference/use-completion' },
-        { text: 'useEmbedding', link: '/zh/reference/use-embedding' }
+        { text: 'useEmbedding', link: '/zh/reference/use-embedding' },
+        { text: 'usePersist', link: '/zh/reference/use-persist' }
+      ]
+    },
+    {
+      text: '核心 API',
+      items: [
+        { text: 'Provider', link: '/zh/reference/providers' },
+        { text: '公共类型', link: '/zh/reference/types' }
       ]
     }
   ]
@@ -124,9 +148,7 @@ export default defineConfig({
   themeConfig: {
     nav: rootNav,
     sidebar: rootSidebar,
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }],
     langMenuLabel: '多语言',
     darkModeSwitchLabel: '外观',
     lightModeSwitchTitle: '切换到浅色模式',

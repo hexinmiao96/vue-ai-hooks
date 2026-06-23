@@ -30,7 +30,10 @@
     "src/**/*.d.ts",
     "tests/**/*.ts",
     "examples/**/*.ts",
-    "examples/**/*.vue"
+    "examples/**/*.vue",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "docs/.vitepress/config.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

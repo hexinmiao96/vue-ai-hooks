@@ -10,6 +10,13 @@ npm install vue-ai-hooks
 
 `vue-ai-hooks` requires Vue 3.4 or later.
 
+## Security note
+
+Any `VITE_*` key in a browser app is public. Use the examples for local demos,
+prototypes, or tightly restricted provider keys only. Production apps should
+send requests through your own backend or edge proxy and keep upstream API keys
+server-side.
+
 ## Your first chat
 
 ```vue
@@ -27,7 +34,15 @@ const { messages, input, append, isLoading, stop, error } = useChat({
   </div>
 
   <textarea v-model="input" />
-  <button :disabled="isLoading" @click="append(input); input = ''">Send</button>
+  <button
+    :disabled="isLoading"
+    @click="
+      append(input)
+      input = ''
+    "
+  >
+    Send
+  </button>
   <button :disabled="!isLoading" @click="stop">Stop</button>
   <p v-if="error">{{ error.message }}</p>
 </template>

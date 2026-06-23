@@ -10,6 +10,10 @@ npm install vue-ai-hooks
 
 `vue-ai-hooks` 需要 Vue 3.4 或更高版本。
 
+## 安全说明
+
+浏览器应用中的任何 `VITE_*` key 都是公开的。示例只适合本地演示、原型或权限受限的 Provider key。生产环境应通过你自己的后端或边缘代理发送请求，并把上游 API key 保留在服务端。
+
 ## 第一个聊天应用
 
 ```vue
@@ -27,7 +31,15 @@ const { messages, input, append, isLoading, stop, error } = useChat({
   </div>
 
   <textarea v-model="input" />
-  <button :disabled="isLoading" @click="append(input); input = ''">Send</button>
+  <button
+    :disabled="isLoading"
+    @click="
+      append(input)
+      input = ''
+    "
+  >
+    Send
+  </button>
   <button :disabled="!isLoading" @click="stop">Stop</button>
   <p v-if="error">{{ error.message }}</p>
 </template>
