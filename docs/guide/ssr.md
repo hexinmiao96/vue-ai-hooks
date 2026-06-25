@@ -15,11 +15,24 @@ For SSR or Nuxt apps, prefer this shape:
 - The server handler injects the upstream provider key.
 - The browser receives only the response data or stream it needs.
 
+`proxyProvider` is the browser-side provider for this shape:
+
+```ts
+import { useChat, proxyProvider } from 'vue-ai-hooks'
+
+const { messages, append } = useChat({
+  provider: proxyProvider({
+    chatUrl: '/api/ai/chat',
+    credentials: 'include'
+  })
+})
+```
+
 Use the [provider guide](./providers.md) for provider setup details.
 
 ## Run composables in client-owned state
 
-`useChat`, `useCompletion`, and `useEmbedding` manage Vue refs and user
+`useChat`, `useCompletion`, `useEmbedding`, and `useObject` manage Vue refs and user
 interaction state. In SSR apps, create them inside components or composables that
 run per request or per user session. Do not share composable state from module
 scope across users.
@@ -53,6 +66,10 @@ When proxying provider streams through your own backend or edge runtime:
   when your runtime supports it.
 - Return useful error responses for authentication, quota, invalid model, and
   provider outage failures.
+
+`examples/proxy-server` is a minimal Node template for these boundaries. It keeps
+provider credentials out of the browser contract while preserving SSE framing for
+the client.
 
 ## Testing SSR boundaries
 

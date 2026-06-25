@@ -14,11 +14,24 @@ SSR 或 Nuxt 应用建议采用这种结构：
 - server handler 注入上游 Provider key。
 - 浏览器只接收需要的响应数据或 stream。
 
+`proxyProvider` 就是这种结构下的浏览器侧 Provider：
+
+```ts
+import { useChat, proxyProvider } from 'vue-ai-hooks'
+
+const { messages, append } = useChat({
+  provider: proxyProvider({
+    chatUrl: '/api/ai/chat',
+    credentials: 'include'
+  })
+})
+```
+
 Provider 配置细节见 [Provider 指南](./providers.md)。
 
 ## 在客户端所属状态中运行组合式函数
 
-`useChat`、`useCompletion` 和 `useEmbedding` 会管理 Vue ref 和用户交互状态。
+`useChat`、`useCompletion`、`useEmbedding` 和 `useObject` 会管理 Vue ref 和用户交互状态。
 SSR 应用中，应在按请求或按用户会话创建的组件/组合式函数里使用它们。不要在
 模块顶层共享组合式函数状态，否则可能跨用户共享状态。
 
@@ -47,6 +60,9 @@ client-only 模式保护浏览器代码。
 - 尽量关闭 serverless、CDN 或反向代理层的响应缓冲。
 - 运行时支持时，把浏览器请求的 abort signal 转发给上游 Provider 请求。
 - 针对认证失败、额度不足、模型无效和 Provider 故障返回有用错误。
+
+`examples/proxy-server` 是这些边界的最小 Node 模板。它让 Provider 凭据留在浏览器
+契约之外，同时保留客户端需要的 SSE framing。
 
 ## 测试 SSR 边界
 

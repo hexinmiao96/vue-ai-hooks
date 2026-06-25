@@ -8,7 +8,7 @@ runtime behavior. This page defines what users can rely on when upgrading.
 The stable API surface is the package entrypoint:
 
 ```ts
-import { useChat, useCompletion, useEmbedding, usePersist } from 'vue-ai-hooks'
+import { useChat, useCompletion, useEmbedding, useObject, usePersist } from 'vue-ai-hooks'
 ```
 
 Public composables, provider factories, and exported TypeScript types are

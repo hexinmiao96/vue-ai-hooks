@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { useCompletion, openai, openrouter } from 'vue-ai-hooks'
+import { useCompletion, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
 
 /**
  * Runtime provider selection for the completion example:
  * - check `VITE_EXAMPLE_PROVIDER` first;
- * - if not set to `openrouter`, check `VITE_CHAT_PROVIDER` for compatibility;
+ * - if not set to `openrouter`, `gemini`, or `proxy`, check `VITE_CHAT_PROVIDER`;
  * - otherwise fall back to `openai`.
  *
  * - openai: uses `openai` with `VITE_OPENAI_KEY` + optional `VITE_OPENAI_BASE_URL`.
  * - openrouter: uses `openrouter` with `VITE_OPENROUTER_*` variables.
+ * - gemini: uses `gemini` with `VITE_GEMINI_*` variables.
+ * - proxy: uses `proxyProvider` with `VITE_PROXY_*` variables.
  *
  * This keeps the provider switch behavior consistent across all demo pages.
  */
@@ -16,7 +18,16 @@ const selectedProvider =
   import.meta.env.VITE_EXAMPLE_PROVIDER === 'openrouter' ||
   import.meta.env.VITE_CHAT_PROVIDER === 'openrouter'
     ? 'openrouter'
-    : 'openai'
+    : import.meta.env.VITE_EXAMPLE_PROVIDER === 'gemini' ||
+        import.meta.env.VITE_CHAT_PROVIDER === 'gemini'
+      ? 'gemini'
+      : import.meta.env.VITE_EXAMPLE_PROVIDER === 'proxy' ||
+          import.meta.env.VITE_CHAT_PROVIDER === 'proxy'
+        ? 'proxy'
+        : 'openai'
+const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
+  | RequestCredentials
+  | undefined
 /**
  * Build the concrete provider instance used by this example.
  * The ternary keeps one source of truth for base URL, API keys and attribution
@@ -31,11 +42,28 @@ const provider =
         siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
         appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
       })
-    : openai({
-        // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
-        apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-        baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-      })
+    : selectedProvider === 'gemini'
+      ? gemini({
+          // Gemini uses Google's OpenAI-compatible base by default.
+          apiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+          defaultModel: import.meta.env.VITE_GEMINI_DEFAULT_MODEL || 'gemini-3.5-flash',
+          baseURL: import.meta.env.VITE_GEMINI_BASE_URL
+        })
+      : selectedProvider === 'proxy'
+        ? proxyProvider({
+            // Browser requests go to your app backend; upstream keys stay server-side.
+            completionUrl: import.meta.env.VITE_PROXY_COMPLETION_URL || '/api/ai/completion',
+            baseURL: import.meta.env.VITE_PROXY_BASE_URL,
+            credentials: proxyCredentials,
+            headers: import.meta.env.VITE_PROXY_AUTH_TOKEN
+              ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
+              : undefined
+          })
+        : openai({
+            // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
+            apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+            baseURL: import.meta.env.VITE_OPENAI_BASE_URL
+          })
 
 // useCompletion returns completion text and request lifecycle controls.
 // - completion: latest response text

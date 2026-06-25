@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 const rootNav = [
   { text: 'Guide', link: '/guide/getting-started' },
-  { text: '示例', link: '/examples/' },
+  { text: 'Examples', link: '/examples/' },
   { text: 'Reference', link: '/reference/use-chat' },
   { text: 'GitHub', link: 'https://github.com/hexinmiao96/vue-ai-hooks' }
 ]
@@ -23,8 +23,8 @@ const rootSidebar = {
   ],
   '/examples/': [
     {
-      text: '示例',
-      items: [{ text: '总览', link: '/examples/' }]
+      text: 'Examples',
+      items: [{ text: 'Overview', link: '/examples/' }]
     }
   ],
   '/reference/': [
@@ -34,6 +34,7 @@ const rootSidebar = {
         { text: 'useChat', link: '/reference/use-chat' },
         { text: 'useCompletion', link: '/reference/use-completion' },
         { text: 'useEmbedding', link: '/reference/use-embedding' },
+        { text: 'useObject', link: '/reference/use-object' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
     },
@@ -81,6 +82,7 @@ const zhSidebar = {
         { text: 'useChat', link: '/zh/reference/use-chat' },
         { text: 'useCompletion', link: '/zh/reference/use-completion' },
         { text: 'useEmbedding', link: '/zh/reference/use-embedding' },
+        { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]
     },

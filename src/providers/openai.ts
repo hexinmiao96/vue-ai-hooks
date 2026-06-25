@@ -5,10 +5,31 @@ import type {
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult,
-  Message
+  Message,
+  TokenUsage
 } from '../types'
 import { parseSSE } from '../utils/stream'
 import { requestJson } from '../utils/fetch'
+
+type OpenAiUsage =
+  | TokenUsage
+  | {
+      prompt_tokens?: number
+      completion_tokens?: number
+      total_tokens?: number
+    }
+
+function normalizeUsage(usage: OpenAiUsage | undefined): TokenUsage | undefined {
+  if (!usage) return undefined
+  if ('promptTokens' in usage) return usage
+  const promptTokens = usage.prompt_tokens ?? 0
+  const completionTokens = usage.completion_tokens ?? 0
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: usage.total_tokens ?? promptTokens + completionTokens
+  }
+}
 
 /** Configuration shared by OpenAI-family providers. */
 export interface OpenAiLikeConfig {
@@ -90,13 +111,16 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         stop,
         tools,
         toolChoice,
+        responseFormat,
         user,
         stream = true,
         signal,
-        headers
+        headers,
+        body: extraBody
       } = request
 
       const body: Record<string, unknown> = {
+        ...extraBody,
         model,
         messages: serializeMessages(messages),
         stream
@@ -109,6 +133,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
       if (stop !== undefined) body.stop = stop
       if (tools) body.tools = tools
       if (toolChoice) body.tool_choice = toolChoice
+      if (responseFormat) body.response_format = responseFormat
       if (user) body.user = user
 
       const response = await requestJson(joinUrl(baseURL, chatPath), {
@@ -123,13 +148,13 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         // Non-streaming: just yield the whole content in a single chunk.
         const data = (await response.json()) as {
           choices: Array<{ message: { content: string }; finish_reason: string | null }>
-          usage?: ChatChunk['usage']
+          usage?: OpenAiUsage
         }
         return (async function* () {
           yield {
             content: data.choices?.[0]?.message?.content ?? '',
             finishReason: (data.choices?.[0]?.finish_reason as ChatChunk['finishReason']) ?? 'stop',
-            usage: data.usage
+            usage: normalizeUsage(data.usage)
           }
         })()
       }
@@ -145,7 +170,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
             }
           ).choices?.[0]
           if (!choice) continue
-          const usage = (raw as { usage?: ChatChunk['usage'] }).usage
+          const usage = normalizeUsage((raw as { usage?: OpenAiUsage }).usage)
           yield {
             content: choice.delta?.content,
             toolCalls: choice.delta?.tool_calls,
@@ -168,10 +193,11 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         stop,
         stream = true,
         signal,
-        headers
+        headers,
+        body: extraBody
       } = request
 
-      const body: Record<string, unknown> = { model, prompt, stream }
+      const body: Record<string, unknown> = { ...extraBody, model, prompt, stream }
       if (temperature !== undefined) body.temperature = temperature
       if (maxTokens !== undefined) body.max_tokens = maxTokens
       if (topP !== undefined) body.top_p = topP
@@ -205,9 +231,9 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     },
 
     async embedding(request: EmbeddingRequest): Promise<EmbeddingResult> {
-      const { input, model = defaultModel, user, signal, headers } = request
+      const { input, model = defaultModel, user, signal, headers, body: extraBody } = request
 
-      const body: Record<string, unknown> = { input }
+      const body: Record<string, unknown> = { ...extraBody, input }
       if (model) body.model = model
       if (user) body.user = user
 

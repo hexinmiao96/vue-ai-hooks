@@ -2,7 +2,8 @@
 
 Vue 3 composable for generating text embeddings.
 
-Public TypeScript types: `UseEmbeddingOptions` and `UseEmbeddingReturn`.
+Public TypeScript types: `UseEmbeddingOptions`, `UseEmbeddingReturn`,
+`RetryOptions`, and `RetryContext`.
 
 ## Usage
 
@@ -19,23 +20,29 @@ console.log(result.embeddings) // number[][]
 
 ## Options
 
-| Name             | Type                                | Default  | Description                     |
-| ---------------- | ----------------------------------- | -------- | ------------------------------- |
-| `provider`       | `ChatProvider`                      | required | The provider to use.            |
-| `defaultRequest` | `Partial<EmbeddingRequest>`         | `{}`     | Default options.                |
-| `onSuccess`      | `(result: EmbeddingResult) => void` | —        | Called when embedding succeeds. |
-| `onError`        | `(e: Error) => void`                | —        | Called on any error.            |
+| Name             | Type                                                                   | Default  | Description                                      |
+| ---------------- | ---------------------------------------------------------------------- | -------- | ------------------------------------------------ |
+| `provider`       | `ChatProvider`                                                         | required | The provider to use.                             |
+| `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`     | Default options.                                 |
+| `maxRetries`     | `number`                                                               | `0`      | Retry attempts for transient failures.           |
+| `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`      | Delay before each retry.                         |
+| `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —        | Override the default retryable error decision.   |
+| `onRetry`        | `(error: Error, context: RetryContext) => void`                        | —        | Called before a retry attempt waits and re-runs. |
+| `onSuccess`      | `(result: EmbeddingResult) => void`                                    | —        | Called when embedding succeeds.                  |
+| `onError`        | `(e: Error) => void`                                                   | —        | Called on any error.                             |
 
 ## Return value
 
 | Property              | Type                                                                          | Description                                                             |
 | --------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `embeddings`          | `Ref<number[][]>`                                                             | The most recent embedding vectors.                                      |
+| `status`              | `Ref<AiRequestStatus>`                                                        | Request lifecycle: `ready`, `submitted`, or `error`.                    |
 | `isLoading`           | `Ref<boolean>`                                                                | True while a request is in flight.                                      |
 | `error`               | `Ref<Error \| null>`                                                          | Last error.                                                             |
 | `result`              | `Ref<EmbeddingResult \| null>`                                                | The most recent full result, including usage stats.                     |
 | `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | Generate embeddings.                                                    |
 | `stop()`              | `() => void`                                                                  | Abort the in-flight request.                                            |
+| `clearError()`        | `() => void`                                                                  | Clear `error` and move `status` back to `ready`.                        |
 | `clear()`             | `() => void`                                                                  | Reset embeddings, result, and error. Also aborts the in-flight request. |
 | `abortController`     | `Ref<AbortController \| null>`                                                | Exposed for advanced use cases.                                         |
 
@@ -44,3 +51,7 @@ console.log(result.embeddings) // number[][]
 - Anthropic has no embeddings API. `useEmbedding` with the Anthropic provider
   throws an `AiHooksError` with `status: 501`.
 - Input can be a single string or an array of strings (batched into one request).
+- Use `defaultRequest.body` or `embed(input, { body })` for provider-specific
+  JSON request fields. Typed fields such as `input`, `model`, and `user` win if
+  keys conflict.
+- `maxRetries` retries failed embedding requests before committing any result.

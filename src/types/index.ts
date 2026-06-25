@@ -26,6 +26,24 @@ export type ContentPart = TextPart | ImageUrlPart
 /** Content can be plain text (the common case) or a list of content parts. */
 export type MessageContent = string | ContentPart[]
 
+/** A preloaded file attachment that `useChat().append()` can convert into message content. */
+export interface ChatFileAttachment {
+  /** File display name, used as a label for text attachments. */
+  name?: string
+  /** MIME type such as `image/png` or `text/plain`. */
+  type: string
+  /** Remote, blob, or data URL for image attachments. */
+  url?: string
+  /** Already-read text content for text attachments. */
+  text?: string
+}
+
+/** Browser or preloaded file input that `useChat().append()` can convert. */
+export type ChatAttachmentInput = File | ChatFileAttachment
+
+/** File input accepted by `append(..., { attachments })`. */
+export type ChatAttachmentsInput = FileList | readonly ChatAttachmentInput[]
+
 /** A function/tool the model may call. OpenAI-compatible schema. */
 export interface Tool {
   type: 'function'
@@ -59,9 +77,46 @@ export interface Message {
   metadata?: Record<string, unknown>
 }
 
+/** JSON response format controls for providers that support structured output. */
+export type ResponseFormat =
+  | { type: 'json_object' }
+  | {
+      type: 'json_schema'
+      json_schema: {
+        name: string
+        description?: string
+        schema: Record<string, unknown>
+        strict?: boolean
+      }
+    }
+
+/** Token usage normalized across provider adapters. */
+export interface TokenUsage {
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+}
+
+export type AiRequestStatus = 'ready' | 'submitted' | 'streaming' | 'error'
+
+/** Override automatic chat, message, tool, and stream data id generation. */
+export type IdGenerator = (prefix?: string) => string
+
+/** A custom data item emitted alongside a streaming assistant response. */
+export interface StreamDataPart {
+  id: string
+  data: unknown
+  type?: string
+  transient?: boolean
+  createdAt?: Date
+}
+
 /** Request payload for a chat completion. */
 export interface ChatRequest {
+  id?: string
   messages: Message[]
+  /** Extra JSON body fields for provider/proxy-specific request options. */
+  body?: Record<string, unknown>
   model?: string
   temperature?: number
   maxTokens?: number
@@ -71,8 +126,20 @@ export interface ChatRequest {
   stop?: string | string[]
   tools?: Tool[]
   toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } }
+  responseFormat?: ResponseFormat
+  metadata?: unknown
   user?: string
   stream?: boolean
+  signal?: AbortSignal
+  headers?: Record<string, string>
+}
+
+/** Request payload for resuming an active chat stream. */
+export interface ChatResumeRequest {
+  id: string
+  /** Extra JSON body fields for provider/proxy-specific resume options. */
+  body?: Record<string, unknown>
+  metadata?: unknown
   signal?: AbortSignal
   headers?: Record<string, string>
 }
@@ -94,16 +161,24 @@ export interface ChatChunk {
   /** Why the model stopped, if this is the final chunk. */
   finishReason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null
   /** Token usage, typically only present on the final chunk. */
-  usage?: {
-    promptTokens: number
-    completionTokens: number
-    totalTokens: number
-  }
+  usage?: TokenUsage
+  /** Extra metadata merged into the current assistant message. */
+  metadata?: Record<string, unknown>
+  /** Custom stream data such as sources, progress, or citations. */
+  data?: unknown
+  /** Stable id used to replace a previous custom data part. */
+  dataId?: string
+  /** Optional custom data kind, for example `source` or `progress`. */
+  dataType?: string
+  /** Fire `onData` without storing the part in `streamData`. */
+  transient?: boolean
 }
 
 /** Request payload for a single-shot completion. */
 export interface CompletionRequest {
   prompt: string
+  /** Extra JSON body fields for provider/proxy-specific request options. */
+  body?: Record<string, unknown>
   model?: string
   temperature?: number
   maxTokens?: number
@@ -119,6 +194,8 @@ export interface CompletionRequest {
 /** Request payload for embedding. */
 export interface EmbeddingRequest {
   input: string | string[]
+  /** Extra JSON body fields for provider/proxy-specific request options. */
+  body?: Record<string, unknown>
   model?: string
   user?: string
   signal?: AbortSignal
@@ -132,6 +209,33 @@ export interface EmbeddingResult {
     promptTokens: number
     totalTokens: number
   }
+}
+
+export interface RetryContext {
+  /** 1-based retry attempt number. */
+  attempt: number
+  /** Maximum retry attempts configured for this call. */
+  maxRetries: number
+  /** Error that caused this retry attempt. */
+  error: Error
+}
+
+export interface RetryOptions {
+  /** Number of retry attempts after the initial provider call fails. Defaults to 0. */
+  maxRetries?: number
+  /** Delay before each retry in milliseconds. Defaults to 0. */
+  retryDelayMs?: number | ((context: RetryContext) => number)
+  /** Return false to stop retrying a specific error. */
+  shouldRetry?: (error: Error, context: RetryContext) => boolean | Promise<boolean>
+  /** Called immediately before waiting and retrying. */
+  onRetry?: (error: Error, context: RetryContext) => void
+}
+
+export interface StreamThrottleOptions {
+  /** Minimum wait in milliseconds between reactive stream updates. Defaults to no throttling. */
+  throttleMs?: number
+  /** Compatibility alias for AI SDK style throttling. Prefer throttleMs in new code. */
+  experimental_throttle?: number
 }
 
 /** Common error thrown by composables. */

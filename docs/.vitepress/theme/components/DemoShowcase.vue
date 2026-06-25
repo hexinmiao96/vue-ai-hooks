@@ -7,38 +7,67 @@ type DemoHref =
   | '#chat-demo'
   | '#completion-demo'
   | '#embedding-demo'
+  | '#object-demo'
   | '#chat-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
+  | '#object-demo-api'
   | '#chat-demo-api-props'
   | '#chat-demo-api-methods'
   | '#completion-demo-api-props'
   | '#completion-demo-api-methods'
   | '#embedding-demo-api-props'
   | '#embedding-demo-api-methods'
+  | '#object-demo-api-props'
+  | '#object-demo-api-methods'
 type NavLink = {
   label: string
   href: DemoHref
 }
 
 const props = withDefaults(defineProps<{ locale?: string }>(), {
-  locale: 'zh'
+  locale: 'en'
 })
 
 const localeKey = computed<LocaleKey>(() => (props.locale.startsWith('zh') ? 'zh' : 'en'))
 
 const codeSamples = {
   en: {
-    chat: `const { messages, input, append, stop, reload, clear } = useChat({
+    chat: `const fileInput = shallowRef<HTMLInputElement | null>(null)
+const { messages, input, handleSubmit, pendingToolCalls, approveToolCall } = useChat({
   provider,
+  id: 'support-thread-1',
+  initialInput: 'Review this release note.',
+  persist: {
+    key: 'support-thread-1',
+    version: 1
+  },
+  prepareSendMessagesRequest({ request }) {
+    return {
+      messages: pruneMessages({
+        messages: request.messages,
+        maxMessages: 12,
+        toolCalls: 'before-last-message'
+      })
+    }
+  },
+  tools: [chargeCardTool],
   toolHandlers: {
-    getWeather: async ({ city }) => ({ city, temperature: 23 })
+    chargeCard: async (args) => billing.charge(args)
+  },
+  requiresToolApproval(_args, context) {
+    return context.toolCall.function.name === 'chargeCard'
   }
 })
 
-async function send() {
-  if (!input.value.trim()) return
-  await append(input.value)
+async function send(event?: { preventDefault?: () => void }) {
+  const attachments = fileInput.value?.files ?? undefined
+  await handleSubmit(event, { attachments })
+}
+
+async function approveFirstTool() {
+  const [call] = pendingToolCalls.value
+  if (call) await approveToolCall(call.id)
 }`,
     completion: `const { completion, input: prompt, complete, stop, clear, isLoading } = useCompletion({
   provider,
@@ -60,21 +89,55 @@ await embed([
   'Streaming chat state for Vue',
   'Semantic search over documents',
   'A recipe for iced coffee'
-])`
+])`,
+    object: `type Ticket = { title: string; priority: 'low' | 'high' }
+
+const { object, partialObject, text, input, submit, stop, clear } = useObject<Ticket>({
+  provider,
+  id: 'support-ticket-draft',
+  initialValue: { priority: 'high' },
+  schemaName: 'ticket',
+  schema: ticketSchema
+})
+
+await submit('Extract a support ticket from the latest customer message.')`
   },
   zh: {
-    chat: `// 创建聊天会话，拿到消息列表与操作函数
-const { messages: 消息列表, input: 输入文本, append, stop, reload, clear } = useChat({
+    chat: `const fileInput = shallowRef<HTMLInputElement | null>(null)
+const { messages: 消息列表, input: 输入文本, handleSubmit, pendingToolCalls, approveToolCall } = useChat({
   provider,
+  id: 'support-thread-1',
+  initialInput: '检查这段发布说明。',
+  persist: {
+    key: 'support-thread-1',
+    version: 1
+  },
+  prepareSendMessagesRequest({ request }) {
+    return {
+      messages: pruneMessages({
+        messages: request.messages,
+        maxMessages: 12,
+        toolCalls: 'before-last-message'
+      })
+    }
+  },
+  tools: [chargeCardTool],
   toolHandlers: {
-    getWeather: async ({ city }) => ({ city, temperature: 23 })
+    chargeCard: async (args) => billing.charge(args)
+  },
+  requiresToolApproval(_args, context) {
+    return context.toolCall.function.name === 'chargeCard'
   }
 })
 
-// 绑定发送逻辑：过滤空白后追加一条消息
-async function send() {
-  if (!输入文本.value.trim()) return
-  await append(输入文本.value)
+async function send(event?: { preventDefault?: () => void }) {
+  const attachments = fileInput.value?.files ?? undefined
+  await handleSubmit(event, { attachments })
+}
+
+async function approveFirstTool() {
+  const [call] = pendingToolCalls.value
+  if (call) await approveToolCall(call.id)
 }`,
     completion: `const { completion: 补全结果, input: 输入文本, complete, stop, clear, isLoading } = useCompletion({
   provider,
@@ -99,7 +162,18 @@ await embed([
   'Vue 场景下的流式对话状态',
   '文档语义检索',
   '冰咖啡配方向量化片段'
-])`
+])`,
+    object: `type 工单 = { title: string; priority: 'low' | 'high' }
+
+const { object: 工单对象, partialObject: 部分工单, text: 原始JSON, input: 输入文本, submit, stop, clear } = useObject<工单>({
+  provider,
+  id: 'support-ticket-draft',
+  initialValue: { priority: 'high' },
+  schemaName: 'ticket',
+  schema: ticketSchema
+})
+
+await submit('从最新客户消息中提取支持工单。')`
   }
 }
 
@@ -123,42 +197,47 @@ const copy = {
     apiNavTitle: 'API',
     anchorLabel: 'Link to this demo',
     status: 'Ready',
+    quickChoiceTitle: 'Choose by job',
+    quickChoices: [
+      { job: 'Chat UI or tool approval', pick: 'useChat' },
+      { job: 'One prompt to text', pick: 'useCompletion' },
+      { job: 'Similarity search', pick: 'useEmbedding' },
+      { job: 'Typed JSON extraction', pick: 'useObject' }
+    ],
     heroStats: [
-      { label: 'Composables', value: '3' },
+      { label: 'Composables', value: '4' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
     demoLinks: [
       { label: 'Chat', href: '#chat-demo' },
       { label: 'Completion', href: '#completion-demo' },
-      { label: 'Embedding', href: '#embedding-demo' }
+      { label: 'Embedding', href: '#embedding-demo' },
+      { label: 'Object', href: '#object-demo' }
     ],
     apiLinks: [
       { label: 'useChat API', href: '#chat-demo-api' },
-      { label: 'useChat Properties', href: '#chat-demo-api-props' },
-      { label: 'useChat Methods', href: '#chat-demo-api-methods' },
       { label: 'useCompletion API', href: '#completion-demo-api' },
-      { label: 'useCompletion Properties', href: '#completion-demo-api-props' },
-      { label: 'useCompletion Methods', href: '#completion-demo-api-methods' },
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
-      { label: 'useEmbedding Properties', href: '#embedding-demo-api-props' },
-      { label: 'useEmbedding Methods', href: '#embedding-demo-api-methods' }
+      { label: 'useObject API', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: 'Composables',
     chat: {
       title: 'Streaming chat',
       topbarTitle: 'useChat',
       description:
-        'A production chat surface with message history, stream controls, reload, clear, and tool-call affordances.',
+        'A production chat surface with message history, stream controls, and approval-gated tool calls.',
       roleUser: 'user',
       roleAssistant: 'assistant',
       composerLabel: 'chat composer',
-      user: 'Plan a focused Vue docs page.',
+      user: 'Review this screenshot and the release note draft.',
       assistant:
-        'Use a three-part structure: hero context, live composable demos, and compact API notes. Keep the implementation provider-agnostic.',
+        'The screenshot needs a shorter first action, and the draft should lead with the user-visible change.',
+      attachment: 'Attached: dashboard.png + release-notes.txt',
+      persistence: 'Saved locally: support-thread-1 · Date-safe history',
       actions: ['Stop', 'Reload', 'Clear'],
-      tool: 'Tool call resolved: getWeather({ city: "Hangzhou" })',
-      composer: 'Ask about providers, tools, or persistence',
+      tool: 'Approval pending: chargeCard({ amount: 49, currency: "USD" })',
+      composer: 'Ask about providers, tool approvals, or persistence',
       apiRef: {
         title: 'useChat API',
         propsTitle: 'Properties',
@@ -185,19 +264,50 @@ const copy = {
             type: 'UseChatOptions',
             required: 'optional',
             description:
-              'Optional overrides for defaults such as message history and tool handlers.'
+              'Optional overrides for defaults such as message history, tools, and approval predicates.'
+          },
+          {
+            name: 'prepareSendMessagesRequest',
+            type: 'PrepareSendMessagesRequest',
+            required: 'optional',
+            description:
+              'Customize the resolved send/regenerate request before it reaches a provider.'
+          },
+          {
+            name: 'prepareReconnectToStreamRequest',
+            type: 'PrepareReconnectToStreamRequest',
+            required: 'optional',
+            description:
+              'Customize the resolved resume request before reconnecting a backend stream.'
+          },
+          {
+            name: 'persist',
+            type: 'ChatPersistOptions',
+            required: 'optional',
+            description:
+              'Save and restore Date-safe message history with localStorage or custom storage.'
           }
         ],
         methods: [
           {
+            name: 'handleSubmit',
+            type: '(event?, { attachments }?): Promise<void>',
+            description: 'Wire a form submit, send current input, and clear it after success.'
+          },
+          {
             name: 'append',
-            type: '(input: string): Promise<void>',
-            description: 'Append the current input and start a stream for the new message.'
+            type: '(input, { attachments }?): Promise<void>',
+            description: 'Append text, optional FileList/File[] attachments, and stream the reply.'
           },
           {
             name: 'reload',
             type: '(): Promise<void>',
             description: 'Re-run the latest request using current state and latest input.'
+          },
+          {
+            name: 'approveToolCall',
+            type: '(id: string): Promise<void>',
+            description: 'Run an approval-gated local tool handler and continue the conversation.'
           },
           {
             name: 'stop',
@@ -325,6 +435,75 @@ const copy = {
         ]
       }
     },
+    object: {
+      title: 'Structured object output',
+      topbarTitle: 'useObject',
+      description:
+        'A schema-backed extraction flow that streams raw JSON, exposes partial object state, and commits the final typed object after parsing succeeds.',
+      schemaLabel: 'JSON Schema',
+      schemaRows: ['title: string', 'priority: low | high', 'additionalProperties: false'],
+      outputLabel: 'Partial / final object',
+      outputRows: ['title: "Password reset blocked"', 'priority: "high"'],
+      footer: 'response_format - partial - final - clear',
+      apiRef: {
+        title: 'useObject API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: 'required',
+            description: 'Provider adapter used to send structured chat requests.'
+          },
+          {
+            name: 'id',
+            type: 'string',
+            required: 'optional',
+            description: 'Share object state across multiple useObject instances.'
+          },
+          {
+            name: 'initialValue',
+            type: 'DeepPartial<T>',
+            required: 'optional',
+            description: 'Seed the first partial object before streaming starts.'
+          },
+          {
+            name: 'schema',
+            type: 'Record<string, unknown>',
+            required: 'required',
+            description: 'JSON Schema sent as the structured response format.'
+          }
+        ],
+        methods: [
+          {
+            name: 'submit',
+            type: '(prompt: string): Promise<T>',
+            description: 'Send a prompt, stream partial JSON state, and parse the final object.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the in-flight structured output request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Reset the parsed object, raw text, input, and error state.'
+          }
+        ]
+      }
+    },
     apiTitle: 'API surface',
     apiSectionLabel: 'API Reference',
     apiIntro:
@@ -334,7 +513,7 @@ const copy = {
         name: 'useChat',
         state: 'messages, input, isLoading, error',
         actions: 'append, reload, stop, clear',
-        fit: 'Conversational UI, tool calls, persistence'
+        fit: 'Conversational UI, attachments, tool calls'
       },
       {
         name: 'useCompletion',
@@ -347,6 +526,12 @@ const copy = {
         state: 'embeddings, result, isLoading, error',
         actions: 'embed, stop, clear',
         fit: 'Search, clustering, similarity scoring'
+      },
+      {
+        name: 'useObject',
+        state: 'partialObject, object, text, input, isLoading, error',
+        actions: 'submit, stop, clear',
+        fit: 'Extraction, classification, JSON form filling'
       }
     ],
     tableLabels: {
@@ -374,40 +559,45 @@ const copy = {
     apiNavTitle: 'API 列表',
     anchorLabel: '跳转到此示例',
     status: '就绪',
+    quickChoiceTitle: '按任务选择',
+    quickChoices: [
+      { job: '聊天界面或工具审批', pick: 'useChat' },
+      { job: '一个提示词生成文本', pick: 'useCompletion' },
+      { job: '语义相似度检索', pick: 'useEmbedding' },
+      { job: '类型化 JSON 抽取', pick: 'useObject' }
+    ],
     heroStats: [
-      { label: '组合式函数', value: '3' },
+      { label: '组合式函数', value: '4' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
     demoLinks: [
       { label: '对话', href: '#chat-demo' },
       { label: '补全', href: '#completion-demo' },
-      { label: '向量检索', href: '#embedding-demo' }
+      { label: '向量检索', href: '#embedding-demo' },
+      { label: '结构化对象', href: '#object-demo' }
     ],
     apiLinks: [
       { label: 'useChat 接口', href: '#chat-demo-api' },
-      { label: 'useChat 参数', href: '#chat-demo-api-props' },
-      { label: 'useChat 方法', href: '#chat-demo-api-methods' },
       { label: 'useCompletion 接口', href: '#completion-demo-api' },
-      { label: 'useCompletion 参数', href: '#completion-demo-api-props' },
-      { label: 'useCompletion 方法', href: '#completion-demo-api-methods' },
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
-      { label: 'useEmbedding 参数', href: '#embedding-demo-api-props' },
-      { label: 'useEmbedding 方法', href: '#embedding-demo-api-methods' }
+      { label: 'useObject 接口', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: '组合式函数',
     chat: {
       title: '流式对话',
       topbarTitle: 'useChat（流式对话）',
-      description: '用于产品聊天界面的完整形态：消息历史、流控制、重新生成、清空以及工具调用提示。',
+      description: '用于产品聊天界面的完整形态：消息历史、流控制，以及需要审批的工具调用。',
       roleUser: '用户',
       roleAssistant: '助手',
       composerLabel: '输入区',
-      user: '规划一个聚焦的 Vue 文档示例页。',
-      assistant: '可以分成三段：顶部语境、组合式函数示例、紧凑 API 说明。实现保持提供者无关。',
+      user: '看一下这张截图和发布说明草稿。',
+      assistant: '截图里的第一个操作需要更短；草稿开头应先讲用户能看到的变化。',
+      attachment: '已附加：dashboard.png + release-notes.txt',
+      persistence: '已本地保存：support-thread-1 · Date-safe 历史',
       actions: ['终止', '重新加载', '清空'],
-      tool: '工具调用已完成：getWeather({ city: "杭州" })',
-      composer: '询问模型服务商、工具调用或持久化',
+      tool: '等待审批：chargeCard({ amount: 49, currency: "USD" })',
+      composer: '询问模型服务商、工具审批或持久化',
       apiRef: {
         title: 'useChat 接口',
         propsTitle: '参数',
@@ -433,19 +623,47 @@ const copy = {
             name: 'options',
             type: 'UseChatOptions',
             required: '可选',
-            description: '可选配置，包括历史记录管理与工具调用处理。'
+            description: '可选配置，包括历史记录、工具列表和审批判断。'
+          },
+          {
+            name: 'prepareSendMessagesRequest',
+            type: 'PrepareSendMessagesRequest',
+            required: '可选',
+            description: '在 provider 收到请求前，自定义已解析的发送或重新生成请求。'
+          },
+          {
+            name: 'prepareReconnectToStreamRequest',
+            type: 'PrepareReconnectToStreamRequest',
+            required: '可选',
+            description: '恢复后端活动流前，自定义已解析的重连请求。'
+          },
+          {
+            name: 'persist',
+            type: 'ChatPersistOptions',
+            required: '可选',
+            description: '通过 localStorage 或自定义 storage 保存并恢复 Date-safe 消息历史。'
           }
         ],
         methods: [
           {
+            name: 'handleSubmit',
+            type: '（event?, { attachments }?）：Promise<void>',
+            description: '接入表单提交，发送当前输入，并在成功后清空输入。'
+          },
+          {
             name: 'append',
-            type: '（输入: string）: Promise<void>',
-            description: '提交当前输入并发起一次新的流式消息。'
+            type: '（input, { attachments }?）：Promise<void>',
+            description: '提交文本和可选 FileList/File[] 附件，并流式接收回复。'
           },
           {
             name: 'reload',
             type: '（）：Promise<void>',
             description: '使用当前状态和输入重新发起最近一次请求。'
+          },
+          {
+            name: 'approveToolCall',
+            type: '（id: string）：Promise<void>',
+            description: '确认后运行等待审批的本地工具 handler，并继续对话。'
           },
           {
             name: 'stop',
@@ -570,16 +788,85 @@ const copy = {
         ]
       }
     },
+    object: {
+      title: '结构化对象输出',
+      topbarTitle: 'useObject（结构化 JSON）',
+      description:
+        '面向信息抽取的 schema 约束流程：流式接收原始 JSON，暴露部分对象状态，并在解析成功后提交最终类型化对象。',
+      schemaLabel: 'JSON Schema',
+      schemaRows: ['title: string', 'priority: low | high', 'additionalProperties: false'],
+      outputLabel: '部分 / 最终对象',
+      outputRows: ['title: "密码重置受阻"', 'priority: "high"'],
+      footer: 'response_format - 部分对象 - 最终对象 - 清空',
+      apiRef: {
+        title: 'useObject 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'provider',
+            type: 'Provider',
+            required: '必填',
+            description: '用于发送结构化聊天请求的适配器。'
+          },
+          {
+            name: 'id',
+            type: 'string',
+            required: '可选',
+            description: '在多个 useObject 实例间共享对象状态。'
+          },
+          {
+            name: 'initialValue',
+            type: 'DeepPartial<T>',
+            required: '可选',
+            description: '流式开始前用于初始化第一份部分对象。'
+          },
+          {
+            name: 'schema',
+            type: 'Record<string, unknown>',
+            required: '必填',
+            description: '作为结构化 response format 发送的 JSON Schema。'
+          }
+        ],
+        methods: [
+          {
+            name: 'submit',
+            type: '（prompt: string）：Promise<T>',
+            description: '提交提示词，流式更新部分 JSON 状态，并解析最终对象。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中止当前结构化输出请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '重置解析对象、原始文本、输入和错误状态。'
+          }
+        ]
+      }
+    },
     apiTitle: 'API 结构',
     apiSectionLabel: 'API 参考',
     apiIntro:
-      '三个组合式函数保持同一套心智模型：状态、异步动作、加载中状态和错误状态，以及少量命令式控制。',
+      '四个组合式函数保持同一套心智模型：状态、异步动作、加载中状态和错误状态，以及少量命令式控制。',
     apiRows: [
       {
         name: 'useChat',
         state: 'messages（消息）、input（输入）、isLoading（加载中）、error（错误）',
         actions: 'append 追加, reload 重新加载, stop 停止, clear 清空',
-        fit: '对话界面、工具调用、消息持久化'
+        fit: '对话界面、文件附件、工具调用'
       },
       {
         name: 'useCompletion',
@@ -592,6 +879,13 @@ const copy = {
         state: 'embeddings（向量列表）、result（结果）、isLoading（加载中）、error（错误）',
         actions: 'embed 向量化, stop 停止, clear 清空',
         fit: '搜索、聚类、相似度计算'
+      },
+      {
+        name: 'useObject',
+        state:
+          'partialObject（部分对象）、object（最终对象）、text（原始文本）、input（输入）、isLoading（加载中）、error（错误）',
+        actions: 'submit 提交, stop 停止, clear 清空',
+        fit: '信息抽取、分类、JSON 表单填充'
       }
     ],
     tableLabels: {
@@ -606,20 +900,25 @@ const content = computed(() => copy[localeKey.value])
 const chatCode = computed(() => codeSamples[localeKey.value].chat)
 const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
+const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
 const sectionIds: DemoHref[] = [
   '#chat-demo',
   '#completion-demo',
   '#embedding-demo',
+  '#object-demo',
   '#chat-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
+  '#object-demo-api',
   '#chat-demo-api-props',
   '#chat-demo-api-methods',
   '#completion-demo-api-props',
   '#completion-demo-api-methods',
   '#embedding-demo-api-props',
-  '#embedding-demo-api-methods'
+  '#embedding-demo-api-methods',
+  '#object-demo-api-props',
+  '#object-demo-api-methods'
 ]
 const sectionTargetIds = sectionIds.map((href) => href.slice(1))
 
@@ -673,7 +972,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="demo-showcase" :lang="props.locale === 'zh' ? 'zh-CN' : 'en'">
+  <main class="demo-showcase" :lang="localeKey === 'zh' ? 'zh-CN' : 'en'">
     <section class="showcase-hero">
       <div class="showcase-hero__copy">
         <p class="showcase-hero__kicker">
@@ -706,6 +1005,18 @@ onUnmounted(() => {
             <dd>{{ item.value }}</dd>
           </div>
         </dl>
+        <div class="showcase-brief__choices">
+          <span class="showcase-brief__choice-title">{{ content.quickChoiceTitle }}</span>
+          <a
+            v-for="choice in content.quickChoices"
+            :key="choice.pick"
+            class="showcase-brief__choice"
+            :href="`#${choice.pick.replace('use', '').toLowerCase()}-demo`"
+          >
+            <span>{{ choice.job }}</span>
+            <strong>{{ choice.pick }}</strong>
+          </a>
+        </div>
       </div>
     </section>
 
@@ -767,6 +1078,12 @@ onUnmounted(() => {
                 <span class="chat-message__role">{{ content.chat.roleUser }}</span>
                 <p>{{ content.chat.user }}</p>
               </article>
+              <div class="attachment-strip">
+                <span>{{ content.chat.attachment }}</span>
+              </div>
+              <div class="attachment-strip">
+                <span>{{ content.chat.persistence }}</span>
+              </div>
               <article class="chat-message is-assistant">
                 <span class="chat-message__role">{{ content.chat.roleAssistant }}</span>
                 <p>{{ content.chat.assistant }}</p>
@@ -894,6 +1211,53 @@ onUnmounted(() => {
             </table>
             <footer class="preview-footer">
               <span>{{ content.embedding.usage }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="object-demo"
+          api-title-id="object-demo-api"
+          api-props-section-id="object-demo-api-props"
+          api-methods-section-id="object-demo-api-methods"
+          :title="content.object.title"
+          :description="content.object.description"
+          :code="objectCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.object.apiRef"
+        >
+          <div class="structured-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-indigo" />
+              <span>{{ content.object.topbarTitle }}</span>
+            </div>
+            <div class="structured-grid">
+              <article class="structured-panel">
+                <span class="field-label">{{ content.object.schemaLabel }}</span>
+                <ul>
+                  <li v-for="row in content.object.schemaRows" :key="row">
+                    {{ row }}
+                  </li>
+                </ul>
+              </article>
+              <article class="structured-panel is-output">
+                <span class="field-label">{{ content.object.outputLabel }}</span>
+                <ul>
+                  <li v-for="row in content.object.outputRows" :key="row">
+                    {{ row }}
+                  </li>
+                </ul>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.object.footer }}</span>
             </footer>
           </div>
         </DemoBlock>
@@ -1095,6 +1459,57 @@ onUnmounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
+.showcase-brief__choices {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--demo-border);
+}
+
+.showcase-brief__choice-title {
+  color: var(--demo-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.showcase-brief__choice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  color: var(--demo-ink);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.showcase-brief__choice:hover {
+  border-color: var(--demo-brand);
+  background: var(--demo-subtle);
+}
+
+.showcase-brief__choice:focus-visible {
+  outline: 2px solid var(--demo-focus);
+  outline-offset: 2px;
+}
+
+.showcase-brief__choice span {
+  min-width: 0;
+}
+
+.showcase-brief__choice strong {
+  color: var(--demo-brand);
+  font-size: 0.75rem;
+  font-weight: 780;
+  white-space: nowrap;
+}
+
 .showcase-nav {
   display: grid;
   gap: 10px;
@@ -1169,7 +1584,8 @@ onUnmounted(() => {
 
 .chat-preview,
 .completion-preview,
-.embedding-preview {
+.embedding-preview,
+.structured-preview {
   display: grid;
   gap: 18px;
   max-width: 760px;
@@ -1203,6 +1619,10 @@ onUnmounted(() => {
 
 .preview-topbar__mark.is-green {
   background: var(--demo-green);
+}
+
+.preview-topbar__mark.is-indigo {
+  background: var(--demo-brand);
 }
 
 .chat-preview__body {
@@ -1242,6 +1662,25 @@ onUnmounted(() => {
   font-size: 0.75rem;
   font-weight: 760;
   line-height: 1.2;
+}
+
+.attachment-strip {
+  justify-self: end;
+  width: min(100%, 520px);
+  color: var(--demo-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.attachment-strip span {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 30px;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-surface);
 }
 
 .tool-call {
@@ -1295,6 +1734,7 @@ onUnmounted(() => {
 .completion-editor,
 .completion-output,
 .embedding-list,
+.structured-panel,
 .similarity-table {
   border: 1px solid var(--demo-border);
   border-radius: 8px;
@@ -1302,10 +1742,35 @@ onUnmounted(() => {
 }
 
 .completion-editor,
-.completion-output {
+.completion-output,
+.structured-panel {
   display: grid;
   gap: 10px;
   padding: 16px;
+}
+
+.structured-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.structured-panel ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.structured-panel li {
+  overflow-wrap: anywhere;
+  color: var(--demo-ink);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.structured-panel.is-output {
+  background: var(--demo-brand-soft);
 }
 
 .completion-output__meter {
@@ -1520,6 +1985,10 @@ onUnmounted(() => {
   .chat-composer {
     grid-template-columns: 1fr auto;
     align-items: center;
+  }
+
+  .structured-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .api-grid {

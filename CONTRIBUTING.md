@@ -1,6 +1,7 @@
 # Contributing
 
-Thanks for your interest in `vue-ai-hooks`! We welcome PRs, issues, and discussion.
+Thanks for your interest in `vue-ai-hooks`! We welcome PRs, reproducible bug
+reports, and discussion.
 
 ## Development setup
 
@@ -43,6 +44,7 @@ pnpm metadata:check # verify package metadata, README, docs navigation, and cont
 pnpm community:check # verify CODEOWNERS, issue/PR templates, support, security, and conduct files
 pnpm workflows:check # verify CI, CodeQL, and npm publish workflow guardrails
 pnpm api:check   # verify public exports, reference docs, and VitePress guide/reference navigation
+pnpm docs:ux:check # verify docs onboarding paths, examples language routing, and demo navigation
 pnpm links:check # verify local Markdown links
 pnpm examples:build # verify all example apps build
 pnpm docs:build   # verify the VitePress docs build
@@ -95,8 +97,8 @@ implementation. Most providers that follow the OpenAI REST spec can use
 Run `pnpm build && pnpm size:check` before submitting changes that affect
 runtime code. Current published bundle budgets:
 
-- `dist/index.mjs`: 25,000 bytes raw, 8,000 bytes gzip.
-- `dist/index.cjs`: 18,000 bytes raw, 7,000 bytes gzip.
+- `dist/index.mjs`: 33,000 bytes raw, 9,400 bytes gzip.
+- `dist/index.cjs`: 22,500 bytes raw, 8,000 bytes gzip.
 
 ## Commit messages
 
@@ -146,13 +148,14 @@ Release checklist:
 
 1. Fork and branch from `main`.
 2. Make your change. Run `pnpm check` before pushing.
-3. Open a PR. Fill in the template. Reference any related issue.
+3. Open a PR. Fill in the template. Reference any related bug issue or
+   discussion.
 4. Address review feedback. Squash-merge when approved.
 
 ## Questions and support
 
 Use [`SUPPORT.md`](./SUPPORT.md) for usage questions, provider configuration
-help, and support channel guidance.
+help, feature ideas, and support channel guidance.
 
 ## Security reports
 

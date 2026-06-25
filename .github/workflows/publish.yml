@@ -95,6 +95,9 @@ jobs:
       - name: API docs
         run: pnpm api:check
 
+      - name: Docs UX
+        run: pnpm docs:ux:check
+
       - name: Links
         run: pnpm links:check
 

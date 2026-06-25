@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 const files = {
   bug: readFileSync('.github/ISSUE_TEMPLATE/bug_report.md', 'utf8'),
-  feature: readFileSync('.github/ISSUE_TEMPLATE/feature_request.md', 'utf8'),
   config: readFileSync('.github/ISSUE_TEMPLATE/config.yml', 'utf8'),
   codeOwners: readFileSync('.github/CODEOWNERS', 'utf8'),
   pr: readFileSync('.github/PULL_REQUEST_TEMPLATE.md', 'utf8'),
@@ -22,7 +21,11 @@ expect(
 )
 expect(
   files.config.includes('/discussions'),
-  'Issue template config must route general questions to Discussions'
+  'Issue template config must route general questions and feature ideas to Discussions'
+)
+expect(
+  files.config.includes('feature ideas'),
+  'Issue template config must route feature ideas away from Issues'
 )
 expect(files.config.includes('/SUPPORT.md'), 'Issue template config must link to SUPPORT.md')
 expect(files.config.includes('/SECURITY.md'), 'Issue template config must link to SECURITY.md')
@@ -52,6 +55,7 @@ for (const section of [
   '## Steps to reproduce',
   '## Expected behavior',
   '## Actual behavior',
+  '## Issue activity',
   '## Environment'
 ]) {
   expect(files.bug.includes(section), `Bug report template must include ${section}`)
@@ -70,15 +74,10 @@ for (const field of [
   expect(files.bug.includes(field), `Bug report template must request ${field}`)
 }
 
-for (const section of [
-  '## Problem',
-  '## Proposed solution',
-  '## Alternatives considered',
-  '## Examples',
-  '## Priority'
-]) {
-  expect(files.feature.includes(section), `Feature request template must include ${section}`)
-}
+expect(
+  !existsSync('.github/ISSUE_TEMPLATE/feature_request.md'),
+  'Feature request issue template must not exist because Issues are bug-only'
+)
 
 for (const item of [
   '## What does this change?',
@@ -127,6 +126,7 @@ for (const section of [
   '## Questions and usage help',
   '## Bugs',
   '## Feature requests',
+  '## Issue activity',
   '## Security'
 ]) {
   expect(files.support.includes(section), `SUPPORT.md must include ${section}`)
@@ -134,9 +134,13 @@ for (const section of [
 
 for (const requiredText of [
   'GitHub Discussion',
+  'Issues are reserved for reproducible bugs',
   '`vue-ai-hooks` version',
   'Provider or custom provider adapter',
   'Use the bug report template for reproducible defects',
+  'Use GitHub Discussions for new APIs, providers, or behavior changes',
+  'Maintainers keep accepted bug issues active',
+  'Avoid empty `bump` comments',
   'Follow [`SECURITY.md`](./SECURITY.md) instead'
 ]) {
   expect(

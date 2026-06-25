@@ -73,6 +73,11 @@ describe('anthropic provider', () => {
         { id: 's1', role: 'system', content: 'You are concise.' },
         { id: 'u1', role: 'user', content: 'Hello' }
       ],
+      body: {
+        metadata: { trace_id: 'trace_1' },
+        thinking: { type: 'enabled', budget_tokens: 128 },
+        max_tokens: 8
+      },
       maxTokens: 256
     })
 
@@ -92,6 +97,8 @@ describe('anthropic provider', () => {
     expect(body.model).toBe('claude-3-5-sonnet-20241022')
     expect(body.system).toBe('You are concise.')
     expect(body.messages).toEqual([{ role: 'user', content: 'Hello' }])
+    expect(body.metadata).toEqual({ trace_id: 'trace_1' })
+    expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 128 })
     expect(body.max_tokens).toBe(256)
     expect(body.stream).toBe(true)
   })
@@ -165,6 +172,214 @@ describe('anthropic provider', () => {
     ])
   })
 
+  it('serializes tools, tool choice, assistant tool_use, and tool_result messages', async () => {
+    const fetchMock = mockFetchOnce(
+      jsonResponse({
+        content: [
+          {
+            type: 'tool_use',
+            id: 'call_2',
+            name: 'lookup',
+            input: { q: 'vue' }
+          }
+        ],
+        stop_reason: 'tool_use',
+        usage: { input_tokens: 9, output_tokens: 4 }
+      })
+    )
+
+    const p = anthropic({ apiKey: 'k' })
+    const stream = await p.chat({
+      messages: [
+        { id: 'u1', role: 'user', content: 'Look up Vue.' },
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: 'I will check.',
+          toolCalls: [
+            {
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'lookup', arguments: '{"q":"vue"}' }
+            }
+          ]
+        },
+        { id: 't1', role: 'tool', toolCallId: 'call_1', content: '{"result":"Vue 3"}' }
+      ],
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'lookup',
+            description: 'Look up a topic',
+            parameters: {
+              type: 'object',
+              properties: { q: { type: 'string' } },
+              required: ['q']
+            }
+          }
+        }
+      ],
+      toolChoice: { type: 'function', function: { name: 'lookup' } },
+      stream: false
+    })
+
+    const chunks = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
+    expect(body.tools).toEqual([
+      {
+        name: 'lookup',
+        description: 'Look up a topic',
+        input_schema: {
+          type: 'object',
+          properties: { q: { type: 'string' } },
+          required: ['q']
+        }
+      }
+    ])
+    expect(body.tool_choice).toEqual({ type: 'tool', name: 'lookup' })
+    expect(body.messages).toEqual([
+      { role: 'user', content: 'Look up Vue.' },
+      {
+        role: 'assistant',
+        content: [
+          { type: 'text', text: 'I will check.' },
+          { type: 'tool_use', id: 'call_1', name: 'lookup', input: { q: 'vue' } }
+        ]
+      },
+      {
+        role: 'user',
+        content: [{ type: 'tool_result', tool_use_id: 'call_1', content: '{"result":"Vue 3"}' }]
+      }
+    ])
+    expect(chunks).toEqual([
+      {
+        content: '',
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_2',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"vue"}' }
+          }
+        ],
+        finishReason: 'tool_calls',
+        usage: { promptTokens: 9, completionTokens: 4, totalTokens: 13 }
+      }
+    ])
+  })
+
+  it('serializes empty assistant tool arguments as an empty Anthropic input object', async () => {
+    const fetchMock = mockFetchOnce(
+      jsonResponse({
+        content: [{ type: 'text', text: 'ok' }],
+        stop_reason: 'end_turn'
+      })
+    )
+    const p = anthropic({ apiKey: 'k' })
+    const stream = await p.chat({
+      messages: [
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: '',
+          toolCalls: [
+            {
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'lookup', arguments: '' }
+            }
+          ]
+        }
+      ],
+      stream: false
+    })
+    for await (const chunk of stream) {
+      void chunk
+    }
+
+    const body = JSON.parse(
+      (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string
+    )
+    expect(body.messages).toEqual([
+      {
+        role: 'assistant',
+        content: [{ type: 'tool_use', id: 'call_1', name: 'lookup', input: {} }]
+      }
+    ])
+  })
+
+  it('maps Anthropic toolChoice variants', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        content: [{ type: 'text', text: 'ok' }],
+        stop_reason: 'end_turn'
+      })
+    )
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+    const p = anthropic({ apiKey: 'k' })
+    const tool = {
+      type: 'function' as const,
+      function: {
+        name: 'lookup',
+        parameters: { type: 'object' }
+      }
+    }
+
+    for (const toolChoice of ['auto', 'none', 'required'] as const) {
+      const stream = await p.chat({
+        messages: [{ id: 'u1', role: 'user', content: 'hi' }],
+        tools: [tool],
+        toolChoice,
+        stream: false
+      })
+      for await (const chunk of stream) {
+        void chunk
+      }
+    }
+
+    const bodies = fetchMock.mock.calls.map((call) =>
+      JSON.parse((call as unknown as [string, RequestInit])[1].body as string)
+    )
+    expect(bodies.map((body) => body.tool_choice)).toEqual([
+      { type: 'auto' },
+      { type: 'none' },
+      { type: 'any' }
+    ])
+  })
+
+  it('rejects invalid assistant tool arguments before sending Anthropic requests', async () => {
+    const fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+    const p = anthropic({ apiKey: 'k' })
+
+    await expect(
+      p.chat({
+        messages: [
+          {
+            id: 'a1',
+            role: 'assistant',
+            content: '',
+            toolCalls: [
+              {
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{bad json' }
+              }
+            ]
+          }
+        ]
+      })
+    ).rejects.toThrow(/Invalid JSON arguments/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('joins multiple system messages with double newline', async () => {
     const fetchMock = mockFetchOnce(
       sseResponse([
@@ -226,6 +441,72 @@ describe('anthropic provider', () => {
     }
     expect(finishReason).toBe('length')
     void fetchMock
+  })
+
+  it('streams tool_use deltas and usage', async () => {
+    mockFetchOnce(
+      sseResponse([
+        {
+          data: '{"type":"message_start","message":{"usage":{"input_tokens":6,"output_tokens":0}}}'
+        },
+        {
+          data: '{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"call_1","name":"lookup","input":{}}}'
+        },
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"q\\":"}}'
+        },
+        {
+          data: '{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\\"vue\\"}"}}'
+        },
+        {
+          data: '{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":5}}'
+        }
+      ])
+    )
+    const p = anthropic({ apiKey: 'k' })
+    const stream = await p.chat({ messages: [{ id: 'u1', role: 'user', content: 'hi' }] })
+    const chunks = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([
+      { usage: { promptTokens: 6, completionTokens: 0, totalTokens: 6 } },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '"vue"}' }
+          }
+        ]
+      },
+      {
+        finishReason: 'tool_calls',
+        usage: { promptTokens: 6, completionTokens: 5, totalTokens: 11 }
+      }
+    ])
   })
 
   it('maps tool_use and unknown stop reasons predictably', async () => {

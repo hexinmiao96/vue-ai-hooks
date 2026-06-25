@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(__dirname, 'src'),
+      'vue-ai-hooks': resolve(__dirname, 'src/index.ts')
     }
   },
   test: {

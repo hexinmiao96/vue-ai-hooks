@@ -1,8 +1,10 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { ChatProvider } from '../providers/types'
-import type { EmbeddingRequest, EmbeddingResult } from '../types'
+import type { AiRequestStatus, EmbeddingRequest, EmbeddingResult, RetryOptions } from '../types'
+import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import { mergeRequestBody } from '../utils/requestBody'
 
-export interface UseEmbeddingOptions {
+export interface UseEmbeddingOptions extends RetryOptions {
   provider: ChatProvider
   defaultRequest?: Partial<EmbeddingRequest>
   onSuccess?: (result: EmbeddingResult) => void
@@ -11,11 +13,13 @@ export interface UseEmbeddingOptions {
 
 export interface UseEmbeddingReturn {
   embeddings: Ref<number[][]>
+  status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
   result: Ref<EmbeddingResult | null>
   embed: (input: string | string[], options?: Partial<EmbeddingRequest>) => Promise<EmbeddingResult>
   stop: () => void
+  clearError: () => void
   clear: () => void
   abortController: Ref<AbortController | null>
 }
@@ -34,6 +38,7 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
   const { provider, defaultRequest = {}, onSuccess, onError } = options
 
   const embeddings = ref<number[][]>([])
+  const status = ref<AiRequestStatus>('ready')
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
   const result = shallowRef<EmbeddingResult | null>(null)
@@ -43,6 +48,7 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     if (abortController.value) abortController.value.abort()
     abortController.value = null
     isLoading.value = false
+    status.value = 'ready'
   }
 
   function clear() {
@@ -50,6 +56,12 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     embeddings.value = []
     result.value = null
     error.value = null
+    status.value = 'ready'
+  }
+
+  function clearError() {
+    error.value = null
+    status.value = 'ready'
   }
 
   function createAbortError(): Error {
@@ -63,29 +75,47 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     abortController.value = controller
     isLoading.value = true
     error.value = null
+    status.value = 'submitted'
 
     try {
-      const res = await provider.embedding({
-        ...defaultRequest,
-        ...requestOptions,
-        input,
-        signal: controller.signal
-      })
-      if (controller.signal.aborted) {
-        throw createAbortError()
+      let retryAttempt = 0
+      const maxRetries = getMaxRetries(options)
+      while (true) {
+        try {
+          const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
+          const res = await provider.embedding({
+            ...defaultRequest,
+            ...requestOptions,
+            ...(body ? { body } : {}),
+            input,
+            signal: controller.signal
+          })
+          if (controller.signal.aborted) {
+            throw createAbortError()
+          }
+          embeddings.value = res.embeddings
+          result.value = res
+          status.value = 'ready'
+          onSuccess?.(res)
+          return res
+        } catch (err) {
+          const e = err instanceof Error ? err : new Error(String(err))
+          if ((e as { name?: string }).name === 'AbortError' || controller.signal.aborted) {
+            status.value = 'ready'
+            throw e
+          }
+          const context = createRetryContext(e, retryAttempt + 1, maxRetries)
+          if (await canRetry(options, context)) {
+            retryAttempt += 1
+            await waitForRetry(options, context, controller.signal)
+            continue
+          }
+          status.value = 'error'
+          error.value = e
+          onError?.(e)
+          throw e
+        }
       }
-      embeddings.value = res.embeddings
-      result.value = res
-      onSuccess?.(res)
-      return res
-    } catch (err) {
-      const e = err instanceof Error ? err : new Error(String(err))
-      if ((e as { name?: string }).name === 'AbortError' || controller.signal.aborted) {
-        throw e
-      }
-      error.value = e
-      onError?.(e)
-      throw e
     } finally {
       abortController.value = null
       isLoading.value = false
@@ -94,11 +124,13 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
 
   return {
     embeddings,
+    status,
     isLoading,
     error,
     result,
     embed,
     stop,
+    clearError,
     clear,
     abortController
   }

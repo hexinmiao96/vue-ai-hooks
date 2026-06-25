@@ -63,6 +63,53 @@ openrouter({
 `https://openrouter.ai/api/v1` by default and the headers (`HTTP-Referer`,
 `X-Title`) that OpenRouter commonly uses.
 
+### `gemini`
+
+```ts
+import { gemini } from 'vue-ai-hooks'
+
+gemini({
+  apiKey: 'AIza...',
+  // optional:
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+  defaultModel: 'gemini-3.5-flash'
+})
+```
+
+`gemini` is a thin wrapper around `openaiCompatible` for Google's
+OpenAI-compatible endpoint. It keeps the same chat, completion, embedding, tool
+calling, and structured output request shape as the OpenAI-compatible provider.
+
+### `proxyProvider`
+
+```ts
+import { proxyProvider } from 'vue-ai-hooks'
+
+proxyProvider({
+  chatUrl: '/api/ai/chat',
+  completionUrl: '/api/ai/completion',
+  embeddingUrl: '/api/ai/embedding',
+  headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),
+  credentials: 'include'
+})
+```
+
+Use `proxyProvider` for production browser apps. The browser sends
+provider-agnostic `ChatRequest`, `CompletionRequest`, and `EmbeddingRequest`
+JSON to your backend. Your backend keeps upstream provider credentials
+server-side, chooses the model/provider, and returns either SSE chunks or JSON.
+
+This is the recommended shape when you need app sessions, rate limits, audit
+logs, model routing, or per-user authorization before an upstream model call.
+
+The repo includes a runnable backend template for this contract:
+
+```bash
+pnpm example:proxy-server
+# in another terminal
+VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 ### `anthropic`
 
 ```ts
@@ -86,6 +133,8 @@ Notes:
   as a single-turn chat with a user message.
 - The system prompt is a **top-level field**, not part of `messages[]`. Any
   `role: 'system'` messages in the input are extracted and joined with `\n\n`.
+- Tool definitions and tool result messages are mapped to Anthropic's Messages
+  API format, so `useChat` tool handlers can continue the round-trip.
 
 ## Writing your own provider
 

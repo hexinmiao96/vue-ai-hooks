@@ -23,15 +23,96 @@ const fakeProvider = (text: string) =>
 
 describe('useCompletion', () => {
   it('streams completion into ref', async () => {
-    const { complete, completion, isLoading, error } = useCompletion({
-      provider: fakeProvider('hello')
+    const onUpdate = vi.fn()
+    const { complete, completion, status, isLoading, error } = useCompletion({
+      provider: fakeProvider('hello'),
+      onUpdate
     })
 
     await expect(complete('Say hello')).resolves.toBe('hello')
 
     expect(completion.value).toBe('hello')
+    expect(onUpdate).toHaveBeenNthCalledWith(1, 'h', 'h')
+    expect(onUpdate).toHaveBeenLastCalledWith('hello', 'o')
+    expect(status.value).toBe('ready')
     expect(isLoading.value).toBe(false)
     expect(error.value).toBeNull()
+  })
+
+  it('throttles streaming completion ref updates', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      let releaseStream!: () => void
+      let resolveFirstBatch!: () => void
+      const firstBatchSeen = new Promise<void>((resolve) => {
+        resolveFirstBatch = resolve
+      })
+      const streamReleased = new Promise<void>((resolve) => {
+        releaseStream = resolve
+      })
+      const provider = completionProvider({
+        completion: async function* () {
+          yield 'a'
+          yield 'b'
+          resolveFirstBatch()
+          await streamReleased
+          yield 'c'
+        }
+      })
+      const onUpdate = vi.fn()
+      const { complete, completion } = useCompletion({
+        provider,
+        throttleMs: 50,
+        onUpdate
+      })
+
+      const pending = complete('throttle')
+      await firstBatchSeen
+
+      expect(completion.value).toBe('')
+      expect(onUpdate).not.toHaveBeenCalled()
+
+      vi.advanceTimersByTime(50)
+      expect(completion.value).toBe('ab')
+      expect(onUpdate).toHaveBeenCalledWith('ab', 'ab')
+
+      releaseStream()
+      await expect(pending).resolves.toBe('abc')
+      expect(completion.value).toBe('abc')
+      expect(onUpdate).toHaveBeenLastCalledWith('abc', 'c')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('tracks submitted, streaming, ready, and error statuses', async () => {
+    let finishStream: () => void = () => {}
+    const streamFinished = new Promise<void>((resolve) => {
+      finishStream = resolve
+    })
+    const provider = completionProvider({
+      completion: async function* () {
+        yield 'a'
+        await streamFinished
+      }
+    })
+    const { clearError, complete, error, status } = useCompletion({ provider })
+
+    const pending = complete('track status')
+    expect(status.value).toBe('submitted')
+
+    await flushPromises()
+    expect(status.value).toBe('streaming')
+
+    finishStream()
+    await pending
+    expect(status.value).toBe('ready')
+
+    error.value = new Error('stale')
+    status.value = 'error'
+    clearError()
+    expect(error.value).toBeNull()
+    expect(status.value).toBe('ready')
   })
 
   it('uses input value when prompt argument is omitted', async () => {
@@ -51,6 +132,115 @@ describe('useCompletion', () => {
     expect(requests[0]?.prompt).toBe('prompt from input')
   })
 
+  it('supports form input helpers for completion prompts', async () => {
+    const preventDefault = vi.fn()
+    const requests: Array<Record<string, unknown>> = []
+    const provider = completionProvider({
+      completion: async function* (request: Record<string, unknown>) {
+        requests.push(request)
+        yield 'submitted'
+      }
+    })
+    const { handleInputChange, handleSubmit, input, setInput } = useCompletion({
+      provider,
+      initialInput: 'draft prompt'
+    })
+
+    expect(input.value).toBe('draft prompt')
+
+    setInput('manual prompt')
+    expect(input.value).toBe('manual prompt')
+
+    handleInputChange({ target: { value: 'event prompt' } })
+    expect(input.value).toBe('event prompt')
+
+    await expect(
+      handleSubmit({ preventDefault }, { model: 'form-model', temperature: 0.2 })
+    ).resolves.toBe('submitted')
+
+    expect(preventDefault).toHaveBeenCalledOnce()
+    expect(input.value).toBe('')
+    expect(requests[0]).toMatchObject({
+      prompt: 'event prompt',
+      model: 'form-model',
+      temperature: 0.2,
+      stream: true
+    })
+  })
+
+  it('keeps input when form submission fails', async () => {
+    const provider = completionProvider({
+      async completion() {
+        throw new Error('submission failed')
+      }
+    })
+    const { handleSubmit, input } = useCompletion({ provider, initialInput: 'keep this prompt' })
+
+    await expect(handleSubmit()).rejects.toThrow('submission failed')
+    expect(input.value).toBe('keep this prompt')
+  })
+
+  it('uses generated completion ids', () => {
+    const generateId = vi.fn((prefix?: string) => `${prefix ?? 'id'}_fixed`)
+    const { id } = useCompletion({
+      provider: fakeProvider('unused'),
+      generateId
+    })
+
+    expect(id.value).toBe('completion_fixed')
+    expect(generateId).toHaveBeenCalledWith('completion')
+  })
+
+  it('shares state for matching completion ids', async () => {
+    let releaseStream!: () => void
+    const streamReleased = new Promise<void>((resolve) => {
+      releaseStream = resolve
+    })
+    const requests: Array<Record<string, unknown>> = []
+    const provider = completionProvider({
+      completion: async function* (request: Record<string, unknown>) {
+        requests.push(request)
+        await streamReleased
+        yield 'shared output'
+      }
+    })
+    const first = useCompletion({
+      id: 'shared-completion-state',
+      provider,
+      initialInput: 'first prompt',
+      initialCompletion: 'first draft'
+    })
+    const second = useCompletion({
+      id: 'shared-completion-state',
+      provider: fakeProvider('unused'),
+      initialInput: 'ignored prompt',
+      initialCompletion: 'ignored draft'
+    })
+
+    expect(second.id.value).toBe('shared-completion-state')
+    expect(second.input.value).toBe('first prompt')
+    expect(second.completion.value).toBe('first draft')
+
+    first.setInput('shared prompt')
+    expect(second.input.value).toBe('shared prompt')
+
+    const pending = first.complete()
+
+    expect(second.status.value).toBe('submitted')
+
+    releaseStream()
+    await expect(pending).resolves.toBe('shared output')
+
+    expect(requests[0]?.prompt).toBe('shared prompt')
+    expect(second.completion.value).toBe('shared output')
+
+    second.clear()
+
+    expect(first.completion.value).toBe('')
+    expect(first.input.value).toBe('')
+    expect(first.status.value).toBe('ready')
+  })
+
   it('merges default request and call request while forcing streaming', async () => {
     const requests: Array<Record<string, unknown>> = []
     const provider = completionProvider({
@@ -63,11 +253,18 @@ describe('useCompletion', () => {
       provider,
       defaultRequest: {
         model: 'default-model',
-        temperature: 0.1
+        temperature: 0.1,
+        body: {
+          cache_control: { type: 'ephemeral' },
+          providerOption: 'default'
+        }
       }
     })
     const requestOptions = {
       model: 'runtime-model',
+      body: {
+        providerOption: 'runtime'
+      },
       stream: false,
       temperature: 0.2
     }
@@ -78,13 +275,17 @@ describe('useCompletion', () => {
       model: 'runtime-model',
       prompt: 'runtime prompt',
       stream: true,
+      body: {
+        cache_control: { type: 'ephemeral' },
+        providerOption: 'runtime'
+      },
       temperature: 0.2
     })
     expect(requests[0]?.signal).toBeInstanceOf(AbortSignal)
   })
 
-  it('supports initial completion and manual completion updates', () => {
-    const { completion, setCompletion } = useCompletion({
+  it('supports initial completion, manual updates, and clear()', () => {
+    const { completion, input, error, clear, setCompletion } = useCompletion({
       provider: fakeProvider('unused'),
       initialCompletion: 'draft'
     })
@@ -92,8 +293,16 @@ describe('useCompletion', () => {
     expect(completion.value).toBe('draft')
 
     setCompletion('manual update')
+    input.value = 'draft prompt'
+    error.value = new Error('visible error')
 
     expect(completion.value).toBe('manual update')
+
+    clear()
+
+    expect(completion.value).toBe('')
+    expect(input.value).toBe('')
+    expect(error.value).toBeNull()
   })
 
   it('calls onFinish with final completion after success', async () => {
@@ -106,7 +315,11 @@ describe('useCompletion', () => {
     await expect(complete('finish it')).resolves.toBe('finished')
 
     expect(onFinish).toHaveBeenCalledOnce()
-    expect(onFinish).toHaveBeenCalledWith('finished')
+    expect(onFinish).toHaveBeenCalledWith('finished', {
+      prompt: 'finish it',
+      completion: 'finished',
+      isAbort: false
+    })
     expect(isLoading.value).toBe(false)
     expect(error.value).toBeNull()
   })
@@ -132,7 +345,7 @@ describe('useCompletion', () => {
         }
       })
     })
-    const { complete, error, isLoading } = useCompletion({
+    const { clearError, complete, error, status, isLoading } = useCompletion({
       provider,
       onError
     })
@@ -141,9 +354,62 @@ describe('useCompletion', () => {
 
     expect(error.value).toBeInstanceOf(Error)
     expect(error.value?.message).toBe('provider failed')
+    expect(status.value).toBe('error')
     expect(onError).toHaveBeenCalledOnce()
     expect(onError).toHaveBeenCalledWith(error.value)
     expect(isLoading.value).toBe(false)
+
+    clearError()
+    expect(error.value).toBeNull()
+    expect(status.value).toBe('ready')
+  })
+
+  it('retries completion streams that fail before the first delta', async () => {
+    let calls = 0
+    const onRetry = vi.fn()
+    const provider = completionProvider({
+      completion: async function* () {
+        calls += 1
+        if (calls === 1) throw new Error('temporary completion failure')
+        yield 'ok'
+      }
+    })
+    const { complete, completion, error } = useCompletion({
+      provider,
+      maxRetries: 1,
+      onRetry
+    })
+
+    await expect(complete('retry')).resolves.toBe('ok')
+
+    expect(calls).toBe(2)
+    expect(completion.value).toBe('ok')
+    expect(error.value).toBeNull()
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it('does not retry completion streams after a delta was received', async () => {
+    let calls = 0
+    const onRetry = vi.fn()
+    const provider = completionProvider({
+      completion: async function* () {
+        calls += 1
+        yield 'partial'
+        throw new Error('completion stream failed')
+      }
+    })
+    const { complete, completion, error } = useCompletion({
+      provider,
+      maxRetries: 2,
+      onRetry
+    })
+
+    await expect(complete('partial failure')).rejects.toThrow('completion stream failed')
+
+    expect(calls).toBe(1)
+    expect(completion.value).toBe('partial')
+    expect(error.value?.message).toBe('completion stream failed')
+    expect(onRetry).not.toHaveBeenCalled()
   })
 
   it('returns partial completion when the provider reports an abort', async () => {
@@ -165,7 +431,11 @@ describe('useCompletion', () => {
 
     expect(error.value).toBeNull()
     expect(onFinish).toHaveBeenCalledOnce()
-    expect(onFinish).toHaveBeenCalledWith('partial')
+    expect(onFinish).toHaveBeenCalledWith('partial', {
+      prompt: 'abort',
+      completion: 'partial',
+      isAbort: true
+    })
     expect(isLoading.value).toBe(false)
   })
 

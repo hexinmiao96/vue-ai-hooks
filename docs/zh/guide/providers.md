@@ -55,6 +55,51 @@ openrouter({
 `https://openrouter.ai/api/v1`，并自动带上 OpenRouter 常用的
 `HTTP-Referer` 与 `X-Title` 请求头。
 
+### `gemini`
+
+```ts
+import { gemini } from 'vue-ai-hooks'
+
+gemini({
+  apiKey: 'AIza...',
+  // 可选：
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
+  defaultModel: 'gemini-3.5-flash'
+})
+```
+
+`gemini` 是针对 Google OpenAI-compatible 端点的轻量封装。它沿用
+`openaiCompatible` 的聊天、补全、embedding、工具调用和结构化输出请求格式。
+
+### `proxyProvider`
+
+```ts
+import { proxyProvider } from 'vue-ai-hooks'
+
+proxyProvider({
+  chatUrl: '/api/ai/chat',
+  completionUrl: '/api/ai/completion',
+  embeddingUrl: '/api/ai/embedding',
+  headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),
+  credentials: 'include'
+})
+```
+
+生产环境的浏览器应用建议使用 `proxyProvider`。浏览器会把框架无关的
+`ChatRequest`、`CompletionRequest` 和 `EmbeddingRequest` JSON 发给你的后端；
+后端保留上游 Provider 凭据，选择模型/Provider，并返回 SSE 片段或 JSON。
+
+当你需要应用会话、限流、审计日志、模型路由或按用户鉴权后再调用上游模型时，
+这是推荐形态。
+
+仓库里包含一个实现该契约的可运行后端模板：
+
+```bash
+pnpm example:proxy-server
+# 另开一个终端
+VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 ### `anthropic`
 
 ```ts
@@ -75,6 +120,8 @@ anthropic({
 - Anthropic **没有 embeddings API**。如果把这个 Provider 传给 `useEmbedding`，会抛出清晰的 `AiHooksError`。
 - Anthropic **没有 `/v1/completions` 端点**。`useCompletion` 会通过一轮用户消息的 chat 请求实现。
 - system prompt 是一个**顶层字段**，不属于 `messages[]`。输入里的所有 `role: 'system'` 消息会被提取出来，并用 `\n\n` 拼接。
+- 工具定义和工具结果消息会映射到 Anthropic Messages API 格式，因此 `useChat`
+  的工具 handler 可以继续完成模型轮次。
 
 ## 编写自己的 Provider
 

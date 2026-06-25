@@ -1,13 +1,14 @@
 # Providers
 
 Provider factories create the `ChatProvider` objects consumed by `useChat`,
-`useCompletion`, and `useEmbedding`.
+`useCompletion`, `useEmbedding`, and `useObject`.
 
 Use the provider guide for integration examples. Use this page when you need the
 exact config surface.
 
-Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`, and
-`AnthropicConfig`.
+Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
+`GeminiConfig`, `ProxyProviderConfig`, `ProxyRequestContext`,
+`ProxyRequestKind`, `ProxyRequestOverride`, and `AnthropicConfig`.
 
 ## `ChatProvider`
 
@@ -15,6 +16,7 @@ Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`, and
 interface ChatProvider {
   readonly id: string
   chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>>
+  resumeChat?(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null>
   completion(request: CompletionRequest): Promise<AsyncIterable<string>>
   embedding(request: EmbeddingRequest): Promise<EmbeddingResult>
 }
@@ -24,8 +26,14 @@ interface ChatProvider {
 | -------------- | ------------------------------------------------------------------------ |
 | `id`           | Stable provider identifier.                                              |
 | `chat()`       | Sends a chat request and returns streamed chat chunks.                   |
+| `resumeChat()` | Optional resumable stream entry used by `useChat().resumeStream()`.      |
 | `completion()` | Sends a single-shot completion request and returns streamed text chunks. |
 | `embedding()`  | Sends an embedding request and returns vectors plus usage metadata.      |
+
+`ChatRequest`, `CompletionRequest`, and `EmbeddingRequest` accept `body` for
+provider-specific JSON fields that are not modeled by the typed options. The
+provider merges `body` before explicit request fields, so typed fields win if a
+key conflicts.
 
 ## `openai(config)`
 
@@ -100,6 +108,102 @@ const provider = openrouter({
 
 The returned provider has `id: 'openrouter'`.
 
+## `gemini(config)`
+
+Gemini wrapper around Google's OpenAI-compatible API.
+
+```ts
+import { gemini } from 'vue-ai-hooks'
+
+const provider = gemini({
+  apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+  defaultModel: 'gemini-3.5-flash'
+})
+```
+
+| Option           | Type                     | Default                                                   | Description                                        |
+| ---------------- | ------------------------ | --------------------------------------------------------- | -------------------------------------------------- |
+| `apiKey`         | `string`                 | required                                                  | Gemini API key. Keep it server-side in production. |
+| `baseURL`        | `string`                 | `https://generativelanguage.googleapis.com/v1beta/openai` | Override for proxies or compatible gateways.       |
+| `headers`        | `Record<string, string>` | `{}`                                                      | Extra headers sent on every request.               |
+| `defaultModel`   | `string`                 | `gemini-3.5-flash`                                        | Model used when a request omits `model`.           |
+| `chatPath`       | `string`                 | `/chat/completions`                                       | Chat endpoint path.                                |
+| `completionPath` | `string`                 | `/completions`                                            | Completion endpoint path.                          |
+| `embeddingPath`  | `string`                 | `/embeddings`                                             | Embeddings endpoint path.                          |
+| `fetch`          | `typeof fetch`           | global `fetch`                                            | Custom fetch implementation.                       |
+
+The returned provider has `id: 'gemini'` and supports the same
+OpenAI-compatible `response_format` path used by `useObject`.
+
+## `proxyProvider(config)`
+
+App-owned backend or edge proxy provider. Use this when browser code should call
+your own `/api/*` routes instead of sending upstream provider keys to the
+client.
+
+```ts
+import { proxyProvider } from 'vue-ai-hooks'
+
+const provider = proxyProvider({
+  chatUrl: '/api/ai/chat',
+  completionUrl: '/api/ai/completion',
+  embeddingUrl: '/api/ai/embedding',
+  body: { appVersion: 'web-1.4.0' },
+  prepareRequest({ kind, body }) {
+    if (kind !== 'chat') return
+    return {
+      url: '/api/ai/chat-stream',
+      body: { ...body, mode: 'stream' }
+    }
+  },
+  headers: () => ({
+    Authorization: `Bearer ${getSessionToken()}`
+  }),
+  credentials: 'include'
+})
+```
+
+| Option           | Type                                                             | Default                   | Description                                                  |
+| ---------------- | ---------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------ |
+| `id`             | `string`                                                         | `'proxy'`                 | Provider id.                                                 |
+| `baseURL`        | `string`                                                         | `''`                      | Optional origin/base path prepended to relative URLs.        |
+| `chatUrl`        | `string`                                                         | `/api/ai/chat`            | Backend endpoint for `ChatRequest`.                          |
+| `resumeUrl`      | `string \| (id: string) => string`                               | `/api/ai/chat/:id/stream` | Backend endpoint for resumable chat streams.                 |
+| `completionUrl`  | `string`                                                         | `/api/ai/completion`      | Backend endpoint for `CompletionRequest`.                    |
+| `embeddingUrl`   | `string`                                                         | `/api/ai/embedding`       | Backend endpoint for `EmbeddingRequest`.                     |
+| `headers`        | `Record<string, string> \| () => Record<string, string>`         | `{}`                      | Static or dynamic headers sent to your backend.              |
+| `body`           | `Record<string, unknown> \| (ctx) => Record<string, unknown>`    | `{}`                      | Extra app-defined JSON fields merged into POST bodies.       |
+| `prepareRequest` | `(context: ProxyRequestContext) => ProxyRequestOverride \| void` | -                         | Last-mile hook to adjust URL, headers, body, or credentials. |
+| `credentials`    | `RequestCredentials`                                             | -                         | Browser credentials mode, for example `'include'`.           |
+| `timeoutMs`      | `number`                                                         | -                         | Request timeout in milliseconds.                             |
+| `fetch`          | `typeof fetch`                                                   | global `fetch`            | Custom fetch implementation.                                 |
+
+Protocol:
+
+- `chat()` posts `ChatRequest` JSON to `chatUrl`. The backend may return
+  `text/event-stream` SSE where each `data:` payload is a `ChatChunk`, or JSON
+  as `ChatChunk`, `ChatChunk[]`, or `{ chunks: ChatChunk[] }`.
+  `ChatChunk` payloads may include `metadata`, `data`, `dataId`, `dataType`, and
+  `transient` for custom stream data consumed by `useChat().streamData`.
+- `resumeChat()` sends a GET request to `resumeUrl`, replacing `:id` or `{id}`
+  placeholders with the encoded chat id. Return `204 No Content` when no active
+  stream exists, or return the same SSE/JSON chunk shapes as `chat()`.
+- `completion()` posts `CompletionRequest` JSON to `completionUrl`. SSE payloads
+  may be JSON strings or objects with `text`, `completion`, or `content`.
+  Non-SSE JSON may be a string, string array, or `{ chunks: string[] }`.
+- `embedding()` posts `EmbeddingRequest` JSON to `embeddingUrl` and expects an
+  `EmbeddingResult` JSON response.
+
+Config-level `body` and request-level `request.body` are merged into chat,
+completion, and embedding POST bodies before the provider request fields.
+`prepareRequest` receives `{ kind, url, request, headers, body, credentials }`;
+return only the fields you need to override. It also runs for `resumeChat()`,
+where there is no body.
+
+`signal` and request-level `headers` are used for the proxy HTTP request and are
+not copied into the JSON body. Your backend owns upstream credentials, model
+selection, rate limiting, logging, and vendor-specific retries.
+
 ## `anthropic(config)`
 
 Anthropic Claude provider.
@@ -131,3 +235,5 @@ Provider behavior:
   embeddings API.
 - `role: 'system'` messages are extracted and joined into Anthropic's top-level
   `system` field.
+- `tools`, `toolChoice`, assistant `toolCalls`, and `role: 'tool'` results are
+  mapped to Anthropic's Messages API tool format.

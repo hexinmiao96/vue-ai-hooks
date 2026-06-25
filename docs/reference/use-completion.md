@@ -2,7 +2,8 @@
 
 Vue 3 composable for single-shot streaming completions.
 
-Public TypeScript types: `UseCompletionOptions` and `UseCompletionReturn`.
+Public TypeScript types: `UseCompletionOptions`, `UseCompletionReturn`,
+`CompletionFinishInfo`, `RetryOptions`, and `RetryContext`.
 
 ## Usage
 
@@ -18,29 +19,62 @@ await complete('Write a haiku about TypeScript:')
 
 ## Options
 
-| Name                | Type                           | Default  | Description                             |
-| ------------------- | ------------------------------ | -------- | --------------------------------------- |
-| `provider`          | `ChatProvider`                 | required | The provider to use.                    |
-| `initialCompletion` | `string`                       | `''`     | Seed the completion.                    |
-| `defaultRequest`    | `Partial<CompletionRequest>`   | `{}`     | Default options.                        |
-| `onFinish`          | `(completion: string) => void` | —        | Called once the completion is finished. |
-| `onError`           | `(e: Error) => void`           | —        | Called on any error.                    |
+| Name                    | Type                                                                   | Default    | Description                                             |
+| ----------------------- | ---------------------------------------------------------------------- | ---------- | ------------------------------------------------------- |
+| `provider`              | `ChatProvider`                                                         | required   | The provider to use.                                    |
+| `id`                    | `string`                                                               | generated  | Completion state identifier. Matching ids share state.  |
+| `generateId`            | `IdGenerator`                                                          | `createId` | Generate an id when `id` is omitted.                    |
+| `initialInput`          | `string`                                                               | `''`       | Seed the form input prompt.                             |
+| `initialCompletion`     | `string`                                                               | `''`       | Seed the completion.                                    |
+| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`       | Default options.                                        |
+| `maxRetries`            | `number`                                                               | `0`        | Retry attempts for failures before the first delta.     |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —          | Override the default retryable error decision.          |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —          | Called before a retry attempt waits and re-runs.        |
+| `throttleMs`            | `number`                                                               | —          | Minimum wait in ms between reactive completion updates. |
+| `experimental_throttle` | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs`.           |
+| `onUpdate`              | `(completion: string, delta: string) => void`                          | —          | Called after each non-empty streamed delta is appended. |
+| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | —          | Called once the completion is finished.                 |
+| `onError`               | `(e: Error) => void`                                                   | —          | Called on any error.                                    |
 
 ## Return value
 
-| Property                   | Type                                                       | Description                                       |
-| -------------------------- | ---------------------------------------------------------- | ------------------------------------------------- |
-| `completion`               | `Ref<string>`                                              | The current completion (grows during streaming).  |
-| `input`                    | `Ref<string>`                                              | The prompt, if not passed inline to `complete()`. |
-| `isLoading`                | `Ref<boolean>`                                             | True while a stream is in flight.                 |
-| `error`                    | `Ref<Error \| null>`                                       | Last error.                                       |
-| `complete(prompt?, opts?)` | `(string?, Partial<CompletionRequest>) => Promise<string>` | Run a completion. Resolves to the final string.   |
-| `stop()`                   | `() => void`                                               | Abort the in-flight stream.                       |
-| `setCompletion(value)`     | `(string) => void`                                         | Replace the completion (e.g. on reset).           |
-| `abortController`          | `Ref<AbortController \| null>`                             | Exposed for advanced use cases.                   |
+| Property                      | Type                                                                                 | Description                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| `id`                          | `Ref<string>`                                                                        | Completion state id selected at composable creation.                                    |
+| `completion`                  | `Ref<string>`                                                                        | The current completion (grows during streaming).                                        |
+| `input`                       | `Ref<string>`                                                                        | The prompt, if not passed inline to `complete()`.                                       |
+| `status`                      | `Ref<AiRequestStatus>`                                                               | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.                       |
+| `isLoading`                   | `Ref<boolean>`                                                                       | True while a stream is in flight.                                                       |
+| `error`                       | `Ref<Error \| null>`                                                                 | Last error.                                                                             |
+| `complete(prompt?, opts?)`    | `(string?, Partial<CompletionRequest>) => Promise<string>`                           | Run a completion. Resolves to the final string.                                         |
+| `stop()`                      | `() => void`                                                                         | Abort the in-flight stream.                                                             |
+| `setInput(value)`             | `(string) => void`                                                                   | Replace the input prompt.                                                               |
+| `handleInputChange(event)`    | `(Event \| { target?: { value?: unknown } } \| string) => void`                      | Update `input` from a native input event or string.                                     |
+| `handleSubmit(event?, opts?)` | `({ preventDefault?: () => void }?, Partial<CompletionRequest>?) => Promise<string>` | Prevent default form submit, run `complete(input.value)`, and clear `input` on success. |
+| `setCompletion(value)`        | `(string) => void`                                                                   | Replace the completion (e.g. on reset).                                                 |
+| `clearError()`                | `() => void`                                                                         | Clear `error` and move `status` back to `ready`.                                        |
+| `abortController`             | `Ref<AbortController \| null>`                                                       | Exposed for advanced use cases.                                                         |
 
 ## Notes
 
 - Anthropic has no `/v1/completions` endpoint. `useCompletion` with the Anthropic
   provider routes through `/v1/messages` as a single-turn chat.
+- Passing the same `id` to multiple `useCompletion()` calls shares `input`,
+  `completion`, `status`, `error`, loading, and abort state across components.
+  The first instance for an id seeds `initialInput` and `initialCompletion`.
+- Omit `id` to create an independent generated completion state.
 - The completion is reset to `''` at the start of each `complete()` call.
+- Use `defaultRequest.body` or `complete(prompt, { body })` for
+  provider-specific JSON request fields. Typed fields such as `prompt`, `model`,
+  and `stream` win if keys conflict.
+- `handleSubmit()` clears `input` only after a successful completion. Provider
+  errors leave the prompt available for retry.
+- `onFinish(completion, info)` keeps the final completion as the first argument
+  and passes `info.prompt`, `info.completion`, and `info.isAbort` as completion
+  metadata.
+- When `maxRetries` is enabled, streaming completions only retry before the
+  first delta arrives.
+- Set `throttleMs` to batch reactive `completion` and `onUpdate` updates during
+  fast streams. The final completion is always flushed before `complete()`
+  resolves.

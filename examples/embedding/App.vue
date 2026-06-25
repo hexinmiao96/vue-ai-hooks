@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useEmbedding, openai, openrouter } from 'vue-ai-hooks'
+import { useEmbedding, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
 
 /**
  * Runtime provider selection for the embedding example:
  * - check `VITE_EXAMPLE_PROVIDER` first;
- * - if it is not `openrouter`, check `VITE_CHAT_PROVIDER` for compatibility;
+ * - if it is not `openrouter`, `gemini`, or `proxy`, check `VITE_CHAT_PROVIDER`;
  * - otherwise default to `openai`.
  *
  * - openai: uses `openai` with `VITE_OPENAI_KEY` + optional `VITE_OPENAI_BASE_URL`.
  * - openrouter: uses `openrouter` with `VITE_OPENROUTER_*` variables.
+ * - gemini: uses `gemini` with `VITE_GEMINI_*` variables.
+ * - proxy: uses `proxyProvider` with `VITE_PROXY_*` variables.
  *
  * Sharing the same resolution logic keeps parity between all examples.
  */
@@ -17,7 +19,16 @@ const selectedProvider =
   import.meta.env.VITE_EXAMPLE_PROVIDER === 'openrouter' ||
   import.meta.env.VITE_CHAT_PROVIDER === 'openrouter'
     ? 'openrouter'
-    : 'openai'
+    : import.meta.env.VITE_EXAMPLE_PROVIDER === 'gemini' ||
+        import.meta.env.VITE_CHAT_PROVIDER === 'gemini'
+      ? 'gemini'
+      : import.meta.env.VITE_EXAMPLE_PROVIDER === 'proxy' ||
+          import.meta.env.VITE_CHAT_PROVIDER === 'proxy'
+        ? 'proxy'
+        : 'openai'
+const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
+  | RequestCredentials
+  | undefined
 /**
  * Build the concrete provider instance used by this example.
  * The ternary keeps provider-specific credentials and OpenRouter attribution
@@ -32,11 +43,30 @@ const provider =
         siteUrl: import.meta.env.VITE_OPENROUTER_SITE_URL,
         appName: import.meta.env.VITE_OPENROUTER_APP_NAME || 'Vue AI Hooks'
       })
-    : openai({
-        // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
-        apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-        baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-      })
+    : selectedProvider === 'gemini'
+      ? gemini({
+          // Use an embedding model by default so the demo does not send chat
+          // model names to the embeddings endpoint.
+          apiKey: import.meta.env.VITE_GEMINI_API_KEY || '',
+          defaultModel: import.meta.env.VITE_GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001',
+          baseURL: import.meta.env.VITE_GEMINI_BASE_URL
+        })
+      : selectedProvider === 'proxy'
+        ? proxyProvider({
+            // Browser requests go to your app backend; upstream keys stay server-side.
+            embeddingUrl: import.meta.env.VITE_PROXY_EMBEDDING_URL || '/api/ai/embedding',
+            baseURL: import.meta.env.VITE_PROXY_BASE_URL,
+            credentials: proxyCredentials,
+            headers: import.meta.env.VITE_PROXY_AUTH_TOKEN
+              ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
+              : undefined
+          })
+        : openai({
+            // Default base is https://api.openai.com/v1 when no VITE_OPENAI_BASE_URL is set.
+            apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+            baseURL: import.meta.env.VITE_OPENAI_BASE_URL,
+            defaultModel: import.meta.env.VITE_OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small'
+          })
 
 // useEmbedding returns embedding vectors and request lifecycle state.
 // - embed: executes one batch embedding request

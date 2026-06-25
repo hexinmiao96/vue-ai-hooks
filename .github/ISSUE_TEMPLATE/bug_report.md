@@ -32,6 +32,12 @@ Link:
 
 <!-- What actually happened. Include the error message and stack trace. -->
 
+## Issue activity
+
+<!-- Help keep this bug issue active: confirm you can respond to maintainer questions and keep the reproduction current. -->
+
+- [ ] I can answer follow-up questions and update the reproduction if the API changes.
+
 ## Environment
 
 - vue-ai-hooks version:

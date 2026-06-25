@@ -7,7 +7,10 @@ import type {
   EmbeddingRequest,
   EmbeddingResult,
   Message,
-  MessageContent
+  MessageContent,
+  TokenUsage,
+  Tool,
+  ToolCall
 } from '../types'
 import { parseSSE } from '../utils/stream'
 import { requestJson } from '../utils/fetch'
@@ -43,6 +46,20 @@ function mapStopReason(reason: string | null | undefined): ChatChunk['finishReas
       return 'tool_calls'
     default:
       return 'stop'
+  }
+}
+
+function mapUsage(
+  usage: { input_tokens?: number; output_tokens?: number } | undefined,
+  fallbackInputTokens = 0
+): TokenUsage | undefined {
+  if (!usage) return undefined
+  const promptTokens = usage.input_tokens ?? fallbackInputTokens
+  const completionTokens = usage.output_tokens ?? 0
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: promptTokens + completionTokens
   }
 }
 
@@ -95,6 +112,13 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     return content.map((p) => toAnthropicPart(p))
   }
 
+  function toAnthropicBlocks(content: MessageContent): Array<Record<string, unknown>> {
+    if (typeof content === 'string') {
+      return content ? [{ type: 'text', text: content }] : []
+    }
+    return content.map((p) => toAnthropicPart(p))
+  }
+
   function toAnthropicPart(part: ContentPart): Record<string, unknown> {
     if (part.type === 'text') {
       return { type: 'text', text: part.text }
@@ -114,6 +138,61 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     return { type: 'image', source: { type: 'url', url } }
   }
 
+  function parseToolInput(call: ToolCall): unknown {
+    const raw = call.function.arguments.trim()
+    if (!raw) return {}
+    try {
+      return JSON.parse(raw) as unknown
+    } catch (err) {
+      throw new AiHooksError(`Invalid JSON arguments for Anthropic tool "${call.function.name}"`, {
+        cause: err
+      })
+    }
+  }
+
+  function toAssistantContent(message: Message): string | Array<Record<string, unknown>> {
+    if (!message.toolCalls?.length) return toAnthropicContent(message.content)
+    return [
+      ...toAnthropicBlocks(message.content),
+      ...message.toolCalls.map((call) => ({
+        type: 'tool_use',
+        id: call.id,
+        name: call.function.name,
+        input: parseToolInput(call)
+      }))
+    ]
+  }
+
+  function toToolResultContent(message: Message): Array<Record<string, unknown>> {
+    return [
+      {
+        type: 'tool_result',
+        tool_use_id: message.toolCallId,
+        content:
+          typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+      }
+    ]
+  }
+
+  function toAnthropicTools(tools: Tool[]): Array<Record<string, unknown>> {
+    return tools.map((tool) => {
+      const out: Record<string, unknown> = {
+        name: tool.function.name,
+        input_schema: tool.function.parameters
+      }
+      if (tool.function.description) out.description = tool.function.description
+      return out
+    })
+  }
+
+  function toAnthropicToolChoice(
+    toolChoice: NonNullable<ChatRequest['toolChoice']>
+  ): Record<string, unknown> {
+    if (toolChoice === 'required') return { type: 'any' }
+    if (toolChoice === 'auto' || toolChoice === 'none') return { type: toolChoice }
+    return { type: 'tool', name: toolChoice.function.name }
+  }
+
   function splitMessages(messages: Message[]): {
     system?: string
     messages: Array<{ role: 'user' | 'assistant'; content: string | unknown[] }>
@@ -126,9 +205,13 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
           systemParts.push(m.content)
         }
       } else if (m.role === 'user' || m.role === 'assistant') {
-        others.push({ role: m.role, content: toAnthropicContent(m.content) })
+        others.push({
+          role: m.role,
+          content: m.role === 'assistant' ? toAssistantContent(m) : toAnthropicContent(m.content)
+        })
+      } else if (m.role === 'tool' && m.toolCallId) {
+        others.push({ role: 'user', content: toToolResultContent(m) })
       }
-      // 'tool' role is not part of Anthropic's API; skip silently for now.
     }
     return {
       system: systemParts.length ? systemParts.join('\n\n') : undefined,
@@ -139,6 +222,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
   function buildBody(request: ChatRequest): Record<string, unknown> {
     const { system, messages } = splitMessages(request.messages)
     const body: Record<string, unknown> = {
+      ...request.body,
       model: request.model ?? defaultModel,
       messages,
       max_tokens: request.maxTokens ?? defaultMaxTokens,
@@ -151,6 +235,8 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
       body.stop_sequences = Array.isArray(request.stop) ? request.stop : [request.stop]
     }
     if (request.user) body.metadata = { user_id: request.user }
+    if (request.tools?.length) body.tools = toAnthropicTools(request.tools)
+    if (request.toolChoice) body.tool_choice = toAnthropicToolChoice(request.toolChoice)
     return body
   }
 
@@ -166,38 +252,104 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
 
     if (request.stream === false) {
       const data = (await response.json()) as {
-        content: Array<{ type: string; text?: string }>
+        content: Array<{ type: string; text?: string; id?: string; name?: string; input?: unknown }>
         stop_reason: string | null
         usage?: { input_tokens: number; output_tokens: number }
       }
       return (async function* () {
-        const textBlock = data.content.find((b) => b.type === 'text')
+        const text = data.content
+          .filter((b) => b.type === 'text')
+          .map((b) => b.text ?? '')
+          .join('')
+        const toolCalls = data.content
+          .filter((b) => b.type === 'tool_use')
+          .map((b, index) => ({
+            index,
+            id: b.id,
+            type: 'function' as const,
+            function: {
+              name: b.name,
+              arguments: JSON.stringify(b.input ?? {})
+            }
+          }))
         yield {
-          content: textBlock?.text ?? '',
+          content: text,
+          toolCalls: toolCalls.length ? toolCalls : undefined,
           finishReason: mapStopReason(data.stop_reason),
-          usage: data.usage
-            ? {
-                promptTokens: data.usage.input_tokens,
-                completionTokens: data.usage.output_tokens,
-                totalTokens: data.usage.input_tokens + data.usage.output_tokens
-              }
-            : undefined
+          usage: mapUsage(data.usage)
         }
       })()
     }
 
     return (async function* () {
+      const toolBlocks = new Map<number, { id?: string; name?: string }>()
+      let inputTokens = 0
       for await (const raw of parseSSE(response, request.signal)) {
         const type = (raw as { type?: string }).type
-        if (type === 'content_block_delta') {
-          const delta = (raw as { delta?: { type?: string; text?: string } }).delta
+        if (type === 'message_start') {
+          const usage = mapUsage(
+            (raw as { message?: { usage?: { input_tokens?: number; output_tokens?: number } } })
+              .message?.usage
+          )
+          if (usage) {
+            inputTokens = usage.promptTokens
+            yield { usage }
+          }
+        } else if (type === 'content_block_start') {
+          const event = raw as {
+            index?: number
+            content_block?: { type?: string; id?: string; name?: string }
+          }
+          if (event.content_block?.type === 'tool_use' && event.index !== undefined) {
+            toolBlocks.set(event.index, {
+              id: event.content_block.id,
+              name: event.content_block.name
+            })
+            yield {
+              toolCalls: [
+                {
+                  index: event.index,
+                  id: event.content_block.id,
+                  type: 'function',
+                  function: { name: event.content_block.name, arguments: '' }
+                }
+              ]
+            }
+          }
+        } else if (type === 'content_block_delta') {
+          const event = raw as {
+            index?: number
+            delta?: { type?: string; text?: string; partial_json?: string }
+          }
+          const delta = event.delta
           if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
             yield { content: delta.text }
+          } else if (
+            delta?.type === 'input_json_delta' &&
+            typeof delta.partial_json === 'string' &&
+            event.index !== undefined
+          ) {
+            const block = toolBlocks.get(event.index)
+            yield {
+              toolCalls: [
+                {
+                  index: event.index,
+                  id: block?.id,
+                  type: 'function',
+                  function: { name: block?.name, arguments: delta.partial_json }
+                }
+              ]
+            }
           }
         } else if (type === 'message_delta') {
-          const stopReason = (raw as { delta?: { stop_reason?: string } }).delta?.stop_reason
-          if (stopReason) {
-            yield { finishReason: mapStopReason(stopReason) }
+          const event = raw as {
+            delta?: { stop_reason?: string }
+            usage?: { input_tokens?: number; output_tokens?: number }
+          }
+          const stopReason = event.delta?.stop_reason
+          const usage = mapUsage(event.usage, inputTokens)
+          if (stopReason || usage) {
+            yield { finishReason: stopReason ? mapStopReason(stopReason) : undefined, usage }
           }
         } else if (type === 'error') {
           const err = (raw as { error?: { type?: string; message?: string } }).error
@@ -206,7 +358,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
             { cause: raw }
           )
         }
-        // Ignore: message_start, content_block_start, content_block_stop, message_stop, ping
+        // Ignore: content_block_stop, message_stop, ping
       }
     })()
   }

@@ -6,14 +6,37 @@
 
 // Composables
 export {
+  deserializeMessages,
+  pruneMessages,
+  serializeMessages,
   useChat,
+  type AddToolOutputOptions,
+  type AppendChatOptions,
+  type ChatPersistOptions,
+  type ChatFinishInfo,
+  type ChatStatus,
+  type PrepareReconnectToStreamRequest,
+  type PrepareReconnectToStreamRequestOptions,
+  type PrepareSendMessagesRequest,
+  type PrepareSendMessagesRequestOptions,
+  type PruneMessagesOptions,
+  type PruneToolCallsStrategy,
+  type RegenerateChatOptions,
+  type ResumeChatOptions,
+  type SendChatTrigger,
+  type SerializedMessage,
+  type SetMessagesInput,
+  type ToolApprovalResponse,
+  type ToolApprovalPredicate,
   type ToolCallHandler,
   type ToolCallHandlerContext,
+  type ToolResultHandlerContext,
   type UseChatOptions,
   type UseChatReturn
 } from './composables/useChat'
 export {
   useCompletion,
+  type CompletionFinishInfo,
   type UseCompletionOptions,
   type UseCompletionReturn
 } from './composables/useCompletion'
@@ -22,12 +45,26 @@ export {
   type UseEmbeddingOptions,
   type UseEmbeddingReturn
 } from './composables/useEmbedding'
+export {
+  useObject,
+  type DeepPartial,
+  type UseObjectOptions,
+  type UseObjectReturn
+} from './composables/useObject'
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'
 // OpenRouter is exposed as a first-class provider entry that keeps OpenAI-compatible
 // request behavior while injecting OpenRouter-specific headers automatically.
 export { openrouter, type OpenRouterConfig } from './providers/openrouter'
+export { gemini, type GeminiConfig } from './providers/gemini'
+export {
+  proxyProvider,
+  type ProxyProviderConfig,
+  type ProxyRequestContext,
+  type ProxyRequestKind,
+  type ProxyRequestOverride
+} from './providers/proxy'
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 
@@ -42,12 +79,24 @@ export type {
   ContentPart,
   TextPart,
   ImageUrlPart,
+  ChatFileAttachment,
+  ChatAttachmentInput,
+  ChatAttachmentsInput,
+  AiRequestStatus,
+  IdGenerator,
   Tool,
   ToolCall,
+  ResponseFormat,
+  TokenUsage,
+  StreamDataPart,
   ChatRequest,
+  ChatResumeRequest,
   ChatChunk,
   CompletionRequest,
   EmbeddingRequest,
-  EmbeddingResult
+  EmbeddingResult,
+  RetryContext,
+  RetryOptions,
+  StreamThrottleOptions
 } from './types'
 export { AiHooksError } from './types'

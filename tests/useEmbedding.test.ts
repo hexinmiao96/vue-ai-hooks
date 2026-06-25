@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { useEmbedding } from '../src/composables/useEmbedding'
 import type { ChatProvider } from '../src/providers/types'
-import type { ChatChunk, EmbeddingRequest } from '../src/types'
+import { AiHooksError, type ChatChunk, type EmbeddingRequest } from '../src/types'
 
 function fakeProvider(vectors: number[][]): ChatProvider {
   return {
@@ -75,21 +75,30 @@ describe('useEmbedding', () => {
         usage: { promptTokens: 2, totalTokens: 2 }
       }
     })
-    const { embed, result, error, isLoading } = useEmbedding({
+    const { embed, result, status, error, isLoading } = useEmbedding({
       provider,
-      defaultRequest: { model: 'default-model' },
+      defaultRequest: {
+        model: 'default-model',
+        body: { encoding_format: 'float', providerOption: 'default' }
+      },
       onSuccess
     })
-    const requestOptions = { input: 'ignored input', model: 'runtime-model' }
+    const requestOptions = {
+      input: 'ignored input',
+      model: 'runtime-model',
+      body: { providerOption: 'runtime' }
+    }
 
     const res = await embed(['a', 'b'], requestOptions)
 
     expect(requests[0]).toMatchObject({
       input: ['a', 'b'],
-      model: 'runtime-model'
+      model: 'runtime-model',
+      body: { encoding_format: 'float', providerOption: 'runtime' }
     })
     expect(requests[0]?.signal).toBeInstanceOf(AbortSignal)
     expect(result.value).toBe(res)
+    expect(status.value).toBe('ready')
     expect(error.value).toBeNull()
     expect(isLoading.value).toBe(false)
     expect(onSuccess).toHaveBeenCalledOnce()
@@ -101,15 +110,90 @@ describe('useEmbedding', () => {
     const provider = fakeEmbeddingProvider(async () => {
       throw 'embedding failed'
     })
-    const { embed, error, isLoading } = useEmbedding({ provider, onError })
+    const { clearError, embed, error, status, isLoading } = useEmbedding({ provider, onError })
 
     await expect(embed('bad input')).rejects.toThrow('embedding failed')
 
     expect(error.value).toBeInstanceOf(Error)
     expect(error.value?.message).toBe('embedding failed')
+    expect(status.value).toBe('error')
     expect(onError).toHaveBeenCalledOnce()
     expect(onError).toHaveBeenCalledWith(error.value)
     expect(isLoading.value).toBe(false)
+
+    clearError()
+    expect(error.value).toBeNull()
+    expect(status.value).toBe('ready')
+  })
+
+  it('tracks submitted and ready statuses for embedding requests', async () => {
+    let resolveRequest: (value: Awaited<ReturnType<ChatProvider['embedding']>>) => void = () => {}
+    const requestPending = new Promise<Awaited<ReturnType<ChatProvider['embedding']>>>(
+      (resolve) => {
+        resolveRequest = resolve
+      }
+    )
+    const provider = fakeEmbeddingProvider(async () => requestPending)
+    const { embed, status } = useEmbedding({ provider })
+
+    const pending = embed('status')
+    expect(status.value).toBe('submitted')
+
+    resolveRequest({
+      embeddings: [[0.1]],
+      model: 'status-model',
+      usage: { promptTokens: 1, totalTokens: 1 }
+    })
+
+    await pending
+    expect(status.value).toBe('ready')
+  })
+
+  it('retries embedding requests before surfacing transient errors', async () => {
+    let calls = 0
+    const onRetry = vi.fn()
+    const provider = fakeEmbeddingProvider(async () => {
+      calls += 1
+      if (calls === 1) throw new Error('temporary embedding failure')
+      return {
+        embeddings: [[0.4, 0.5]],
+        model: 'retry-model',
+        usage: { promptTokens: 2, totalTokens: 2 }
+      }
+    })
+    const { embed, embeddings, error } = useEmbedding({
+      provider,
+      maxRetries: 1,
+      onRetry
+    })
+
+    const result = await embed('retry')
+
+    expect(calls).toBe(2)
+    expect(result.model).toBe('retry-model')
+    expect(embeddings.value).toEqual([[0.4, 0.5]])
+    expect(error.value).toBeNull()
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it('does not retry non-retryable embedding status errors by default', async () => {
+    let calls = 0
+    const onRetry = vi.fn()
+    const provider = fakeEmbeddingProvider(async () => {
+      calls += 1
+      throw new AiHooksError('bad request', { status: 400 })
+    })
+    const { embed, error } = useEmbedding({
+      provider,
+      maxRetries: 2,
+      onRetry
+    })
+
+    await expect(embed('bad')).rejects.toThrow('bad request')
+
+    expect(calls).toBe(1)
+    expect(error.value?.message).toBe('bad request')
+    expect(onRetry).not.toHaveBeenCalled()
   })
 
   it('stop() aborts the in-flight request and clears loading state', async () => {
@@ -147,17 +231,22 @@ describe('useEmbedding', () => {
       }
     }
     const onError = vi.fn()
-    const { embed, stop, isLoading, abortController, error } = useEmbedding({ provider, onError })
+    const { embed, stop, status, isLoading, abortController, error } = useEmbedding({
+      provider,
+      onError
+    })
 
     const result = embed('hello').catch((err: unknown) => err)
     await requestStarted
 
     expect(isLoading.value).toBe(true)
+    expect(status.value).toBe('submitted')
     expect(abortController.value).not.toBeNull()
 
     stop()
 
     expect(capturedSignal?.aborted).toBe(true)
+    expect(status.value).toBe('ready')
     expect(isLoading.value).toBe(false)
     await expect(result).resolves.toMatchObject({ name: 'AbortError' })
     expect(error.value).toBeNull()

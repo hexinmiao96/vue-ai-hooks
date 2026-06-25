@@ -8,7 +8,7 @@
 稳定 API 面是包入口：
 
 ```ts
-import { useChat, useCompletion, useEmbedding, usePersist } from 'vue-ai-hooks'
+import { useChat, useCompletion, useEmbedding, useObject, usePersist } from 'vue-ai-hooks'
 ```
 
 只要组合式函数、Provider 工厂和导出的 TypeScript 类型从 `vue-ai-hooks` 包入口

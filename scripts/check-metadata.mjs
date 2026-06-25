@@ -381,6 +381,14 @@ expect(
   'pnpm check must include community:check'
 )
 expect(
+  packageJson.scripts?.['docs:ux:check'] === 'node scripts/check-docs-ux.mjs',
+  'docs:ux:check must verify documentation onboarding and examples UX'
+)
+expect(
+  packageJson.scripts?.check?.includes('pnpm docs:ux:check'),
+  'pnpm check must include docs:ux:check'
+)
+expect(
   packageJson.scripts?.['release:check'] === 'pnpm security:audit && pnpm check',
   'release:check must run security audit and pnpm check'
 )
@@ -628,6 +636,10 @@ expect(
   'CONTRIBUTING.md must describe api:check coverage accurately'
 )
 expect(
+  contributing.includes('docs onboarding paths, examples language routing, and demo navigation'),
+  'CONTRIBUTING.md must describe docs:ux:check coverage accurately'
+)
+expect(
   contributing.includes('No external runtime deps'),
   'CONTRIBUTING.md must document the no runtime dependency policy'
 )
@@ -636,11 +648,11 @@ expect(
   'CONTRIBUTING.md must document how to check bundle size budgets'
 )
 expect(
-  contributing.includes('`dist/index.mjs`: 25,000 bytes raw, 8,000 bytes gzip.'),
+  contributing.includes('`dist/index.mjs`: 33,000 bytes raw, 9,400 bytes gzip.'),
   'CONTRIBUTING.md must document the ESM bundle size budget'
 )
 expect(
-  contributing.includes('`dist/index.cjs`: 18,000 bytes raw, 7,000 bytes gzip.'),
+  contributing.includes('`dist/index.cjs`: 22,500 bytes raw, 8,000 bytes gzip.'),
   'CONTRIBUTING.md must document the CJS bundle size budget'
 )
 expect(

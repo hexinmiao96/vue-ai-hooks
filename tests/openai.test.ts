@@ -80,6 +80,19 @@ describe('openaiCompatible provider', () => {
         }
       ],
       toolChoice: { type: 'function', function: { name: 'weather' } },
+      responseFormat: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'weather_report',
+          schema: { type: 'object' },
+          strict: true
+        }
+      },
+      body: {
+        custom_flag: true,
+        model: 'body-model-ignored',
+        stream: true
+      },
       user: 'user-1',
       stream: false,
       headers: { 'X-Request': 'request' }
@@ -101,6 +114,7 @@ describe('openaiCompatible provider', () => {
     expect(body).toMatchObject({
       model: 'default-chat',
       stream: false,
+      custom_flag: true,
       temperature: 0.2,
       max_tokens: 12,
       top_p: 0.9,
@@ -124,6 +138,14 @@ describe('openaiCompatible provider', () => {
     })
     expect(body.tools[0].function.name).toBe('weather')
     expect(body.tool_choice.function.name).toBe('weather')
+    expect(body.response_format).toEqual({
+      type: 'json_schema',
+      json_schema: {
+        name: 'weather_report',
+        schema: { type: 'object' },
+        strict: true
+      }
+    })
     expect(chunks).toEqual([
       {
         content: 'ok',
@@ -154,7 +176,7 @@ describe('openaiCompatible provider', () => {
               finish_reason: 'tool_calls'
             }
           ],
-          usage: { promptTokens: 1, completionTokens: 2, totalTokens: 3 }
+          usage: { prompt_tokens: 1, completion_tokens: 2, total_tokens: 3 }
         }
       ])
     )
@@ -207,6 +229,11 @@ describe('openaiCompatible provider', () => {
       frequencyPenalty: 0.2,
       presencePenalty: 0.5,
       stop: 'END',
+      body: {
+        custom_option: 'completion-extra',
+        prompt: 'ignored body prompt',
+        stream: true
+      },
       stream: false
     })
     let text = ''
@@ -222,6 +249,7 @@ describe('openaiCompatible provider', () => {
       model: 'default-completion',
       prompt: 'Complete this',
       stream: false,
+      custom_option: 'completion-extra',
       temperature: 0.4,
       max_tokens: 20,
       top_p: 0.8,
@@ -269,6 +297,10 @@ describe('openaiCompatible provider', () => {
 
     const result = await provider.embedding({
       input: ['a', 'b'],
+      body: {
+        encoding_format: 'float',
+        input: 'ignored body input'
+      },
       user: 'user-2',
       headers: { 'X-Trace': 'trace-1' }
     })
@@ -280,6 +312,7 @@ describe('openaiCompatible provider', () => {
     expect(url).toBe('https://api.example.test/v1/custom/embeddings')
     expect(headers['X-Trace']).toBe('trace-1')
     expect(body).toEqual({
+      encoding_format: 'float',
       input: ['a', 'b'],
       model: 'default-embedding',
       user: 'user-2'

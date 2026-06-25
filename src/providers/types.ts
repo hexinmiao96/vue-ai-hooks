@@ -1,6 +1,7 @@
 import type {
   ChatChunk,
   ChatRequest,
+  ChatResumeRequest,
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult
@@ -20,6 +21,9 @@ export interface ChatProvider {
 
   /** Send a chat completion request. If `stream` is true, the returned async iterable yields deltas. */
   chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>>
+
+  /** Resume an existing chat stream when the provider/backend supports resumable streams. */
+  resumeChat?(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null>
 
   /** Send a single-shot completion request. */
   completion(request: CompletionRequest): Promise<AsyncIterable<string>>
