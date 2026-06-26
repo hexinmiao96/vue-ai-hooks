@@ -308,7 +308,8 @@ Proxy streams can also send `ChatChunk.messageId` or AI SDK UI stream
 
 Passing the same `id` to multiple `useChat()` calls shares chat state across
 components. The first instance seeds `initialMessages` and `initialInput`;
-`setId()` only changes the id sent with future provider requests.
+`messages` is accepted as an AI SDK-style alias for `initialMessages`. `setId()`
+only changes the id sent with future provider requests.
 
 Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to

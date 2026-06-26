@@ -112,6 +112,24 @@ describe('useChat', () => {
     expect(messages.value).toEqual(initial)
   })
 
+  it('accepts messages as an AI SDK-style initial history alias', () => {
+    const initial = [{ id: 'm1', role: 'user' as const, content: 'hi' }]
+    const { messages } = useChat({ provider: fakeProvider([]), messages: initial })
+    expect(messages.value).toEqual(initial)
+  })
+
+  it('prefers initialMessages over messages when both are provided', () => {
+    const initialMessages = [{ id: 'preferred', role: 'user' as const, content: 'preferred' }]
+    const aliasedMessages = [{ id: 'alias', role: 'user' as const, content: 'alias' }]
+    const { messages } = useChat({
+      provider: fakeProvider([]),
+      initialMessages,
+      messages: aliasedMessages
+    })
+
+    expect(messages.value).toEqual(initialMessages)
+  })
+
   it('serializes message dates for persistence without mutating messages', () => {
     const createdAt = new Date('2026-01-02T03:04:05.000Z')
     const messages: Message[] = [

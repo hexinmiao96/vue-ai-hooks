@@ -167,6 +167,7 @@ export interface ChatPersistOptions {
 export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
   initialMessages?: Message[]
+  messages?: Message[]
   initialInput?: string
   defaultRequest?: Partial<ChatRequest>
   id?: string
@@ -728,7 +729,8 @@ function getChatState(id: string, initialMessages: Message[], initialInput: stri
 export function useChat(options: UseChatOptions): UseChatReturn {
   const {
     provider: providedProvider,
-    initialMessages = empty,
+    initialMessages,
+    messages: messagesOption,
     initialInput = '',
     defaultRequest = {},
     onUpdate,
@@ -750,7 +752,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const provider = providedProvider
   const nextId = options.generateId ?? createId
   const id = ref(options.id || nextId('chat'))
-  const state = getChatState(id.value, initialMessages, initialInput)
+  const state = getChatState(id.value, initialMessages ?? messagesOption ?? empty, initialInput)
   const {
     messages,
     input,

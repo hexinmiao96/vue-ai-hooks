@@ -219,6 +219,7 @@ describe('public API types', () => {
       experimental_throttle?: number
     }>()
     expectTypeOf<UseChatOptions['generateId']>().toEqualTypeOf<IdGenerator | undefined>()
+    expectTypeOf<UseChatOptions['messages']>().toEqualTypeOf<Message[] | undefined>()
     expectTypeOf<UseChatOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseChatOptions['prepareSendMessagesRequest']>().toEqualTypeOf<
       PrepareSendMessagesRequest | undefined

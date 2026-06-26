@@ -50,6 +50,7 @@ Use `input` with a Vue form for the common composer flow:
 | `id`                              | `string`                                                               | generated  | Stable chat id sent with provider requests.                            |
 | `generateId`                      | `IdGenerator`                                                          | `createId` | Override automatic chat, message, tool, and stream data id generation. |
 | `initialMessages`                 | `Message[]`                                                            | `[]`       | Seed the message history.                                              |
+| `messages`                        | `Message[]`                                                            | `[]`       | AI SDK-style alias for `initialMessages`; `initialMessages` wins.      |
 | `initialInput`                    | `string`                                                               | `''`       | Seed the composer input for the first instance of an id.               |
 | `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`       | Default options merged into every chat request.                        |
 | `resume`                          | `boolean`                                                              | `false`    | Automatically try `resumeStream()` when the composable is created.     |
@@ -565,9 +566,9 @@ await append('Explain it with a shorter example.', {
 `useChat({ id })` keeps a reactive chat id, includes it in every provider
 request, and shares in-memory chat state with other `useChat()` instances that
 were created with the same id. The first instance for an id seeds
-`initialMessages` and `initialInput`; later instances reuse the same
-`messages`, `input`, `status`, loading, error, usage, stream data, and pending
-tool-call refs.
+`initialMessages` and `initialInput`; `messages` is accepted as an AI SDK-style
+alias for `initialMessages`. Later instances reuse the same `messages`, `input`,
+`status`, loading, error, usage, stream data, and pending tool-call refs.
 
 Use `setId()` when your app needs future provider requests to use a different
 backend thread id. It does not rebind the current refs to another shared-state

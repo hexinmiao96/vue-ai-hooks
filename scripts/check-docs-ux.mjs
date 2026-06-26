@@ -183,8 +183,9 @@ expect(
   files.useChat.includes('shares in-memory chat state') &&
     files.useChat.includes('initialMessages') &&
     files.useChat.includes('initialInput') &&
+    files.useChat.includes('AI SDK-style alias for `initialMessages`') &&
     files.useChat.includes('It does not rebind the current refs'),
-  'English useChat docs must explain same-id shared chat state and setId boundaries'
+  'English useChat docs must explain same-id shared chat state, messages alias, and setId boundaries'
 )
 expect(
   files.useChat.includes('## Lifecycle callbacks') &&
@@ -229,8 +230,10 @@ expect(
   files.zhUseChat.includes('共享内存中的聊天状态') &&
     files.zhUseChat.includes('initialMessages') &&
     files.zhUseChat.includes('initialInput') &&
+    files.zhUseChat.includes('AI SDK 风格的') &&
+    files.zhUseChat.includes('`initialMessages` 别名') &&
     files.zhUseChat.includes('不会把当前 refs 重新绑定'),
-  'Chinese useChat docs must explain same-id shared chat state and setId boundaries'
+  'Chinese useChat docs must explain same-id shared chat state, messages alias, and setId boundaries'
 )
 expect(
   files.zhUseChat.includes('## 生命周期回调') &&
