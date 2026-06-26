@@ -247,36 +247,36 @@ Then open a PR — the hook layer stays untouched.
 
 Returns a reactive bundle for managing a streaming chat conversation.
 
-| Return                          | Type                                                            | Description                                          |
-| ------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------- |
-| `id`                            | `Ref<string>`                                                   | Stable chat id sent with provider requests           |
-| `messages`                      | `Ref<Message[]>`                                                | Full message history (user, assistant, system, tool) |
-| `input`                         | `Ref<string>`                                                   | Bound to your composer; `handleSubmit()` clears it   |
-| `status`                        | `Ref<ChatStatus>`                                               | `ready`, `submitted`, `streaming`, or `error`        |
-| `usage`                         | `Ref<TokenUsage \| null>`                                       | Latest normalized token usage                        |
-| `streamData`                    | `Ref<StreamDataPart[]>`                                         | Custom stream data from the current assistant turn   |
-| `pendingToolCalls`              | `Ref<ToolCall[]>`                                               | Tool calls waiting for manual results                |
-| `isLoading`                     | `Ref<boolean>`                                                  | True while a stream is in flight                     |
-| `error`                         | `Ref<Error \| null>`                                            | Last error, cleared on next `append`                 |
-| `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`       | Send or replace a message and stream the reply       |
-| `sendMessage(content, opts?)`   | `(string \| Message, AppendChatOptions) => Promise<void>`       | AI SDK-style alias for `append()`                    |
-| `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`      | Submit a manual tool result and continue when ready  |
-| `addToolOutput(output)`         | `(AddToolOutputOptions, Partial<ChatRequest>) => Promise<void>` | AI SDK-style alias for manual tool output            |
-| `addToolApprovalResponse(resp)` | `(ToolApprovalResponse, Partial<ChatRequest>) => Promise<void>` | AI SDK-style approval response helper                |
-| `approveToolCall(id)`           | `(string, Partial<ChatRequest>) => Promise<void>`               | Run an approval-gated local tool handler             |
-| `rejectToolCall(id)`            | `(string, unknown, Partial<ChatRequest>) => Promise<void>`      | Reject a pending tool call and continue when ready   |
-| `regenerate(opts?)`             | `(RegenerateChatOptions) => Promise<void>`                      | Regenerate the latest or a specific assistant turn   |
-| `resumeStream(opts?)`           | `(ResumeChatOptions) => Promise<void>`                          | Resume an active provider/backend stream             |
-| `reload()`                      | `() => Promise<void>`                                           | Re-run the last assistant turn                       |
-| `stop()`                        | `() => void`                                                    | Abort the in-flight stream                           |
-| `setId(id)`                     | `(string) => void`                                              | Replace the chat id for future requests              |
-| `setInput(value)`               | `(string) => void`                                              | Replace composer input manually                      |
-| `handleInputChange(event)`      | `(Event \| { target } \| string) => void`                       | Wire custom inputs without `v-model`                 |
-| `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                 | Wire a form submit; clears input after success       |
-| `setMessages(messages)`         | `(SetMessagesInput) => void`                                    | Replace or functionally update history               |
-| `clearError()`                  | `() => void`                                                    | Clear error state                                    |
-| `clear()`                       | `() => void`                                                    | Reset to empty state                                 |
-| `abortController`               | `Ref<AbortController \| null>`                                  | Exposed for advanced use cases                       |
+| Return                          | Type                                                                   | Description                                                       |
+| ------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `id`                            | `Ref<string>`                                                          | Stable chat id sent with provider requests                        |
+| `messages`                      | `Ref<Message[]>`                                                       | Full message history (user, assistant, system, tool)              |
+| `input`                         | `Ref<string>`                                                          | Bound to your composer; `handleSubmit()` clears it                |
+| `status`                        | `Ref<ChatStatus>`                                                      | `ready`, `submitted`, `streaming`, or `error`                     |
+| `usage`                         | `Ref<TokenUsage \| null>`                                              | Latest normalized token usage                                     |
+| `streamData`                    | `Ref<StreamDataPart[]>`                                                | Custom stream data from the current assistant turn                |
+| `pendingToolCalls`              | `Ref<ToolCall[]>`                                                      | Tool calls waiting for manual results                             |
+| `isLoading`                     | `Ref<boolean>`                                                         | True while a stream is in flight                                  |
+| `error`                         | `Ref<Error \| null>`                                                   | Last error, cleared on next `append`                              |
+| `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`              | Send or replace a message and stream the reply                    |
+| `sendMessage(content?, opts?)`  | `(string \| Message \| undefined, AppendChatOptions) => Promise<void>` | AI SDK-style send helper; omit content to submit current messages |
+| `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`             | Submit a manual tool result and continue when ready               |
+| `addToolOutput(output)`         | `(AddToolOutputOptions, Partial<ChatRequest>) => Promise<void>`        | AI SDK-style alias for manual tool output                         |
+| `addToolApprovalResponse(resp)` | `(ToolApprovalResponse, Partial<ChatRequest>) => Promise<void>`        | AI SDK-style approval response helper                             |
+| `approveToolCall(id)`           | `(string, Partial<ChatRequest>) => Promise<void>`                      | Run an approval-gated local tool handler                          |
+| `rejectToolCall(id)`            | `(string, unknown, Partial<ChatRequest>) => Promise<void>`             | Reject a pending tool call and continue when ready                |
+| `regenerate(opts?)`             | `(RegenerateChatOptions) => Promise<void>`                             | Regenerate the latest or a specific assistant turn                |
+| `resumeStream(opts?)`           | `(ResumeChatOptions) => Promise<void>`                                 | Resume an active provider/backend stream                          |
+| `reload()`                      | `() => Promise<void>`                                                  | Re-run the last assistant turn                                    |
+| `stop()`                        | `() => void`                                                           | Abort the in-flight stream                                        |
+| `setId(id)`                     | `(string) => void`                                                     | Replace the chat id for future requests                           |
+| `setInput(value)`               | `(string) => void`                                                     | Replace composer input manually                                   |
+| `handleInputChange(event)`      | `(Event \| { target } \| string) => void`                              | Wire custom inputs without `v-model`                              |
+| `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                        | Wire a form submit; clears input after success                    |
+| `setMessages(messages)`         | `(SetMessagesInput) => void`                                           | Replace or functionally update history                            |
+| `clearError()`                  | `() => void`                                                           | Clear error state                                                 |
+| `clear()`                       | `() => void`                                                           | Reset to empty state                                              |
+| `abortController`               | `Ref<AbortController \| null>`                                         | Exposed for advanced use cases                                    |
 
 Set `maxRetries` on `useChat`, `useCompletion`, `useEmbedding`, or `useObject`
 to retry transient provider failures. Streaming calls only retry when the

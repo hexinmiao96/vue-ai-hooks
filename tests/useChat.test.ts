@@ -1283,6 +1283,61 @@ describe('useChat', () => {
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('resubmits current messages when sendMessage is called without content', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Tool result accepted.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages, sendMessage } = useChat({
+      provider,
+      sendAutomaticallyWhen: false
+    })
+
+    await append('Use a tool.')
+    await addToolResult('call_1', 'done')
+    await sendMessage(undefined, { body: { providerOption: 'manual-follow-up' } })
+
+    expect(requests).toHaveLength(2)
+    expect(requests[1].messages.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool'
+    ])
+    expect(requests[1].body).toEqual({ providerOption: 'manual-follow-up' })
+    expect(messages.value.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant'
+    ])
+    expect(messages.value[messages.value.length - 1].content).toBe('Tool result accepted.')
+  })
+
+  it('rejects message-only options when sendMessage resubmits current messages', async () => {
+    const provider = fakeTurnProvider([[{ content: 'Should not be requested.' }]])
+    const { error, sendMessage } = useChat({ provider })
+
+    await expect(sendMessage(undefined, { messageId: 'u1' })).rejects.toThrow(/without a message/)
+    await expect(sendMessage(undefined, { attachments: [] })).rejects.toThrow(/without a message/)
+    expect(error.value?.message).toContain('without a message')
+  })
+
   it('prepares send-message requests before calling the provider', async () => {
     const requests: ChatRequest[] = []
     const prepareSendMessagesRequest = vi.fn(({ body, headers, request }) => ({

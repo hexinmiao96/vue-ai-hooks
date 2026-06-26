@@ -190,7 +190,7 @@ export interface UseChatReturn {
   isLoading: Ref<boolean>
   error: Ref<Error | null>
   append: (c: string | Message, o?: AppendChatOptions) => Promise<void>
-  sendMessage: (c: string | Message, o?: AppendChatOptions) => Promise<void>
+  sendMessage: (c?: string | Message, o?: AppendChatOptions) => Promise<void>
   addToolResult: (toolCallId: string, result: unknown, o?: Partial<ChatRequest>) => Promise<void>
   addToolOutput: (output: AddToolOutputOptions, o?: Partial<ChatRequest>) => Promise<void>
   addToolApprovalResponse: (
@@ -1422,6 +1422,36 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       { trigger: 'submit-message', messageId }
     )
   }
+  async function submitCurrentMessages(requestOptions: AppendChatOptions = {}) {
+    const { messageId, attachments, ...chatRequestOptions } = requestOptions
+    if (messageId || attachments) {
+      throw reportError(
+        new AiHooksError(
+          'sendMessage() without a message does not support messageId or attachments'
+        )
+      )
+    }
+    clearPendingToolCalls()
+    const assistant = buildAssistant()
+    resetTurnState()
+    messages.value = [...messages.value, { ...assistant }]
+    await runAssistantTurn(
+      assistant,
+      {
+        messages: messages.value.filter((m) => m.id !== assistant.id),
+        ...chatRequestOptions
+      },
+      maxToolRoundtrips,
+      { trigger: 'submit-message' }
+    )
+  }
+  async function sendMessage(content?: string | Message, requestOptions: AppendChatOptions = {}) {
+    if (content === undefined) {
+      await submitCurrentMessages(requestOptions)
+      return
+    }
+    await append(content, requestOptions)
+  }
   async function handleSubmit(
     event?: { preventDefault?: () => void },
     requestOptions: AppendChatOptions = {}
@@ -1571,7 +1601,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     isLoading,
     error,
     append,
-    sendMessage: append,
+    sendMessage,
     addToolResult,
     addToolOutput,
     addToolApprovalResponse,

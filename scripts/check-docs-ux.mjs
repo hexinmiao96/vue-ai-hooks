@@ -212,7 +212,8 @@ expect(
 expect(
   files.useChat.includes('sendAutomaticallyWhen') &&
     files.useChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
-    files.useChat.includes('SendAutomaticallyWhen'),
+    files.useChat.includes('SendAutomaticallyWhen') &&
+    files.useChat.includes('call `sendMessage()` without content'),
   'English useChat docs must document AI SDK-style tool result auto-send control'
 )
 expect(
@@ -249,7 +250,9 @@ expect(
 expect(
   files.zhUseChat.includes('sendAutomaticallyWhen') &&
     files.zhUseChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
-    files.zhUseChat.includes('SendAutomaticallyWhen'),
+    files.zhUseChat.includes('SendAutomaticallyWhen') &&
+    files.zhUseChat.includes('无参调用') &&
+    files.zhUseChat.includes('`sendMessage()`'),
   'Chinese useChat docs must document AI SDK-style tool result auto-send control'
 )
 expect(

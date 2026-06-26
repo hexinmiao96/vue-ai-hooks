@@ -171,7 +171,7 @@ describe('public API types', () => {
     expectTypeOf(chat.pendingToolCalls).toEqualTypeOf<Ref<ToolCall[]>>()
     expectTypeOf(chat.append).parameter(0).toEqualTypeOf<string | Message>()
     expectTypeOf(chat.append).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
-    expectTypeOf(chat.sendMessage).parameter(0).toEqualTypeOf<string | Message>()
+    expectTypeOf(chat.sendMessage).parameter(0).toEqualTypeOf<string | Message | undefined>()
     expectTypeOf(chat.sendMessage).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
     expectTypeOf(chat.addToolResult).parameter(0).toEqualTypeOf<string>()
     expectTypeOf(chat.addToolResult).parameter(1).toEqualTypeOf<unknown>()
