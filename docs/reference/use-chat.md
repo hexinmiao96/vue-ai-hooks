@@ -32,6 +32,17 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 })
 ```
 
+Pass a custom data shape to type `streamData` and `onData`:
+
+```ts
+const { streamData } = useChat<{ progress: number; label?: string }>({
+  provider,
+  onData(part) {
+    console.debug(part.data.progress)
+  }
+})
+```
+
 Use `input` with a Vue form for the common composer flow:
 
 ```vue
@@ -78,7 +89,7 @@ Use `input` with a Vue form for the common composer flow:
 | `throttleMs`                      | `number`                                                               | —          | Minimum wait in ms between reactive message and `streamData` updates.  |
 | `experimental_throttle`           | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs` in new code.              |
 | `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | —          | Called after each raw chat chunk is applied to the assistant message.  |
-| `onData`                          | `(part: StreamDataPart) => void`                                       | —          | Called for custom stream data parts, including transient parts.        |
+| `onData`                          | `(part: StreamDataPart<TData>) => void`                                | —          | Called for custom stream data parts, including transient parts.        |
 | `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | —          | Called with the final chat/resume request before the provider runs.    |
 | `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | —          | Called after the provider returns a chat/resume stream or no stream.   |
 | `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | —          | Called before a registered local tool handler runs.                    |
@@ -216,7 +227,7 @@ state.
 | `input`                         | `Ref<string>`                                                          | Bound to your composer; `handleSubmit()` clears it after success.      |
 | `status`                        | `Ref<ChatStatus>`                                                      | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.      |
 | `usage`                         | `Ref<TokenUsage \| null>`                                              | Latest normalized token usage from provider chunks.                    |
-| `streamData`                    | `Ref<StreamDataPart[]>`                                                | Custom stream data collected during the current assistant turn.        |
+| `streamData`                    | `Ref<StreamDataPart<TData>[]>`                                         | Custom stream data collected during the current assistant turn.        |
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                      | Tool calls waiting for manual results.                                 |
 | `isLoading`                     | `Ref<boolean>`                                                         | True while a stream is in flight.                                      |
 | `error`                         | `Ref<Error \| null>`                                                   | Last error, cleared on next `append`.                                  |
@@ -732,10 +743,10 @@ custom `data`. Metadata is merged into the current assistant message. Data parts
 are exposed through `streamData` and `onData`:
 
 ```ts
-const { messages, streamData } = useChat({
+const { messages, streamData } = useChat<{ title: string; url?: string }>({
   provider,
   onData(part) {
-    console.debug(part.type, part.data)
+    console.debug(part.type, part.data.title)
   }
 })
 
@@ -750,6 +761,8 @@ same assistant `metadata` field.
 When a later chunk uses the same `dataId`, it replaces the earlier stored part.
 Set `transient: true` for progress ticks or debug events that should call
 `onData` without being stored in `streamData` or `Message.parts`.
+The `useChat<TData>()` generic only types `streamData` and `onData`; persisted
+`Message.parts` stay provider-agnostic and keep `unknown` data payloads.
 
 ## Vision input
 

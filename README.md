@@ -260,7 +260,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `input`                         | `Ref<string>`                                                          | Bound to your composer; `handleSubmit()` clears it                |
 | `status`                        | `Ref<ChatStatus>`                                                      | `ready`, `submitted`, `streaming`, or `error`                     |
 | `usage`                         | `Ref<TokenUsage \| null>`                                              | Latest normalized token usage                                     |
-| `streamData`                    | `Ref<StreamDataPart[]>`                                                | Custom stream data from the current assistant turn                |
+| `streamData`                    | `Ref<StreamDataPart<TData>[]>`                                         | Custom stream data from the current assistant turn                |
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                      | Tool calls waiting for manual results                             |
 | `isLoading`                     | `Ref<boolean>`                                                         | True while a stream is in flight                                  |
 | `error`                         | `Ref<Error \| null>`                                                   | Last error, cleared on next `append`                              |

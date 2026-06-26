@@ -203,7 +203,7 @@ export interface ChatPersistOptions {
   deserialize?: UsePersistOptions<Message[]>['deserialize']
 }
 
-export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
+export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
   initialMessages?: Message[]
   messages?: Message[]
@@ -228,7 +228,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   stopWhen?: StopWhen | readonly StopWhen[]
   maxToolRoundtrips?: number
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
-  onData?: (part: StreamDataPart) => void
+  onData?: (part: StreamDataPart<TData>) => void
   onRequest?: (info: ChatRequestInfo) => void
   onResponse?: (info: ChatResponseInfo) => void
   onToolCall?: (args: unknown, context: ToolCallHandlerContext) => void
@@ -238,13 +238,13 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   onError?: (e: Error) => void
 }
 
-export interface UseChatReturn {
+export interface UseChatReturn<TData = unknown> {
   id: Ref<string>
   messages: Ref<Message[]>
   input: Ref<string>
   status: Ref<ChatStatus>
   usage: Ref<TokenUsage | null>
-  streamData: Ref<StreamDataPart[]>
+  streamData: Ref<StreamDataPart<TData>[]>
   pendingToolCalls: Ref<ToolCall[]>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
@@ -735,13 +735,13 @@ interface SendChatContext {
   stepNumber: number
 }
 
-interface ChatState {
+interface ChatState<TData = unknown> {
   messages: Ref<Message[]>
   input: Ref<string>
   status: Ref<ChatStatus>
   usage: Ref<TokenUsage | null>
-  streamData: Ref<StreamDataPart[]>
-  bufferedStreamData: StreamDataPart[]
+  streamData: Ref<StreamDataPart<TData>[]>
+  bufferedStreamData: StreamDataPart<TData>[]
   pendingToolCalls: Ref<ToolCall[]>
   pendingToolRequest: Ref<ChatRequest | null>
   pendingToolSendContext: SendChatContext | null
@@ -750,18 +750,22 @@ interface ChatState {
   abortController: Ref<AbortController | null>
 }
 
-const chatStates = new Map<string, ChatState>()
+const chatStates = new Map<string, ChatState<unknown>>()
 
-function getChatState(id: string, initialMessages: Message[], initialInput: string): ChatState {
+function getChatState<TData = unknown>(
+  id: string,
+  initialMessages: Message[],
+  initialInput: string
+): ChatState<TData> {
   const existing = chatStates.get(id)
-  if (existing) return existing
+  if (existing) return existing as ChatState<TData>
 
-  const state: ChatState = {
+  const state: ChatState<TData> = {
     messages: ref<Message[]>([...initialMessages]) as Ref<Message[]>,
     input: ref(initialInput),
     status: ref<ChatStatus>('ready'),
     usage: ref<TokenUsage | null>(null),
-    streamData: ref<StreamDataPart[]>([]) as Ref<StreamDataPart[]>,
+    streamData: ref<StreamDataPart<TData>[]>([]) as Ref<StreamDataPart<TData>[]>,
     bufferedStreamData: [],
     pendingToolCalls: ref<ToolCall[]>([]) as Ref<ToolCall[]>,
     pendingToolRequest: shallowRef<ChatRequest | null>(null),
@@ -770,11 +774,11 @@ function getChatState(id: string, initialMessages: Message[], initialInput: stri
     error: ref<Error | null>(null),
     abortController: shallowRef<AbortController | null>(null)
   }
-  chatStates.set(id, state)
+  chatStates.set(id, state as ChatState<unknown>)
   return state
 }
 
-export function useChat(options: UseChatOptions): UseChatReturn {
+export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseChatReturn<TData> {
   const {
     provider: providedProvider,
     initialMessages,
@@ -807,7 +811,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   const provider = providedProvider
   const nextId = options.generateId ?? createId
   const id = ref(options.id || nextId('chat'))
-  const state = getChatState(id.value, initialMessages ?? messagesOption ?? empty, initialInput)
+  const state = getChatState<TData>(
+    id.value,
+    initialMessages ?? messagesOption ?? empty,
+    initialInput
+  )
   const {
     messages,
     input,
@@ -1156,12 +1164,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   function processStreamData(
     chunk: ChatChunk,
     scheduleStreamData: () => void
-  ): StreamDataPart | null {
+  ): StreamDataPart<TData> | null {
     if (!('data' in chunk)) return null
 
-    const part: StreamDataPart = {
+    const part: StreamDataPart<TData> = {
       id: chunk.dataId || nextId('data'),
-      data: chunk.data,
+      data: chunk.data as TData,
       type: chunk.dataType,
       transient: chunk.transient,
       createdAt: new Date()

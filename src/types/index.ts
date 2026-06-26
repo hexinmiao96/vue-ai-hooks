@@ -162,9 +162,9 @@ export type AiRequestStatus = 'ready' | 'submitted' | 'streaming' | 'error'
 export type IdGenerator = (prefix?: string) => string
 
 /** A custom data item emitted alongside a streaming assistant response. */
-export interface StreamDataPart {
+export interface StreamDataPart<TData = unknown> {
   id: string
-  data: unknown
+  data: TData
   type?: string
   transient?: boolean
   createdAt?: Date

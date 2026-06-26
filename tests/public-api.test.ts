@@ -172,6 +172,14 @@ describe('public API types', () => {
 
   it('keeps composable return types stable for consumers', () => {
     const chat = useChat({ provider } satisfies UseChatOptions)
+    const typedChat = useChat<{ progress: number; label?: string }>({
+      provider,
+      onData(part) {
+        expectTypeOf(part).toEqualTypeOf<StreamDataPart<{ progress: number; label?: string }>>()
+        expectTypeOf(part.data.progress).toEqualTypeOf<number>()
+        expectTypeOf(part.data.label).toEqualTypeOf<string | undefined>()
+      }
+    } satisfies UseChatOptions<{ progress: number; label?: string }>)
     const completion = useCompletion({ provider } satisfies UseCompletionOptions)
     const embedding = useEmbedding({ provider } satisfies UseEmbeddingOptions)
     const structured = useObject<{ answer: string }>({
@@ -186,6 +194,10 @@ describe('public API types', () => {
     expectTypeOf<ChatStatus>().toEqualTypeOf<AiRequestStatus>()
     expectTypeOf(chat.usage).toEqualTypeOf<Ref<TokenUsage | null>>()
     expectTypeOf(chat.streamData).toEqualTypeOf<Ref<StreamDataPart[]>>()
+    expectTypeOf(typedChat).toEqualTypeOf<UseChatReturn<{ progress: number; label?: string }>>()
+    expectTypeOf(typedChat.streamData).toEqualTypeOf<
+      Ref<StreamDataPart<{ progress: number; label?: string }>[]>
+    >()
     expectTypeOf(chat.pendingToolCalls).toEqualTypeOf<Ref<ToolCall[]>>()
     expectTypeOf(chat.append).parameter(0).toEqualTypeOf<string | Message>()
     expectTypeOf(chat.append).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
@@ -266,6 +278,9 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseChatOptions['onResponse']>().toEqualTypeOf<
       ((info: ChatResponseInfo) => void) | undefined
+    >()
+    expectTypeOf<UseChatOptions<{ progress: number }>['onData']>().toEqualTypeOf<
+      ((part: StreamDataPart<{ progress: number }>) => void) | undefined
     >()
     expectTypeOf(pruneMessages).parameter(0).toEqualTypeOf<PruneMessagesOptions>()
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()

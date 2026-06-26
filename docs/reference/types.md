@@ -368,9 +368,9 @@ interface TokenUsage {
   totalTokens: number
 }
 
-interface StreamDataPart {
+interface StreamDataPart<TData = unknown> {
   id: string
-  data: unknown
+  data: TData
   type?: string
   transient?: boolean
   createdAt?: Date
@@ -414,9 +414,10 @@ message id before the text deltas arrive.
 `ChatChunk.metadata` is merged into the current assistant message metadata. AI
 SDK UI stream `messageMetadata` values are normalized into this field by
 `proxyProvider`.
-`ChatChunk.data` is exposed through `useChat().streamData` and `onData`; use a
-stable `dataId` to replace an earlier part, and set `transient: true` for parts
-that should only trigger `onData`.
+`ChatChunk.data` is exposed through `useChat().streamData` and `onData`; pass
+`useChat<TData>()` to type those custom stream data values. Use a stable
+`dataId` to replace an earlier part, and set `transient: true` for parts that
+should only trigger `onData`.
 `ChatChunk.parts` is merged into the assistant `Message.parts` array, alongside
 text deltas, custom data parts, and accumulated tool call states.
 
