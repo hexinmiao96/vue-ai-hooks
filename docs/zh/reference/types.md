@@ -203,6 +203,35 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 `PrepareStep` 用于自定义每个 assistant 步骤的请求。`stepNumber` 从 `0`
 开始；准备工具结果后的续跑请求时，`toolCalls` 会包含最新 assistant 步骤的工具调用。
 
+请求生命周期回调会暴露与 Provider 无关的请求快照：
+
+```ts
+type ChatRequestLifecycleKind = 'chat' | 'resume'
+
+interface ChatRequestInfo {
+  kind: ChatRequestLifecycleKind
+  id: string
+  providerId: string
+  attempt: number
+  request: ChatRequest | ChatResumeRequest
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+  trigger?: 'submit-message' | 'regenerate-message'
+  messageId?: string
+  stepNumber?: number
+}
+
+interface ChatResponseInfo extends ChatRequestInfo {
+  hasStream: boolean
+}
+```
+
+`onRequest` 会在请求准备完成、Provider adapter 执行前收到 `ChatRequestInfo`。
+`onResponse` 会在 adapter 返回后收到 `ChatResponseInfo`，其中 `hasStream`
+表示本次是否有可消费的 stream。
+
 ## ID
 
 ```ts

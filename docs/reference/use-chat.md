@@ -4,7 +4,8 @@ The core composable for streaming chat completions.
 
 Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `AppendChatOptions`, `AddToolOutputOptions`, `ToolApprovalResponse`,
-`ChatFinishInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
+`ChatFinishInfo`, `ChatRequestInfo`, `ChatRequestLifecycleKind`,
+`ChatResponseInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
 `PrepareStep`, `PrepareStepOptions`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
@@ -78,6 +79,8 @@ Use `input` with a Vue form for the common composer flow:
 | `experimental_throttle`           | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs` in new code.              |
 | `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | —          | Called after each raw chat chunk is applied to the assistant message.  |
 | `onData`                          | `(part: StreamDataPart) => void`                                       | —          | Called for custom stream data parts, including transient parts.        |
+| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | —          | Called with the final chat/resume request before the provider runs.    |
+| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | —          | Called after the provider returns a chat/resume stream or no stream.   |
 | `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | —          | Called before a registered local tool handler runs.                    |
 | `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | —          | Called after a local tool handler returns a `tool` message.            |
 | `onUpdate`                        | `(m: Message) => void`                                                 | —          | Called for every streamed chunk update.                                |
@@ -267,6 +270,17 @@ data are always flushed before `append()`, `regenerate()`, or `resumeStream()`
 resolves.
 
 ## Lifecycle callbacks
+
+`onRequest(info)` runs after `prepareStep`, `prepareSendMessagesRequest`, or
+`prepareReconnectToStreamRequest` have produced the final request, and before
+the provider adapter is called. `info.kind` is `'chat'` or `'resume'`,
+`info.request` is a shallow snapshot of the outgoing request, and `info.attempt`
+is 1-based so retries can be correlated with `onRetry`.
+
+`onResponse(info)` runs after the provider adapter returns. Because
+`vue-ai-hooks` providers abstract over fetch clients, `info.hasStream` tells you
+whether a stream was returned instead of exposing a raw `Response` object. Use
+these callbacks for tracing, analytics, request logging, and resume diagnostics.
 
 `onFinish(message, info)` receives the final assistant message and a snapshot
 with `info.message`, `info.messages`, `info.isAbort`, `info.isError`,

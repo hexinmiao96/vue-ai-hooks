@@ -213,6 +213,35 @@ default helper.
 `0`, and `toolCalls` contains the latest assistant step's tool calls when a
 follow-up request is being prepared.
 
+Request lifecycle callbacks expose provider-agnostic snapshots:
+
+```ts
+type ChatRequestLifecycleKind = 'chat' | 'resume'
+
+interface ChatRequestInfo {
+  kind: ChatRequestLifecycleKind
+  id: string
+  providerId: string
+  attempt: number
+  request: ChatRequest | ChatResumeRequest
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+  trigger?: 'submit-message' | 'regenerate-message'
+  messageId?: string
+  stepNumber?: number
+}
+
+interface ChatResponseInfo extends ChatRequestInfo {
+  hasStream: boolean
+}
+```
+
+`onRequest` receives `ChatRequestInfo` after request preparation and before the
+provider adapter runs. `onResponse` receives `ChatResponseInfo` after the
+adapter returns, with `hasStream` indicating whether a stream was available.
+
 ## IDs
 
 ```ts

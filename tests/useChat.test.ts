@@ -761,6 +761,86 @@ describe('useChat', () => {
     )
   })
 
+  it('reports prepared chat request lifecycle attempts', async () => {
+    let calls = 0
+    const onRequest = vi.fn()
+    const onResponse = vi.fn()
+    const provider: ChatProvider = {
+      id: 'observable-chat',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        calls += 1
+        if (calls === 1) throw new Error('retryable setup failure')
+        return (async function* () {
+          yield { content: 'observed' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { append } = useChat({
+      provider,
+      maxRetries: 1,
+      defaultRequest: {
+        body: { tenantId: 'tenant_default' },
+        headers: { 'X-Default': 'yes' }
+      },
+      prepareSendMessagesRequest: ({ body, headers }) => ({
+        body: { ...body, prepared: true },
+        headers: { ...headers, 'X-Prepared': 'yes' },
+        metadata: { source: 'prepared' }
+      }),
+      onRequest,
+      onResponse
+    })
+
+    await append('observe lifecycle', {
+      body: { route: '/tickets/1' },
+      headers: { 'X-Trace': 'trace_1' },
+      metadata: { traceId: 'trace_1' }
+    })
+
+    expect(calls).toBe(2)
+    expect(onRequest.mock.calls.map(([info]) => info.attempt)).toEqual([1, 2])
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'chat',
+        id: expect.any(String),
+        providerId: 'observable-chat',
+        attempt: 1,
+        trigger: 'submit-message',
+        stepNumber: 0,
+        requestMetadata: { source: 'prepared' },
+        body: { tenantId: 'tenant_default', route: '/tickets/1', prepared: true },
+        headers: {
+          'X-Default': 'yes',
+          'X-Trace': 'trace_1',
+          'X-Prepared': 'yes'
+        },
+        messages: [expect.objectContaining({ role: 'user', content: 'observe lifecycle' })],
+        request: expect.objectContaining({
+          metadata: { source: 'prepared' },
+          body: { tenantId: 'tenant_default', route: '/tickets/1', prepared: true }
+        })
+      })
+    )
+    expect(onResponse).toHaveBeenCalledOnce()
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'chat',
+        providerId: 'observable-chat',
+        attempt: 2,
+        hasStream: true,
+        messages: [expect.objectContaining({ role: 'user', content: 'observe lifecycle' })]
+      })
+    )
+  })
+
   it('does not retry chat streams after a chunk was received', async () => {
     let calls = 0
     const onRetry = vi.fn()
@@ -1646,6 +1726,8 @@ describe('useChat', () => {
 
   it('passes thread id and forwarded props through resume requests', async () => {
     const requests: ChatResumeRequest[] = []
+    const onRequest = vi.fn()
+    const onResponse = vi.fn()
     const provider: ChatProvider = {
       id: 'resume-thread',
       async chat(): Promise<AsyncIterable<ChatChunk>> {
@@ -1671,7 +1753,9 @@ describe('useChat', () => {
       forwardedProps: { locale: 'en-US' },
       defaultRequest: {
         forwardedProps: { route: '/chat' }
-      }
+      },
+      onRequest,
+      onResponse
     })
 
     await resumeStream({
@@ -1688,6 +1772,36 @@ describe('useChat', () => {
         reconnect: true
       }
     })
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'resume',
+        id: 'client_chat',
+        providerId: 'resume-thread',
+        attempt: 1,
+        messages: [
+          expect.objectContaining({ role: 'user', content: 'threaded request' }),
+          expect.objectContaining({ role: 'assistant', content: 'threaded' })
+        ],
+        request: expect.objectContaining({
+          id: 'client_chat',
+          threadId: 'thread_resume',
+          forwardedProps: {
+            locale: 'en-US',
+            route: '/chat/2',
+            reconnect: true
+          }
+        })
+      })
+    )
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'resume',
+        id: 'client_chat',
+        providerId: 'resume-thread',
+        attempt: 1,
+        hasStream: true
+      })
+    )
   })
 
   it('reports regenerate trigger and message id to the send request preparer', async () => {

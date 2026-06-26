@@ -4,7 +4,8 @@
 
 公开 TypeScript 类型：`UseChatOptions`、`UseChatReturn`、`ToolCallHandler`、
 `AppendChatOptions`、`AddToolOutputOptions`、`ToolApprovalResponse`、
-`ChatFinishInfo`、`ChatStatus`、`RegenerateChatOptions`、`ResumeChatOptions`、
+`ChatFinishInfo`、`ChatRequestInfo`、`ChatRequestLifecycleKind`、
+`ChatResponseInfo`、`ChatStatus`、`RegenerateChatOptions`、`ResumeChatOptions`、
 `PrepareSendMessagesRequest`、`PrepareSendMessagesRequestOptions`、
 `PrepareStep`、`PrepareStepOptions`、
 `PrepareReconnectToStreamRequest`、`PrepareReconnectToStreamRequestOptions`、
@@ -78,6 +79,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `experimental_throttle`           | `number`                                                               | -          | AI SDK 风格兼容别名。新代码建议使用 `throttleMs`。             |
 | `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | -          | 每个原始 chat chunk 应用到助手消息后调用。                     |
 | `onData`                          | `(part: StreamDataPart) => void`                                       | -          | 收到自定义流数据片段时调用，包括 transient 片段。              |
+| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | -          | Provider 调用前，拿到最终 chat/resume request。                |
+| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | -          | Provider 返回 chat/resume stream 或无活动 stream 后调用。      |
 | `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | -          | 注册的本地工具 handler 执行前调用。                            |
 | `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | -          | 本地工具 handler 返回并生成 `tool` 消息后调用。                |
 | `onUpdate`                        | `(m: Message) => void`                                                 | -          | 每次流式片段更新时调用。                                       |
@@ -260,6 +263,16 @@ flush。`append()`、`regenerate()` 或 `resumeStream()` resolve 前一定会刷
 助手消息和 stream data。
 
 ## 生命周期回调
+
+`onRequest(info)` 会在 `prepareStep`、`prepareSendMessagesRequest` 或
+`prepareReconnectToStreamRequest` 产出最终请求之后、调用 Provider adapter 之前执行。
+`info.kind` 为 `'chat'` 或 `'resume'`，`info.request` 是即将发送请求的浅拷贝快照，
+`info.attempt` 从 1 开始，便于和 `onRetry` 串联分析。
+
+`onResponse(info)` 会在 Provider adapter 返回后执行。由于 `vue-ai-hooks` 的
+Provider 层抽象了不同 fetch 客户端，回调里不会暴露原始 `Response` 对象，而是通过
+`info.hasStream` 表示本次是否拿到了可消费的 stream。它适合做链路追踪、分析埋点、
+请求日志和 resume 诊断。
 
 `onFinish(message, info)` 会收到最终助手消息，以及包含 `info.message`、
 `info.messages`、`info.isAbort`、`info.isError`、`info.isDisconnect` 和

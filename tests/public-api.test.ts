@@ -33,7 +33,10 @@ import type {
   ChatProvider,
   ChatPersistOptions,
   ChatRequest,
+  ChatRequestInfo,
+  ChatRequestLifecycleKind,
   ChatResumeRequest,
+  ChatResponseInfo,
   CompletionFinishInfo,
   CompletionRequest,
   ContentPart,
@@ -243,6 +246,20 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions['prepareStep']>().toEqualTypeOf<PrepareStep | undefined>()
     expectTypeOf<UseChatOptions['prepareReconnectToStreamRequest']>().toEqualTypeOf<
       PrepareReconnectToStreamRequest | undefined
+    >()
+    expectTypeOf<ChatRequestLifecycleKind>().toEqualTypeOf<'chat' | 'resume'>()
+    expectTypeOf<ChatRequestInfo>().toMatchTypeOf<{
+      kind: ChatRequestLifecycleKind
+      request: ChatRequest | ChatResumeRequest
+      attempt: number
+      providerId: string
+    }>()
+    expectTypeOf<ChatResponseInfo>().toMatchTypeOf<ChatRequestInfo & { hasStream: boolean }>()
+    expectTypeOf<UseChatOptions['onRequest']>().toEqualTypeOf<
+      ((info: ChatRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseChatOptions['onResponse']>().toEqualTypeOf<
+      ((info: ChatResponseInfo) => void) | undefined
     >()
     expectTypeOf(pruneMessages).parameter(0).toEqualTypeOf<PruneMessagesOptions>()
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()

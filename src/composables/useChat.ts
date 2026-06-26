@@ -75,6 +75,27 @@ export interface ChatFinishInfo {
   finishReason?: ChatChunk['finishReason']
 }
 
+export type ChatRequestLifecycleKind = 'chat' | 'resume'
+
+export interface ChatRequestInfo {
+  kind: ChatRequestLifecycleKind
+  id: string
+  providerId: string
+  attempt: number
+  request: ChatRequest | ChatResumeRequest
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+  trigger?: SendChatTrigger
+  messageId?: string
+  stepNumber?: number
+}
+
+export interface ChatResponseInfo extends ChatRequestInfo {
+  hasStream: boolean
+}
+
 export type ChatStatus = AiRequestStatus
 
 export interface RegenerateChatOptions extends Partial<ChatRequest> {
@@ -207,6 +228,8 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   maxToolRoundtrips?: number
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
   onData?: (part: StreamDataPart) => void
+  onRequest?: (info: ChatRequestInfo) => void
+  onResponse?: (info: ChatResponseInfo) => void
   onToolCall?: (args: unknown, context: ToolCallHandlerContext) => void
   onToolResult?: (result: unknown, context: ToolResultHandlerContext) => void
   onUpdate?: (m: Message) => void
@@ -795,6 +818,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     maxToolRoundtrips = 1,
     onChunk,
     onData,
+    onRequest,
+    onResponse,
     onToolCall,
     onToolResult
   } = options
@@ -1023,6 +1048,52 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     status.value = 'error'
     onError?.(e)
     return e
+  }
+  function cloneLifecycleRequest<T extends ChatRequest | ChatResumeRequest>(request: T): T {
+    return {
+      ...request,
+      ...('messages' in request ? { messages: request.messages.map(cloneMessage) } : {}),
+      ...(request.body ? { body: { ...request.body } } : {}),
+      ...(request.forwardedProps ? { forwardedProps: { ...request.forwardedProps } } : {}),
+      ...(request.headers ? { headers: { ...request.headers } } : {})
+    } as T
+  }
+  function requestInfo(
+    kind: ChatRequestLifecycleKind,
+    request: ChatRequest | ChatResumeRequest,
+    attempt: number,
+    context?: SendChatContext
+  ): ChatRequestInfo {
+    return {
+      kind,
+      id: request.id ?? id.value,
+      providerId: provider.id,
+      attempt,
+      request: cloneLifecycleRequest(request),
+      messages:
+        kind === 'chat'
+          ? (request as ChatRequest).messages.map(cloneMessage)
+          : messages.value.map(cloneMessage),
+      requestMetadata: request.metadata,
+      ...(request.body ? { body: { ...request.body } } : {}),
+      ...(request.headers ? { headers: { ...request.headers } } : {}),
+      ...(context?.trigger ? { trigger: context.trigger } : {}),
+      ...(context?.messageId ? { messageId: context.messageId } : {}),
+      ...(context?.stepNumber !== undefined ? { stepNumber: context.stepNumber } : {})
+    }
+  }
+  function reportResponse(
+    info: ChatRequestInfo,
+    stream: AsyncIterable<ChatChunk> | null | undefined
+  ) {
+    onResponse?.({
+      ...info,
+      request: cloneLifecycleRequest(info.request),
+      messages: info.messages.map(cloneMessage),
+      ...(info.body ? { body: { ...info.body } } : {}),
+      ...(info.headers ? { headers: { ...info.headers } } : {}),
+      hasStream: Boolean(stream)
+    })
   }
   function finishAssistant(
     assistant: Message,
@@ -1265,7 +1336,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   }
   async function runAssistantStream(
     getAssistant: () => Message,
-    openStream: (signal: AbortSignal) => Promise<AsyncIterable<ChatChunk> | null | undefined>
+    openStream: (
+      signal: AbortSignal,
+      attempt: number
+    ) => Promise<AsyncIterable<ChatChunk> | null | undefined>
   ): Promise<boolean> {
     const controller = new AbortController()
     let assistant: Message | null = null
@@ -1307,7 +1381,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       while (true) {
         let receivedChunk = false
         try {
-          const stream = await openStream(controller.signal)
+          const stream = await openStream(controller.signal, retryAttempt + 1)
           if (!stream) {
             status.value = 'ready'
             return false
@@ -1492,7 +1566,14 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ): Promise<boolean> {
     return runAssistantStream(
       () => assistant,
-      async (signal) => provider.chat(await prepareChatRequest(request, signal, context))
+      async (signal, attempt) => {
+        const prepared = await prepareChatRequest(request, signal, context)
+        const info = requestInfo('chat', prepared, attempt, context)
+        onRequest?.(info)
+        const stream = await provider.chat(prepared)
+        reportResponse(info, stream)
+        return stream
+      }
     )
   }
   async function resumeStream(options: ResumeChatOptions = {}) {
@@ -1502,9 +1583,14 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     }
     clearPendingToolCalls()
     resetTurnState()
-    await runAssistantStream(resumeAssistant, async (signal) =>
-      resumeChat(await prepareResumeRequest(options, signal))
-    )
+    await runAssistantStream(resumeAssistant, async (signal, attempt) => {
+      const prepared = await prepareResumeRequest(options, signal)
+      const info = requestInfo('resume', prepared, attempt)
+      onRequest?.(info)
+      const stream = await resumeChat(prepared)
+      reportResponse(info, stream)
+      return stream
+    })
   }
   async function runAssistantTurn(
     assistant: Message,
