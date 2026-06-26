@@ -104,6 +104,10 @@ expect(
 )
 
 for (const snippet of [
+  '## Run the no-key demo first',
+  'pnpm example:chat',
+  'deterministic `local-tools` provider',
+  'click **Run approval demo**',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
@@ -114,6 +118,11 @@ for (const snippet of [
 }
 
 for (const snippet of [
+  '## 先跑不需要 key 的 Demo',
+  'pnpm example:chat',
+  '确定性的',
+  '`local-tools` Provider',
+  '点击 **Run approval demo**',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
@@ -383,7 +392,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples task chooser, form helpers, shared chat state, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, shared chat state, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

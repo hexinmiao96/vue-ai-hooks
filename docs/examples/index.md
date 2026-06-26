@@ -15,6 +15,18 @@ Use this page as a product-oriented map. Start with the preview to understand th
 UI shape, switch to code when you want the minimal composable wiring, then scan
 the API table only when you need an option or method.
 
+## Run the no-key demo first
+
+```bash
+pnpm install
+pnpm example:chat
+```
+
+Open the Vite URL and click **Run approval demo**. The chat example starts with
+the deterministic `local-tools` provider, streams a reply, pauses on a
+`chargeCard` tool call, and continues after approval or rejection. Use that flow
+to verify the UI before wiring real provider keys or a backend proxy.
+
 ## Which demo should I open first?
 
 | Goal                                                     | Start with                               |

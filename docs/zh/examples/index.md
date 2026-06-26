@@ -13,6 +13,17 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
 
 这个页面按真实产品场景组织。先看预览理解 UI 形态，需要接入时切到代码；只有查参数或方法时再看 API 表格。
 
+## 先跑不需要 key 的 Demo
+
+```bash
+pnpm install
+pnpm example:chat
+```
+
+打开 Vite 输出的本地地址，点击 **Run approval demo**。聊天示例会先使用确定性的
+`local-tools` Provider，流式输出回复，在 `chargeCard` 工具调用处暂停，并在审批或拒绝后继续。
+先用这条路径确认 UI，再接真实 Provider key 或后端代理。
+
 ## 先看哪个示例？
 
 | 目标                             | 从这里开始                     |
