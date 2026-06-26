@@ -51,6 +51,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `id`                              | `string`                                                               | 自动生成   | 随 provider request 透传的稳定 chat id。                       |
 | `threadId`                        | `string`                                                               | -          | 随 chat 和 resume request 透传的后端 thread id。               |
 | `forwardedProps`                  | `Record<string, unknown>`                                              | -          | 转发给 proxy/agent 后端的应用上下文 props。                    |
+| `context`                         | `unknown`                                                              | -          | 只传给本地工具回调的客户端上下文。                             |
 | `generateId`                      | `IdGenerator`                                                          | `createId` | 覆盖自动生成 chat、message、tool 和 stream data id 的逻辑。    |
 | `initialMessages`                 | `Message[]`                                                            | `[]`       | 初始消息历史。                                                 |
 | `messages`                        | `Message[]`                                                            | `[]`       | AI SDK 风格的 `initialMessages` 别名；两者同时存在时后者优先。 |
@@ -439,6 +440,11 @@ await append("What's the weather in Tokyo?")
 console.log(messages.value.map((m) => m.role))
 // ['user', 'assistant', 'tool', 'assistant']
 ```
+
+浏览器本地工具需要 store、session 快照或客户端服务实例时，可以使用 `context`。它会通过
+`ToolCallHandlerContext.context` 传给 `toolHandlers`、`requiresToolApproval`、
+`onToolCall` 和 `onToolResult`；不会复制进 provider request。proxy/agent 后端需要 JSON
+上下文时，应使用 `forwardedProps`。
 
 库会把流式返回的 `tool_calls` delta 累积成 assistant 消息上的最终 `toolCalls[]`。
 OpenAI-compatible Provider 使用 OpenAI wire format；Anthropic Provider 会把同一套公开 `Tool` 和 `tool` 消息映射到 Anthropic Messages API 格式。如果模型调用了未注册的工具，或者 handler 抛错，`append()` 会 reject，并写入 `error.value`。

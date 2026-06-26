@@ -9,8 +9,8 @@ const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
 
 const [pack] = JSON.parse(output)
 const files = new Set(pack.files.map((file) => file.path))
-const maxPackageSize = 216_800
-const maxUnpackedSize = 874_800
+const maxPackageSize = 217_050
+const maxUnpackedSize = 876_100
 
 const requiredFiles = [
   'package.json',

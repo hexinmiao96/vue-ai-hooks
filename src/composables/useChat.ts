@@ -34,6 +34,7 @@ export interface ToolCallHandlerContext {
   toolCall: ToolCall
   messages: Message[]
   args: unknown
+  context?: unknown
 }
 
 export type ToolCallHandler = (
@@ -189,6 +190,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   id?: string
   threadId?: string
   forwardedProps?: Record<string, unknown>
+  context?: unknown
   generateId?: IdGenerator
   resume?: boolean
   prepareStep?: PrepareStep
@@ -778,6 +780,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     defaultRequest = {},
     threadId: defaultThreadId,
     forwardedProps: defaultForwardedProps,
+    context: runtimeContext,
     onUpdate,
     onFinish,
     onError,
@@ -1085,7 +1088,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     return {
       toolCall: call,
       messages: [...messages.value],
-      args
+      args,
+      context: runtimeContext
     }
   }
   function toolResultMessage(call: ToolCall, result: unknown): Message {
@@ -1107,6 +1111,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       toolCall: call,
       messages: [...messages.value],
       args,
+      context: runtimeContext,
       resultMessage: { ...resultMessage }
     })
   }

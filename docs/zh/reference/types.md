@@ -160,6 +160,7 @@ interface ToolCallHandlerContext {
   toolCall: ToolCall
   messages: Message[]
   args: unknown
+  context?: unknown
 }
 
 type ToolApprovalPredicate = (
@@ -193,6 +194,7 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 
 `ToolApprovalPredicate` 会让匹配到的本地 handler 暂停，直到 UI 调用
 `approveToolCall()` 或 `rejectToolCall()`。`messages` 是当前历史的浅拷贝快照。
+`context` 是客户端本地的 `useChat({ context })` 值，不会序列化进 provider request。
 `resultMessage` 是继续下一轮模型请求前将追加的 `tool` 消息。
 
 `SendAutomaticallyWhen` 用于控制工具结果齐备后是否发起下一轮 provider 请求。

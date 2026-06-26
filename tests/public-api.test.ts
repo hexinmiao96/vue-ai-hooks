@@ -236,6 +236,7 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions['forwardedProps']>().toEqualTypeOf<
       Record<string, unknown> | undefined
     >()
+    expectTypeOf<UseChatOptions['context']>().toEqualTypeOf<unknown>()
     expectTypeOf<UseChatOptions['prepareSendMessagesRequest']>().toEqualTypeOf<
       PrepareSendMessagesRequest | undefined
     >()
@@ -483,6 +484,7 @@ describe('public API types', () => {
     const handler: ToolCallHandler = async (args, context) => {
       expectTypeOf(args).toEqualTypeOf<unknown>()
       expectTypeOf(context).toEqualTypeOf<ToolCallHandlerContext>()
+      expectTypeOf(context.context).toEqualTypeOf<unknown>()
       return { ok: true }
     }
     const requiresToolApproval: ToolApprovalPredicate = (args, context) => {
@@ -506,6 +508,7 @@ describe('public API types', () => {
     }
     const resultContext: ToolResultHandlerContext = {
       args: { q: 'vue' },
+      context: { userId: 'user_1' },
       toolCall,
       messages: [message],
       resultMessage: {

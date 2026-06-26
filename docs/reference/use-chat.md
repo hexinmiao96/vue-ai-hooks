@@ -51,6 +51,7 @@ Use `input` with a Vue form for the common composer flow:
 | `id`                              | `string`                                                               | generated  | Stable chat id sent with provider requests.                            |
 | `threadId`                        | `string`                                                               | —          | Backend thread id sent with chat and resume requests.                  |
 | `forwardedProps`                  | `Record<string, unknown>`                                              | —          | App props forwarded to proxy/agent backends.                           |
+| `context`                         | `unknown`                                                              | —          | Client-local context passed to local tool callbacks only.              |
 | `generateId`                      | `IdGenerator`                                                          | `createId` | Override automatic chat, message, tool, and stream data id generation. |
 | `initialMessages`                 | `Message[]`                                                            | `[]`       | Seed the message history.                                              |
 | `messages`                        | `Message[]`                                                            | `[]`       | AI SDK-style alias for `initialMessages`; `initialMessages` wins.      |
@@ -457,6 +458,12 @@ await append("What's the weather in Tokyo?")
 console.log(messages.value.map((m) => m.role))
 // ['user', 'assistant', 'tool', 'assistant']
 ```
+
+Use `context` for browser-local dependencies that tools need, such as a store,
+session snapshot, or client service handle. It is passed to `toolHandlers`,
+`requiresToolApproval`, `onToolCall`, and `onToolResult` through
+`ToolCallHandlerContext.context`; it is not copied into provider requests. Use
+`forwardedProps` instead when a proxy/agent backend needs JSON context.
 
 The library handles the streaming accumulation of `tool_calls` deltas into the
 final `toolCalls[]` on the assistant message. OpenAI-compatible providers use

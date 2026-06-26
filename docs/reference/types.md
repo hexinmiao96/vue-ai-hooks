@@ -167,6 +167,7 @@ interface ToolCallHandlerContext {
   toolCall: ToolCall
   messages: Message[]
   args: unknown
+  context?: unknown
 }
 
 type ToolApprovalPredicate = (
@@ -200,8 +201,9 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 
 `ToolApprovalPredicate` pauses matching local handlers until the UI calls
 `approveToolCall()` or `rejectToolCall()`. `messages` is a shallow snapshot of
-the current history. `resultMessage` is the generated `tool` message that will
-be appended before the follow-up model call.
+the current history. `context` is the client-local `useChat({ context })` value
+and is not serialized to provider requests. `resultMessage` is the generated
+`tool` message that will be appended before the follow-up model call.
 
 `SendAutomaticallyWhen` controls whether completed tool results should trigger
 the next provider request. `lastAssistantMessageIsCompleteWithToolCalls` is the

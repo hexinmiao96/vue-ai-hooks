@@ -2098,6 +2098,7 @@ describe('useChat', () => {
     const requests: ChatRequest[] = []
     const onToolCall = vi.fn()
     const onToolResult = vi.fn()
+    const runtimeContext = { tenantId: 'tenant_1', mode: 'checkout' }
     const provider = fakeTurnProvider(
       [
         [
@@ -2119,12 +2120,14 @@ describe('useChat', () => {
     )
     const { messages, append } = useChat({
       provider,
+      context: runtimeContext,
       onToolCall,
       onToolResult,
       toolHandlers: {
         getWeather(args, context) {
           expect(args).toEqual({ city: 'Tokyo' })
           expect(context.args).toEqual(args)
+          expect(context.context).toBe(runtimeContext)
           return { temp: 22, conditions: 'sunny' }
         }
       }
@@ -2145,6 +2148,7 @@ describe('useChat', () => {
       { city: 'Tokyo' },
       expect.objectContaining({
         args: { city: 'Tokyo' },
+        context: runtimeContext,
         toolCall: expect.objectContaining({ id: 'call_1' })
       })
     )
@@ -2152,6 +2156,7 @@ describe('useChat', () => {
       { temp: 22, conditions: 'sunny' },
       expect.objectContaining({
         args: { city: 'Tokyo' },
+        context: runtimeContext,
         resultMessage: expect.objectContaining({
           role: 'tool',
           toolCallId: 'call_1',
@@ -2278,9 +2283,11 @@ describe('useChat', () => {
 
   it('waits for approval before running a registered tool handler', async () => {
     const requests: ChatRequest[] = []
+    const runtimeContext = { userId: 'user_1' }
     const chargeCard = vi.fn(() => ({ charged: true }))
-    const requiresToolApproval = vi.fn((args) => {
+    const requiresToolApproval = vi.fn((args, context) => {
       expect(args).toEqual({ amount: 49 })
+      expect(context.context).toBe(runtimeContext)
       return true
     })
     const provider = fakeTurnProvider(
@@ -2304,6 +2311,7 @@ describe('useChat', () => {
     )
     const { addToolApprovalResponse, append, messages, pendingToolCalls } = useChat({
       provider,
+      context: runtimeContext,
       requiresToolApproval,
       toolHandlers: { chargeCard }
     })
@@ -2319,11 +2327,17 @@ describe('useChat', () => {
 
     expect(requiresToolApproval).toHaveBeenCalledWith(
       { amount: 49 },
-      expect.objectContaining({ toolCall: expect.objectContaining({ id: 'call_1' }) })
+      expect.objectContaining({
+        context: runtimeContext,
+        toolCall: expect.objectContaining({ id: 'call_1' })
+      })
     )
     expect(chargeCard).toHaveBeenCalledWith(
       { amount: 49 },
-      expect.objectContaining({ toolCall: expect.objectContaining({ id: 'call_1' }) })
+      expect.objectContaining({
+        context: runtimeContext,
+        toolCall: expect.objectContaining({ id: 'call_1' })
+      })
     )
     expect(pendingToolCalls.value).toEqual([])
     expect(requests).toHaveLength(2)

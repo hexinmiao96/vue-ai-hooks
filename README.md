@@ -46,6 +46,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🔐 **Production proxy path** — `proxyProvider` calls your `/api/ai/*` endpoints so upstream keys stay server-side
 - 🧭 **Proxy request control** — add app body fields or rewrite proxy URL, headers, and credentials per request
 - 🧵 **Thread-aware backend context** — pass `threadId` and `forwardedProps` to proxy/agent backends without overloading client state ids
+- 🧩 **Client-local tool context** — pass local runtime context to browser tool handlers without serializing it to the model backend
 - 🧾 **Request body extensions** — pass provider-specific JSON fields through `body` without losing typed options
 - 🪝 **Request preparation hooks** — customize send and resume requests after chat id, metadata, and messages resolve
 - 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
@@ -298,6 +299,8 @@ Use `prepareStep` when automatic tool loops need request changes per assistant
 step, such as narrowing `activeTools` after a tool result arrives.
 Use `threadId` and `forwardedProps` when an agent backend needs a server thread
 identifier plus app context without changing the client-side shared chat id.
+Use `context` when browser-local tool handlers need stores, services, or session
+state that should not be serialized.
 
 Set `throttleMs` on `useChat`, `useCompletion`, or `useObject` to batch reactive
 stream updates for busy UIs. The final stream state is always flushed before the
@@ -420,6 +423,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Shared completion state with explicit `useCompletion({ id })`
 - ✅ Chat id and request metadata passthrough for proxy-backed apps
 - ✅ Thread id and forwarded props passthrough for proxy/agent backends
+- ✅ Client-local tool context for handlers, approval predicates, and tool lifecycle hooks
 - ✅ AI SDK UI message stream compatibility for proxy-backed apps
 - ✅ Resumable stream client hook for proxy-backed apps
 - ✅ Edit-and-resend flow with `append(..., { messageId })`
