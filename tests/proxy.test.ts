@@ -48,7 +48,7 @@ describe('proxyProvider', () => {
       model: 'app-selected-model',
       headers: { 'X-Trace': 'trace-1' }
     })
-    const chunks = []
+    const chunks: unknown[] = []
     for await (const chunk of stream) chunks.push(chunk)
 
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
@@ -81,10 +81,232 @@ describe('proxyProvider', () => {
       messages: [{ id: 'm1', role: 'user', content: 'Hi' }],
       stream: false
     })
-    const chunks = []
+    const chunks: unknown[] = []
     for await (const chunk of stream) chunks.push(chunk)
 
     expect(chunks).toEqual([{ content: 'done' }])
+  })
+
+  it('maps AI SDK UI message stream parts to ChatChunk values', async () => {
+    const fetcher = vi.fn(async () =>
+      sseResponse([
+        { type: 'start', messageId: 'msg_1' },
+        { type: 'text-start', id: 'text_1' },
+        { type: 'text-delta', id: 'text_1', delta: 'Hel' },
+        { type: 'text-delta', id: 'text_1', delta: 'lo' },
+        { type: 'data-progress', id: 'progress_1', data: { step: 1 } },
+        { type: 'source-url', sourceId: 'source_1', url: 'https://example.test/docs' },
+        { type: 'tool-input-start', toolCallId: 'call_1', toolName: 'lookup' },
+        { type: 'tool-input-delta', toolCallId: 'call_1', inputTextDelta: '{"q":"' },
+        { type: 'tool-input-delta', toolCallId: 'call_1', inputTextDelta: 'vue"}' },
+        {
+          type: 'finish',
+          finishReason: 'stop',
+          totalUsage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 }
+        }
+      ])
+    )
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    expect(chunks).toEqual([
+      { metadata: { type: 'start', messageId: 'msg_1' } },
+      { content: 'Hel' },
+      { content: 'lo' },
+      { data: { step: 1 }, dataType: 'data-progress', dataId: 'progress_1' },
+      {
+        data: { sourceId: 'source_1', url: 'https://example.test/docs' },
+        dataType: 'source-url',
+        dataId: 'source_1'
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { arguments: '{"q":"' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { arguments: 'vue"}' }
+          }
+        ]
+      },
+      {
+        finishReason: 'stop',
+        usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 }
+      }
+    ])
+  })
+
+  it('surfaces AI SDK UI message stream error parts as request errors', async () => {
+    const fetcher = vi.fn(async () =>
+      sseResponse([
+        { type: 'text-delta', delta: 'partial' },
+        { type: 'error', errorText: 'bad' }
+      ])
+    )
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+
+    const chunks: unknown[] = []
+    await expect(async () => {
+      for await (const chunk of stream) chunks.push(chunk)
+    }).rejects.toMatchObject({ message: 'bad' })
+    expect(chunks).toEqual([{ content: 'partial' }])
+  })
+
+  it('maps AI SDK UI message stream tool availability and data variants', async () => {
+    const fetcher = vi.fn(async () =>
+      sseResponse([
+        { type: 'start-step' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'call_2',
+          toolName: 'search',
+          input: { q: 'vue' }
+        },
+        {
+          type: 'tool-output-available',
+          toolCallId: 'call_2',
+          output: { ok: true },
+          transient: true
+        },
+        { type: 'file', id: 'file_1', mediaType: 'text/plain', url: 'https://example.test/a.txt' },
+        { type: 'source-document', sourceId: 'doc_1', title: 'Docs' },
+        { type: 'finish' }
+      ])
+    )
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    expect(chunks).toEqual([
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_2',
+            type: 'function',
+            function: { name: 'search', arguments: '{"q":"vue"}' }
+          }
+        ]
+      },
+      {
+        data: { toolCallId: 'call_2', output: { ok: true }, transient: true },
+        dataType: 'tool-output-available',
+        dataId: 'call_2',
+        transient: true
+      },
+      {
+        data: { id: 'file_1', mediaType: 'text/plain', url: 'https://example.test/a.txt' },
+        dataType: 'file',
+        dataId: 'file_1'
+      },
+      {
+        data: { sourceId: 'doc_1', title: 'Docs' },
+        dataType: 'source-document',
+        dataId: 'doc_1'
+      },
+      {}
+    ])
+  })
+
+  it('uses available AI SDK UI message stream error text fallbacks', async () => {
+    const providerFrom = (event: unknown) =>
+      proxyProvider({
+        fetch: vi.fn(async () => sseResponse([event])) as unknown as typeof fetch
+      })
+
+    for (const [event, message] of [
+      [{ type: 'error', message: 'message field' }, 'message field'],
+      [{ type: 'error', error: 'error field' }, 'error field'],
+      [{ type: 'error' }, 'AI SDK UI message stream returned an error part']
+    ] as const) {
+      const stream = await providerFrom(event).chat({
+        messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+      })
+
+      await expect(async () => {
+        for await (const _chunk of stream) {
+          // consume stream
+        }
+      }).rejects.toMatchObject({ message })
+    }
+  })
+
+  it('skips malformed AI SDK UI message stream parts and normalizes partial usage', async () => {
+    const fetcher = vi.fn(async () =>
+      sseResponse([
+        { type: 'text-delta', delta: 1 },
+        { type: 'start', id: 'run_1' },
+        { type: 'finish-step', id: 'step_1' },
+        { type: 'tool-input-start', toolCallId: 'bad' },
+        { type: 'tool-input-delta', toolCallId: 'call_missing' },
+        {
+          type: 'tool-input-available',
+          toolCallId: 'call_3',
+          toolName: 'raw',
+          input: '{"raw":true}'
+        },
+        { type: 'data-note', transient: false },
+        { type: 'finish', usage: { promptTokens: 2, completionTokens: 3 } },
+        { type: 'finish', usage: { promptTokens: 'bad' } }
+      ])
+    )
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    expect(chunks).toEqual([
+      { metadata: { type: 'start', id: 'run_1' } },
+      { metadata: { type: 'finish-step', id: 'step_1' } },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_3',
+            type: 'function',
+            function: { name: 'raw', arguments: '{"raw":true}' }
+          }
+        ]
+      },
+      { data: undefined, dataType: 'data-note', transient: false },
+      { usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 } },
+      {}
+    ])
   })
 
   it('lets proxy requests add body fields and transform chat request options', async () => {

@@ -6,9 +6,15 @@ import type {
   EmbeddingRequest,
   EmbeddingResult
 } from '../types'
+import { AiHooksError } from '../types'
 import { requestJson } from '../utils/fetch'
 import { parseSSE } from '../utils/stream'
 import type { ChatProvider } from './types'
+
+interface UiStreamState {
+  toolIndexes: Map<string, number>
+  toolArgumentDeltas: Map<string, string>
+}
 
 type HeaderSource =
   | Record<string, string>
@@ -248,8 +254,13 @@ function isEventStream(response: Response) {
 async function readChatChunks(response: Response, signal?: AbortSignal) {
   if (isEventStream(response)) {
     return (async function* () {
+      const uiState: UiStreamState = {
+        toolIndexes: new Map(),
+        toolArgumentDeltas: new Map()
+      }
       for await (const raw of parseSSE(response, signal)) {
-        yield raw as ChatChunk
+        const chunks = toChatChunks(raw, uiState)
+        for (const chunk of chunks) yield chunk
       }
     })()
   }
@@ -280,4 +291,180 @@ function completionText(value: unknown): string | undefined {
   if (typeof item.text === 'string') return item.text
   if (typeof item.completion === 'string') return item.completion
   return typeof item.content === 'string' ? item.content : undefined
+}
+
+function toChatChunks(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {
+  if (!isUiMessageStreamPart(raw)) return [raw as ChatChunk]
+
+  const type = raw.type
+  if (type === 'text-delta') {
+    const delta = typeof raw.delta === 'string' ? raw.delta : ''
+    return delta ? [{ content: delta }] : []
+  }
+
+  if (type === 'finish') {
+    return [
+      {
+        ...(typeof raw.finishReason === 'string'
+          ? { finishReason: raw.finishReason as ChatChunk['finishReason'] }
+          : {}),
+        ...normalizeUsage(raw.totalUsage ?? raw.usage)
+      }
+    ]
+  }
+
+  if (type === 'error') {
+    throw new AiHooksError(uiErrorMessage(raw), { cause: raw })
+  }
+
+  if (type === 'tool-input-start') {
+    return toolInputStartChunk(raw, state)
+  }
+
+  if (type === 'tool-input-delta') {
+    return toolInputDeltaChunk(raw, state)
+  }
+
+  if (type === 'tool-input-available') {
+    return toolInputAvailableChunk(raw, state)
+  }
+
+  if (
+    type === 'tool-output-available' ||
+    type === 'tool-output-error' ||
+    type === 'source-url' ||
+    type === 'source-document' ||
+    type === 'file' ||
+    type.startsWith('data-')
+  ) {
+    return [uiDataChunk(raw)]
+  }
+
+  if (type === 'start' || type === 'start-step' || type === 'finish-step') {
+    return raw.messageId || raw.id ? [{ metadata: { ...raw } }] : []
+  }
+
+  return []
+}
+
+function isUiMessageStreamPart(raw: Record<string, unknown>): raw is Record<string, unknown> & {
+  type: string
+} {
+  return typeof raw.type === 'string'
+}
+
+function normalizeUsage(raw: unknown): Pick<ChatChunk, 'usage'> {
+  if (!raw || typeof raw !== 'object') return {}
+  const usage = raw as Record<string, unknown>
+  const promptTokens = numberValue(usage.promptTokens ?? usage.inputTokens)
+  const completionTokens = numberValue(usage.completionTokens ?? usage.outputTokens)
+  const totalTokens = numberValue(usage.totalTokens)
+  if (promptTokens === undefined && completionTokens === undefined && totalTokens === undefined) {
+    return {}
+  }
+  return {
+    usage: {
+      promptTokens: promptTokens ?? 0,
+      completionTokens: completionTokens ?? 0,
+      totalTokens: totalTokens ?? (promptTokens ?? 0) + (completionTokens ?? 0)
+    }
+  }
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function uiErrorMessage(raw: Record<string, unknown>) {
+  if (typeof raw.errorText === 'string') return raw.errorText
+  if (typeof raw.message === 'string') return raw.message
+  if (typeof raw.error === 'string') return raw.error
+  return 'AI SDK UI message stream returned an error part'
+}
+
+function toolIndex(id: string, state: UiStreamState) {
+  const existing = state.toolIndexes.get(id)
+  if (existing !== undefined) return existing
+  const next = state.toolIndexes.size
+  state.toolIndexes.set(id, next)
+  return next
+}
+
+function toolInputStartChunk(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {
+  const id = typeof raw.toolCallId === 'string' ? raw.toolCallId : undefined
+  const name = typeof raw.toolName === 'string' ? raw.toolName : undefined
+  if (!id || !name) return []
+  state.toolArgumentDeltas.set(id, '')
+  return [
+    {
+      toolCalls: [
+        {
+          index: toolIndex(id, state),
+          id,
+          type: 'function',
+          function: { name, arguments: '' }
+        }
+      ]
+    }
+  ]
+}
+
+function toolInputDeltaChunk(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {
+  const id = typeof raw.toolCallId === 'string' ? raw.toolCallId : undefined
+  const delta = typeof raw.inputTextDelta === 'string' ? raw.inputTextDelta : undefined
+  if (!id || !delta) return []
+  state.toolArgumentDeltas.set(id, `${state.toolArgumentDeltas.get(id) ?? ''}${delta}`)
+  return [
+    {
+      toolCalls: [
+        {
+          index: toolIndex(id, state),
+          id,
+          type: 'function',
+          function: { arguments: delta }
+        }
+      ]
+    }
+  ]
+}
+
+function toolInputAvailableChunk(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {
+  const id = typeof raw.toolCallId === 'string' ? raw.toolCallId : undefined
+  const name = typeof raw.toolName === 'string' ? raw.toolName : undefined
+  if (!id || !name) return []
+
+  const hasDelta = Boolean(state.toolArgumentDeltas.get(id))
+  const input = hasDelta ? '' : stringifyToolInput(raw.input)
+  return [
+    {
+      toolCalls: [
+        {
+          index: toolIndex(id, state),
+          id,
+          type: 'function',
+          function: { name, arguments: input }
+        }
+      ]
+    }
+  ]
+}
+
+function stringifyToolInput(value: unknown) {
+  if (value === undefined) return ''
+  return typeof value === 'string' ? value : JSON.stringify(value)
+}
+
+function uiDataChunk(raw: Record<string, unknown>): ChatChunk {
+  const type = raw.type as string
+  const data = type.startsWith('data-')
+    ? raw.data
+    : Object.fromEntries(Object.entries(raw).filter(([key]) => key !== 'type'))
+  return {
+    data,
+    dataType: type,
+    ...(typeof raw.id === 'string' ? { dataId: raw.id } : {}),
+    ...(typeof raw.sourceId === 'string' ? { dataId: raw.sourceId } : {}),
+    ...(typeof raw.toolCallId === 'string' ? { dataId: raw.toolCallId } : {}),
+    ...(typeof raw.transient === 'boolean' ? { transient: raw.transient } : {})
+  }
 }

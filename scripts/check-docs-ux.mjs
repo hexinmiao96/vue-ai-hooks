@@ -8,6 +8,8 @@ const files = {
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
+  providers: readFileSync('docs/reference/providers.md', 'utf8'),
+  zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
   zhExamples: readFileSync('docs/zh/examples/index.md', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
@@ -209,6 +211,18 @@ expect(
     files.zhUseChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'Chinese useChat docs must document Date-safe message persistence helpers and public types'
 )
+expect(
+  files.providers.includes('AI SDK UI message stream protocol') &&
+    files.providers.includes('text-delta') &&
+    files.providers.includes('tool-input-*'),
+  'English provider docs must document AI SDK UI message stream compatibility'
+)
+expect(
+  files.zhProviders.includes('AI SDK UI message stream 协议') &&
+    files.zhProviders.includes('text-delta') &&
+    files.zhProviders.includes('tool-input-*'),
+  'Chinese provider docs must document AI SDK UI message stream compatibility'
+)
 
 for (const noisyLabel of [
   "label: 'useChat Properties'",
@@ -237,7 +251,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples task chooser, form helpers, shared chat state, message pruning, message persistence, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, examples task chooser, form helpers, shared chat state, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

@@ -398,6 +398,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Completion form helpers for input and submit handling
 - ✅ Shared completion state with explicit `useCompletion({ id })`
 - ✅ Chat id and request metadata passthrough for proxy-backed apps
+- ✅ AI SDK UI message stream compatibility for proxy-backed apps
 - ✅ Resumable stream client hook for proxy-backed apps
 - ✅ Edit-and-resend flow with `append(..., { messageId })`
 - ✅ Proxy request `body` and `prepareRequest` hooks for app backends

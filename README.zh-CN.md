@@ -334,6 +334,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - Completion 表单输入和提交辅助函数
 - 显式 `useCompletion({ id })` 支持共享补全状态
 - 面向代理后端应用的 chat id 和请求 metadata 透传
+- 面向代理后端应用的 AI SDK UI message stream 兼容
 - 面向代理后端应用的可恢复流客户端 hook
 - 通过 `append(..., { messageId })` 实现编辑后重发
 - 请求级 `body` 扩展，支持 Provider 专属 JSON 选项
