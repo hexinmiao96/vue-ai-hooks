@@ -187,6 +187,8 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   initialInput?: string
   defaultRequest?: Partial<ChatRequest>
   id?: string
+  threadId?: string
+  forwardedProps?: Record<string, unknown>
   generateId?: IdGenerator
   resume?: boolean
   prepareStep?: PrepareStep
@@ -774,6 +776,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     messages: messagesOption,
     initialInput = '',
     defaultRequest = {},
+    threadId: defaultThreadId,
+    forwardedProps: defaultForwardedProps,
     onUpdate,
     onFinish,
     onError,
@@ -1396,12 +1400,19 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ): Promise<ChatRequest> {
     const body = mergeRequestBody(defaultRequest.body, request.body)
     const headers = mergeRequestHeaders(defaultRequest.headers, request.headers)
+    const forwardedProps = mergeRequestBody(
+      mergeRequestBody(defaultForwardedProps, defaultRequest.forwardedProps),
+      request.forwardedProps
+    )
     const activeTools = request.activeTools ?? defaultRequest.activeTools ?? defaultActiveTools
+    const threadId = request.threadId ?? defaultRequest.threadId ?? defaultThreadId
     const base: ChatRequest = {
       ...defaultRequest,
       ...(defaultTools && !request.tools ? { tools: defaultTools } : {}),
       ...(defaultToolChoice && !request.toolChoice ? { toolChoice: defaultToolChoice } : {}),
       ...request,
+      ...(threadId !== undefined ? { threadId } : {}),
+      ...(forwardedProps ? { forwardedProps } : {}),
       ...(activeTools !== undefined ? { activeTools } : {}),
       ...(body ? { body } : {}),
       ...(headers ? { headers } : {}),
@@ -1445,10 +1456,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ): Promise<ChatResumeRequest> {
     const body = mergeRequestBody(defaultRequest.body, resumeOptions.body)
     const headers = mergeRequestHeaders(defaultRequest.headers, resumeOptions.headers)
+    const forwardedProps = mergeRequestBody(
+      mergeRequestBody(defaultForwardedProps, defaultRequest.forwardedProps),
+      resumeOptions.forwardedProps
+    )
+    const threadId = resumeOptions.threadId ?? defaultRequest.threadId ?? defaultThreadId
     const base: ChatResumeRequest = {
       id: resumeOptions.id ?? id.value,
       metadata: defaultRequest.metadata,
       ...resumeOptions,
+      ...(threadId !== undefined ? { threadId } : {}),
+      ...(forwardedProps ? { forwardedProps } : {}),
       ...(body ? { body } : {}),
       ...(headers ? { headers } : {}),
       signal

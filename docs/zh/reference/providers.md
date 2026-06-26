@@ -195,7 +195,8 @@ const provider = proxyProvider({
   `EmbeddingResult` JSON。
 
 config 级 `body` 和请求级 `request.body` 会先合并进 chat、completion 和 embedding 的
-POST body，然后再合并 Provider request 字段。`prepareRequest` 会收到
+POST body，然后再合并 Provider request 字段。`ChatRequest.threadId` 和
+`ChatRequest.forwardedProps` 也会复制进 proxy chat POST body，方便 agent 后端维护自己的线程状态。`prepareRequest` 会收到
 `{ kind, url, request, headers, body, credentials }`；只返回需要覆盖的字段即可。它也会在
 `resumeChat()` 中运行，此时没有 body。
 

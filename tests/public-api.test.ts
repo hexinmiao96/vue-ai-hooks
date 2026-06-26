@@ -232,6 +232,10 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions['generateId']>().toEqualTypeOf<IdGenerator | undefined>()
     expectTypeOf<UseChatOptions['messages']>().toEqualTypeOf<Message[] | undefined>()
     expectTypeOf<UseChatOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseChatOptions['threadId']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseChatOptions['forwardedProps']>().toEqualTypeOf<
+      Record<string, unknown> | undefined
+    >()
     expectTypeOf<UseChatOptions['prepareSendMessagesRequest']>().toEqualTypeOf<
       PrepareSendMessagesRequest | undefined
     >()
@@ -383,7 +387,9 @@ describe('public API types', () => {
     }
     const request: ChatRequest = {
       id: 'chat_1',
+      threadId: 'thread_1',
       messages: [message],
+      forwardedProps: { locale: 'en-US' },
       body: { providerOption: true },
       metadata: { traceId: 'trace_1' },
       tools: [tool],
@@ -399,6 +405,8 @@ describe('public API types', () => {
     }
     const resumeRequest: ChatResumeRequest = {
       id: 'chat_1',
+      threadId: 'thread_1',
+      forwardedProps: { locale: 'en-US' },
       body: { resumeReason: 'manual' },
       metadata: { traceId: 'resume_1' },
       headers: { 'X-Trace': 'resume_1' }
@@ -538,8 +546,12 @@ describe('public API types', () => {
     expectTypeOf<ChatAttachmentsInput>().toEqualTypeOf<FileList | readonly ChatAttachmentInput[]>()
     expectTypeOf(request.messages).toEqualTypeOf<Message[]>()
     expectTypeOf(request.messages[0].parts).toEqualTypeOf<MessagePart[] | undefined>()
+    expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
+    expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.metadata).toEqualTypeOf<unknown>()
+    expectTypeOf(resumeRequest.threadId).toEqualTypeOf<string | undefined>()
+    expectTypeOf(resumeRequest.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(resumeRequest.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(prepareSendOptions.trigger).toEqualTypeOf<SendChatTrigger>()
     expectTypeOf(prepareStepOptions.stepNumber).toEqualTypeOf<number>()

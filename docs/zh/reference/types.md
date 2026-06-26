@@ -249,7 +249,9 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | 字段               | 类型                                                                                 | 说明                                             |
 | ------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | `id`               | `string`                                                                             | Provider 或代理层使用的 chat/session 标识。      |
+| `threadId`         | `string`                                                                             | 和客户端共享状态 id 分离的后端 thread id。       |
 | `messages`         | `Message[]`                                                                          | 对话历史。                                       |
+| `forwardedProps`   | `Record<string, unknown>`                                                            | 转发给 proxy/agent 后端的应用上下文 props。      |
 | `body`             | `Record<string, unknown>`                                                            | 额外 JSON body 字段，用于 Provider/代理选项。    |
 | `model`            | `string`                                                                             | Provider 模型 ID。                               |
 | `temperature`      | `number`                                                                             | 采样温度。                                       |
@@ -270,13 +272,15 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 ### `ChatResumeRequest`
 
-| 字段       | 类型                      | 说明                                             |
-| ---------- | ------------------------- | ------------------------------------------------ |
-| `id`       | `string`                  | 恢复端点使用的 chat/session 标识。               |
-| `body`     | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。    |
-| `metadata` | `unknown`                 | 应用自定义的请求 metadata，通常给代理/后端使用。 |
-| `signal`   | `AbortSignal`             | 中止信号。                                       |
-| `headers`  | `Record<string, string>`  | Provider 合并的单次请求 headers。                |
+| 字段             | 类型                      | 说明                                             |
+| ---------------- | ------------------------- | ------------------------------------------------ |
+| `id`             | `string`                  | 恢复端点使用的 chat/session 标识。               |
+| `threadId`       | `string`                  | 和客户端共享状态 id 分离的后端 thread id。       |
+| `forwardedProps` | `Record<string, unknown>` | 转发给 proxy/agent 后端的应用上下文 props。      |
+| `body`           | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。    |
+| `metadata`       | `unknown`                 | 应用自定义的请求 metadata，通常给代理/后端使用。 |
+| `signal`         | `AbortSignal`             | 中止信号。                                       |
+| `headers`        | `Record<string, string>`  | Provider 合并的单次请求 headers。                |
 
 ### `CompletionRequest`
 

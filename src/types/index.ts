@@ -173,7 +173,11 @@ export interface StreamDataPart {
 /** Request payload for a chat completion. */
 export interface ChatRequest {
   id?: string
+  /** Backend thread/session identifier that can differ from client-side shared state id. */
+  threadId?: string
   messages: Message[]
+  /** App-defined props forwarded to proxy/agent backends. */
+  forwardedProps?: Record<string, unknown>
   /** Extra JSON body fields for provider/proxy-specific request options. */
   body?: Record<string, unknown>
   model?: string
@@ -198,6 +202,10 @@ export interface ChatRequest {
 /** Request payload for resuming an active chat stream. */
 export interface ChatResumeRequest {
   id: string
+  /** Backend thread/session identifier that can differ from client-side shared state id. */
+  threadId?: string
+  /** App-defined props forwarded to proxy/agent backends. */
+  forwardedProps?: Record<string, unknown>
   /** Extra JSON body fields for provider/proxy-specific resume options. */
   body?: Record<string, unknown>
   metadata?: unknown

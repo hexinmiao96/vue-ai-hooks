@@ -204,6 +204,8 @@ Protocol:
 
 Config-level `body` and request-level `request.body` are merged into chat,
 completion, and embedding POST bodies before the provider request fields.
+`ChatRequest.threadId` and `ChatRequest.forwardedProps` are also copied into
+proxy chat POST bodies for agent backends that keep their own thread state.
 `prepareRequest` receives `{ kind, url, request, headers, body, credentials }`;
 return only the fields you need to override. It also runs for `resumeChat()`,
 where there is no body.

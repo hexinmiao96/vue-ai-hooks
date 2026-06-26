@@ -258,37 +258,41 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 ### `ChatRequest`
 
-| Field              | Type                                                                                 | Description                                             |
-| ------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| `id`               | `string`                                                                             | Chat/session identifier for provider or proxy layers.   |
-| `messages`         | `Message[]`                                                                          | Conversation history.                                   |
-| `body`             | `Record<string, unknown>`                                                            | Extra JSON body fields for provider/proxy options.      |
-| `model`            | `string`                                                                             | Provider model id.                                      |
-| `temperature`      | `number`                                                                             | Sampling temperature.                                   |
-| `maxTokens`        | `number`                                                                             | Maximum generated tokens.                               |
-| `topP`             | `number`                                                                             | Nucleus sampling value.                                 |
-| `frequencyPenalty` | `number`                                                                             | Frequency penalty.                                      |
-| `presencePenalty`  | `number`                                                                             | Presence penalty.                                       |
-| `stop`             | `string \| string[]`                                                                 | Stop sequence or sequences.                             |
-| `tools`            | `Tool[]`                                                                             | Function tools the model may call.                      |
-| `activeTools`      | `string[]`                                                                           | Function tool names to keep from the resolved list.     |
-| `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | Tool choice policy.                                     |
-| `responseFormat`   | `ResponseFormat`                                                                     | Structured output format for compatible providers.      |
-| `metadata`         | `unknown`                                                                            | App-defined request metadata for proxy/backend layers.  |
-| `user`             | `string`                                                                             | End-user identifier for provider policy/abuse tracking. |
-| `stream`           | `boolean`                                                                            | Whether the provider should stream.                     |
-| `signal`           | `AbortSignal`                                                                        | Abort signal.                                           |
-| `headers`          | `Record<string, string>`                                                             | Per-request headers merged by the provider.             |
+| Field              | Type                                                                                 | Description                                              |
+| ------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `id`               | `string`                                                                             | Chat/session identifier for provider or proxy layers.    |
+| `threadId`         | `string`                                                                             | Backend thread id, separate from client shared state id. |
+| `messages`         | `Message[]`                                                                          | Conversation history.                                    |
+| `forwardedProps`   | `Record<string, unknown>`                                                            | App props forwarded to proxy/agent backends.             |
+| `body`             | `Record<string, unknown>`                                                            | Extra JSON body fields for provider/proxy options.       |
+| `model`            | `string`                                                                             | Provider model id.                                       |
+| `temperature`      | `number`                                                                             | Sampling temperature.                                    |
+| `maxTokens`        | `number`                                                                             | Maximum generated tokens.                                |
+| `topP`             | `number`                                                                             | Nucleus sampling value.                                  |
+| `frequencyPenalty` | `number`                                                                             | Frequency penalty.                                       |
+| `presencePenalty`  | `number`                                                                             | Presence penalty.                                        |
+| `stop`             | `string \| string[]`                                                                 | Stop sequence or sequences.                              |
+| `tools`            | `Tool[]`                                                                             | Function tools the model may call.                       |
+| `activeTools`      | `string[]`                                                                           | Function tool names to keep from the resolved list.      |
+| `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | Tool choice policy.                                      |
+| `responseFormat`   | `ResponseFormat`                                                                     | Structured output format for compatible providers.       |
+| `metadata`         | `unknown`                                                                            | App-defined request metadata for proxy/backend layers.   |
+| `user`             | `string`                                                                             | End-user identifier for provider policy/abuse tracking.  |
+| `stream`           | `boolean`                                                                            | Whether the provider should stream.                      |
+| `signal`           | `AbortSignal`                                                                        | Abort signal.                                            |
+| `headers`          | `Record<string, string>`                                                             | Per-request headers merged by the provider.              |
 
 ### `ChatResumeRequest`
 
-| Field      | Type                      | Description                                            |
-| ---------- | ------------------------- | ------------------------------------------------------ |
-| `id`       | `string`                  | Chat/session identifier used by the resume endpoint.   |
-| `body`     | `Record<string, unknown>` | Extra JSON body fields for provider/proxy options.     |
-| `metadata` | `unknown`                 | App-defined request metadata for proxy/backend layers. |
-| `signal`   | `AbortSignal`             | Abort signal.                                          |
-| `headers`  | `Record<string, string>`  | Per-request headers merged by the provider.            |
+| Field            | Type                      | Description                                              |
+| ---------------- | ------------------------- | -------------------------------------------------------- |
+| `id`             | `string`                  | Chat/session identifier used by the resume endpoint.     |
+| `threadId`       | `string`                  | Backend thread id, separate from client shared state id. |
+| `forwardedProps` | `Record<string, unknown>` | App props forwarded to proxy/agent backends.             |
+| `body`           | `Record<string, unknown>` | Extra JSON body fields for provider/proxy options.       |
+| `metadata`       | `unknown`                 | App-defined request metadata for proxy/backend layers.   |
+| `signal`         | `AbortSignal`             | Abort signal.                                            |
+| `headers`        | `Record<string, string>`  | Per-request headers merged by the provider.              |
 
 ### `CompletionRequest`
 

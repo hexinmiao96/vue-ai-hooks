@@ -49,6 +49,8 @@ Use `input` with a Vue form for the common composer flow:
 | --------------------------------- | ---------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------- |
 | `provider`                        | `ChatProvider`                                                         | required   | The provider to use.                                                   |
 | `id`                              | `string`                                                               | generated  | Stable chat id sent with provider requests.                            |
+| `threadId`                        | `string`                                                               | —          | Backend thread id sent with chat and resume requests.                  |
+| `forwardedProps`                  | `Record<string, unknown>`                                              | —          | App props forwarded to proxy/agent backends.                           |
 | `generateId`                      | `IdGenerator`                                                          | `createId` | Override automatic chat, message, tool, and stream data id generation. |
 | `initialMessages`                 | `Message[]`                                                            | `[]`       | Seed the message history.                                              |
 | `messages`                        | `Message[]`                                                            | `[]`       | AI SDK-style alias for `initialMessages`; `initialMessages` wins.      |
@@ -634,11 +636,17 @@ were created with the same id. The first instance for an id seeds
 alias for `initialMessages`. Later instances reuse the same `messages`, `input`,
 `status`, loading, error, usage, stream data, and pending tool-call refs.
 
+Use `threadId` when the backend thread identifier should differ from the
+client-side shared state id. `forwardedProps` carries app context such as tenant,
+route, locale, or UI mode to proxy/agent backends. Both fields can be set on
+`useChat()`, `defaultRequest`, or a single call; single-call values win, and
+`forwardedProps` are shallow-merged.
+
 Use `setId()` when your app needs future provider requests to use a different
-backend thread id. It does not rebind the current refs to another shared-state
-entry. Per-request `metadata` is also passed through `ChatRequest`; direct
-provider adapters ignore it unless their upstream API supports it, while
-`proxyProvider` sends it to your backend JSON body.
+chat id. It does not rebind the current refs to another shared-state entry.
+Per-request `metadata` is also passed through `ChatRequest`; direct provider
+adapters ignore it unless their upstream API supports it, while `proxyProvider`
+sends it to your backend JSON body.
 
 ```ts
 const mainChat = useChat({
@@ -651,13 +659,20 @@ const mainChat = useChat({
 const sidebarChat = useChat({
   provider,
   id: 'thread_1',
-  defaultRequest: { metadata: { source: 'support-inbox' } }
+  threadId: 'backend-thread-1',
+  forwardedProps: { locale: 'en-US' },
+  defaultRequest: {
+    metadata: { source: 'support-inbox' },
+    forwardedProps: { route: '/support' }
+  }
 })
 
-mainChat.setInput('Continue this thread.')
-await sidebarChat.handleSubmit(undefined, { metadata: { traceId: 'req_1' } })
+await sidebarChat.handleSubmit(undefined, {
+  metadata: { traceId: 'req_1' },
+  forwardedProps: { route: '/support/ticket-1' }
+})
 
-mainChat.setId('backend-thread-2')
+mainChat.setId('client-chat-2')
 ```
 
 ## Resumable streams

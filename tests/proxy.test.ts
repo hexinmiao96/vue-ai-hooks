@@ -377,6 +377,8 @@ describe('proxyProvider', () => {
 
     const stream = await provider.chat({
       id: 'chat_1',
+      threadId: 'thread_1',
+      forwardedProps: { route: '/support/1', locale: 'en-US' },
       body: {
         tenantId: 'tenant_request',
         requestFlag: true,
@@ -417,6 +419,8 @@ describe('proxyProvider', () => {
     expect(body).toMatchObject({
       id: 'chat_1',
       requestFlag: true,
+      threadId: 'thread_1',
+      forwardedProps: { route: '/support/1', locale: 'en-US' },
       tenantId: 'tenant_request',
       prepared: true,
       messages: [{ id: 'm2', role: 'user', content: 'Latest' }]

@@ -41,6 +41,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **多 Provider**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、DeepSeek、Moonshot、智谱、Ollama、vLLM，以及任何 OpenAI-compatible API
 - **生产代理路径**：`proxyProvider` 调用你的 `/api/ai/*` 端点，让上游 key 留在服务端
 - **代理请求控制**：按请求追加应用 body 字段，或改写代理 URL、headers 和 credentials
+- **线程感知后端上下文**：用 `threadId` 和 `forwardedProps` 对接 proxy/agent 后端，不占用客户端共享状态 id
 - **请求 body 扩展**：通过 `body` 透传 Provider 专属 JSON 字段，同时保留 typed options
 - **请求准备钩子**：在 chat id、metadata 和消息列表确定后，自定义发送和恢复请求
 - **Tool calling helper**：自动执行本地 handler，也支持先审批再执行，或通过 `sendAutomaticallyWhen` 控制工具结果后的续跑
@@ -259,6 +260,8 @@ metadata 或后端专属 body 字段时，可以使用 `prepareSendMessagesReque
 `prepareReconnectToStreamRequest`。
 自动工具循环需要按 assistant 步骤调整请求时，可以使用 `prepareStep`，例如工具结果回来后收窄
 `activeTools`。
+agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `threadId` 和
+`forwardedProps`，不用改变客户端共享 chat id。
 
 `useChat`、`useCompletion` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
 
@@ -347,6 +350,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - Completion 表单输入和提交辅助函数
 - 显式 `useCompletion({ id })` 支持共享补全状态
 - 面向代理后端应用的 chat id 和请求 metadata 透传
+- 面向 proxy/agent 后端的 thread id 和 forwarded props 透传
 - 面向代理后端应用的 AI SDK UI message stream 兼容
 - 面向代理后端应用的可恢复流客户端 hook
 - 通过 `append(..., { messageId })` 实现编辑后重发

@@ -1597,6 +1597,99 @@ describe('useChat', () => {
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('passes thread id and forwarded props through chat requests', async () => {
+    const requests: ChatRequest[] = []
+    const prepareSendMessagesRequest = vi.fn()
+    const provider = fakeTurnProvider([[{ content: 'threaded' }]], requests)
+    const { append } = useChat({
+      provider,
+      id: 'client_chat',
+      threadId: 'thread_default',
+      forwardedProps: { locale: 'en-US', theme: 'light' },
+      defaultRequest: {
+        threadId: 'thread_request_default',
+        forwardedProps: { theme: 'dark', route: '/inbox' }
+      },
+      prepareSendMessagesRequest
+    })
+
+    await append('threaded request', {
+      threadId: 'thread_runtime',
+      forwardedProps: { route: '/ticket/1', panel: 'sidebar' }
+    })
+
+    expect(prepareSendMessagesRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          id: 'client_chat',
+          threadId: 'thread_runtime',
+          forwardedProps: {
+            locale: 'en-US',
+            theme: 'dark',
+            route: '/ticket/1',
+            panel: 'sidebar'
+          }
+        })
+      })
+    )
+    expect(requests[0]).toMatchObject({
+      id: 'client_chat',
+      threadId: 'thread_runtime',
+      forwardedProps: {
+        locale: 'en-US',
+        theme: 'dark',
+        route: '/ticket/1',
+        panel: 'sidebar'
+      }
+    })
+  })
+
+  it('passes thread id and forwarded props through resume requests', async () => {
+    const requests: ChatResumeRequest[] = []
+    const provider: ChatProvider = {
+      id: 'resume-thread',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        return (async function* () {})()
+      },
+      async resumeChat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        return (async function* () {
+          yield { content: 'resumed' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {})()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { resumeStream } = useChat({
+      provider,
+      id: 'client_chat',
+      threadId: 'thread_default',
+      forwardedProps: { locale: 'en-US' },
+      defaultRequest: {
+        forwardedProps: { route: '/chat' }
+      }
+    })
+
+    await resumeStream({
+      threadId: 'thread_resume',
+      forwardedProps: { route: '/chat/2', reconnect: true }
+    })
+
+    expect(requests[0]).toMatchObject({
+      id: 'client_chat',
+      threadId: 'thread_resume',
+      forwardedProps: {
+        locale: 'en-US',
+        route: '/chat/2',
+        reconnect: true
+      }
+    })
+  })
+
   it('reports regenerate trigger and message id to the send request preparer', async () => {
     const requests: ChatRequest[] = []
     const prepareSendMessagesRequest = vi.fn()
