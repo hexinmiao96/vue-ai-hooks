@@ -13,10 +13,11 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
-`RetryOptions`, and `RetryContext`.
+`SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `RetryOptions`, and
+`RetryContext`.
 
-Public helpers: `pruneMessages`, `serializeMessages`, and
-`deserializeMessages`.
+Public helpers: `pruneMessages`, `serializeMessages`, `deserializeMessages`,
+and `lastAssistantMessageIsCompleteWithToolCalls`.
 
 ## Usage
 
@@ -57,6 +58,7 @@ Use `input` with a Vue form for the common composer flow:
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | —          | Default tool choice.                                                   |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —          | Local handlers for automatic tool execution.                           |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | —          | Return true to pause a tool call for UI approval before execution.     |
+| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | Decide whether completed tool results should trigger the next request. |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | Maximum automatic tool-call rounds after a user message.               |
 | `persist`                         | `ChatPersistOptions`                                                   | —          | Auto-save Date-safe messages to localStorage or a custom `Storage`.    |
 | `maxRetries`                      | `number`                                                               | `0`        | Retry attempts for failures before the first stream chunk.             |
@@ -466,6 +468,21 @@ await addToolResult(call.id, { approved: true })
 `addToolOutput({ toolCallId, output })` is available as an AI SDK-style alias.
 For failed browser-side tool work, pass
 `{ toolCallId, state: 'output-error', errorText }`.
+
+By default, `useChat` continues automatically when the latest assistant tool
+calls all have matching `tool` result messages. Pass
+`sendAutomaticallyWhen: false` to turn that off, or pass a predicate such as
+`lastAssistantMessageIsCompleteWithToolCalls` to keep AI SDK-style
+configuration explicit:
+
+```ts
+import { lastAssistantMessageIsCompleteWithToolCalls, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls
+})
+```
 
 When a registered local handler should still wait for user approval, provide
 `requiresToolApproval`. Matching calls are exposed through `pendingToolCalls`

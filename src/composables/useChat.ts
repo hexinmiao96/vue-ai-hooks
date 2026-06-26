@@ -50,6 +50,14 @@ export interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
 
+export interface SendAutomaticallyWhenOptions {
+  messages: Message[]
+}
+
+export type SendAutomaticallyWhen = (
+  options: SendAutomaticallyWhenOptions
+) => boolean | PromiseLike<boolean>
+
 export interface ChatFinishInfo {
   message: Message
   messages: Message[]
@@ -160,6 +168,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   toolChoice?: ChatRequest['toolChoice']
   toolHandlers?: Record<string, ToolCallHandler>
   requiresToolApproval?: ToolApprovalPredicate
+  sendAutomaticallyWhen?: SendAutomaticallyWhen | false
   maxToolRoundtrips?: number
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
   onData?: (part: StreamDataPart) => void
@@ -228,6 +237,31 @@ function cloneMessage(message: Message): Message {
     ...(message.parts ? { parts: message.parts.map((part) => ({ ...part })) } : {}),
     ...(message.metadata ? { metadata: { ...message.metadata } } : {})
   }
+}
+
+export function lastAssistantMessageIsCompleteWithToolCalls({
+  messages
+}: SendAutomaticallyWhenOptions): boolean {
+  let assistantIndex = -1
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    if (messages[i].role === 'assistant') {
+      assistantIndex = i
+      break
+    }
+  }
+  if (assistantIndex < 0) return false
+
+  const assistant = messages[assistantIndex]
+  const calls = assistant.toolCalls ?? []
+  if (!calls.length) return false
+
+  const toolResultIds = new Set(
+    messages
+      .slice(assistantIndex + 1)
+      .filter((message) => message.role === 'tool' && message.toolCallId)
+      .map((message) => message.toolCallId)
+  )
+  return calls.every((call) => Boolean(call.id && toolResultIds.has(call.id)))
 }
 
 function serializeCreatedAt(value: unknown): string | undefined {
@@ -642,6 +676,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     toolChoice: defaultToolChoice,
     toolHandlers,
     requiresToolApproval,
+    sendAutomaticallyWhen,
     maxToolRoundtrips = 1,
     onChunk,
     onData,
@@ -905,6 +940,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     pendingToolCalls.value = []
     pendingToolRequest.value = null
     state.pendingToolSendContext = null
+  }
+  async function shouldSendAutomatically() {
+    const predicate = sendAutomaticallyWhen ?? lastAssistantMessageIsCompleteWithToolCalls
+    if (!predicate) return false
+    return await predicate({ messages: messages.value.map(cloneMessage) })
   }
   function requirePendingToolCall(toolCallId: string): ToolCall {
     const call = pendingToolCalls.value.find((item) => item.id === toolCallId)
@@ -1307,6 +1347,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         isLoading.value = false
         return
       }
+      if (!(await shouldSendAutomatically())) {
+        isLoading.value = false
+        return
+      }
     } catch (err) {
       isLoading.value = false
       throw reportError(err)
@@ -1395,10 +1439,18 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     if (pendingToolCalls.value.length) return
 
     const request = pendingToolRequest.value
+    if (!request) return
+
     const context = state.pendingToolSendContext ?? { trigger: 'submit-message' }
+    let shouldContinue = false
+    try {
+      shouldContinue = await shouldSendAutomatically()
+    } catch (err) {
+      throw reportError(err)
+    }
     pendingToolRequest.value = null
     state.pendingToolSendContext = null
-    if (!request) return
+    if (!shouldContinue) return
 
     const nextAssistant = buildAssistant()
     messages.value = [...messages.value, { ...nextAssistant }]

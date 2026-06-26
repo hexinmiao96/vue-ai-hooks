@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import {
   deserializeMessages,
+  lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
   serializeMessages,
   useChat
@@ -2146,6 +2147,221 @@ describe('useChat', () => {
     expect(requests).toHaveLength(2)
     expect(requests[1].messages.map((m) => m.role)).toEqual(['user', 'assistant', 'tool', 'tool'])
     expect(messages.value[messages.value.length - 1].content).toBe('Both tool results are ready.')
+  })
+
+  it('can disable automatic continuation after manual tool results', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'confirmPurchase', arguments: '{"sku":"pro"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Should not be requested.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages, pendingToolCalls } = useChat({
+      provider,
+      sendAutomaticallyWhen: false
+    })
+
+    await append('Buy the pro plan.')
+    await addToolResult('call_1', { approved: true })
+
+    expect(pendingToolCalls.value).toEqual([])
+    expect(requests).toHaveLength(1)
+    expect(messages.value.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+  })
+
+  it('can stop automatic continuation from sendAutomaticallyWhen', async () => {
+    const requests: ChatRequest[] = []
+    const sendAutomaticallyWhen = vi.fn(() => false)
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Should not be requested.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages } = useChat({
+      provider,
+      sendAutomaticallyWhen
+    })
+
+    await append('Use a tool.')
+    await addToolResult('call_1', 'deny')
+
+    expect(sendAutomaticallyWhen).toHaveBeenCalledTimes(1)
+    expect(requests).toHaveLength(1)
+    expect(messages.value.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+  })
+
+  it('reports sendAutomaticallyWhen errors after manual tool results', async () => {
+    const requests: ChatRequest[] = []
+    const failure = new Error('auto-send check failed')
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ]
+      ],
+      requests
+    )
+    const { addToolResult, append, error, status } = useChat({
+      provider,
+      sendAutomaticallyWhen() {
+        throw failure
+      }
+    })
+
+    await append('Use a tool.')
+    await expect(addToolResult('call_1', 'done')).rejects.toBe(failure)
+
+    expect(error.value).toBe(failure)
+    expect(status.value).toBe('error')
+    expect(requests).toHaveLength(1)
+  })
+
+  it('uses sendAutomaticallyWhen to decide whether tool results continue', async () => {
+    const requests: ChatRequest[] = []
+    const sendAutomaticallyWhen = vi.fn(({ messages }: { messages: Message[] }) => {
+      expect(messages.map((message) => message.role)).toEqual(['user', 'assistant', 'tool'])
+      return messages.some((message) => message.role === 'tool' && message.content === 'allow')
+    })
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Allowed continuation.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages } = useChat({
+      provider,
+      sendAutomaticallyWhen
+    })
+
+    await append('Use a tool.')
+    await addToolResult('call_1', 'allow')
+
+    expect(sendAutomaticallyWhen).toHaveBeenCalledTimes(1)
+    expect(requests).toHaveLength(2)
+    expect(messages.value[messages.value.length - 1].content).toBe('Allowed continuation.')
+  })
+
+  it('can disable automatic continuation after local tool handlers', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'getWeather', arguments: '{"city":"Tokyo"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Should not be requested.' }]
+      ],
+      requests
+    )
+    const { append, messages } = useChat({
+      provider,
+      sendAutomaticallyWhen: false,
+      toolHandlers: {
+        getWeather() {
+          return 'sunny'
+        }
+      }
+    })
+
+    await append('weather?')
+
+    expect(requests).toHaveLength(1)
+    expect(messages.value.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+  })
+
+  it('detects complete assistant tool calls for automatic sending', () => {
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Use a tool.'
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{}' }
+          }
+        ]
+      },
+      {
+        id: 'tool_1',
+        role: 'tool',
+        content: 'done',
+        toolCallId: 'call_1'
+      }
+    ]
+
+    expect(lastAssistantMessageIsCompleteWithToolCalls({ messages })).toBe(true)
+    expect(
+      lastAssistantMessageIsCompleteWithToolCalls({
+        messages: messages.slice(0, 2)
+      })
+    ).toBe(false)
   })
 
   it('preserves per-request options during tool follow-up requests', async () => {

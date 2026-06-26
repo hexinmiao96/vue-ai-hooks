@@ -5,6 +5,7 @@ import {
   anthropic,
   deserializeMessages,
   gemini,
+  lastAssistantMessageIsCompleteWithToolCalls,
   openai,
   openaiCompatible,
   openrouter,
@@ -67,6 +68,8 @@ import type {
   RetryOptions,
   ResumeChatOptions,
   ResponseFormat,
+  SendAutomaticallyWhen,
+  SendAutomaticallyWhenOptions,
   SetMessagesInput,
   SendChatTrigger,
   SerializedMessage,
@@ -445,9 +448,14 @@ describe('public API types', () => {
       expectTypeOf(context.toolCall).toEqualTypeOf<ToolCall>()
       return context.toolCall.function.name === 'lookup'
     }
+    const sendAutomaticallyWhen: SendAutomaticallyWhen = (sendOptions) => {
+      expectTypeOf(sendOptions).toEqualTypeOf<SendAutomaticallyWhenOptions>()
+      return lastAssistantMessageIsCompleteWithToolCalls(sendOptions)
+    }
     const options: UseChatOptions = {
       provider,
-      requiresToolApproval
+      requiresToolApproval,
+      sendAutomaticallyWhen
     }
     const resultContext: ToolResultHandlerContext = {
       args: { q: 'vue' },
@@ -527,6 +535,11 @@ describe('public API types', () => {
     }>()
     expectTypeOf(handler).toEqualTypeOf<ToolCallHandler>()
     expectTypeOf(options.requiresToolApproval).toEqualTypeOf<ToolApprovalPredicate | undefined>()
+    expectTypeOf(options.sendAutomaticallyWhen).toEqualTypeOf<
+      SendAutomaticallyWhen | false | undefined
+    >()
+    expectTypeOf(sendAutomaticallyWhen).toEqualTypeOf<SendAutomaticallyWhen>()
+    expectTypeOf(lastAssistantMessageIsCompleteWithToolCalls).toMatchTypeOf<SendAutomaticallyWhen>()
     expectTypeOf(resultContext).toEqualTypeOf<ToolResultHandlerContext>()
     expectTypeOf(persisted.clear).toEqualTypeOf<() => void>()
     expectTypeOf(serializedMessages).toEqualTypeOf<SerializedMessage[]>()

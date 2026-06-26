@@ -174,6 +174,8 @@ type ToolApprovalPredicate = (
   context: ToolCallHandlerContext
 ) => boolean | Promise<boolean>
 
+type SendAutomaticallyWhen = (options: { messages: Message[] }) => boolean | PromiseLike<boolean>
+
 interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
@@ -183,6 +185,10 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 `approveToolCall()` or `rejectToolCall()`. `messages` is a shallow snapshot of
 the current history. `resultMessage` is the generated `tool` message that will
 be appended before the follow-up model call.
+
+`SendAutomaticallyWhen` controls whether completed tool results should trigger
+the next provider request. `lastAssistantMessageIsCompleteWithToolCalls` is the
+default helper.
 
 ## IDs
 

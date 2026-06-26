@@ -167,6 +167,8 @@ type ToolApprovalPredicate = (
   context: ToolCallHandlerContext
 ) => boolean | Promise<boolean>
 
+type SendAutomaticallyWhen = (options: { messages: Message[] }) => boolean | PromiseLike<boolean>
+
 interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
@@ -175,6 +177,9 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 `ToolApprovalPredicate` 会让匹配到的本地 handler 暂停，直到 UI 调用
 `approveToolCall()` 或 `rejectToolCall()`。`messages` 是当前历史的浅拷贝快照。
 `resultMessage` 是继续下一轮模型请求前将追加的 `tool` 消息。
+
+`SendAutomaticallyWhen` 用于控制工具结果齐备后是否发起下一轮 provider 请求。
+`lastAssistantMessageIsCompleteWithToolCalls` 是默认 helper。
 
 ## ID
 

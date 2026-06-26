@@ -12,10 +12,12 @@
 `StreamDataPart`、`ChatAttachmentInput`、`ChatAttachmentsInput`、
 `MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
 `MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
-`IdGenerator`、`ToolCallHandlerContext`、`ToolResultHandlerContext`、`RetryOptions`
-和 `RetryContext`。
+`SendAutomaticallyWhen`、`SendAutomaticallyWhenOptions`、`IdGenerator`、
+`ToolCallHandlerContext`、`ToolResultHandlerContext`、`RetryOptions` 和
+`RetryContext`。
 
-公开 helper：`pruneMessages`、`serializeMessages` 和 `deserializeMessages`。
+公开 helper：`pruneMessages`、`serializeMessages`、`deserializeMessages` 和
+`lastAssistantMessageIsCompleteWithToolCalls`。
 
 ## 用法
 
@@ -56,6 +58,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | -          | 默认工具选择策略。                                            |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -          | 用于自动执行工具调用的本地 handler。                          |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | -          | 返回 true 时暂停工具调用，等待 UI 确认后再执行。              |
+| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | 控制工具结果齐备后是否自动发起下一轮请求。                    |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | 用户消息之后最多自动执行几轮工具调用。                        |
 | `persist`                         | `ChatPersistOptions`                                                   | -          | 把 Date-safe 消息自动保存到 localStorage 或自定义 `Storage`。 |
 | `maxRetries`                      | `number`                                                               | `0`        | 首个 stream chunk 到达前失败时最多重试几次。                  |
@@ -442,6 +445,19 @@ await addToolResult(call.id, { approved: true })
 
 也可以使用 AI SDK 风格别名：`addToolOutput({ toolCallId, output })`。如果浏览器侧工具执行失败，
 传入 `{ toolCallId, state: 'output-error', errorText }`。
+
+默认情况下，只要最新 assistant 工具调用都有对应的 `tool` 结果消息，`useChat` 就会自动继续下一轮。传入
+`sendAutomaticallyWhen: false` 可以关闭自动续跑；也可以显式传入
+`lastAssistantMessageIsCompleteWithToolCalls`，保持和 AI SDK 风格一致的配置方式：
+
+```ts
+import { lastAssistantMessageIsCompleteWithToolCalls, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls
+})
+```
 
 如果某个已注册的本地 handler 仍然需要用户确认，可以传入
 `requiresToolApproval`。匹配到的调用会先进入 `pendingToolCalls`，不会立即执行

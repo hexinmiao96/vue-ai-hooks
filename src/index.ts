@@ -7,6 +7,7 @@
 // Composables
 export {
   deserializeMessages,
+  lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
   serializeMessages,
   useChat,
@@ -23,6 +24,8 @@ export {
   type PruneToolCallsStrategy,
   type RegenerateChatOptions,
   type ResumeChatOptions,
+  type SendAutomaticallyWhen,
+  type SendAutomaticallyWhenOptions,
   type SendChatTrigger,
   type SerializedMessage,
   type SetMessagesInput,

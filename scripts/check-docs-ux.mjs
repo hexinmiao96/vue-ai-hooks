@@ -210,6 +210,12 @@ expect(
   'English useChat docs must document structured Message.parts rendering and persistence'
 )
 expect(
+  files.useChat.includes('sendAutomaticallyWhen') &&
+    files.useChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
+    files.useChat.includes('SendAutomaticallyWhen'),
+  'English useChat docs must document AI SDK-style tool result auto-send control'
+)
+expect(
   files.zhUseChat.includes('共享内存中的聊天状态') &&
     files.zhUseChat.includes('initialMessages') &&
     files.zhUseChat.includes('initialInput') &&
@@ -241,14 +247,21 @@ expect(
   'Chinese useChat docs must document structured Message.parts rendering and persistence'
 )
 expect(
+  files.zhUseChat.includes('sendAutomaticallyWhen') &&
+    files.zhUseChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
+    files.zhUseChat.includes('SendAutomaticallyWhen'),
+  'Chinese useChat docs must document AI SDK-style tool result auto-send control'
+)
+expect(
   files.types.includes('type MessagePart =') &&
     files.types.includes('parts?: MessagePart[]') &&
     files.types.includes('messageId?: string') &&
     files.types.includes('MessageToolPart') &&
     files.types.includes('tool-*') &&
     files.types.includes('ChatChunk.parts') &&
-    files.types.includes('ChatChunk.messageId'),
-  'English public type docs must expose Message.parts, ChatChunk.parts, and ChatChunk.messageId'
+    files.types.includes('ChatChunk.messageId') &&
+    files.types.includes('SendAutomaticallyWhen'),
+  'English public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
   files.zhTypes.includes('type MessagePart =') &&
@@ -257,8 +270,9 @@ expect(
     files.zhTypes.includes('MessageToolPart') &&
     files.zhTypes.includes('tool-*') &&
     files.zhTypes.includes('ChatChunk.parts') &&
-    files.zhTypes.includes('ChatChunk.messageId'),
-  'Chinese public type docs must expose Message.parts, ChatChunk.parts, and ChatChunk.messageId'
+    files.zhTypes.includes('ChatChunk.messageId') &&
+    files.zhTypes.includes('SendAutomaticallyWhen'),
+  'Chinese public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
   files.chatExample.includes('visibleMessageParts(message.parts)') &&

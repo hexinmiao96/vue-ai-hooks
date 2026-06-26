@@ -47,7 +47,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🧭 **Proxy request control** — add app body fields or rewrite proxy URL, headers, and credentials per request
 - 🧾 **Request body extensions** — pass provider-specific JSON fields through `body` without losing typed options
 - 🪝 **Request preparation hooks** — customize send and resume requests after chat id, metadata, and messages resolve
-- 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or submit manual results from the UI
+- 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
@@ -393,6 +393,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Tool-calling helpers
 - ✅ AI SDK-style chat aliases for send and tool output flows
 - ✅ Tool approval flow for gated local handlers
+- ✅ AI SDK-style `sendAutomaticallyWhen` for tool-result follow-up control
 - ✅ Custom stream data and assistant metadata
 - ✅ Chat status, clearError, and regenerate controls
 - ✅ Function updater support for `setMessages()`
