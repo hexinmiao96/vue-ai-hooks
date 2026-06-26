@@ -34,6 +34,7 @@ const rootSidebar = {
         { text: 'useChat', link: '/reference/use-chat' },
         { text: 'useCompletion', link: '/reference/use-completion' },
         { text: 'useEmbedding', link: '/reference/use-embedding' },
+        { text: 'useGeneration', link: '/reference/use-generation' },
         { text: 'useObject', link: '/reference/use-object' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
@@ -82,6 +83,7 @@ const zhSidebar = {
         { text: 'useChat', link: '/zh/reference/use-chat' },
         { text: 'useCompletion', link: '/zh/reference/use-completion' },
         { text: 'useEmbedding', link: '/zh/reference/use-embedding' },
+        { text: 'useGeneration', link: '/zh/reference/use-generation' },
         { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]

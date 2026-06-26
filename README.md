@@ -14,7 +14,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Four composables, pluggable
+[Axios](https://axios-http.com) to the LLM world. Five composables, pluggable
 providers, Server-Sent Events streaming handled for you. Works with OpenAI and any
 OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
 vLLM, Gemini's OpenAI-compatible endpoint, etc.).
@@ -40,7 +40,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 
 ## Features
 
-- 🎯 **Four composables, one mental model** — `useChat`, `useCompletion`, `useEmbedding`, `useObject`
+- 🎯 **Five composables, one mental model** — `useChat`, `useCompletion`, `useEmbedding`, `useGeneration`, `useObject`
 - 🌊 **Streaming by default** — SSE parsing, AbortController, and reactivity handled for you
 - 🔌 **Multi-provider** — OpenAI, Gemini, OpenRouter, Anthropic, backend proxy, Azure OpenAI, DeepSeek, Moonshot, Zhipu, Ollama, vLLM, any OpenAI-compatible API
 - 🔐 **Production proxy path** — `proxyProvider` calls your `/api/ai/*` endpoints so upstream keys stay server-side
@@ -71,6 +71,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 👀 **Lifecycle callbacks** — observe chunks, tool calls, deltas, partial objects, finishes, and errors
 - 🧩 **Custom stream data** — collect sources, progress, citations, and AI SDK message metadata during a chat turn
 - 📐 **Structured output** — `useObject` sends JSON Schema response formats, streams partial objects, and validates the final object
+- 🧬 **Custom generation tasks** — `useGeneration` wraps image, audio, summary, or app-specific AI jobs with shared status, progress, chunks, aborts, and retries
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
 - ⚡ **Tiny** — zero runtime deps beyond Vue itself
 - 🧪 **Tested** — Vitest + jsdom, with fake providers you can copy
@@ -179,6 +180,27 @@ const { object, partialObject, submit } = useObject<{ title: string; priority: '
 await submit('Extract a support ticket from this message.')
 console.log(partialObject.value?.title)
 console.log(object.value)
+```
+
+### Custom generation task
+
+```ts
+import { useGeneration } from 'vue-ai-hooks'
+
+const { result, progress, generate } = useGeneration<string, { url: string }, number>({
+  async fetcher(prompt, context) {
+    context.reportProgress(50)
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      signal: context.signal,
+      body: JSON.stringify({ prompt })
+    })
+    return (await response.json()) as { url: string }
+  }
+})
+
+await generate('A Vue workspace hero image')
+console.log(progress.value, result.value?.url)
 ```
 
 ## Using a non-OpenAI provider
@@ -327,17 +349,21 @@ Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to
 a provider.
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useObject(options)`
 
-Same shape, scoped to single-shot completions, embedding vectors, and structured
-JSON object output respectively.
+Same shape, scoped to single-shot completions, embedding vectors, custom
+generation jobs, and structured JSON object output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `stop()`, and `clear()` so UI state can follow one pattern across chat, text,
-vectors, and structured JSON.
+vectors, custom generation jobs, and structured JSON.
 
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object.
+
+`useGeneration` accepts a custom `fetcher` and provides typed `result`,
+`progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before
+visible output.
 
 `useChat` and `useCompletion` also expose `setInput()`, `handleInputChange()`,
 and `handleSubmit()` for simple form wiring. Successful form submissions clear
@@ -399,6 +425,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Chat with streaming, abort, message history, finish metadata
 - ✅ Single-shot completion
 - ✅ Embedding
+- ✅ Custom generation tasks
 - ✅ Structured object output with final schema validation
 - ✅ OpenAI + OpenAI-compatible provider
 - ✅ OpenRouter provider
@@ -417,9 +444,9 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Custom stream data and assistant metadata
 - ✅ Chat status, clearError, and regenerate controls
 - ✅ Function updater support for `setMessages()`
-- ✅ Consistent status and clearError controls across completion, embedding, and object output
+- ✅ Consistent status and clearError controls across completion, embedding, custom generation, and object output
 - ✅ Stream update throttling with `throttleMs`
-- ✅ Custom `generateId` hooks for deterministic chat, completion, and message ids
+- ✅ Custom `generateId` hooks for deterministic chat, completion, generation, and message ids
 - ✅ Completion form helpers for input and submit handling
 - ✅ Shared completion state with explicit `useCompletion({ id })`
 - ✅ Chat id and request metadata passthrough for proxy-backed apps

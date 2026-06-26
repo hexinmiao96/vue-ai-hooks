@@ -17,8 +17,8 @@ hero:
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
 features:
-  - title: Four composables, one mental model
-    details: useChat, useCompletion, useEmbedding, and useObject cover chat, text, vectors, and structured JSON. Pluggable providers let you swap models without rewriting your app.
+  - title: Five composables, one mental model
+    details: useChat, useCompletion, useEmbedding, useGeneration, and useObject cover chat, text, vectors, custom generation jobs, and structured JSON. Pluggable providers let you swap models without rewriting your app.
   - title: Start without an API key
     details: The chat demo includes a deterministic local provider for tool approvals, and the proxy template streams fake chunks locally. Try the UI first, wire real providers later.
   - title: Streaming by default
@@ -34,7 +34,7 @@ features:
   - title: Retry controls
     details: Opt into maxRetries, retryDelayMs, shouldRetry, and onRetry for transient provider failures. Streaming calls only retry before the first chunk to avoid duplicated output.
   - title: Consistent statuses
-    details: status, isLoading, error, and clearError follow one lifecycle vocabulary across chat, completion, embedding, and structured object output.
+    details: status, isLoading, error, and clearError follow one lifecycle vocabulary across chat, completion, embedding, custom generation, and structured object output.
   - title: TypeScript first
     details: Strict mode, no any leaks, full IDE autocomplete. If you can write the call, you can read the type.
   - title: Tiny

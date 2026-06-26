@@ -17,6 +17,7 @@ import {
   useChat,
   useCompletion,
   useEmbedding,
+  useGeneration,
   useObject,
   usePersist
 } from 'vue-ai-hooks'
@@ -48,6 +49,11 @@ import type {
   EmbeddingResponseInfo,
   EmbeddingResult,
   GeminiConfig,
+  GenerateOptions,
+  GenerationFetcher,
+  GenerationRequestInfo,
+  GenerationResponseInfo,
+  GenerationRunContext,
   IdGenerator,
   ImageUrlPart,
   Message,
@@ -109,6 +115,8 @@ import type {
   UseCompletionReturn,
   UseEmbeddingOptions,
   UseEmbeddingReturn,
+  UseGenerationOptions,
+  UseGenerationReturn,
   UseObjectOptions,
   UseObjectReturn,
   UsePersistOptions
@@ -182,6 +190,17 @@ describe('public API types', () => {
     } satisfies UseChatOptions<{ progress: number; label?: string }>)
     const completion = useCompletion({ provider } satisfies UseCompletionOptions)
     const embedding = useEmbedding({ provider } satisfies UseEmbeddingOptions)
+    const generation = useGeneration<string, { url: string }, { percent: number }, string>({
+      fetcher: async (input, context) => {
+        expectTypeOf(input).toEqualTypeOf<string>()
+        expectTypeOf(context).toEqualTypeOf<
+          GenerationRunContext<string, { percent: number }, string>
+        >()
+        context.reportProgress({ percent: 100 })
+        context.reportChunk('done')
+        return { url: input }
+      }
+    } satisfies UseGenerationOptions<string, { url: string }, { percent: number }, string>)
     const structured = useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
@@ -241,9 +260,11 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<StreamThrottleOptions>()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<StreamThrottleOptions>()
+    expectTypeOf<UseGenerationOptions>().toMatchTypeOf<StreamThrottleOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<StreamThrottleOptions>()
     expectTypeOf<RetryContext>().toMatchTypeOf<{ attempt: number; maxRetries: number }>()
     expectTypeOf<StreamThrottleOptions>().toMatchTypeOf<{
@@ -345,6 +366,43 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseCompletionOptions['onResponse']>().toEqualTypeOf<
       ((info: CompletionResponseInfo) => void) | undefined
+    >()
+
+    expectTypeOf(generation).toEqualTypeOf<
+      UseGenerationReturn<string, { url: string }, { percent: number }, string>
+    >()
+    expectTypeOf(generation.id).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(generation.input).toEqualTypeOf<Ref<string | undefined>>()
+    expectTypeOf(generation.result).toEqualTypeOf<Ref<{ url: string } | null>>()
+    expectTypeOf(generation.progress).toEqualTypeOf<Ref<{ percent: number } | null>>()
+    expectTypeOf(generation.chunks).toEqualTypeOf<Ref<string[]>>()
+    expectTypeOf(generation.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(generation.generate).returns.toEqualTypeOf<Promise<{ url: string }>>()
+    expectTypeOf(generation.generate).parameter(0).toEqualTypeOf<string | undefined>()
+    expectTypeOf(generation.generate).parameter(1).toEqualTypeOf<GenerateOptions | undefined>()
+    expectTypeOf(generation.setInput).toEqualTypeOf<(value: string | undefined) => void>()
+    expectTypeOf(generation.setResult).toEqualTypeOf<(value: { url: string } | null) => void>()
+    expectTypeOf(generation.clear).toEqualTypeOf<() => void>()
+    expectTypeOf(generation.reset).toEqualTypeOf<() => void>()
+    expectTypeOf<GenerationFetcher<string, { url: string }, { percent: number }, string>>()
+      .parameter(0)
+      .toEqualTypeOf<string>()
+    expectTypeOf<GenerationFetcher<string, { url: string }, { percent: number }, string>>()
+      .parameter(1)
+      .toEqualTypeOf<GenerationRunContext<string, { percent: number }, string>>()
+    expectTypeOf<GenerationRequestInfo<string>>().toMatchTypeOf<{
+      id: string
+      attempt: number
+      input: string
+    }>()
+    expectTypeOf<GenerationResponseInfo<string, { url: string }>>().toMatchTypeOf<
+      GenerationRequestInfo<string> & { result: { url: string } }
+    >()
+    expectTypeOf<UseGenerationOptions<string, { url: string }>['onRequest']>().toEqualTypeOf<
+      ((info: GenerationRequestInfo<string>) => void) | undefined
+    >()
+    expectTypeOf<UseGenerationOptions<string, { url: string }>['onResponse']>().toEqualTypeOf<
+      ((info: GenerationResponseInfo<string, { url: string }>) => void) | undefined
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()

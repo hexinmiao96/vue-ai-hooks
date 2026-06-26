@@ -13,7 +13,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178c6.svg)](https://www.typescriptlang.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
-`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供四个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
+`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供五个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -36,7 +36,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 
 ## 特性
 
-- **四个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、`useObject`
+- **五个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、`useGeneration`、`useObject`
 - **默认支持流式响应**：SSE 解析、AbortController 和响应式状态都已处理好
 - **多 Provider**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、DeepSeek、Moonshot、智谱、Ollama、vLLM，以及任何 OpenAI-compatible API
 - **生产代理路径**：`proxyProvider` 调用你的 `/api/ai/*` 端点，让上游 key 留在服务端
@@ -66,6 +66,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生命周期回调**：观察 chunk、工具调用、delta、部分对象、完成和错误
 - **自定义流数据**：在一次聊天轮次里收集 sources、进度、引用和消息 metadata
 - **结构化输出**：`useObject` 会发送 JSON Schema response format，流式更新部分对象，并校验最终对象
+- **自定义生成任务**：`useGeneration` 为图片、音频、摘要或业务自定义 AI 任务提供统一状态、进度、chunk、取消和重试
 - **TypeScript 优先**：严格模式、无 `any` 泄漏、完整 IDE 自动补全
 - **小而轻**：除 Vue 本身外没有运行时依赖
 - **已测试**：Vitest + jsdom，并提供可复制的 fake provider
@@ -173,6 +174,27 @@ console.log(partialObject.value?.title)
 console.log(object.value)
 ```
 
+### 自定义生成任务
+
+```ts
+import { useGeneration } from 'vue-ai-hooks'
+
+const { result, progress, generate } = useGeneration<string, { url: string }, number>({
+  async fetcher(prompt, context) {
+    context.reportProgress(50)
+    const response = await fetch('/api/image', {
+      method: 'POST',
+      signal: context.signal,
+      body: JSON.stringify({ prompt })
+    })
+    return (await response.json()) as { url: string }
+  }
+})
+
+await generate('一张 Vue 工作台主视觉图')
+console.log(progress.value, result.value?.url)
+```
+
 ## 使用非 OpenAI Provider
 
 每个 Provider 都实现同一个 `ChatProvider` 接口，所以组合式函数不关心另一端具体使用哪个模型：
@@ -267,18 +289,21 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 浏览器本地工具 handler 需要 store、服务实例或 session 状态时，可以使用 `context`，
 这些数据不会被序列化。
 
-`useChat`、`useCompletion` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
+`useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
 
 多个 `useChat()` 传入同一个 `id` 时，会在组件之间共享聊天状态。某个 id 的第一个实例会写入 `initialMessages` 和 `initialInput`；`messages` 也可作为 AI SDK 风格的 `initialMessages` 别名。`setId()` 只会改变后续 provider request 携带的 id。
 
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useObject(options)`
 
-分别用于单次流式补全、embedding 向量生成和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
+分别用于单次流式补全、embedding 向量生成、自定义生成任务和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
 
 `useChat` 和 `useCompletion` 还提供 `setInput()`、`handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空 `input`；失败时会保留输入内容。两者都支持 `initialInput`。
+
+`useGeneration` 接收自定义 `fetcher`，并提供 typed `result`、`progress`、`chunks`、
+`stop()`、`reset()`、生命周期回调，以及首个可见输出前的重试。
 
 `useObject` 支持通过 `id` 在多个组件间共享结构化输出状态，也支持用
 `initialValue` 初始化第一份部分对象。
@@ -330,6 +355,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - Chat 流式响应、中止、消息历史、完成状态元信息
 - 单次补全
 - Embedding
+- 自定义生成任务
 - 带最终 schema 校验的结构化对象输出
 - OpenAI + OpenAI-compatible Provider
 - OpenRouter Provider
@@ -348,7 +374,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - 自定义流数据和 assistant metadata
 - Chat status、clearError 和 regenerate 控制
 - `setMessages()` 支持函数式 updater
-- Completion、Embedding 和结构化输出也提供一致的 status 与 clearError 控制
+- Completion、Embedding、自定义生成和结构化输出也提供一致的 status 与 clearError 控制
 - 通过 `throttleMs` 控制流式响应式更新频率
 - 通过 `generateId` 自定义 chat、completion 和 message id
 - Completion 表单输入和提交辅助函数

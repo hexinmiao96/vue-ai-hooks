@@ -65,6 +65,16 @@ export {
   type UseEmbeddingReturn
 } from './composables/useEmbedding'
 export {
+  useGeneration,
+  type GenerateOptions,
+  type GenerationFetcher,
+  type GenerationRequestInfo,
+  type GenerationResponseInfo,
+  type GenerationRunContext,
+  type UseGenerationOptions,
+  type UseGenerationReturn
+} from './composables/useGeneration'
+export {
   useObject,
   type DeepPartial,
   type ObjectRequestInfo,
