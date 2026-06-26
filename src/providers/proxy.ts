@@ -14,6 +14,7 @@ import type { ChatProvider } from './types'
 interface UiStreamState {
   toolIndexes: Map<string, number>
   toolArgumentDeltas: Map<string, string>
+  reasoningDeltas: Map<string, string>
 }
 
 type HeaderSource =
@@ -256,7 +257,8 @@ async function readChatChunks(response: Response, signal?: AbortSignal) {
     return (async function* () {
       const uiState: UiStreamState = {
         toolIndexes: new Map(),
-        toolArgumentDeltas: new Map()
+        toolArgumentDeltas: new Map(),
+        reasoningDeltas: new Map()
       }
       for await (const raw of parseSSE(response, signal)) {
         const chunks = toChatChunks(raw, uiState)
@@ -300,6 +302,22 @@ function toChatChunks(raw: Record<string, unknown>, state: UiStreamState): ChatC
   if (type === 'text-delta') {
     const delta = typeof raw.delta === 'string' ? raw.delta : ''
     return delta ? [{ content: delta }] : []
+  }
+
+  if (type === 'reasoning-start') {
+    const id = typeof raw.id === 'string' ? raw.id : undefined
+    if (id) state.reasoningDeltas.set(id, '')
+    return []
+  }
+
+  if (type === 'reasoning-delta') {
+    return reasoningDeltaChunk(raw, state)
+  }
+
+  if (type === 'reasoning-end') {
+    const id = typeof raw.id === 'string' ? raw.id : undefined
+    if (id) state.reasoningDeltas.delete(id)
+    return []
   }
 
   if (type === 'finish') {
@@ -407,6 +425,15 @@ function toolInputStartChunk(raw: Record<string, unknown>, state: UiStreamState)
       ]
     }
   ]
+}
+
+function reasoningDeltaChunk(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {
+  const id = typeof raw.id === 'string' ? raw.id : undefined
+  const delta = typeof raw.delta === 'string' ? raw.delta : undefined
+  if (!id || !delta) return []
+  const text = `${state.reasoningDeltas.get(id) ?? ''}${delta}`
+  state.reasoningDeltas.set(id, text)
+  return [{ parts: [{ type: 'reasoning', id, text }] }]
 }
 
 function toolInputDeltaChunk(raw: Record<string, unknown>, state: UiStreamState): ChatChunk[] {

@@ -51,7 +51,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
-- 🧱 **Structured message parts** — render assistant text, sources, files, custom data, and `tool-*` states from `Message.parts`
+- 🧱 **Structured message parts** — render assistant text, reasoning, sources, files, custom data, and `tool-*` states from `Message.parts`
 - 🧯 **Retry controls** — opt into `maxRetries`, `retryDelayMs`, `shouldRetry`, and `onRetry` for transient provider failures
 - 🪶 **Stream throttling** — use `throttleMs` to reduce reactive updates during fast token streams
 - 🆔 **Custom IDs** — pass `generateId` for deterministic chat, completion, message, tool, and stream data IDs

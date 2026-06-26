@@ -187,9 +187,10 @@ Protocol:
   `transient` for custom stream data consumed by `useChat().streamData`.
   The SSE stream may also use the AI SDK UI message stream protocol. In that
   mode, `text-delta` parts become `ChatChunk.content`, `finish` parts become
-  `finishReason`/`usage`, `data-*`, `source-*`, `file`, and tool-output parts
-  become `streamData`, `tool-input-*` parts become streamed `toolCalls`, and
-  `error` parts reject the active chat request.
+  `finishReason`/`usage`, `reasoning-*` parts become `Message.parts`
+  reasoning entries, `data-*`, `source-*`, `file`, and tool-output parts become
+  `streamData`, `tool-input-*` parts become streamed `toolCalls`, and `error`
+  parts reject the active chat request.
 - `resumeChat()` sends a GET request to `resumeUrl`, replacing `:id` or `{id}`
   placeholders with the encoded chat id. Return `204 No Content` when no active
   stream exists, or return the same SSE/JSON chunk shapes as `chat()`.

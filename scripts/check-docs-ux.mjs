@@ -269,12 +269,14 @@ expect(
 expect(
   files.providers.includes('AI SDK UI message stream protocol') &&
     files.providers.includes('text-delta') &&
+    files.providers.includes('reasoning-*') &&
     files.providers.includes('tool-input-*'),
   'English provider docs must document AI SDK UI message stream compatibility'
 )
 expect(
   files.zhProviders.includes('AI SDK UI message stream 协议') &&
     files.zhProviders.includes('text-delta') &&
+    files.zhProviders.includes('reasoning-*') &&
     files.zhProviders.includes('tool-input-*'),
   'Chinese provider docs must document AI SDK UI message stream compatibility'
 )

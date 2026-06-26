@@ -47,7 +47,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **文件附件**：把浏览器文件或预加载文件对象传给 `append(..., { attachments })`
 - **AI SDK 风格别名**：提供 `sendMessage`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
 - **可恢复流 hook**：用 `resumeStream()` 和 `resumeUrl` 重新连接代理后端的聊天流
-- **结构化消息 parts**：通过 `Message.parts` 渲染 assistant 文本、source、file、自定义 data 和 `tool-*` 状态
+- **结构化消息 parts**：通过 `Message.parts` 渲染 assistant 文本、reasoning、source、file、自定义 data 和 `tool-*` 状态
 - **重试控制**：通过 `maxRetries`、`retryDelayMs`、`shouldRetry` 和 `onRetry` 处理临时 Provider 失败
 - **流式更新节流**：用 `throttleMs` 降低高频 token 流带来的响应式更新压力
 - **自定义 ID**：通过 `generateId` 生成稳定的 chat、completion、message、tool 和 stream data id
