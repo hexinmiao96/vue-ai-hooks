@@ -3,7 +3,8 @@
 用于单次流式补全的 Vue 3 组合式函数。
 
 公开 TypeScript 类型：`UseCompletionOptions`、`UseCompletionReturn`、
-`CompletionFinishInfo`、`RetryOptions` 和 `RetryContext`。
+`CompletionRequestInfo`、`CompletionResponseInfo`、`CompletionFinishInfo`、
+`RetryOptions` 和 `RetryContext`。
 
 ## 用法
 
@@ -34,6 +35,8 @@ await complete('Write a haiku about TypeScript:')
 | `throttleMs`            | `number`                                                               | -          | 响应式补全更新之间的最小等待毫秒数。       |
 | `experimental_throttle` | `number`                                                               | -          | AI SDK 风格兼容别名，建议用 `throttleMs`。 |
 | `onUpdate`              | `(completion: string, delta: string) => void`                          | -          | 每个非空流式 delta 追加后调用。            |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | -          | Provider 调用前，拿到最终补全请求。        |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | -          | Provider 返回补全 stream 后调用。          |
 | `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | -          | 补全完成时调用。                           |
 | `onError`               | `(e: Error) => void`                                                   | -          | 发生错误时调用。                           |
 
@@ -67,6 +70,9 @@ await complete('Write a haiku about TypeScript:')
 - `handleSubmit()` 只会在补全成功后清空 `input`；Provider 错误会保留 prompt 供重试。
 - `onFinish(completion, info)` 保持最终补全文本作为第一个参数，同时通过
   `info.prompt`、`info.completion` 和 `info.isAbort` 传递完成元信息。
+- `onRequest(info)` 会在 Provider 执行前收到最终 `CompletionRequest`。
+  `onResponse(info)` 会在 Provider 返回 stream 后执行。两者都包含从 1 开始的
+  `attempt`、Provider id、prompt、body、headers 和请求快照。
 - 开启 `maxRetries` 后，流式补全只会在首个 delta 到达前失败时重试。
 - 设置 `throttleMs` 后，快速流式响应中的 `completion` 和 `onUpdate` 会批量刷新。
   `complete()` resolve 前一定会刷新最终补全文本。

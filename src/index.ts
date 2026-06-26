@@ -52,17 +52,23 @@ export {
 export {
   useCompletion,
   type CompletionFinishInfo,
+  type CompletionRequestInfo,
+  type CompletionResponseInfo,
   type UseCompletionOptions,
   type UseCompletionReturn
 } from './composables/useCompletion'
 export {
   useEmbedding,
+  type EmbeddingRequestInfo,
+  type EmbeddingResponseInfo,
   type UseEmbeddingOptions,
   type UseEmbeddingReturn
 } from './composables/useEmbedding'
 export {
   useObject,
   type DeepPartial,
+  type ObjectRequestInfo,
+  type ObjectResponseInfo,
   type UseObjectOptions,
   type UseObjectReturn
 } from './composables/useObject'

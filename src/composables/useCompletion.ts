@@ -8,6 +8,7 @@ import type {
   StreamThrottleOptions
 } from '../types'
 import { createId } from '../utils/id'
+import { cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
@@ -18,6 +19,20 @@ export interface CompletionFinishInfo {
   isAbort: boolean
 }
 
+export interface CompletionRequestInfo {
+  id: string
+  providerId: string
+  attempt: number
+  prompt: string
+  request: CompletionRequest
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+}
+
+export interface CompletionResponseInfo extends CompletionRequestInfo {
+  hasStream: boolean
+}
+
 export interface UseCompletionOptions extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
   id?: string
@@ -26,6 +41,8 @@ export interface UseCompletionOptions extends RetryOptions, StreamThrottleOption
   initialCompletion?: string
   defaultRequest?: Partial<CompletionRequest>
   onUpdate?: (completion: string, delta: string) => void
+  onRequest?: (info: CompletionRequestInfo) => void
+  onResponse?: (info: CompletionResponseInfo) => void
   onFinish?: (completion: string, info: CompletionFinishInfo) => void
   onError?: (err: Error) => void
 }
@@ -100,6 +117,8 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
     initialCompletion = '',
     defaultRequest = {},
     onUpdate,
+    onRequest,
+    onResponse,
     onFinish,
     onError
   } = options
@@ -153,6 +172,22 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
     onFinish(completion.value, { prompt, completion: completion.value, isAbort })
   }
 
+  function requestInfo(
+    prompt: string,
+    request: CompletionRequest,
+    attempt: number
+  ): CompletionRequestInfo {
+    return {
+      id: id.value,
+      providerId: provider.id,
+      attempt,
+      prompt,
+      request: cloneRequestSnapshot(request),
+      ...(request.body ? { body: { ...request.body } } : {}),
+      ...(request.headers ? { headers: { ...request.headers } } : {})
+    }
+  }
+
   async function complete(prompt?: string, requestOptions: Partial<CompletionRequest> = {}) {
     const finalPrompt = prompt ?? input.value
     if (!finalPrompt) {
@@ -182,13 +217,20 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
         })
         try {
           const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
-          const stream = await provider.completion({
+          const request: CompletionRequest = {
             ...defaultRequest,
             ...requestOptions,
             ...(body ? { body } : {}),
             prompt: finalPrompt,
             signal: controller.signal,
             stream: true
+          }
+          const info = requestInfo(finalPrompt, request, retryAttempt + 1)
+          onRequest?.(info)
+          const stream = await provider.completion(request)
+          onResponse?.({
+            ...info,
+            hasStream: Boolean(stream)
           })
           for await (const delta of stream) {
             if (controller.signal.aborted) break

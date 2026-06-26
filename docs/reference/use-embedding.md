@@ -3,7 +3,8 @@
 Vue 3 composable for generating text embeddings.
 
 Public TypeScript types: `UseEmbeddingOptions`, `UseEmbeddingReturn`,
-`RetryOptions`, and `RetryContext`.
+`EmbeddingRequestInfo`, `EmbeddingResponseInfo`, `RetryOptions`, and
+`RetryContext`.
 
 ## Usage
 
@@ -28,6 +29,8 @@ console.log(result.embeddings) // number[][]
 | `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`      | Delay before each retry.                         |
 | `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —        | Override the default retryable error decision.   |
 | `onRetry`        | `(error: Error, context: RetryContext) => void`                        | —        | Called before a retry attempt waits and re-runs. |
+| `onRequest`      | `(info: EmbeddingRequestInfo) => void`                                 | —        | Called with the final embedding request.         |
+| `onResponse`     | `(info: EmbeddingResponseInfo) => void`                                | —        | Called after the provider returns embeddings.    |
 | `onSuccess`      | `(result: EmbeddingResult) => void`                                    | —        | Called when embedding succeeds.                  |
 | `onError`        | `(e: Error) => void`                                                   | —        | Called on any error.                             |
 
@@ -54,4 +57,8 @@ console.log(result.embeddings) // number[][]
 - Use `defaultRequest.body` or `embed(input, { body })` for provider-specific
   JSON request fields. Typed fields such as `input`, `model`, and `user` win if
   keys conflict.
+- `onRequest(info)` receives the final `EmbeddingRequest` before the provider
+  runs. `onResponse(info)` receives the final result after the provider returns.
+  Both include the 1-based `attempt`, provider id, input, body, headers, and
+  request snapshot.
 - `maxRetries` retries failed embedding requests before committing any result.

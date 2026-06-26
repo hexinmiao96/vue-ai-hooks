@@ -1,12 +1,28 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { ChatProvider } from '../providers/types'
 import type { AiRequestStatus, EmbeddingRequest, EmbeddingResult, RetryOptions } from '../types'
+import { cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
+
+export interface EmbeddingRequestInfo {
+  providerId: string
+  attempt: number
+  input: string | string[]
+  request: EmbeddingRequest
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+}
+
+export interface EmbeddingResponseInfo extends EmbeddingRequestInfo {
+  result: EmbeddingResult
+}
 
 export interface UseEmbeddingOptions extends RetryOptions {
   provider: ChatProvider
   defaultRequest?: Partial<EmbeddingRequest>
+  onRequest?: (info: EmbeddingRequestInfo) => void
+  onResponse?: (info: EmbeddingResponseInfo) => void
   onSuccess?: (result: EmbeddingResult) => void
   onError?: (err: Error) => void
 }
@@ -35,7 +51,7 @@ export interface UseEmbeddingReturn {
  * ```
  */
 export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
-  const { provider, defaultRequest = {}, onSuccess, onError } = options
+  const { provider, defaultRequest = {}, onRequest, onResponse, onSuccess, onError } = options
 
   const embeddings = ref<number[][]>([])
   const status = ref<AiRequestStatus>('ready')
@@ -70,6 +86,21 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     return e
   }
 
+  function requestInfo(
+    input: string | string[],
+    request: EmbeddingRequest,
+    attempt: number
+  ): EmbeddingRequestInfo {
+    return {
+      providerId: provider.id,
+      attempt,
+      input: Array.isArray(input) ? [...input] : input,
+      request: cloneRequestSnapshot(request),
+      ...(request.body ? { body: { ...request.body } } : {}),
+      ...(request.headers ? { headers: { ...request.headers } } : {})
+    }
+  }
+
   async function embed(input: string | string[], requestOptions: Partial<EmbeddingRequest> = {}) {
     const controller = new AbortController()
     abortController.value = controller
@@ -83,12 +114,19 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
       while (true) {
         try {
           const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
-          const res = await provider.embedding({
+          const request: EmbeddingRequest = {
             ...defaultRequest,
             ...requestOptions,
             ...(body ? { body } : {}),
             input,
             signal: controller.signal
+          }
+          const info = requestInfo(input, request, retryAttempt + 1)
+          onRequest?.(info)
+          const res = await provider.embedding(request)
+          onResponse?.({
+            ...info,
+            result: res
           })
           if (controller.signal.aborted) {
             throw createAbortError()

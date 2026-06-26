@@ -176,6 +176,69 @@ describe('useEmbedding', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
+  it('reports embedding request lifecycle attempts and final result', async () => {
+    let calls = 0
+    const onRequest = vi.fn()
+    const onResponse = vi.fn()
+    const provider = fakeEmbeddingProvider(async () => {
+      calls += 1
+      if (calls === 1) throw new Error('temporary embedding setup failure')
+      return {
+        embeddings: [[0.7, 0.8]],
+        model: 'observable-embedding',
+        usage: { promptTokens: 3, totalTokens: 3 }
+      }
+    })
+    const { embed } = useEmbedding({
+      provider,
+      maxRetries: 1,
+      defaultRequest: {
+        body: { tenantId: 'tenant_default' },
+        headers: { 'X-Default': 'yes' }
+      },
+      onRequest,
+      onResponse
+    })
+
+    await expect(
+      embed(['trace one', 'trace two'], {
+        body: { route: '/embed' },
+        headers: { 'X-Trace': 'trace_1' },
+        model: 'embedding-model'
+      })
+    ).resolves.toMatchObject({ model: 'observable-embedding' })
+
+    expect(calls).toBe(2)
+    expect(onRequest.mock.calls.map(([info]) => info.attempt)).toEqual([1, 2])
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'fake-embedding',
+        attempt: 1,
+        input: ['trace one', 'trace two'],
+        body: { tenantId: 'tenant_default', route: '/embed' },
+        headers: { 'X-Trace': 'trace_1' },
+        request: expect.objectContaining({
+          input: ['trace one', 'trace two'],
+          model: 'embedding-model',
+          body: { tenantId: 'tenant_default', route: '/embed' }
+        })
+      })
+    )
+    expect(onResponse).toHaveBeenCalledOnce()
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'fake-embedding',
+        attempt: 2,
+        input: ['trace one', 'trace two'],
+        result: {
+          embeddings: [[0.7, 0.8]],
+          model: 'observable-embedding',
+          usage: { promptTokens: 3, totalTokens: 3 }
+        }
+      })
+    )
+  })
+
   it('does not retry non-retryable embedding status errors by default', async () => {
     let calls = 0
     const onRetry = vi.fn()

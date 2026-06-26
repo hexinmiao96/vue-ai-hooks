@@ -45,7 +45,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **客户端本地工具上下文**：把本地 runtime context 传给浏览器工具 handler，但不序列化给模型后端
 - **请求 body 扩展**：通过 `body` 透传 Provider 专属 JSON 字段，同时保留 typed options
 - **请求准备钩子**：在 chat id、metadata 和消息列表确定后，自定义发送和恢复请求
-- **请求生命周期追踪**：通过 `onRequest` 和 `onResponse` 观察最终 chat/resume 请求以及 Provider 是否返回 stream
+- **请求生命周期追踪**：通过 `onRequest` 和 `onResponse` 观察最终 chat、completion、object 和 embedding 请求
 - **Tool calling helper**：自动执行本地 handler，也支持先审批再执行，或通过 `sendAutomaticallyWhen` 控制工具结果后的续跑
 - **活跃工具筛选**：用 `activeTools` 保留一套工具注册表，并按请求只开放选中的工具
 - **工具循环停止条件**：用 `isStepCount()` 或 `hasToolCall()` 控制多步工具循环何时停止

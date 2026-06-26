@@ -26,6 +26,7 @@ import type {
 } from '../types'
 import { createId } from '../utils/id'
 import { AiHooksError } from '../types'
+import { cloneMessageSnapshot as cloneMessage, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
@@ -275,27 +276,6 @@ export interface UseChatReturn {
 }
 
 const empty = [] as Message[]
-
-function cloneMessage(message: Message): Message {
-  return {
-    ...message,
-    content: Array.isArray(message.content)
-      ? message.content.map((part) =>
-          part.type === 'image_url' ? { ...part, image_url: { ...part.image_url } } : { ...part }
-        )
-      : message.content,
-    ...(message.toolCalls
-      ? {
-          toolCalls: message.toolCalls.map((call) => ({
-            ...call,
-            function: { ...call.function }
-          }))
-        }
-      : {}),
-    ...(message.parts ? { parts: message.parts.map((part) => ({ ...part })) } : {}),
-    ...(message.metadata ? { metadata: { ...message.metadata } } : {})
-  }
-}
 
 export function lastAssistantMessageIsCompleteWithToolCalls({
   messages
@@ -1049,15 +1029,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onError?.(e)
     return e
   }
-  function cloneLifecycleRequest<T extends ChatRequest | ChatResumeRequest>(request: T): T {
-    return {
-      ...request,
-      ...('messages' in request ? { messages: request.messages.map(cloneMessage) } : {}),
-      ...(request.body ? { body: { ...request.body } } : {}),
-      ...(request.forwardedProps ? { forwardedProps: { ...request.forwardedProps } } : {}),
-      ...(request.headers ? { headers: { ...request.headers } } : {})
-    } as T
-  }
   function requestInfo(
     kind: ChatRequestLifecycleKind,
     request: ChatRequest | ChatResumeRequest,
@@ -1069,7 +1040,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       id: request.id ?? id.value,
       providerId: provider.id,
       attempt,
-      request: cloneLifecycleRequest(request),
+      request: cloneRequestSnapshot(request),
       messages:
         kind === 'chat'
           ? (request as ChatRequest).messages.map(cloneMessage)
@@ -1088,10 +1059,6 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ) {
     onResponse?.({
       ...info,
-      request: cloneLifecycleRequest(info.request),
-      messages: info.messages.map(cloneMessage),
-      ...(info.body ? { body: { ...info.body } } : {}),
-      ...(info.headers ? { headers: { ...info.headers } } : {}),
       hasStream: Boolean(stream)
     })
   }

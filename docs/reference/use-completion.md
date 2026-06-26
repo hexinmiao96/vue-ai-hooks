@@ -3,7 +3,8 @@
 Vue 3 composable for single-shot streaming completions.
 
 Public TypeScript types: `UseCompletionOptions`, `UseCompletionReturn`,
-`CompletionFinishInfo`, `RetryOptions`, and `RetryContext`.
+`CompletionRequestInfo`, `CompletionResponseInfo`, `CompletionFinishInfo`,
+`RetryOptions`, and `RetryContext`.
 
 ## Usage
 
@@ -34,6 +35,8 @@ await complete('Write a haiku about TypeScript:')
 | `throttleMs`            | `number`                                                               | —          | Minimum wait in ms between reactive completion updates. |
 | `experimental_throttle` | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs`.           |
 | `onUpdate`              | `(completion: string, delta: string) => void`                          | —          | Called after each non-empty streamed delta is appended. |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | —          | Called with the final completion request before send.   |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | —          | Called after the provider returns a completion stream.  |
 | `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | —          | Called once the completion is finished.                 |
 | `onError`               | `(e: Error) => void`                                                   | —          | Called on any error.                                    |
 
@@ -73,6 +76,9 @@ await complete('Write a haiku about TypeScript:')
 - `onFinish(completion, info)` keeps the final completion as the first argument
   and passes `info.prompt`, `info.completion`, and `info.isAbort` as completion
   metadata.
+- `onRequest(info)` receives the final `CompletionRequest` before the provider
+  runs. `onResponse(info)` runs once the provider returns a stream. Both include
+  the 1-based `attempt`, provider id, prompt, body, headers, and request snapshot.
 - When `maxRetries` is enabled, streaming completions only retry before the
   first delta arrives.
 - Set `throttleMs` to batch reactive `completion` and `onUpdate` updates during

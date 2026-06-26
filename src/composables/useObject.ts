@@ -12,6 +12,7 @@ import type {
 } from '../types'
 import { AiHooksError } from '../types'
 import { createId } from '../utils/id'
+import { cloneMessageSnapshot, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
@@ -23,6 +24,21 @@ export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
     : T extends object
       ? { [K in keyof T]?: DeepPartial<T[K]> }
       : T
+
+export interface ObjectRequestInfo {
+  id: string
+  providerId: string
+  attempt: number
+  request: ChatRequest
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+}
+
+export interface ObjectResponseInfo extends ObjectRequestInfo {
+  hasStream: boolean
+}
 
 export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
@@ -37,6 +53,8 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   generateId?: IdGenerator
   onChunk?: (chunk: ChatChunk, text: string) => void
   onPartial?: (partialObject: DeepPartial<T>, text: string) => void
+  onRequest?: (info: ObjectRequestInfo) => void
+  onResponse?: (info: ObjectResponseInfo) => void
   onFinish?: (object: T) => void
   onError?: (err: Error) => void
 }
@@ -113,6 +131,8 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     generateId = createId,
     onChunk,
     onPartial,
+    onRequest,
+    onResponse,
     onFinish,
     onError
   } = options
@@ -200,6 +220,19 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     return err instanceof Error ? err : new Error(String(err))
   }
 
+  function requestInfo(request: ChatRequest, attempt: number): ObjectRequestInfo {
+    return {
+      id: request.id ?? id.value,
+      providerId: provider.id,
+      attempt,
+      request: cloneRequestSnapshot(request),
+      messages: request.messages.map(cloneMessageSnapshot),
+      requestMetadata: request.metadata,
+      ...(request.body ? { body: { ...request.body } } : {}),
+      ...(request.headers ? { headers: { ...request.headers } } : {})
+    }
+  }
+
   function createAbortError(): Error {
     const e = new Error('Structured output request was aborted')
     e.name = 'AbortError'
@@ -251,7 +284,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
             promptToMessage(finalPrompt as string | Message)
           ]
           const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
-          const stream = await provider.chat({
+          const request: ChatRequest = {
             ...defaultRest,
             ...requestRest,
             ...(body ? { body } : {}),
@@ -259,6 +292,13 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
             responseFormat: responseFormat(),
             signal: controller.signal,
             stream: true
+          }
+          const info = requestInfo(request, retryAttempt + 1)
+          onRequest?.(info)
+          const stream = await provider.chat(request)
+          onResponse?.({
+            ...info,
+            hasStream: Boolean(stream)
           })
 
           for await (const chunk of stream) {

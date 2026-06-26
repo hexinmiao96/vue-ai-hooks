@@ -49,7 +49,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🧩 **Client-local tool context** — pass local runtime context to browser tool handlers without serializing it to the model backend
 - 🧾 **Request body extensions** — pass provider-specific JSON fields through `body` without losing typed options
 - 🪝 **Request preparation hooks** — customize send and resume requests after chat id, metadata, and messages resolve
-- 🔎 **Request lifecycle tracing** — observe final chat/resume requests and provider stream availability with `onRequest` and `onResponse`
+- 🔎 **Request lifecycle tracing** — observe final chat, completion, object, and embedding requests with `onRequest` and `onResponse`
 - 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
 - 🎚️ **Active tool filtering** — keep one tool registry and expose only selected tools per request with `activeTools`
 - 🛑 **Tool loop stop conditions** — stop multi-step tool loops with `isStepCount()` or `hasToolCall()`

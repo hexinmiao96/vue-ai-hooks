@@ -320,6 +320,81 @@ describe('useObject', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
+  it('reports structured request lifecycle attempts', async () => {
+    let calls = 0
+    const onRequest = vi.fn()
+    const onResponse = vi.fn()
+    const provider: ChatProvider = {
+      id: 'observable-object',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        calls += 1
+        if (calls === 1) throw new Error('temporary object setup failure')
+        return (async function* () {
+          yield { content: '{"title":"Traced","priority":"high"}' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { submit } = useObject<TaskSummary>({
+      provider,
+      schema,
+      schemaName: 'task_summary',
+      maxRetries: 1,
+      defaultRequest: {
+        body: { tenantId: 'tenant_default' },
+        headers: { 'X-Default': 'yes' },
+        metadata: { source: 'default' }
+      },
+      onRequest,
+      onResponse
+    })
+
+    await expect(
+      submit('Trace structured output.', {
+        body: { route: '/objects' },
+        headers: { 'X-Trace': 'trace_1' },
+        metadata: { traceId: 'trace_1' }
+      })
+    ).resolves.toEqual({ title: 'Traced', priority: 'high' })
+
+    expect(calls).toBe(2)
+    expect(onRequest.mock.calls.map(([info]) => info.attempt)).toEqual([1, 2])
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.any(String),
+        providerId: 'observable-object',
+        attempt: 1,
+        requestMetadata: { traceId: 'trace_1' },
+        body: { tenantId: 'tenant_default', route: '/objects' },
+        headers: { 'X-Trace': 'trace_1' },
+        messages: [expect.objectContaining({ role: 'user', content: 'Trace structured output.' })],
+        request: expect.objectContaining({
+          metadata: { traceId: 'trace_1' },
+          stream: true,
+          responseFormat: expect.objectContaining({
+            type: 'json_schema'
+          })
+        })
+      })
+    )
+    expect(onResponse).toHaveBeenCalledOnce()
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'observable-object',
+        attempt: 2,
+        hasStream: true,
+        messages: [expect.objectContaining({ role: 'user', content: 'Trace structured output.' })]
+      })
+    )
+  })
+
   it('supports input.value and clear()', async () => {
     const { input, object, partialObject, text, submit, clear } = useObject<TaskSummary>({
       provider: fakeProvider([{ content: '{"title":"Clean","priority":"low"}' }]),

@@ -4,7 +4,8 @@ Structured JSON output composable for prompts that should return one parsed
 object.
 
 Public TypeScript types: `UseObjectOptions`, `UseObjectReturn`, `DeepPartial`,
-`ResponseFormat`, `IdGenerator`, `RetryOptions`, and `RetryContext`.
+`ObjectRequestInfo`, `ObjectResponseInfo`, `ResponseFormat`, `IdGenerator`,
+`RetryOptions`, and `RetryContext`.
 
 ## Usage
 
@@ -61,6 +62,8 @@ console.log(object.value?.priority)
 | `experimental_throttle` | `number`                                                               | -          | AI SDK-compatible alias. Prefer `throttleMs`.                              |
 | `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -          | Called after each streamed chat chunk is applied.                          |
 | `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -          | Called whenever the current JSON stream can be parsed as a partial object. |
+| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -          | Called with the final structured chat request before send.                 |
+| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -          | Called after the provider returns a structured chat stream.                |
 | `onFinish`              | `(object: T) => void`                                                  | -          | Called after the final JSON parses successfully.                           |
 | `onError`               | `(err: Error) => void`                                                 | -          | Called on provider errors or invalid JSON parse failures.                  |
 
@@ -106,6 +109,11 @@ JSON request fields. Typed fields such as `messages`, `responseFormat`, and
 Set `throttleMs` to batch reactive `text`, `partialObject`, and `onPartial`
 updates during fast JSON streams. `onChunk` still receives every raw stream
 event, and the final parsed object is always flushed before `submit()` resolves.
+
+`onRequest(info)` receives the final structured `ChatRequest` after messages and
+`responseFormat` are resolved. `onResponse(info)` runs after the provider returns
+a stream. Both include the 1-based `attempt`, provider id, request metadata,
+body, headers, and message snapshot.
 
 Pass `generateId` when prompt messages created by `submit('...')` need
 deterministic ids. It also generates the object state id when `id` is omitted.

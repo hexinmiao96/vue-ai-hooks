@@ -39,9 +39,13 @@ import type {
   ChatResponseInfo,
   CompletionFinishInfo,
   CompletionRequest,
+  CompletionRequestInfo,
+  CompletionResponseInfo,
   ContentPart,
   DeepPartial,
+  EmbeddingRequestInfo,
   EmbeddingRequest,
+  EmbeddingResponseInfo,
   EmbeddingResult,
   GeminiConfig,
   IdGenerator,
@@ -58,6 +62,8 @@ import type {
   MessageToolPart,
   OpenAiLikeConfig,
   OpenRouterConfig,
+  ObjectRequestInfo,
+  ObjectResponseInfo,
   PrepareReconnectToStreamRequest,
   PrepareReconnectToStreamRequestOptions,
   PrepareSendMessagesRequest,
@@ -310,6 +316,21 @@ describe('public API types', () => {
       completion: string
       isAbort: boolean
     }>()
+    expectTypeOf<CompletionRequestInfo>().toMatchTypeOf<{
+      providerId: string
+      attempt: number
+      prompt: string
+      request: CompletionRequest
+    }>()
+    expectTypeOf<CompletionResponseInfo>().toMatchTypeOf<
+      CompletionRequestInfo & { hasStream: boolean }
+    >()
+    expectTypeOf<UseCompletionOptions['onRequest']>().toEqualTypeOf<
+      ((info: CompletionRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseCompletionOptions['onResponse']>().toEqualTypeOf<
+      ((info: CompletionResponseInfo) => void) | undefined
+    >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()
     expectTypeOf(embedding.embeddings).toEqualTypeOf<Ref<number[][]>>()
@@ -320,6 +341,21 @@ describe('public API types', () => {
     expectTypeOf(embedding.embed)
       .parameter(1)
       .toEqualTypeOf<Partial<EmbeddingRequest> | undefined>()
+    expectTypeOf<EmbeddingRequestInfo>().toMatchTypeOf<{
+      providerId: string
+      attempt: number
+      input: string | string[]
+      request: EmbeddingRequest
+    }>()
+    expectTypeOf<EmbeddingResponseInfo>().toMatchTypeOf<
+      EmbeddingRequestInfo & { result: EmbeddingResult }
+    >()
+    expectTypeOf<UseEmbeddingOptions['onRequest']>().toEqualTypeOf<
+      ((info: EmbeddingRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseEmbeddingOptions['onResponse']>().toEqualTypeOf<
+      ((info: EmbeddingResponseInfo) => void) | undefined
+    >()
 
     expectTypeOf(structured).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
     expectTypeOf(structured.id).toEqualTypeOf<Ref<string>>()
@@ -331,6 +367,19 @@ describe('public API types', () => {
     >()
     expectTypeOf(structured.submit).returns.toEqualTypeOf<Promise<{ answer: string }>>()
     expectTypeOf(structured.submit).parameter(1).toEqualTypeOf<Partial<ChatRequest> | undefined>()
+    expectTypeOf<ObjectRequestInfo>().toMatchTypeOf<{
+      providerId: string
+      attempt: number
+      request: ChatRequest
+      messages: Message[]
+    }>()
+    expectTypeOf<ObjectResponseInfo>().toMatchTypeOf<ObjectRequestInfo & { hasStream: boolean }>()
+    expectTypeOf<UseObjectOptions['onRequest']>().toEqualTypeOf<
+      ((info: ObjectRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseObjectOptions['onResponse']>().toEqualTypeOf<
+      ((info: ObjectResponseInfo) => void) | undefined
+    >()
 
     expectTypeOf(assertInvalidPublicApiUsage).returns.toEqualTypeOf<void>()
   })

@@ -388,6 +388,69 @@ describe('useCompletion', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
+  it('reports prepared completion request lifecycle attempts', async () => {
+    let calls = 0
+    const onRequest = vi.fn()
+    const onResponse = vi.fn()
+    const provider = {
+      id: 'observable-completion',
+      async completion(request: Record<string, unknown>) {
+        calls += 1
+        if (calls === 1) throw new Error('temporary completion setup failure')
+        expect(request.prompt).toBe('trace completion')
+        return (async function* () {
+          yield 'traced'
+        })()
+      }
+    } as unknown as CompletionProvider
+    const { complete } = useCompletion({
+      provider,
+      maxRetries: 1,
+      defaultRequest: {
+        body: { tenantId: 'tenant_default' },
+        headers: { 'X-Default': 'yes' }
+      },
+      onRequest,
+      onResponse
+    })
+
+    await expect(
+      complete('trace completion', {
+        body: { route: '/complete' },
+        headers: { 'X-Trace': 'trace_1' },
+        temperature: 0.3
+      })
+    ).resolves.toBe('traced')
+
+    expect(calls).toBe(2)
+    expect(onRequest.mock.calls.map(([info]) => info.attempt)).toEqual([1, 2])
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.any(String),
+        providerId: 'observable-completion',
+        attempt: 1,
+        prompt: 'trace completion',
+        body: { tenantId: 'tenant_default', route: '/complete' },
+        headers: { 'X-Trace': 'trace_1' },
+        request: expect.objectContaining({
+          prompt: 'trace completion',
+          temperature: 0.3,
+          stream: true,
+          body: { tenantId: 'tenant_default', route: '/complete' }
+        })
+      })
+    )
+    expect(onResponse).toHaveBeenCalledOnce()
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'observable-completion',
+        attempt: 2,
+        prompt: 'trace completion',
+        hasStream: true
+      })
+    )
+  })
+
   it('does not retry completion streams after a delta was received', async () => {
     let calls = 0
     const onRetry = vi.fn()
