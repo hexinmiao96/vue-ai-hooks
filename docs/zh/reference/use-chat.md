@@ -14,11 +14,11 @@
 `MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
 `MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
 `SendAutomaticallyWhen`、`SendAutomaticallyWhenOptions`、`IdGenerator`、
-`ToolCallHandlerContext`、`ToolResultHandlerContext`、`RetryOptions` 和
-`RetryContext`。
+`ToolCallHandlerContext`、`ToolResultHandlerContext`、`StopWhen`、
+`StopWhenOptions`、`RetryOptions` 和 `RetryContext`。
 
 公开 helper：`pruneMessages`、`serializeMessages`、`deserializeMessages` 和
-`lastAssistantMessageIsCompleteWithToolCalls`。
+`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`。
 
 ## 用法
 
@@ -62,6 +62,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -          | 用于自动执行工具调用的本地 handler。                           |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | -          | 返回 true 时暂停工具调用，等待 UI 确认后再执行。               |
 | `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | 控制工具结果齐备后是否自动发起下一轮请求。                     |
+| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | -          | 条件命中时停止工具结果后的自动续跑。                           |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | 用户消息之后最多自动执行几轮工具调用。                         |
 | `persist`                         | `ChatPersistOptions`                                                   | -          | 把 Date-safe 消息自动保存到 localStorage 或自定义 `Storage`。  |
 | `maxRetries`                      | `number`                                                               | `0`        | 首个 stream chunk 到达前失败时最多重试几次。                   |
@@ -483,6 +484,24 @@ const chat = useChat({
   sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls
 })
 ```
+
+自动工具循环需要按条件停住时，可以使用 `stopWhen`。内置 helper 覆盖常见限制：
+`isStepCount(n)` 会在第 N 个 assistant 工具调用步骤后停止，`hasToolCall(...names)`
+会在最新 assistant 步骤调用指定工具时停止：
+
+```ts
+import { hasToolCall, isStepCount, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  toolHandlers,
+  maxToolRoundtrips: 4,
+  stopWhen: [isStepCount(3), hasToolCall('chargeCard')]
+})
+```
+
+`stopWhen` 会在工具结果已经追加、下一次 assistant request 发起之前执行；它不会中止当前流。
 
 关闭自动续跑时，可以在 `addToolResult()` 或 `addToolOutput()` 之后无参调用
 `sendMessage()`，提交当前 messages，让模型从工具结果继续生成。

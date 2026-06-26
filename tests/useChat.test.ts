@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import {
   deserializeMessages,
+  hasToolCall,
+  isStepCount,
   lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
   serializeMessages,
@@ -2532,6 +2534,96 @@ describe('useChat', () => {
     expect(sendAutomaticallyWhen).toHaveBeenCalledTimes(1)
     expect(requests).toHaveLength(2)
     expect(messages.value[messages.value.length - 1].content).toBe('Allowed continuation.')
+  })
+
+  it('stops automatic continuation when stopWhen matches manual tool results', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Should not be requested.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages } = useChat({
+      provider,
+      stopWhen: hasToolCall('lookup')
+    })
+
+    await append('Use a tool.')
+    await addToolResult('call_1', 'done')
+
+    expect(requests).toHaveLength(1)
+    expect(messages.value.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+  })
+
+  it('stops automatic local tool loops when isStepCount matches', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_2',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"hooks"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Should not be requested.' }]
+      ],
+      requests
+    )
+    const { append, messages } = useChat({
+      provider,
+      maxToolRoundtrips: 3,
+      stopWhen: isStepCount(2),
+      toolHandlers: {
+        lookup(args) {
+          return args
+        }
+      }
+    })
+
+    await append('Loop with lookup.')
+
+    expect(requests).toHaveLength(2)
+    expect(messages.value.map((m) => m.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant',
+      'tool'
+    ])
   })
 
   it('can disable automatic continuation after local tool handlers', async () => {

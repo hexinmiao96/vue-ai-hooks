@@ -49,6 +49,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🪝 **Request preparation hooks** — customize send and resume requests after chat id, metadata, and messages resolve
 - 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
 - 🎚️ **Active tool filtering** — keep one tool registry and expose only selected tools per request with `activeTools`
+- 🛑 **Tool loop stop conditions** — stop multi-step tool loops with `isStepCount()` or `hasToolCall()`
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
@@ -398,6 +399,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Date-safe localStorage persistence
 - ✅ Tool-calling helpers
 - ✅ Active tool filtering with `activeTools`
+- ✅ Tool loop stop conditions with `stopWhen`
 - ✅ AI SDK-style chat aliases for send and tool output flows
 - ✅ Tool approval flow for gated local handlers
 - ✅ AI SDK-style `sendAutomaticallyWhen` for tool-result follow-up control

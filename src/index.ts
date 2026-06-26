@@ -7,6 +7,8 @@
 // Composables
 export {
   deserializeMessages,
+  hasToolCall,
+  isStepCount,
   lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
   serializeMessages,
@@ -32,6 +34,8 @@ export {
   type SendChatTrigger,
   type SerializedMessage,
   type SetMessagesInput,
+  type StopWhen,
+  type StopWhenOptions,
   type ToolApprovalResponse,
   type ToolApprovalPredicate,
   type ToolCallHandler,

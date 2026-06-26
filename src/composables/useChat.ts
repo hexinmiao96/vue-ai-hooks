@@ -58,6 +58,13 @@ export type SendAutomaticallyWhen = (
   options: SendAutomaticallyWhenOptions
 ) => boolean | PromiseLike<boolean>
 
+export interface StopWhenOptions {
+  messages: Message[]
+  toolCalls: ToolCall[]
+}
+
+export type StopWhen = (options: StopWhenOptions) => boolean | PromiseLike<boolean>
+
 export interface ChatFinishInfo {
   message: Message
   messages: Message[]
@@ -182,6 +189,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   toolHandlers?: Record<string, ToolCallHandler>
   requiresToolApproval?: ToolApprovalPredicate
   sendAutomaticallyWhen?: SendAutomaticallyWhen | false
+  stopWhen?: StopWhen | readonly StopWhen[]
   maxToolRoundtrips?: number
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
   onData?: (part: StreamDataPart) => void
@@ -275,6 +283,27 @@ export function lastAssistantMessageIsCompleteWithToolCalls({
       .map((message) => message.toolCallId)
   )
   return calls.every((call) => Boolean(call.id && toolResultIds.has(call.id)))
+}
+
+function latestAssistantToolCalls(messages: Message[]): ToolCall[] {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const calls = messages[i].role === 'assistant' ? messages[i].toolCalls : undefined
+    if (calls?.length) return calls
+  }
+  return []
+}
+
+export function isStepCount(count: number): StopWhen {
+  return ({ messages }) =>
+    messages.filter((message) => message.role === 'assistant' && message.toolCalls?.length)
+      .length >= count
+}
+
+export function hasToolCall(...toolNames: string[]): StopWhen {
+  return ({ toolCalls }) =>
+    toolNames.length
+      ? toolCalls.some((call) => toolNames.includes(call.function.name))
+      : toolCalls.length > 0
 }
 
 function serializeCreatedAt(value: unknown): string | undefined {
@@ -744,6 +773,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     toolHandlers,
     requiresToolApproval,
     sendAutomaticallyWhen,
+    stopWhen,
     maxToolRoundtrips = 1,
     onChunk,
     onData,
@@ -1018,6 +1048,16 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const predicate = sendAutomaticallyWhen ?? lastAssistantMessageIsCompleteWithToolCalls
     if (!predicate) return false
     return await predicate({ messages: messages.value.map(cloneMessage) })
+  }
+  async function shouldStopWhen() {
+    if (!stopWhen) return false
+    const conditions = Array.isArray(stopWhen) ? stopWhen : [stopWhen]
+    const clonedMessages = messages.value.map(cloneMessage)
+    const toolCalls = latestAssistantToolCalls(clonedMessages)
+    for (const condition of conditions) {
+      if (await condition({ messages: clonedMessages, toolCalls })) return true
+    }
+    return false
   }
   function requirePendingToolCall(toolCallId: string): ToolCall {
     const call = pendingToolCalls.value.find((item) => item.id === toolCallId)
@@ -1437,6 +1477,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         isLoading.value = false
         return
       }
+      if (await shouldStopWhen()) {
+        isLoading.value = false
+        return
+      }
       if (!(await shouldSendAutomatically())) {
         isLoading.value = false
         return
@@ -1564,7 +1608,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const context = state.pendingToolSendContext ?? { trigger: 'submit-message' }
     let shouldContinue = false
     try {
-      shouldContinue = await shouldSendAutomatically()
+      shouldContinue = !(await shouldStopWhen()) && (await shouldSendAutomatically())
     } catch (err) {
       throw reportError(err)
     }

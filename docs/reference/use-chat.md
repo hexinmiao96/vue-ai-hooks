@@ -14,11 +14,11 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
-`SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `RetryOptions`, and
-`RetryContext`.
+`SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
+`StopWhenOptions`, `RetryOptions`, and `RetryContext`.
 
 Public helpers: `pruneMessages`, `serializeMessages`, `deserializeMessages`,
-and `lastAssistantMessageIsCompleteWithToolCalls`.
+`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, and `hasToolCall`.
 
 ## Usage
 
@@ -62,6 +62,7 @@ Use `input` with a Vue form for the common composer flow:
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —          | Local handlers for automatic tool execution.                           |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | —          | Return true to pause a tool call for UI approval before execution.     |
 | `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | Decide whether completed tool results should trigger the next request. |
+| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | —          | Stop automatic tool continuation when a condition matches.             |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | Maximum automatic tool-call rounds after a user message.               |
 | `persist`                         | `ChatPersistOptions`                                                   | —          | Auto-save Date-safe messages to localStorage or a custom `Storage`.    |
 | `maxRetries`                      | `number`                                                               | `0`        | Retry attempts for failures before the first stream chunk.             |
@@ -511,6 +512,26 @@ const chat = useChat({
   sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls
 })
 ```
+
+Use `stopWhen` when automatic tool loops should stop after a condition matches.
+Built-in helpers cover common limits: `isStepCount(n)` stops after N assistant
+tool-call steps, and `hasToolCall(...names)` stops when the latest assistant
+step called a named tool:
+
+```ts
+import { hasToolCall, isStepCount, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  toolHandlers,
+  maxToolRoundtrips: 4,
+  stopWhen: [isStepCount(3), hasToolCall('chargeCard')]
+})
+```
+
+`stopWhen` runs after tool results have been added and before the next assistant
+request is started. It does not abort the current stream.
 
 When automatic continuation is disabled, call `sendMessage()` without content
 after `addToolResult()` or `addToolOutput()` to submit the current messages and

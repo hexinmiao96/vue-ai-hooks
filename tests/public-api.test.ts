@@ -5,6 +5,8 @@ import {
   anthropic,
   deserializeMessages,
   gemini,
+  hasToolCall,
+  isStepCount,
   lastAssistantMessageIsCompleteWithToolCalls,
   openai,
   openaiCompatible,
@@ -77,6 +79,8 @@ import type {
   SendChatTrigger,
   SerializedMessage,
   ChatStatus,
+  StopWhen,
+  StopWhenOptions,
   StreamDataPart,
   StreamThrottleOptions,
   TextPart,
@@ -209,6 +213,9 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseChatOptions['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<ChatRequest['activeTools']>().toEqualTypeOf<string[] | undefined>()
+    expectTypeOf<UseChatOptions['stopWhen']>().toEqualTypeOf<
+      StopWhen | readonly StopWhen[] | undefined
+    >()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
@@ -467,10 +474,15 @@ describe('public API types', () => {
       expectTypeOf(sendOptions).toEqualTypeOf<SendAutomaticallyWhenOptions>()
       return lastAssistantMessageIsCompleteWithToolCalls(sendOptions)
     }
+    const stopWhen: StopWhen = (stopOptions) => {
+      expectTypeOf(stopOptions).toEqualTypeOf<StopWhenOptions>()
+      return hasToolCall('lookup')(stopOptions) || isStepCount(2)(stopOptions)
+    }
     const options: UseChatOptions = {
       provider,
       requiresToolApproval,
-      sendAutomaticallyWhen
+      sendAutomaticallyWhen,
+      stopWhen
     }
     const resultContext: ToolResultHandlerContext = {
       args: { q: 'vue' },
@@ -554,7 +566,13 @@ describe('public API types', () => {
     expectTypeOf(options.sendAutomaticallyWhen).toEqualTypeOf<
       SendAutomaticallyWhen | false | undefined
     >()
+    expectTypeOf(options.stopWhen).toEqualTypeOf<StopWhen | readonly StopWhen[] | undefined>()
     expectTypeOf(sendAutomaticallyWhen).toEqualTypeOf<SendAutomaticallyWhen>()
+    expectTypeOf(stopWhen).toEqualTypeOf<StopWhen>()
+    expectTypeOf(isStepCount).parameter(0).toEqualTypeOf<number>()
+    expectTypeOf(isStepCount).returns.toEqualTypeOf<StopWhen>()
+    expectTypeOf(hasToolCall).toEqualTypeOf<(...toolNames: string[]) => StopWhen>()
+    expectTypeOf(hasToolCall).returns.toEqualTypeOf<StopWhen>()
     expectTypeOf(lastAssistantMessageIsCompleteWithToolCalls).toMatchTypeOf<SendAutomaticallyWhen>()
     expectTypeOf(resultContext).toEqualTypeOf<ToolResultHandlerContext>()
     expectTypeOf(persisted.clear).toEqualTypeOf<() => void>()
