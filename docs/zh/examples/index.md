@@ -15,11 +15,11 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
 
 ## 先看哪个示例？
 
-| 目标                         | 从这里开始                     |
-| ---------------------------- | ------------------------------ |
-| 做聊天界面、工具审批或恢复流 | [流式对话](#chat-demo)         |
-| 一个提示词生成一段文本       | [文本补全](#completion-demo)   |
-| 做语义相似度比较             | [向量相似度](#embedding-demo)  |
-| 从提示词抽取类型化 JSON      | [结构化对象输出](#object-demo) |
+| 目标                             | 从这里开始                     |
+| -------------------------------- | ------------------------------ |
+| 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)         |
+| 一个提示词生成一段文本           | [文本补全](#completion-demo)   |
+| 做语义相似度比较                 | [向量相似度](#embedding-demo)  |
+| 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo) |
 
 <DemoShowcase locale="zh" />

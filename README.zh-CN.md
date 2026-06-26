@@ -284,7 +284,7 @@ metadata 或后端专属 body 字段时，可以使用 `prepareSendMessagesReque
 
 四个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
 
-- `examples/chat`：支持 Provider 切换和本地工具审批演示的流式聊天 UI
+- `examples/chat`：支持 Provider 切换、结构化 `Message.parts` 和本地工具审批演示的流式聊天 UI
 - `examples/proxy-server`：本地后端代理模板，覆盖 `/api/ai/*` 契约
 - `examples/completion`：单次补全表单
 - `examples/embedding`：成对余弦相似度热力图

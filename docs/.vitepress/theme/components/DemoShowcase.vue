@@ -60,6 +60,10 @@ const { messages, input, handleSubmit, pendingToolCalls, approveToolCall } = use
   }
 })
 
+const visibleParts = computed(() =>
+  messages.value.flatMap((message) => message.parts ?? []).filter((part) => part.type !== 'text')
+)
+
 async function send(event?: { preventDefault?: () => void }) {
   const attachments = fileInput.value?.files ?? undefined
   await handleSubmit(event, { attachments })
@@ -129,6 +133,10 @@ const { messages: 消息列表, input: 输入文本, handleSubmit, pendingToolCa
     return context.toolCall.function.name === 'chargeCard'
   }
 })
+
+const 可见Parts = computed(() =>
+  消息列表.value.flatMap((message) => message.parts ?? []).filter((part) => part.type !== 'text')
+)
 
 async function send(event?: { preventDefault?: () => void }) {
   const attachments = fileInput.value?.files ?? undefined
@@ -226,7 +234,7 @@ const copy = {
       title: 'Streaming chat',
       topbarTitle: 'useChat',
       description:
-        'A production chat surface with message history, stream controls, and approval-gated tool calls.',
+        'A production chat surface with message history, structured Message.parts, stream controls, and approval-gated tool calls.',
       roleUser: 'user',
       roleAssistant: 'assistant',
       composerLabel: 'chat composer',
@@ -235,6 +243,11 @@ const copy = {
         'The screenshot needs a shorter first action, and the draft should lead with the user-visible change.',
       attachment: 'Attached: dashboard.png + release-notes.txt',
       persistence: 'Saved locally: support-thread-1 · Date-safe history',
+      parts: [
+        'source-url: useChat reference',
+        'file: release-notes.txt',
+        'tool-chargeCard: input available'
+      ],
       actions: ['Stop', 'Reload', 'Clear'],
       tool: 'Approval pending: chargeCard({ amount: 49, currency: "USD" })',
       composer: 'Ask about providers, tool approvals, or persistence',
@@ -511,7 +524,7 @@ const copy = {
     apiRows: [
       {
         name: 'useChat',
-        state: 'messages, input, isLoading, error',
+        state: 'messages, messages[].parts, input, isLoading, error',
         actions: 'append, reload, stop, clear',
         fit: 'Conversational UI, attachments, tool calls'
       },
@@ -587,7 +600,8 @@ const copy = {
     chat: {
       title: '流式对话',
       topbarTitle: 'useChat（流式对话）',
-      description: '用于产品聊天界面的完整形态：消息历史、流控制，以及需要审批的工具调用。',
+      description:
+        '用于产品聊天界面的完整形态：消息历史、结构化 Message.parts、流控制，以及需要审批的工具调用。',
       roleUser: '用户',
       roleAssistant: '助手',
       composerLabel: '输入区',
@@ -595,6 +609,7 @@ const copy = {
       assistant: '截图里的第一个操作需要更短；草稿开头应先讲用户能看到的变化。',
       attachment: '已附加：dashboard.png + release-notes.txt',
       persistence: '已本地保存：support-thread-1 · Date-safe 历史',
+      parts: ['source-url：useChat 参考', 'file：release-notes.txt', 'tool-chargeCard：输入已就绪'],
       actions: ['终止', '重新加载', '清空'],
       tool: '等待审批：chargeCard({ amount: 49, currency: "USD" })',
       composer: '询问模型服务商、工具审批或持久化',
@@ -864,7 +879,8 @@ const copy = {
     apiRows: [
       {
         name: 'useChat',
-        state: 'messages（消息）、input（输入）、isLoading（加载中）、error（错误）',
+        state:
+          'messages（消息）、messages[].parts（结构化片段）、input（输入）、isLoading（加载中）、error（错误）',
         actions: 'append 追加, reload 重新加载, stop 停止, clear 清空',
         fit: '对话界面、文件附件、工具调用'
       },
@@ -1088,6 +1104,11 @@ onUnmounted(() => {
                 <span class="chat-message__role">{{ content.chat.roleAssistant }}</span>
                 <p>{{ content.chat.assistant }}</p>
               </article>
+              <ul class="message-part-strip" aria-label="Message.parts preview">
+                <li v-for="part in content.chat.parts" :key="part">
+                  {{ part }}
+                </li>
+              </ul>
               <div class="tool-call">
                 <span class="tool-call__status" />
                 <span>{{ content.chat.tool }}</span>
@@ -1681,6 +1702,28 @@ onUnmounted(() => {
   border: 1px solid var(--demo-border);
   border-radius: 8px;
   background: var(--demo-surface);
+}
+
+.message-part-strip {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 560px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message-part-strip li {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-subtle);
+  color: var(--demo-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .tool-call {

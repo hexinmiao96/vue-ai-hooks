@@ -19,7 +19,7 @@ the API table only when you need an option or method.
 
 | Goal                                                     | Start with                               |
 | -------------------------------------------------------- | ---------------------------------------- |
-| Build a chat surface, approval flow, or resumable stream | [Streaming chat](#chat-demo)             |
+| Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)             |
 | Turn one prompt into text                                | [Text completion](#completion-demo)      |
 | Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)  |
 | Extract typed JSON from a prompt                         | [Structured object output](#object-demo) |

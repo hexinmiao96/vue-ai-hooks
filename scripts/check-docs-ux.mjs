@@ -14,6 +14,7 @@ const files = {
   zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
   zhExamples: readFileSync('docs/zh/examples/index.md', 'utf8'),
+  chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
 const failures = []
@@ -76,7 +77,7 @@ expect(
 
 for (const snippet of [
   '## Which demo should I open first?',
-  'Build a chat surface, approval flow, or resumable stream',
+  'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
@@ -86,7 +87,7 @@ for (const snippet of [
 
 for (const snippet of [
   '## 先看哪个示例？',
-  '做聊天界面、工具审批或恢复流',
+  '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
   '从提示词抽取类型化 JSON',
   '[结构化对象输出](#object-demo)'
@@ -134,6 +135,14 @@ expect(
     files.demoShowcase.includes("key: 'support-thread-1'") &&
     files.demoShowcase.includes("type: 'ChatPersistOptions'"),
   'DemoShowcase chat code sample and API table must show message persistence'
+)
+expect(
+  files.demoShowcase.includes('structured Message.parts') &&
+    files.demoShowcase.includes('const visibleParts = computed(() =>') &&
+    files.demoShowcase.includes('const 可见Parts = computed(() =>') &&
+    files.demoShowcase.includes('message-part-strip') &&
+    files.demoShowcase.includes('messages[].parts'),
+  'DemoShowcase chat preview and code sample must show structured Message.parts'
 )
 expect(
   files.demoShowcase.includes("attachment: 'Attached: dashboard.png + release-notes.txt'"),
@@ -246,6 +255,16 @@ expect(
     files.zhTypes.includes('tool-*') &&
     files.zhTypes.includes('ChatChunk.parts'),
   'Chinese public type docs must expose Message.parts and ChatChunk.parts'
+)
+expect(
+  files.chatExample.includes('visibleMessageParts(message.parts)') &&
+    files.chatExample.includes('aria-label="structured message parts"') &&
+    files.chatExample.includes("dataType: 'source-url'") &&
+    files.chatExample.includes("dataType: 'file'") &&
+    files.chatExample.includes(
+      "dataType: approved ? 'tool-output-available' : 'tool-output-error'"
+    ),
+  'Runnable chat example must render and produce structured Message.parts'
 )
 expect(
   files.providers.includes('AI SDK UI message stream protocol') &&

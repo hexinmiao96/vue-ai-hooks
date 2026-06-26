@@ -7,6 +7,8 @@ import type {
   ChatRequest,
   ImageUrlPart,
   MessageContent,
+  MessagePart,
+  MessageToolPart,
   Tool,
   ToolCall
 } from 'vue-ai-hooks'
@@ -18,6 +20,14 @@ type CheckoutArgs = {
   plan: string
   amount: number
   currency: string
+}
+
+type RenderedMessagePart = {
+  key: string
+  kind: string
+  label: string
+  href?: string
+  tone: 'reasoning' | 'source' | 'file' | 'data' | 'tool'
 }
 
 /**
@@ -107,10 +117,25 @@ async function* localToolStream(request: ChatRequest): AsyncIterable<ChatChunk> 
 
   if (lastTool) {
     const result = safeJson(String(lastTool.content))
-    const text =
-      result.approved === false
-        ? 'Checkout cancelled. No card was charged, and the order is still pending.'
-        : `Approved. Receipt ${result.receiptId} is ready for ${result.currency} ${result.amount}.`
+    const approved = result.approved !== false
+    yield {
+      dataId: 'charge-result',
+      dataType: approved ? 'tool-output-available' : 'tool-output-error',
+      data: approved
+        ? {
+            toolCallId: lastTool.toolCallId || 'call_charge_card',
+            toolName: 'chargeCard',
+            output: result
+          }
+        : {
+            toolCallId: lastTool.toolCallId || 'call_charge_card',
+            toolName: 'chargeCard',
+            errorText: 'Checkout was rejected before charging the saved card.'
+          }
+    }
+    const text = !approved
+      ? 'Checkout cancelled. No card was charged, and the order is still pending.'
+      : `Approved. Receipt ${result.receiptId} is ready for ${result.currency} ${result.amount}.`
 
     for (const part of text.match(/.{1,24}/g) ?? [text]) {
       await sleep(30)
@@ -124,6 +149,23 @@ async function* localToolStream(request: ChatRequest): AsyncIterable<ChatChunk> 
   }
 
   yield { content: 'I can prepare checkout, but charging the card needs approval first.' }
+  yield {
+    dataId: 'use-chat-reference',
+    dataType: 'source-url',
+    data: {
+      url: 'https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md',
+      title: 'useChat reference'
+    }
+  }
+  yield {
+    dataId: 'checkout-policy',
+    dataType: 'file',
+    data: {
+      url: 'https://example.test/checkout-policy.pdf',
+      mediaType: 'application/pdf',
+      name: 'checkout-policy.pdf'
+    }
+  }
   await sleep(80)
   yield {
     toolCalls: [
@@ -251,6 +293,16 @@ const canStartDemo = computed(() => !isLoading.value && pendingApprovals.value.l
 const canSend = computed(
   () => !isLoading.value && (input.value.trim().length > 0 || selectedFiles.value.length > 0)
 )
+const renderedMessages = computed(() =>
+  messages.value.map((message) => ({
+    id: message.id,
+    role: message.role,
+    text: messageText(message.content),
+    images: messageImages(message.content),
+    parts: visibleMessageParts(message.parts),
+    toolCalls: message.toolCalls ?? []
+  }))
+)
 
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement
@@ -273,6 +325,64 @@ function messageText(content: MessageContent): string {
 function messageImages(content: MessageContent): ImageUrlPart[] {
   if (typeof content === 'string') return []
   return content.filter((part): part is ImageUrlPart => part.type === 'image_url')
+}
+
+function isToolPart(part: MessagePart): part is MessageToolPart {
+  return part.type.startsWith('tool-')
+}
+
+function formatPreviewData(value: unknown): string {
+  if (typeof value === 'string') return value
+  const serialized = JSON.stringify(value)
+  if (!serialized) return 'data'
+  return serialized.length > 90 ? `${serialized.slice(0, 87)}...` : serialized
+}
+
+function visibleMessageParts(parts: MessagePart[] | undefined): RenderedMessagePart[] {
+  return (parts ?? [])
+    .filter((part) => part.type !== 'text')
+    .map((part, index) => {
+      if (part.type === 'reasoning') {
+        return {
+          key: part.id ?? `reasoning-${index}`,
+          kind: 'reasoning',
+          label: part.text,
+          tone: 'reasoning'
+        }
+      }
+      if (part.type === 'source') {
+        return {
+          key: part.id ?? `source-${index}`,
+          kind: part.sourceType === 'document' ? 'source document' : 'source url',
+          label: part.title ?? part.url ?? 'source',
+          href: part.url,
+          tone: 'source'
+        }
+      }
+      if (part.type === 'file') {
+        return {
+          key: part.id ?? `file-${index}`,
+          kind: 'file',
+          label: part.name ?? part.mediaType ?? part.url,
+          href: part.url,
+          tone: 'file'
+        }
+      }
+      if (isToolPart(part)) {
+        return {
+          key: part.toolCallId,
+          kind: part.type,
+          label: `${part.toolName}: ${part.state}`,
+          tone: 'tool'
+        }
+      }
+      return {
+        key: part.id ?? `${part.type}-${index}`,
+        kind: part.type,
+        label: formatPreviewData(part.data),
+        tone: 'data'
+      }
+    })
 }
 
 /**
@@ -322,18 +432,27 @@ async function rejectCheckout(callId: string) {
     </button>
 
     <section class="messages">
-      <article v-for="m in messages" :key="m.id" :class="['message', `role-${m.role}`]">
+      <article v-for="m in renderedMessages" :key="m.id" :class="['message', `role-${m.role}`]">
         <header>{{ m.role }}</header>
-        <p v-if="messageText(m.content)" class="message-text">{{ messageText(m.content) }}</p>
-        <div v-if="messageImages(m.content).length" class="message-images">
+        <p v-if="m.text" class="message-text">{{ m.text }}</p>
+        <div v-if="m.images.length" class="message-images">
           <img
-            v-for="image in messageImages(m.content)"
+            v-for="image in m.images"
             :key="image.image_url.url"
             :src="image.image_url.url"
             alt="Attached image preview"
           />
         </div>
-        <ul v-if="m.toolCalls?.length" class="tool-call-list" aria-label="tool calls">
+        <ul v-if="m.parts.length" class="message-parts" aria-label="structured message parts">
+          <li v-for="part in m.parts" :key="part.key" :class="`is-${part.tone}`">
+            <span>{{ part.kind }}</span>
+            <a v-if="part.href" :href="part.href" target="_blank" rel="noreferrer">
+              {{ part.label }}
+            </a>
+            <strong v-else>{{ part.label }}</strong>
+          </li>
+        </ul>
+        <ul v-if="m.toolCalls.length" class="tool-call-list" aria-label="tool calls">
           <li v-for="call in m.toolCalls" :key="call.id">requested {{ call.function.name }}</li>
         </ul>
       </article>
@@ -465,6 +584,57 @@ h1 {
   color: #92400e;
   background: #fffbeb;
   font-size: 12px;
+}
+.message-parts {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+  margin: 10px 0 0;
+  list-style: none;
+}
+.message-parts li {
+  display: grid;
+  grid-template-columns: minmax(96px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 7px 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12px;
+}
+.message-parts span {
+  color: #64748b;
+  font-weight: 700;
+}
+.message-parts strong,
+.message-parts a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #172033;
+  font-weight: 700;
+  text-decoration: none;
+}
+.message-parts a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+.message-parts .is-source {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+.message-parts .is-file {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+}
+.message-parts .is-tool {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+.message-parts .is-reasoning,
+.message-parts .is-data {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
 }
 .approval-panel {
   display: grid;
