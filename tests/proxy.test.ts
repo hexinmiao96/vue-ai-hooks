@@ -90,10 +90,15 @@ describe('proxyProvider', () => {
   it('maps AI SDK UI message stream parts to ChatChunk values', async () => {
     const fetcher = vi.fn(async () =>
       sseResponse([
-        { type: 'start', messageId: 'msg_1' },
+        {
+          type: 'start',
+          messageId: 'msg_1',
+          messageMetadata: { createdAt: 1, model: 'test-model' }
+        },
         { type: 'text-start', id: 'text_1' },
         { type: 'text-delta', id: 'text_1', delta: 'Hel' },
         { type: 'text-delta', id: 'text_1', delta: 'lo' },
+        { type: 'message-metadata', messageMetadata: { route: 'tools' } },
         { type: 'reasoning-start', id: 'reasoning_1' },
         { type: 'reasoning-delta', id: 'reasoning_1', delta: 'Check ' },
         { type: 'reasoning-delta', id: 'reasoning_1', delta: 'sources.' },
@@ -106,6 +111,7 @@ describe('proxyProvider', () => {
         {
           type: 'finish',
           finishReason: 'stop',
+          messageMetadata: { totalTokens: 5 },
           totalUsage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 }
         }
       ])
@@ -119,9 +125,13 @@ describe('proxyProvider', () => {
     for await (const chunk of stream) chunks.push(chunk)
 
     expect(chunks).toEqual([
-      { messageId: 'msg_1', metadata: { type: 'start', messageId: 'msg_1' } },
+      {
+        messageId: 'msg_1',
+        metadata: { type: 'start', messageId: 'msg_1', createdAt: 1, model: 'test-model' }
+      },
       { content: 'Hel' },
       { content: 'lo' },
+      { metadata: { route: 'tools' } },
       { parts: [{ type: 'reasoning', id: 'reasoning_1', text: 'Check ' }] },
       { parts: [{ type: 'reasoning', id: 'reasoning_1', text: 'Check sources.' }] },
       { data: { step: 1 }, dataType: 'data-progress', dataId: 'progress_1' },
@@ -162,8 +172,32 @@ describe('proxyProvider', () => {
       },
       {
         finishReason: 'stop',
+        metadata: { totalTokens: 5 },
         usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 }
       }
+    ])
+  })
+
+  it('normalizes AI SDK UI message metadata parts', async () => {
+    const fetcher = vi.fn(async () =>
+      sseResponse([
+        { type: 'start', messageMetadata: { model: 'test-model' } },
+        { type: 'message-metadata', messageMetadata: 'trace-1' },
+        { type: 'finish', messageMetadata: null }
+      ])
+    )
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    expect(chunks).toEqual([
+      { metadata: { type: 'start', model: 'test-model' } },
+      { metadata: { messageMetadata: 'trace-1' } },
+      { metadata: { messageMetadata: null } }
     ])
   })
 

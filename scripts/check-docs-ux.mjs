@@ -273,6 +273,8 @@ expect(
 expect(
   files.providers.includes('AI SDK UI message stream protocol') &&
     files.providers.includes('start.messageId') &&
+    files.providers.includes('message-metadata') &&
+    files.providers.includes('ChatChunk.metadata') &&
     files.providers.includes('text-delta') &&
     files.providers.includes('reasoning-*') &&
     files.providers.includes('tool-input-*'),
@@ -281,6 +283,8 @@ expect(
 expect(
   files.zhProviders.includes('AI SDK UI message stream 协议') &&
     files.zhProviders.includes('start.messageId') &&
+    files.zhProviders.includes('message-metadata') &&
+    files.zhProviders.includes('ChatChunk.metadata') &&
     files.zhProviders.includes('text-delta') &&
     files.zhProviders.includes('reasoning-*') &&
     files.zhProviders.includes('tool-input-*'),

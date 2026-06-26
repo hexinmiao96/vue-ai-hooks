@@ -102,7 +102,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 `proxyProvider` 既能消费本项目的 `ChatChunk` SSE payload，也能直接消费已有后端返回的
 AI SDK UI message stream。如果你的服务端已经输出 `text-delta`、`finish`、`data-*`、
-`source-*` 或 `tool-input-*` 片段，迁移时不需要先改成自定义流协议。
+`source-*`、`message-metadata` 或 `tool-input-*` 片段，迁移时不需要先改成自定义流协议。
 
 ### `anthropic`
 

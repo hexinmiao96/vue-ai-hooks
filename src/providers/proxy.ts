@@ -326,7 +326,8 @@ function toChatChunks(raw: Record<string, unknown>, state: UiStreamState): ChatC
         ...(typeof raw.finishReason === 'string'
           ? { finishReason: raw.finishReason as ChatChunk['finishReason'] }
           : {}),
-        ...normalizeUsage(raw.totalUsage ?? raw.usage)
+        ...normalizeUsage(raw.totalUsage ?? raw.usage),
+        ...messageMetadataChunk(raw)
       }
     ]
   }
@@ -360,12 +361,18 @@ function toChatChunks(raw: Record<string, unknown>, state: UiStreamState): ChatC
 
   if (type === 'start') {
     const messageId = typeof raw.messageId === 'string' && raw.messageId ? raw.messageId : undefined
-    if (messageId) return [{ messageId, metadata: { ...raw } }]
-    return raw.id ? [{ metadata: { ...raw } }] : []
+    const metadata = { ...withoutMessageMetadata(raw), ...messageMetadata(raw) }
+    if (messageId) return [{ messageId, metadata }]
+    return raw.id || raw.messageMetadata !== undefined ? [{ metadata }] : []
   }
 
   if (type === 'start-step' || type === 'finish-step') {
     return raw.messageId || raw.id ? [{ metadata: { ...raw } }] : []
+  }
+
+  if (type === 'message-metadata') {
+    const chunk = messageMetadataChunk(raw)
+    return chunk.metadata ? [chunk] : []
   }
 
   return []
@@ -397,6 +404,28 @@ function normalizeUsage(raw: unknown): Pick<ChatChunk, 'usage'> {
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function messageMetadata(raw: Record<string, unknown>): Record<string, unknown> {
+  if (!('messageMetadata' in raw)) return {}
+  const metadata = raw.messageMetadata
+  if (metadata === undefined) return {}
+  return isRecord(metadata) ? { ...metadata } : { messageMetadata: metadata }
+}
+
+function messageMetadataChunk(raw: Record<string, unknown>): Pick<ChatChunk, 'metadata'> {
+  const metadata = messageMetadata(raw)
+  return Object.keys(metadata).length ? { metadata } : {}
+}
+
+function withoutMessageMetadata(raw: Record<string, unknown>): Record<string, unknown> {
+  const metadata = { ...raw }
+  delete metadata.messageMetadata
+  return metadata
 }
 
 function uiErrorMessage(raw: Record<string, unknown>) {

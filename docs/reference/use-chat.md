@@ -611,6 +611,10 @@ const { messages, streamData } = useChat({
 // { dataId: 'doc-1', dataType: 'source', data: { title: 'Vue docs' } }
 ```
 
+When `proxyProvider` consumes an AI SDK UI message stream, `start.messageMetadata`,
+`finish.messageMetadata`, and `message-metadata` parts are normalized into the
+same assistant `metadata` field.
+
 When a later chunk uses the same `dataId`, it replaces the earlier stored part.
 Set `transient: true` for progress ticks or debug events that should call
 `onData` without being stored in `streamData` or `Message.parts`.

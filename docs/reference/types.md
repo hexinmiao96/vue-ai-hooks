@@ -348,7 +348,9 @@ interface EmbeddingResult {
 `ChatChunk.messageId` replaces the id of the current assistant message. This is
 useful when a backend or AI SDK UI message stream sends a server-authoritative
 message id before the text deltas arrive.
-`ChatChunk.metadata` is merged into the current assistant message metadata.
+`ChatChunk.metadata` is merged into the current assistant message metadata. AI
+SDK UI stream `messageMetadata` values are normalized into this field by
+`proxyProvider`.
 `ChatChunk.data` is exposed through `useChat().streamData` and `onData`; use a
 stable `dataId` to replace an earlier part, and set `transient: true` for parts
 that should only trigger `onData`.

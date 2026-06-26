@@ -182,10 +182,11 @@ const provider = proxyProvider({
   `transient`，供 `useChat().streamData` 消费自定义流数据。
 - SSE 流也可以使用 AI SDK UI message stream 协议。此时 `text-delta` 会转换成
   `ChatChunk.content`，`start.messageId` 会转换成 `ChatChunk.messageId`，
-  `finish` 会转换成 `finishReason`/`usage`，`reasoning-*` 会转换成
-  `Message.parts` reasoning 条目，`data-*`、`source-*`、`file` 和 tool-output
-  片段会进入 `streamData`，`tool-input-*` 会转换成流式 `toolCalls`，`error`
-  片段会让当前聊天请求 reject。
+  `start.messageMetadata`、`finish.messageMetadata` 和 `message-metadata` 会转换成
+  `ChatChunk.metadata`，`finish` 会转换成 `finishReason`/`usage`，`reasoning-*`
+  会转换成 `Message.parts` reasoning 条目，`data-*`、`source-*`、`file` 和
+  tool-output 片段会进入 `streamData`，`tool-input-*` 会转换成流式 `toolCalls`，
+  `error` 片段会让当前聊天请求 reject。
 - `resumeChat()` 会对 `resumeUrl` 发起 GET 请求，并把其中的 `:id` 或 `{id}` 占位符替换为编码后的 chat id。没有活动流时返回 `204 No Content`；存在活动流时返回和 `chat()` 相同的 SSE/JSON chunk 结构。
 - `completion()` 会把 `CompletionRequest` JSON POST 到 `completionUrl`。SSE
   payload 可以是 JSON 字符串，也可以是包含 `text`、`completion` 或 `content` 的对象。

@@ -63,7 +63,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🧱 **Optimistic message edits** — `setMessages()` accepts arrays or updater functions for local chat history changes
 - 📝 **Form helpers** — `useChat` and `useCompletion` include `setInput`, `handleInputChange`, and `handleSubmit`
 - 👀 **Lifecycle callbacks** — observe chunks, tool calls, deltas, partial objects, finishes, and errors
-- 🧩 **Custom stream data** — collect sources, progress, citations, and message metadata during a chat turn
+- 🧩 **Custom stream data** — collect sources, progress, citations, and AI SDK message metadata during a chat turn
 - 📐 **Structured output** — `useObject` sends JSON Schema response formats, streams partial objects, and validates the final object
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
 - ⚡ **Tiny** — zero runtime deps beyond Vue itself

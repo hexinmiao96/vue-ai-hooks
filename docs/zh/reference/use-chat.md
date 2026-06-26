@@ -566,6 +566,10 @@ const { messages, streamData } = useChat({
 // { dataId: 'doc-1', dataType: 'source', data: { title: 'Vue docs' } }
 ```
 
+当 `proxyProvider` 消费 AI SDK UI message stream 时，`start.messageMetadata`、
+`finish.messageMetadata` 和 `message-metadata` 也会归一化到同一个 assistant
+`metadata` 字段。
+
 后续 chunk 使用同一个 `dataId` 时，会替换之前保存的片段。进度 tick 或调试事件可以设置
 `transient: true`，这样只触发 `onData`，不会写入 `streamData` 或 `Message.parts`。
 

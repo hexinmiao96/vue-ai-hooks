@@ -113,7 +113,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 `proxyProvider` can consume either this project's `ChatChunk` SSE payloads or AI
 SDK UI message streams from an existing backend. That makes migration simpler
 when your server already returns `text-delta`, `finish`, `data-*`, `source-*`,
-or `tool-input-*` stream parts.
+`message-metadata`, or `tool-input-*` stream parts.
 
 ### `anthropic`
 
