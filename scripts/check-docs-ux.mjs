@@ -127,6 +127,7 @@ expect(
 )
 expect(
   files.demoShowcase.includes('messages: pruneMessages({') &&
+    files.demoShowcase.includes("reasoning: 'before-last-message'") &&
     files.demoShowcase.includes("toolCalls: 'before-last-message'"),
   'DemoShowcase chat code sample must show message pruning before provider requests'
 )
@@ -188,9 +189,10 @@ expect(
 expect(
   files.useChat.includes('## Message pruning') &&
     files.useChat.includes('pruneMessages({') &&
+    files.useChat.includes('reasoning') &&
     files.useChat.includes('PruneMessagesOptions') &&
     files.useChat.includes('PruneToolCallsStrategy'),
-  'English useChat docs must document message pruning utility and public types'
+  'English useChat docs must document message pruning utility, reasoning pruning, and public types'
 )
 expect(
   files.useChat.includes('## Message persistence') &&
@@ -226,9 +228,10 @@ expect(
 expect(
   files.zhUseChat.includes('## 消息裁剪') &&
     files.zhUseChat.includes('pruneMessages({') &&
+    files.zhUseChat.includes('reasoning') &&
     files.zhUseChat.includes('PruneMessagesOptions') &&
     files.zhUseChat.includes('PruneToolCallsStrategy'),
-  'Chinese useChat docs must document message pruning utility and public types'
+  'Chinese useChat docs must document message pruning utility, reasoning pruning, and public types'
 )
 expect(
   files.zhUseChat.includes('## 消息持久化') &&

@@ -293,7 +293,8 @@ await append('Use provider-specific options.', {
 ## 消息裁剪
 
 长对话只想把有用上下文发给 provider 或代理后端时，可以使用 `pruneMessages()`。它可以保留
-system 消息、只保留最近 N 条非 system 消息、移除空消息，并裁剪历史工具调用/结果：
+system 消息、只保留最近 N 条非 system 消息、移除空消息，并裁剪历史 reasoning parts
+和工具调用/结果：
 
 ```ts
 import { pruneMessages, useChat } from 'vue-ai-hooks'
@@ -305,6 +306,7 @@ const { append } = useChat({
       messages: pruneMessages({
         messages: request.messages,
         maxMessages: 12,
+        reasoning: 'before-last-message',
         toolCalls: 'before-last-message'
       })
     }
@@ -320,6 +322,7 @@ await append('使用最近的相关上下文。')
 | `maxMessages`   | `number`                                                             | -          | 保留最近 N 条非 system 消息。                          |
 | `keepSystem`    | `boolean`                                                            | `true`     | 即使 `maxMessages` 裁剪历史，也保留 system 消息。      |
 | `emptyMessages` | `'keep' \| 'remove'`                                                 | `'remove'` | 移除没有文本/图片内容且没有 tool call 的消息。         |
+| `reasoning`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | 移除历史 `reasoning` message parts。                   |
 | `toolCalls`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | 移除历史 assistant tool calls 和对应的 tool 结果消息。 |
 
 ## 请求准备钩子

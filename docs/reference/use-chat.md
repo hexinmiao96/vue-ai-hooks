@@ -303,7 +303,8 @@ await append('Use provider-specific options.', {
 
 Use `pruneMessages()` when a long chat should send only useful context to a
 provider or proxy. It can keep system messages, keep the latest N non-system
-messages, remove empty messages, and trim historical tool calls/results:
+messages, remove empty messages, trim historical reasoning parts, and trim
+historical tool calls/results:
 
 ```ts
 import { pruneMessages, useChat } from 'vue-ai-hooks'
@@ -315,6 +316,7 @@ const { append } = useChat({
       messages: pruneMessages({
         messages: request.messages,
         maxMessages: 12,
+        reasoning: 'before-last-message',
         toolCalls: 'before-last-message'
       })
     }
@@ -330,6 +332,7 @@ await append('Use the latest relevant context.')
 | `maxMessages`   | `number`                                                             | -          | Keep the latest N non-system messages.                          |
 | `keepSystem`    | `boolean`                                                            | `true`     | Preserve system messages even when `maxMessages` trims history. |
 | `emptyMessages` | `'keep' \| 'remove'`                                                 | `'remove'` | Drop messages with no text/image content or tool calls.         |
+| `reasoning`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | Remove historical `reasoning` message parts.                    |
 | `toolCalls`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | Remove historical assistant tool calls and matching tool rows.  |
 
 ## Request preparation hooks

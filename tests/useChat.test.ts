@@ -349,6 +349,78 @@ describe('useChat', () => {
     ])
   })
 
+  it('can prune historical reasoning parts without mutating original messages', () => {
+    const messages: Message[] = [
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: 'First answer',
+        parts: [
+          { type: 'reasoning', id: 'r1', text: 'Old reasoning' },
+          { type: 'text', id: 't1', text: 'First answer' }
+        ]
+      },
+      { id: 'u2', role: 'user', content: 'Latest question' },
+      {
+        id: 'a2',
+        role: 'assistant',
+        content: 'Latest answer',
+        parts: [
+          { type: 'reasoning', id: 'r2', text: 'Keep recent reasoning' },
+          { type: 'text', id: 't2', text: 'Latest answer' }
+        ]
+      }
+    ]
+
+    const pruned = pruneMessages({ messages, reasoning: 'before-last-message' })
+
+    expect(pruned[0].parts).toEqual([{ type: 'text', id: 't1', text: 'First answer' }])
+    expect(pruned[2].parts).toEqual(messages[2].parts)
+    expect(messages[0].parts).toHaveLength(2)
+    expect(pruneMessages({ messages, reasoning: 'none' })[0].parts).toEqual(messages[0].parts)
+  })
+
+  it('can remove all reasoning parts before empty message pruning', () => {
+    const pruned = pruneMessages({
+      messages: [
+        {
+          id: 'reasoning-only',
+          role: 'assistant',
+          content: '',
+          parts: [{ type: 'reasoning', id: 'r1', text: 'Drop me' }]
+        },
+        {
+          id: 'answer',
+          role: 'assistant',
+          content: 'Visible answer',
+          parts: [
+            { type: 'reasoning', id: 'r2', text: 'Drop me too' },
+            { type: 'text', id: 't2', text: 'Visible answer' }
+          ]
+        }
+      ],
+      reasoning: 'all'
+    })
+
+    expect(pruned).toEqual([
+      {
+        id: 'answer',
+        role: 'assistant',
+        content: 'Visible answer',
+        parts: [{ type: 'text', id: 't2', text: 'Visible answer' }]
+      }
+    ])
+  })
+
+  it('rejects unsupported reasoning pruning strategies', () => {
+    expect(() =>
+      pruneMessages({
+        messages: [{ id: 'a1', role: 'assistant', content: 'answer' }],
+        reasoning: 'before-last-many-messages' as never
+      })
+    ).toThrow(/Unsupported reasoning pruning strategy/)
+  })
+
   it('shares state across instances with the same id and seeds from the first instance', async () => {
     const requests: ChatRequest[] = []
     const provider = fakeTurnProvider([[{ content: 'shared output' }]], requests)

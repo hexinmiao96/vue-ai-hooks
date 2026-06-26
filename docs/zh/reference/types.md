@@ -445,13 +445,17 @@ type PruneToolCallsStrategy =
   | 'before-last-message'
   | `before-last-${number}-messages`
 
+type PruneReasoningStrategy = PruneToolCallsStrategy
+
 interface PruneMessagesOptions {
   messages: Message[]
   maxMessages?: number
   keepSystem?: boolean
   emptyMessages?: 'keep' | 'remove'
   toolCalls?: PruneToolCallsStrategy
+  reasoning?: PruneReasoningStrategy
 }
 ```
 
-`pruneMessages()` 使用 `PruneMessagesOptions` 在 provider request 前裁剪长历史。
+`pruneMessages()` 使用 `PruneMessagesOptions` 在 provider request 前裁剪长历史，
+包括历史 reasoning parts 和工具细节。

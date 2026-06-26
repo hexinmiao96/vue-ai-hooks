@@ -47,6 +47,7 @@ const { messages, input, handleSubmit, pendingToolCalls, approveToolCall } = use
       messages: pruneMessages({
         messages: request.messages,
         maxMessages: 12,
+        reasoning: 'before-last-message',
         toolCalls: 'before-last-message'
       })
     }
@@ -121,6 +122,7 @@ const { messages: 消息列表, input: 输入文本, handleSubmit, pendingToolCa
       messages: pruneMessages({
         messages: request.messages,
         maxMessages: 12,
+        reasoning: 'before-last-message',
         toolCalls: 'before-last-message'
       })
     }

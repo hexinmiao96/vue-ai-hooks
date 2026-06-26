@@ -135,12 +135,15 @@ export type PruneToolCallsStrategy =
   | 'before-last-message'
   | `before-last-${number}-messages`
 
+export type PruneReasoningStrategy = PruneToolCallsStrategy
+
 export interface PruneMessagesOptions {
   messages: Message[]
   maxMessages?: number
   keepSystem?: boolean
   emptyMessages?: 'keep' | 'remove'
   toolCalls?: PruneToolCallsStrategy
+  reasoning?: PruneReasoningStrategy
 }
 
 export type SerializedMessage = Omit<Message, 'createdAt'> & { createdAt?: string }
@@ -569,13 +572,18 @@ function isEmptyMessage(message: Message): boolean {
   return !hasContent(message.content) && !message.toolCalls?.length
 }
 
-function pruneToolDetails(index: number, total: number, strategy: PruneToolCallsStrategy): boolean {
+function pruneHistoricalDetails(
+  index: number,
+  total: number,
+  strategy: PruneToolCallsStrategy,
+  label: string
+): boolean {
   if (strategy === 'none') return false
   if (strategy === 'all') return true
   if (strategy === 'before-last-message') return index < total - 1
 
   const match = /^before-last-(\d+)-messages$/.exec(strategy)
-  if (!match) throw new Error(`Unsupported tool call pruning strategy: ${strategy}`)
+  if (!match) throw new Error(`Unsupported ${label} pruning strategy: ${strategy}`)
   return index < total - Number(match[1])
 }
 
@@ -588,7 +596,8 @@ export function pruneMessages(options: PruneMessagesOptions): Message[] {
     maxMessages,
     keepSystem = true,
     emptyMessages = 'remove',
-    toolCalls = 'none'
+    toolCalls = 'none',
+    reasoning = 'none'
   } = options
   if (maxMessages !== undefined && maxMessages < 0) {
     throw new Error('pruneMessages() maxMessages must be greater than or equal to 0')
@@ -598,9 +607,14 @@ export function pruneMessages(options: PruneMessagesOptions): Message[] {
   let pruned = messages
     .map((message, index) => {
       const next = cloneMessage(message)
-      if (!pruneToolDetails(index, total, toolCalls)) return next
-      if (next.role === 'tool') return null
-      delete next.toolCalls
+      if (pruneHistoricalDetails(index, total, reasoning, 'reasoning') && next.parts?.length) {
+        next.parts = next.parts.filter((part) => part.type !== 'reasoning')
+        if (!next.parts.length) delete next.parts
+      }
+      if (pruneHistoricalDetails(index, total, toolCalls, 'tool call')) {
+        if (next.role === 'tool') return null
+        delete next.toolCalls
+      }
       return next
     })
     .filter((message): message is Message => message !== null)

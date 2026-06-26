@@ -52,7 +52,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **流式更新节流**：用 `throttleMs` 降低高频 token 流带来的响应式更新压力
 - **自定义 ID**：通过 `generateId` 生成稳定的 chat、completion、message、tool 和 stream data id
 - **同 ID 共享状态**：多个 Vue 组件传入同一个 `id` 时，可以复用 chat、completion 和 object 状态
-- **消息裁剪**：发送给 Provider 前裁剪长对话历史和历史工具调用
+- **消息裁剪**：发送给 Provider 前裁剪长对话历史、reasoning parts 和历史工具调用
 - **编辑后重发**：用 `append(..., { messageId })` 替换历史消息并重新生成回复
 - **一致的状态模型**：核心组合式函数都暴露 `status`、`isLoading`、`error` 和 `clearError()`
 - **乐观消息编辑**：`setMessages()` 支持数组或 updater 函数，方便本地更新聊天历史
