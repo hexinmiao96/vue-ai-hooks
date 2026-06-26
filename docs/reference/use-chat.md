@@ -261,9 +261,10 @@ resolves.
 ## Lifecycle callbacks
 
 `onFinish(message, info)` receives the final assistant message and a snapshot
-with `info.message`, `info.messages`, `info.isAbort`, `info.isError`, and
-`info.finishReason`. If a stream fails after the assistant message has started,
-`onFinish` runs with `isError: true` before `onError`.
+with `info.message`, `info.messages`, `info.isAbort`, `info.isError`,
+`info.isDisconnect`, and `info.finishReason`. If a stream fails after the
+assistant message has started, `onFinish` runs with `isError: true` and
+`isDisconnect: true` before `onError`.
 
 ## Custom ids
 

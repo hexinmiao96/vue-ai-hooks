@@ -447,6 +447,7 @@ describe('public API types', () => {
       messages: [message],
       isAbort: false,
       isError: false,
+      isDisconnect: false,
       finishReason: 'stop'
     }
     const handler: ToolCallHandler = async (args, context) => {
@@ -542,6 +543,7 @@ describe('public API types', () => {
       messages: Message[]
       isAbort: boolean
       isError: boolean
+      isDisconnect: boolean
       finishReason?: ChatChunk['finishReason']
     }>()
     expectTypeOf(handler).toEqualTypeOf<ToolCallHandler>()

@@ -187,6 +187,12 @@ expect(
   'English useChat docs must explain same-id shared chat state and setId boundaries'
 )
 expect(
+  files.useChat.includes('## Lifecycle callbacks') &&
+    files.useChat.includes('info.isDisconnect') &&
+    files.useChat.includes('isDisconnect: true'),
+  'English useChat docs must document disconnect-aware finish callbacks'
+)
+expect(
   files.useChat.includes('## Message pruning') &&
     files.useChat.includes('pruneMessages({') &&
     files.useChat.includes('reasoning') &&
@@ -225,6 +231,12 @@ expect(
     files.zhUseChat.includes('initialInput') &&
     files.zhUseChat.includes('不会把当前 refs 重新绑定'),
   'Chinese useChat docs must explain same-id shared chat state and setId boundaries'
+)
+expect(
+  files.zhUseChat.includes('## 生命周期回调') &&
+    files.zhUseChat.includes('info.isDisconnect') &&
+    files.zhUseChat.includes('isDisconnect: true'),
+  'Chinese useChat docs must document disconnect-aware finish callbacks'
 )
 expect(
   files.zhUseChat.includes('## 消息裁剪') &&

@@ -246,7 +246,7 @@ import type { ChatProvider } from 'vue-ai-hooks'
 `useChat`、`useCompletion` 和 `useObject` 支持 `throttleMs`，可以把高频流式响应合并成较低频的响应式更新；最终状态会在请求 resolve 前强制刷新。`experimental_throttle` 也可作为 AI SDK 风格兼容别名，但新代码建议使用 `throttleMs`。
 
 `useChat` 的 `onFinish` 保持最终助手消息作为第一个参数，同时会传入
-`ChatFinishInfo`，包含消息快照、中止/错误标记和 finish reason。
+`ChatFinishInfo`，包含消息快照、中止/错误/断连标记和 finish reason。
 
 可以在 `defaultRequest` 或单次调用选项中传入 `body`，用于向 OpenAI-compatible、Anthropic
 或 proxy 请求透传 Provider 专属 JSON 字段；如果 key 冲突，显式 typed 字段仍然优先。

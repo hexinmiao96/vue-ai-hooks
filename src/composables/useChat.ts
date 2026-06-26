@@ -63,6 +63,7 @@ export interface ChatFinishInfo {
   messages: Message[]
   isAbort: boolean
   isError: boolean
+  isDisconnect: boolean
   finishReason?: ChatChunk['finishReason']
 }
 
@@ -971,7 +972,12 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onError?.(e)
     return e
   }
-  function finishAssistant(assistant: Message, isAbort: boolean, isError: boolean) {
+  function finishAssistant(
+    assistant: Message,
+    isAbort: boolean,
+    isError: boolean,
+    isDisconnect = false
+  ) {
     if (!onFinish) return
     const message = { ...assistant }
     onFinish(message, {
@@ -979,6 +985,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       messages: messages.value.map((message) => ({ ...message })),
       isAbort,
       isError,
+      isDisconnect,
       finishReason: assistant.metadata?.finishReason as ChatChunk['finishReason'] | undefined
     })
   }
@@ -1268,7 +1275,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
             status.value = 'submitted'
             continue
           }
-          if (assistant) finishAssistant(assistant, false, true)
+          if (assistant) finishAssistant(assistant, false, true, true)
           throw reportError(e)
         }
       }

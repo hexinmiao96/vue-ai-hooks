@@ -254,9 +254,9 @@ flush。`append()`、`regenerate()` 或 `resumeStream()` resolve 前一定会刷
 ## 生命周期回调
 
 `onFinish(message, info)` 会收到最终助手消息，以及包含 `info.message`、
-`info.messages`、`info.isAbort`、`info.isError` 和 `info.finishReason` 的快照。
-如果流已经开始生成助手消息后失败，`onFinish` 会先以 `isError: true` 调用，然后再
-触发 `onError`。
+`info.messages`、`info.isAbort`、`info.isError`、`info.isDisconnect` 和
+`info.finishReason` 的快照。如果流已经开始生成助手消息后失败，`onFinish` 会先以
+`isError: true` 和 `isDisconnect: true` 调用，然后再触发 `onError`。
 
 ## 自定义 ID
 

@@ -778,7 +778,8 @@ describe('useChat', () => {
           expect.objectContaining({ role: 'assistant', content: 'partial' })
         ],
         isAbort: false,
-        isError: true
+        isError: true,
+        isDisconnect: true
       })
     )
   })
@@ -1312,6 +1313,7 @@ describe('useChat', () => {
         ],
         isAbort: false,
         isError: false,
+        isDisconnect: false,
         finishReason: 'stop'
       })
     )
@@ -1620,6 +1622,7 @@ describe('useChat', () => {
         messages: [expect.objectContaining({ role: 'assistant', content: 'Partial continued' })],
         isAbort: false,
         isError: false,
+        isDisconnect: false,
         finishReason: 'stop'
       })
     )
@@ -1764,7 +1767,7 @@ describe('useChat', () => {
     expect(messages.value.length).toBeGreaterThanOrEqual(2)
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'assistant' }),
-      expect.objectContaining({ isAbort: true, isError: false })
+      expect.objectContaining({ isAbort: true, isError: false, isDisconnect: false })
     )
   })
 

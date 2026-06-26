@@ -297,8 +297,8 @@ request resolves. `experimental_throttle` is accepted as an AI SDK-compatible
 alias, but new code should prefer `throttleMs`.
 
 `useChat` keeps the final assistant message as the first `onFinish` argument and
-also passes `ChatFinishInfo` with the message snapshot, abort/error flags, and
-finish reason.
+also passes `ChatFinishInfo` with the message snapshot, abort/error/disconnect
+flags, and finish reason.
 
 Pass `generateId` to `useChat`, `useCompletion`, or `useObject` when you need
 deterministic IDs for SSR, persistence, tests, or backend trace correlation.
