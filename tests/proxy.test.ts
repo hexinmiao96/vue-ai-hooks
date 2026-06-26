@@ -119,7 +119,7 @@ describe('proxyProvider', () => {
     for await (const chunk of stream) chunks.push(chunk)
 
     expect(chunks).toEqual([
-      { metadata: { type: 'start', messageId: 'msg_1' } },
+      { messageId: 'msg_1', metadata: { type: 'start', messageId: 'msg_1' } },
       { content: 'Hel' },
       { content: 'lo' },
       { parts: [{ type: 'reasoning', id: 'reasoning_1', text: 'Check ' }] },

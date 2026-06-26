@@ -205,6 +205,8 @@ export interface ChatResumeRequest {
 
 /** A single delta in a streaming chat response. */
 export interface ChatChunk {
+  /** Server-provided id for the current assistant message. */
+  messageId?: string
   /** Text delta for the assistant message. */
   content?: string
   /** Tool call deltas. */

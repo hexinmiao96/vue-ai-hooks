@@ -418,6 +418,7 @@ describe('public API types', () => {
       data: { title: 'docs' }
     }
     const chunk: ChatChunk = {
+      messageId: 'msg_server_1',
       content: 'ok',
       finishReason: 'stop',
       usage,

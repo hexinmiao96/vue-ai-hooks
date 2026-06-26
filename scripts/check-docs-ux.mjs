@@ -243,18 +243,22 @@ expect(
 expect(
   files.types.includes('type MessagePart =') &&
     files.types.includes('parts?: MessagePart[]') &&
+    files.types.includes('messageId?: string') &&
     files.types.includes('MessageToolPart') &&
     files.types.includes('tool-*') &&
-    files.types.includes('ChatChunk.parts'),
-  'English public type docs must expose Message.parts and ChatChunk.parts'
+    files.types.includes('ChatChunk.parts') &&
+    files.types.includes('ChatChunk.messageId'),
+  'English public type docs must expose Message.parts, ChatChunk.parts, and ChatChunk.messageId'
 )
 expect(
   files.zhTypes.includes('type MessagePart =') &&
     files.zhTypes.includes('parts?: MessagePart[]') &&
+    files.zhTypes.includes('messageId?: string') &&
     files.zhTypes.includes('MessageToolPart') &&
     files.zhTypes.includes('tool-*') &&
-    files.zhTypes.includes('ChatChunk.parts'),
-  'Chinese public type docs must expose Message.parts and ChatChunk.parts'
+    files.zhTypes.includes('ChatChunk.parts') &&
+    files.zhTypes.includes('ChatChunk.messageId'),
+  'Chinese public type docs must expose Message.parts, ChatChunk.parts, and ChatChunk.messageId'
 )
 expect(
   files.chatExample.includes('visibleMessageParts(message.parts)') &&
@@ -268,6 +272,7 @@ expect(
 )
 expect(
   files.providers.includes('AI SDK UI message stream protocol') &&
+    files.providers.includes('start.messageId') &&
     files.providers.includes('text-delta') &&
     files.providers.includes('reasoning-*') &&
     files.providers.includes('tool-input-*'),
@@ -275,6 +280,7 @@ expect(
 )
 expect(
   files.zhProviders.includes('AI SDK UI message stream 协议') &&
+    files.zhProviders.includes('start.messageId') &&
     files.zhProviders.includes('text-delta') &&
     files.zhProviders.includes('reasoning-*') &&
     files.zhProviders.includes('tool-input-*'),

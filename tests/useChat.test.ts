@@ -689,6 +689,32 @@ describe('useChat', () => {
     expect(messages.value[1].metadata).toMatchObject({ model: 'test-model', runId: 'run_1' })
   })
 
+  it('uses stream messageId as the assistant message id', async () => {
+    const onFinish = vi.fn()
+    const { append, messages } = useChat({
+      provider: fakeProvider([
+        { messageId: 'server_assistant_1', metadata: { type: 'start' } },
+        { content: 'Answer' }
+      ]),
+      onFinish
+    })
+
+    await append('with server id')
+
+    expect(messages.value[1]).toMatchObject({
+      id: 'server_assistant_1',
+      role: 'assistant',
+      content: 'Answer',
+      metadata: { type: 'start' }
+    })
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'server_assistant_1', content: 'Answer' }),
+      expect.objectContaining({
+        message: expect.objectContaining({ id: 'server_assistant_1' })
+      })
+    )
+  })
+
   it('builds structured assistant message parts from stream chunks', async () => {
     const { append, messages } = useChat({
       provider: fakeProvider([

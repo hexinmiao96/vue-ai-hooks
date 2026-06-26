@@ -51,6 +51,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
+- 🆔 **Server message IDs** — map proxy/UI stream `start.messageId` onto the assistant message id
 - 🧱 **Structured message parts** — render assistant text, reasoning, sources, files, custom data, and `tool-*` states from `Message.parts`
 - 🧯 **Retry controls** — opt into `maxRetries`, `retryDelayMs`, `shouldRetry`, and `onRetry` for transient provider failures
 - 🪶 **Stream throttling** — use `throttleMs` to reduce reactive updates during fast token streams
@@ -302,6 +303,8 @@ finish reason.
 Pass `generateId` to `useChat`, `useCompletion`, or `useObject` when you need
 deterministic IDs for SSR, persistence, tests, or backend trace correlation.
 Explicit `id` and `messageId` values still take priority over generated IDs.
+Proxy streams can also send `ChatChunk.messageId` or AI SDK UI stream
+`start.messageId` to replace the current assistant id with the server's id.
 
 Passing the same `id` to multiple `useChat()` calls shares chat state across
 components. The first instance seeds `initialMessages` and `initialInput`;

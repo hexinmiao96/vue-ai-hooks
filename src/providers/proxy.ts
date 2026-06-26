@@ -358,7 +358,13 @@ function toChatChunks(raw: Record<string, unknown>, state: UiStreamState): ChatC
     return [uiDataChunk(raw)]
   }
 
-  if (type === 'start' || type === 'start-step' || type === 'finish-step') {
+  if (type === 'start') {
+    const messageId = typeof raw.messageId === 'string' && raw.messageId ? raw.messageId : undefined
+    if (messageId) return [{ messageId, metadata: { ...raw } }]
+    return raw.id ? [{ metadata: { ...raw } }] : []
+  }
+
+  if (type === 'start-step' || type === 'finish-step') {
     return raw.messageId || raw.id ? [{ metadata: { ...raw } }] : []
   }
 

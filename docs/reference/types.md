@@ -314,6 +314,7 @@ interface StreamDataPart {
 }
 
 interface ChatChunk {
+  messageId?: string
   content?: string
   toolCalls?: Array<{
     index: number
@@ -344,6 +345,9 @@ interface EmbeddingResult {
 }
 ```
 
+`ChatChunk.messageId` replaces the id of the current assistant message. This is
+useful when a backend or AI SDK UI message stream sends a server-authoritative
+message id before the text deltas arrive.
 `ChatChunk.metadata` is merged into the current assistant message metadata.
 `ChatChunk.data` is exposed through `useChat().streamData` and `onData`; use a
 stable `dataId` to replace an earlier part, and set `transient: true` for parts

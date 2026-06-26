@@ -708,8 +708,8 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     error.value = null
     status.value = 'ready'
   }
-  function replaceAssistant(assistant: Message) {
-    const idx = messages.value.findIndex((m) => m.id === assistant.id)
+  function replaceAssistant(assistant: Message, targetId = assistant.id) {
+    const idx = messages.value.findIndex((m) => m.id === targetId)
     if (idx >= 0) {
       messages.value = [
         ...messages.value.slice(0, idx),
@@ -1028,12 +1028,18 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   function applyChunk(
     assistant: Message,
     chunk: ChatChunk,
-    scheduleAssistant: (notifyUpdate: boolean) => void,
+    scheduleAssistant: (notifyUpdate: boolean, targetId?: string) => void,
     scheduleStreamData: () => void
   ) {
     let changedAssistant = false
     let notifyUpdate = false
+    let targetId: string | undefined
     const incomingParts: MessagePart[] = []
+    if (chunk.messageId && chunk.messageId !== assistant.id) {
+      targetId = assistant.id
+      assistant.id = chunk.messageId
+      changedAssistant = true
+    }
     if (chunk.content) {
       assistant.content += chunk.content
       incomingParts.push({ type: 'text', text: chunk.content })
@@ -1072,7 +1078,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     if (incomingParts.length) {
       assistant.parts = mergeMessageParts(assistant.parts, incomingParts)
     }
-    if (changedAssistant) scheduleAssistant(notifyUpdate)
+    if (changedAssistant) scheduleAssistant(notifyUpdate, targetId)
     onChunk?.(chunk, { ...assistant })
   }
   function resumeAssistant(): Message {
@@ -1091,15 +1097,17 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const controller = new AbortController()
     let assistant: Message | null = null
     let pendingAssistant: Message | null = null
+    let pendingAssistantTargetId: string | null = null
     let pendingUpdate = false
     let pendingStreamData = false
     let retryAttempt = 0
     const maxRetries = getMaxRetries(options)
     const throttler = createStreamUpdateThrottler(getThrottleMs(options), () => {
       if (pendingAssistant) {
-        replaceAssistant(pendingAssistant)
+        replaceAssistant(pendingAssistant, pendingAssistantTargetId ?? pendingAssistant.id)
         if (pendingUpdate) onUpdate?.({ ...pendingAssistant })
         pendingAssistant = null
+        pendingAssistantTargetId = null
         pendingUpdate = false
       }
       if (pendingStreamData) {
@@ -1107,9 +1115,10 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         pendingStreamData = false
       }
     })
-    const scheduleAssistant = (notifyUpdate: boolean) => {
+    const scheduleAssistant = (notifyUpdate: boolean, targetId?: string) => {
       if (!assistant) return
       pendingAssistant = assistant
+      pendingAssistantTargetId ??= targetId ?? assistant.id
       pendingUpdate ||= notifyUpdate
       throttler.schedule()
     }
