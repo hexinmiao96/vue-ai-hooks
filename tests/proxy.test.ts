@@ -46,6 +46,7 @@ describe('proxyProvider', () => {
     const stream = await provider.chat({
       messages: [{ id: 'm1', role: 'user', content: 'Hi' }],
       model: 'app-selected-model',
+      activeTools: ['searchDocs'],
       headers: { 'X-Trace': 'trace-1' }
     })
     const chunks: unknown[] = []

@@ -57,6 +57,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | -          | 发送或重新生成前，自定义最终 provider request。                |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | -          | `resumeStream()` 重连前，自定义最终恢复请求。                  |
 | `tools`                           | `Tool[]`                                                               | -          | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。      |
+| `activeTools`                     | `string[]`                                                             | -          | 按函数名筛选本次聊天/请求真正发送给 Provider 的工具。          |
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | -          | 默认工具选择策略。                                             |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -          | 用于自动执行工具调用的本地 handler。                           |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | -          | 返回 true 时暂停工具调用，等待 UI 确认后再执行。               |
@@ -436,6 +437,21 @@ console.log(messages.value.map((m) => m.role))
 
 库会把流式返回的 `tool_calls` delta 累积成 assistant 消息上的最终 `toolCalls[]`。
 OpenAI-compatible Provider 使用 OpenAI wire format；Anthropic Provider 会把同一套公开 `Tool` 和 `tool` 消息映射到 Anthropic Messages API 格式。如果模型调用了未注册的工具，或者 handler 抛错，`append()` 会 reject，并写入 `error.value`。
+
+当页面有一组默认工具，但某条消息只想开放其中一部分时，可以使用 `activeTools`。
+这个筛选会在发送 Provider request 之前完成，`activeTools` 本身不会透传：
+
+```ts
+const { append } = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  activeTools: ['searchDocs']
+})
+
+await append('只搜索文档。')
+await append('准备结账。', { activeTools: ['chargeCard'] })
+await append('不用工具直接回答。', { activeTools: [] })
+```
 
 对于需要用户确认的工具，可以不传 `toolHandlers`。`useChat` 会把调用暴露到
 `pendingToolCalls`；当 UI 完成确认或浏览器侧操作后，调用 `addToolResult()`。如果模型一次请求多个工具，只有所有 pending 调用都有结果后才会继续下一轮对话：

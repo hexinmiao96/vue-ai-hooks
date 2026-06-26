@@ -239,6 +239,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `presencePenalty`  | `number`                                                                             | presence penalty。                               |
 | `stop`             | `string \| string[]`                                                                 | 停止序列。                                       |
 | `tools`            | `Tool[]`                                                                             | 模型可调用的函数工具。                           |
+| `activeTools`      | `string[]`                                                                           | 从已解析工具列表中保留的函数工具名。             |
 | `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | 工具选择策略。                                   |
 | `responseFormat`   | `ResponseFormat`                                                                     | 兼容 Provider 使用的结构化输出格式。             |
 | `metadata`         | `unknown`                                                                            | 应用自定义的请求 metadata，通常给代理/后端使用。 |

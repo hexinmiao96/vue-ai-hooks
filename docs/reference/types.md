@@ -250,6 +250,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `presencePenalty`  | `number`                                                                             | Presence penalty.                                       |
 | `stop`             | `string \| string[]`                                                                 | Stop sequence or sequences.                             |
 | `tools`            | `Tool[]`                                                                             | Function tools the model may call.                      |
+| `activeTools`      | `string[]`                                                                           | Function tool names to keep from the resolved list.     |
 | `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | Tool choice policy.                                     |
 | `responseFormat`   | `ResponseFormat`                                                                     | Structured output format for compatible providers.      |
 | `metadata`         | `unknown`                                                                            | App-defined request metadata for proxy/backend layers.  |

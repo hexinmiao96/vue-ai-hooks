@@ -184,6 +184,8 @@ export interface ChatRequest {
   presencePenalty?: number
   stop?: string | string[]
   tools?: Tool[]
+  /** Filter the resolved tool list by function name before sending the provider request. */
+  activeTools?: string[]
   toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } }
   responseFormat?: ResponseFormat
   metadata?: unknown

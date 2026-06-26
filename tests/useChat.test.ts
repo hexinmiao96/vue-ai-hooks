@@ -8,7 +8,7 @@ import {
   useChat
 } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
-import type { ChatChunk, ChatRequest, ChatResumeRequest, Message } from '../src/types'
+import type { ChatChunk, ChatRequest, ChatResumeRequest, Message, Tool } from '../src/types'
 
 /**
  * Build a fake ChatProvider that yields the chunks you pass in.
@@ -1419,6 +1419,54 @@ describe('useChat', () => {
       toolChoice: 'auto'
     })
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('filters resolved tools with activeTools before provider requests', async () => {
+    const requests: ChatRequest[] = []
+    const weatherTool: Tool = {
+      type: 'function',
+      function: {
+        name: 'getWeather',
+        parameters: { type: 'object', properties: { city: { type: 'string' } } }
+      }
+    }
+    const chargeTool: Tool = {
+      type: 'function',
+      function: {
+        name: 'chargeCard',
+        parameters: { type: 'object', properties: { amount: { type: 'number' } } }
+      }
+    }
+    const provider = fakeTurnProvider(
+      [[{ content: 'weather' }], [{ content: 'charge' }], [{ content: 'none' }]],
+      requests
+    )
+    const { sendMessage } = useChat({
+      provider,
+      tools: [weatherTool, chargeTool],
+      toolChoice: 'auto',
+      activeTools: ['getWeather']
+    })
+
+    await sendMessage('weather?')
+    await sendMessage('charge?', {
+      activeTools: ['chargeCard'],
+      toolChoice: { type: 'function', function: { name: 'chargeCard' } }
+    })
+    await sendMessage('no tools', { activeTools: [] })
+
+    expect(requests[0].tools).toEqual([weatherTool])
+    expect(requests[0].toolChoice).toBe('auto')
+    expect(requests[0]).not.toHaveProperty('activeTools')
+    expect(requests[1].tools).toEqual([chargeTool])
+    expect(requests[1].toolChoice).toEqual({
+      type: 'function',
+      function: { name: 'chargeCard' }
+    })
+    expect(requests[1]).not.toHaveProperty('activeTools')
+    expect(requests[2].tools).toBeUndefined()
+    expect(requests[2].toolChoice).toBeUndefined()
+    expect(requests[2]).not.toHaveProperty('activeTools')
   })
 
   it('resubmits current messages when sendMessage is called without content', async () => {

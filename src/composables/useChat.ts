@@ -177,6 +177,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   prepareReconnectToStreamRequest?: PrepareReconnectToStreamRequest
   persist?: ChatPersistOptions
   tools?: Tool[]
+  activeTools?: string[]
   toolChoice?: ChatRequest['toolChoice']
   toolHandlers?: Record<string, ToolCallHandler>
   requiresToolApproval?: ToolApprovalPredicate
@@ -738,6 +739,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     onError,
     persist,
     tools: defaultTools,
+    activeTools: defaultActiveTools,
     toolChoice: defaultToolChoice,
     toolHandlers,
     requiresToolApproval,
@@ -1296,6 +1298,21 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       ...(requestHeaders ?? {})
     }
   }
+  function applyActiveTools(request: ChatRequest): ChatRequest {
+    const { activeTools: activeToolNames, ...rest } = request
+    if (activeToolNames === undefined) return rest
+    const tools = rest.tools?.filter((tool) => activeToolNames.includes(tool.function.name))
+    if (!tools?.length) return { ...rest, tools: undefined, toolChoice: undefined }
+    const toolChoice =
+      typeof rest.toolChoice !== 'object' || activeToolNames.includes(rest.toolChoice.function.name)
+        ? rest.toolChoice
+        : undefined
+    return {
+      ...rest,
+      tools,
+      toolChoice
+    }
+  }
   function mergePreparedChatRequest(base: ChatRequest, prepared?: Partial<ChatRequest> | void) {
     if (!prepared) return base
     const body = mergeRequestBody(base.body, prepared.body)
@@ -1328,11 +1345,13 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ): Promise<ChatRequest> {
     const body = mergeRequestBody(defaultRequest.body, request.body)
     const headers = mergeRequestHeaders(defaultRequest.headers, request.headers)
+    const activeTools = request.activeTools ?? defaultRequest.activeTools ?? defaultActiveTools
     const base: ChatRequest = {
       ...defaultRequest,
       ...(defaultTools && !request.tools ? { tools: defaultTools } : {}),
       ...(defaultToolChoice && !request.toolChoice ? { toolChoice: defaultToolChoice } : {}),
       ...request,
+      ...(activeTools !== undefined ? { activeTools } : {}),
       ...(body ? { body } : {}),
       ...(headers ? { headers } : {}),
       id: id.value,
@@ -1348,7 +1367,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       trigger: context.trigger,
       messageId: context.messageId
     })
-    return mergePreparedChatRequest(base, prepared)
+    return applyActiveTools(mergePreparedChatRequest(base, prepared))
   }
   async function prepareResumeRequest(
     resumeOptions: ResumeChatOptions,

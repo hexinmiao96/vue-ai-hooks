@@ -57,6 +57,7 @@ Use `input` with a Vue form for the common composer flow:
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | —          | Customize the final provider request before send/regenerate calls.     |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | —          | Customize the final resume request before `resumeStream()` reconnects. |
 | `tools`                           | `Tool[]`                                                               | —          | Default tool list. Override per-call by passing `tools` to `append()`. |
+| `activeTools`                     | `string[]`                                                             | —          | Filter the resolved tool list by function name for this chat/request.  |
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | —          | Default tool choice.                                                   |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —          | Local handlers for automatic tool execution.                           |
 | `requiresToolApproval`            | `ToolApprovalPredicate`                                                | —          | Return true to pause a tool call for UI approval before execution.     |
@@ -458,6 +459,22 @@ the OpenAI wire format; the Anthropic provider maps the same public `Tool` and
 `tool` messages into Anthropic's Messages API format. If a model calls a tool
 that has no registered handler, or a handler throws, `append()` rejects and
 `error.value` is set.
+
+Use `activeTools` when a page has a shared default tool list but a specific
+message should expose only a subset. The filter is applied before the provider
+request is sent; `activeTools` itself is not forwarded:
+
+```ts
+const { append } = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  activeTools: ['searchDocs']
+})
+
+await append('Search the docs only.')
+await append('Prepare checkout.', { activeTools: ['chargeCard'] })
+await append('Answer without tools.', { activeTools: [] })
+```
 
 For tools that need user interaction, omit `toolHandlers`. `useChat` exposes the
 calls in `pendingToolCalls`; call `addToolResult()` once your UI has approval or

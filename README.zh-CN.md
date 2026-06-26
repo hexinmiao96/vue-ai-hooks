@@ -44,6 +44,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **请求 body 扩展**：通过 `body` 透传 Provider 专属 JSON 字段，同时保留 typed options
 - **请求准备钩子**：在 chat id、metadata 和消息列表确定后，自定义发送和恢复请求
 - **Tool calling helper**：自动执行本地 handler，也支持先审批再执行，或通过 `sendAutomaticallyWhen` 控制工具结果后的续跑
+- **活跃工具筛选**：用 `activeTools` 保留一套工具注册表，并按请求只开放选中的工具
 - **文件附件**：把浏览器文件或预加载文件对象传给 `append(..., { attachments })`
 - **AI SDK 风格别名**：提供 `sendMessage`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
 - **可恢复流 hook**：用 `resumeStream()` 和 `resumeUrl` 重新连接代理后端的聊天流
@@ -327,6 +328,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - 多模态图片输入
 - Date-safe localStorage 持久化
 - Tool-calling helper
+- 通过 `activeTools` 按请求筛选可用工具
 - AI SDK 风格的发送、工具输出和工具审批别名
 - 需要审批的本地工具 handler 流程
 - AI SDK 风格 `sendAutomaticallyWhen`

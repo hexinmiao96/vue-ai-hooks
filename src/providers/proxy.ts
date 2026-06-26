@@ -131,9 +131,10 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
     const {
       signal: _signal,
       headers: _headers,
+      activeTools: _activeTools,
       body: requestBody,
       ...body
-    } = request as ProxyRequest & { body?: Record<string, unknown> }
+    } = request as ProxyRequest & { activeTools?: string[]; body?: Record<string, unknown> }
     return {
       ...configured,
       ...requestBody,

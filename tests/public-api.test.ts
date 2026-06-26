@@ -207,6 +207,8 @@ describe('public API types', () => {
     expectTypeOf(chat.setMessages).parameter(0).toEqualTypeOf<SetMessagesInput>()
     expectTypeOf(chat.clearError).toEqualTypeOf<() => void>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseChatOptions['activeTools']>().toEqualTypeOf<string[] | undefined>()
+    expectTypeOf<ChatRequest['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
