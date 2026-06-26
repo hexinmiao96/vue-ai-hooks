@@ -366,6 +366,9 @@ cp .env.example .env
 pnpm example:chat
 ```
 
+`examples/chat` defaults to the no-key `local-tools` provider unless you select a
+provider or configure a real `VITE_OPENAI_KEY`.
+
 To run the browser chat example through the local proxy template:
 
 ```bash

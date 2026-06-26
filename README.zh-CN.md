@@ -297,6 +297,9 @@ cp .env.example .env
 pnpm example:chat
 ```
 
+`examples/chat` 默认使用不需要 key 的 `local-tools` Provider；只有显式选择 Provider
+或配置真实 `VITE_OPENAI_KEY` 时才会请求外部模型服务。
+
 要让浏览器聊天示例通过本地代理模板运行：
 
 ```bash

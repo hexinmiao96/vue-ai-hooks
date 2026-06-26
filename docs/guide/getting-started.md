@@ -25,13 +25,14 @@ The fastest first run is the local chat demo. It uses a deterministic provider,
 so you can test streaming UI and tool approval before touching real credentials:
 
 ```bash
-cp examples/.env.example .env
-VITE_CHAT_PROVIDER=local-tools pnpm example:chat
+pnpm install
+pnpm example:chat
 ```
 
-Open the local URL printed by Vite, then click **Run approval demo**. The UI will
-show a pending `chargeCard` tool call and continue after `approveToolCall()` or
-`rejectToolCall()`.
+Open the local URL printed by Vite, then click **Run approval demo**. When no
+provider is selected and no real `VITE_OPENAI_KEY` is present, the chat example
+falls back to `local-tools`, shows a pending `chargeCard` tool call, and
+continues after `approveToolCall()` or `rejectToolCall()`.
 
 ## Security note before real providers
 

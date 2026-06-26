@@ -36,7 +36,8 @@ type RenderedMessagePart = {
  * - `VITE_CHAT_PROVIDER=gemini` selects Gemini's OpenAI-compatible endpoint.
  * - `VITE_CHAT_PROVIDER=proxy` selects your app backend proxy.
  * - `VITE_CHAT_PROVIDER=local-tools` runs the tool approval demo without keys.
- * - any other value (or missing value) defaults to openai.
+ * - when no provider is selected and no real OpenAI key is present, the demo
+ *   starts with local-tools so the first run works without credentials.
  *
  * - openai: created via `openai` and reads `VITE_OPENAI_KEY` + optional
  *   `VITE_OPENAI_BASE_URL`.
@@ -50,7 +51,11 @@ type RenderedMessagePart = {
  *   pnpm example:chat
  *   open http://localhost:5174
  */
-const providerName = import.meta.env.VITE_CHAT_PROVIDER || import.meta.env.VITE_EXAMPLE_PROVIDER
+const configuredProvider =
+  import.meta.env.VITE_CHAT_PROVIDER || import.meta.env.VITE_EXAMPLE_PROVIDER
+const openAiKey = (import.meta.env.VITE_OPENAI_KEY || '').trim()
+const providerName =
+  configuredProvider || (openAiKey && openAiKey !== 'sk-...' ? 'openai' : 'local-tools')
 const providerType: ProviderType =
   providerName === 'openrouter'
     ? 'openrouter'

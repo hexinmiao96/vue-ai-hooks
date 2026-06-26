@@ -25,12 +25,13 @@ npm install vue-ai-hooks
 不用配置真实模型凭证：
 
 ```bash
-cp examples/.env.example .env
-VITE_CHAT_PROVIDER=local-tools pnpm example:chat
+pnpm install
+pnpm example:chat
 ```
 
-打开 Vite 输出的本地地址，然后点击 **Run approval demo**。界面会显示 pending
-`chargeCard` 工具调用，并在执行 `approveToolCall()` 或 `rejectToolCall()` 后继续对话。
+打开 Vite 输出的本地地址，然后点击 **Run approval demo**。当没有选择 Provider，且没有真实的
+`VITE_OPENAI_KEY` 时，聊天示例会自动回退到 `local-tools`，显示 pending `chargeCard`
+工具调用，并在执行 `approveToolCall()` 或 `rejectToolCall()` 后继续对话。
 
 ## 接真实 Provider 前的安全说明
 

@@ -14,6 +14,9 @@ const files = {
   zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
   zhExamples: readFileSync('docs/zh/examples/index.md', 'utf8'),
+  readme: readFileSync('README.md', 'utf8'),
+  zhReadme: readFileSync('README.zh-CN.md', 'utf8'),
+  envExample: readFileSync('.env.example', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
@@ -44,7 +47,8 @@ expect(
 for (const snippet of [
   '## Pick a path',
   '## Run a demo without API keys',
-  'VITE_CHAT_PROVIDER=local-tools pnpm example:chat',
+  'pnpm example:chat',
+  'falls back to `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   'Use this browser-key version for local exploration only',
   '[Examples](/examples/)'
@@ -55,7 +59,8 @@ for (const snippet of [
 for (const snippet of [
   '## 先选一条路径',
   '## 不需要 API key 的 Demo',
-  'VITE_CHAT_PROVIDER=local-tools pnpm example:chat',
+  'pnpm example:chat',
+  '自动回退到 `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   '这段浏览器 key 写法只适合本地探索',
   '[示例](/zh/examples/)'
@@ -65,6 +70,29 @@ for (const snippet of [
     `Chinese getting started must include: ${snippet}`
   )
 }
+
+expect(
+  !files.gettingStarted.includes('cp examples/.env.example .env') &&
+    !files.zhGettingStarted.includes('cp examples/.env.example .env'),
+  'Getting started docs must not reference a non-existent examples/.env.example file'
+)
+expect(
+  files.envExample.includes(
+    'Supported chat values: local-tools, openai, openrouter, gemini, proxy'
+  ) && files.envExample.includes('VITE_CHAT_PROVIDER=local-tools'),
+  '.env.example must make the chat example runnable without provider keys by default'
+)
+expect(
+  files.chatExample.includes('const openAiKey =') &&
+    files.chatExample.includes("'sk-...'") &&
+    files.chatExample.includes("'local-tools'"),
+  'Chat example must fall back to local-tools when no real OpenAI key is configured'
+)
+expect(
+  files.readme.includes('defaults to the no-key `local-tools` provider') &&
+    files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider'),
+  'Readmes must explain the no-key chat example default'
+)
 
 expect(
   files.examples.includes('<DemoShowcase locale="en" />'),
