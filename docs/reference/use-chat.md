@@ -10,8 +10,10 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `SendChatTrigger`, `SetMessagesInput`, `PruneMessagesOptions`,
 `PruneToolCallsStrategy`, `ChatPersistOptions`, `SerializedMessage`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
-`ToolApprovalPredicate`, `ToolCallHandler`, `ToolCallHandlerContext`,
-`ToolResultHandlerContext`, `RetryOptions`, and `RetryContext`.
+`MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
+`MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
+`ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
+`RetryOptions`, and `RetryContext`.
 
 Public helpers: `pruneMessages`, `serializeMessages`, and
 `deserializeMessages`.
@@ -167,6 +169,29 @@ const chat = useChat({
   }
 })
 ```
+
+## Structured message parts
+
+Assistant messages keep `content` for backward-compatible text rendering and can
+also include `Message.parts` for richer UIs. During streaming, `useChat` appends
+text parts, converts source/file/custom data chunks into `source`, `file`, and
+`data-*` parts, and mirrors accumulated tool calls as `tool-*` parts:
+
+```vue
+<template>
+  <article v-for="message in messages" :key="message.id">
+    <template v-for="part in message.parts ?? []" :key="part.id ?? part.type">
+      <p v-if="part.type === 'text'">{{ part.text }}</p>
+      <a v-else-if="part.type === 'source'" :href="part.url">{{ part.title ?? part.url }}</a>
+      <code v-else-if="part.type.startsWith('tool-')">{{ part.state }}</code>
+    </template>
+  </article>
+</template>
+```
+
+`serializeMessages()` and `deserializeMessages()` preserve valid
+`Message.parts`, so persisted chats can restore the same structured rendering
+state.
 
 ## Return value
 
@@ -588,7 +613,7 @@ const { messages, streamData } = useChat({
 
 When a later chunk uses the same `dataId`, it replaces the earlier stored part.
 Set `transient: true` for progress ticks or debug events that should call
-`onData` without being stored in `streamData`.
+`onData` without being stored in `streamData` or `Message.parts`.
 
 ## Vision input
 

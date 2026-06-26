@@ -10,8 +10,10 @@
 `SendChatTrigger`、`SetMessagesInput`、`PruneMessagesOptions`、
 `PruneToolCallsStrategy`、`ChatPersistOptions`、`SerializedMessage`、
 `StreamDataPart`、`ChatAttachmentInput`、`ChatAttachmentsInput`、
-`ToolApprovalPredicate`、`IdGenerator`、`ToolCallHandlerContext`、
-`ToolResultHandlerContext`、`RetryOptions` 和 `RetryContext`。
+`MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
+`MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
+`IdGenerator`、`ToolCallHandlerContext`、`ToolResultHandlerContext`、`RetryOptions`
+和 `RetryContext`。
 
 公开 helper：`pruneMessages`、`serializeMessages` 和 `deserializeMessages`。
 
@@ -163,6 +165,28 @@ const chat = useChat({
   }
 })
 ```
+
+## 结构化消息 parts
+
+assistant 消息会继续保留 `content`，用于向后兼容的文本渲染；同时也可以包含
+`Message.parts`，用于更丰富的 UI。流式过程中，`useChat` 会追加 text parts，把
+source/file/custom data chunk 转成 `source`、`file` 和 `data-*` parts，并把累积后的工具调用同步成
+`tool-*` parts：
+
+```vue
+<template>
+  <article v-for="message in messages" :key="message.id">
+    <template v-for="part in message.parts ?? []" :key="part.id ?? part.type">
+      <p v-if="part.type === 'text'">{{ part.text }}</p>
+      <a v-else-if="part.type === 'source'" :href="part.url">{{ part.title ?? part.url }}</a>
+      <code v-else-if="part.type.startsWith('tool-')">{{ part.state }}</code>
+    </template>
+  </article>
+</template>
+```
+
+`serializeMessages()` 和 `deserializeMessages()` 会保留合法的 `Message.parts`，
+因此持久化聊天恢复后也能继续使用同一套结构化渲染状态。
 
 ## 返回值
 
@@ -543,7 +567,7 @@ const { messages, streamData } = useChat({
 ```
 
 后续 chunk 使用同一个 `dataId` 时，会替换之前保存的片段。进度 tick 或调试事件可以设置
-`transient: true`，这样只触发 `onData`，不会写入 `streamData`。
+`transient: true`，这样只触发 `onData`，不会写入 `streamData` 或 `Message.parts`。
 
 ## 视觉输入
 

@@ -42,7 +42,14 @@ import type {
   ImageUrlPart,
   Message,
   MessageContent,
+  MessageDataPart,
+  MessageFilePart,
+  MessagePart,
+  MessageReasoningPart,
   MessageRole,
+  MessageSourcePart,
+  MessageTextPart,
+  MessageToolPart,
   OpenAiLikeConfig,
   OpenRouterConfig,
   PrepareReconnectToStreamRequest,
@@ -292,6 +299,40 @@ describe('public API types', () => {
       type: 'image_url',
       image_url: { url: 'https://example.test/image.png', detail: 'auto' }
     }
+    const messageTextPart: MessageTextPart = { type: 'text', text: 'hello' }
+    const messageReasoningPart: MessageReasoningPart = { type: 'reasoning', text: 'thinking' }
+    const messageSourcePart: MessageSourcePart = {
+      type: 'source',
+      id: 'source_1',
+      sourceType: 'url',
+      url: 'https://example.test/source'
+    }
+    const messageFilePart: MessageFilePart = {
+      type: 'file',
+      id: 'file_1',
+      url: 'https://example.test/file.txt',
+      mediaType: 'text/plain'
+    }
+    const messageDataPart: MessageDataPart = {
+      type: 'data-progress',
+      id: 'progress_1',
+      data: { step: 1 }
+    }
+    const messageToolPart: MessageToolPart = {
+      type: 'tool-lookup',
+      toolCallId: 'call_1',
+      toolName: 'lookup',
+      state: 'input-available',
+      input: { q: 'vue' }
+    }
+    const messageParts: MessagePart[] = [
+      messageTextPart,
+      messageReasoningPart,
+      messageSourcePart,
+      messageFilePart,
+      messageDataPart,
+      messageToolPart
+    ]
     const content: MessageContent = [text, image]
     const tool: Tool = {
       type: 'function',
@@ -309,6 +350,7 @@ describe('public API types', () => {
       id: 'msg_1',
       role,
       content,
+      parts: messageParts,
       toolCalls: [toolCall],
       metadata: { source: 'type-test' }
     }
@@ -382,7 +424,8 @@ describe('public API types', () => {
       metadata: { model: 'test-model' },
       dataId: 'source-1',
       dataType: 'source',
-      data: dataPart.data
+      data: dataPart.data,
+      parts: messageParts
     }
     const finishInfo: ChatFinishInfo = {
       message,
@@ -429,6 +472,14 @@ describe('public API types', () => {
     }
 
     expectTypeOf<ContentPart>().toEqualTypeOf<TextPart | ImageUrlPart>()
+    expectTypeOf<MessagePart>().toEqualTypeOf<
+      | MessageTextPart
+      | MessageReasoningPart
+      | MessageSourcePart
+      | MessageFilePart
+      | MessageDataPart
+      | MessageToolPart
+    >()
     expectTypeOf<ChatFileAttachment>().toEqualTypeOf<{
       name?: string
       type: string
@@ -438,6 +489,7 @@ describe('public API types', () => {
     expectTypeOf<ChatAttachmentInput>().toEqualTypeOf<File | ChatFileAttachment>()
     expectTypeOf<ChatAttachmentsInput>().toEqualTypeOf<FileList | readonly ChatAttachmentInput[]>()
     expectTypeOf(request.messages).toEqualTypeOf<Message[]>()
+    expectTypeOf(request.messages[0].parts).toEqualTypeOf<MessagePart[] | undefined>()
     expectTypeOf(request.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.metadata).toEqualTypeOf<unknown>()
     expectTypeOf(resumeRequest.body).toEqualTypeOf<Record<string, unknown> | undefined>()

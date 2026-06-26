@@ -74,6 +74,13 @@ export { usePersist, type UsePersistOptions } from './composables/usePersist'
 // Types
 export type {
   Message,
+  MessagePart,
+  MessageTextPart,
+  MessageReasoningPart,
+  MessageSourcePart,
+  MessageFilePart,
+  MessageDataPart,
+  MessageToolPart,
   MessageRole,
   MessageContent,
   ContentPart,

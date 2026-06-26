@@ -13,6 +13,7 @@ import type {
   ChatFileAttachment,
   Message,
   MessageContent,
+  MessagePart,
   MessageRole,
   ContentPart,
   StreamDataPart,
@@ -224,6 +225,7 @@ function cloneMessage(message: Message): Message {
           }))
         }
       : {}),
+    ...(message.parts ? { parts: message.parts.map((part) => ({ ...part })) } : {}),
     ...(message.metadata ? { metadata: { ...message.metadata } } : {})
   }
 }
@@ -306,11 +308,166 @@ function deserializeToolCalls(raw: unknown): ToolCall[] | null {
   return calls
 }
 
+function deserializeMessageParts(raw: unknown): MessagePart[] | null {
+  if (!Array.isArray(raw)) return null
+
+  const parts: MessagePart[] = []
+  for (const part of raw) {
+    if (!isRecord(part) || typeof part.type !== 'string') return null
+    if (part.type === 'text' || part.type === 'reasoning') {
+      if (typeof part.text !== 'string') return null
+      parts.push({ ...part, type: part.type, text: part.text } as MessagePart)
+      continue
+    }
+    if (part.type === 'source') {
+      if (
+        part.sourceType !== undefined &&
+        part.sourceType !== 'url' &&
+        part.sourceType !== 'document'
+      ) {
+        return null
+      }
+      parts.push({ ...part, type: 'source' } as MessagePart)
+      continue
+    }
+    if (part.type === 'file') {
+      if (typeof part.url !== 'string') return null
+      parts.push({ ...part, type: 'file', url: part.url } as MessagePart)
+      continue
+    }
+    if (part.type === 'data' || part.type.startsWith('data-')) {
+      parts.push({ ...part, type: part.type } as MessagePart)
+      continue
+    }
+    if (part.type.startsWith('tool-')) {
+      if (
+        typeof part.toolCallId !== 'string' ||
+        typeof part.toolName !== 'string' ||
+        (part.state !== 'input-streaming' &&
+          part.state !== 'input-available' &&
+          part.state !== 'output-available' &&
+          part.state !== 'output-error')
+      ) {
+        return null
+      }
+      parts.push({ ...part, type: part.type } as MessagePart)
+      continue
+    }
+    return null
+  }
+
+  return parts
+}
+
 function deserializeCreatedAt(raw: unknown): Date | undefined {
   if (raw instanceof Date && !Number.isNaN(raw.getTime())) return new Date(raw)
   if (typeof raw !== 'string') return undefined
   const date = new Date(raw)
   return Number.isNaN(date.getTime()) ? undefined : date
+}
+
+function mergeMessageParts(
+  existing: MessagePart[] | undefined,
+  incoming: MessagePart[]
+): MessagePart[] {
+  const parts = existing ? existing.map((part) => ({ ...part })) : []
+  for (const part of incoming) {
+    if (part.type === 'text') {
+      const textIndex = findTextPartIndex(parts, part)
+      if (textIndex >= 0) {
+        const current = parts[textIndex] as Extract<MessagePart, { type: 'text' }>
+        parts[textIndex] = { ...current, text: current.text + part.text }
+        continue
+      }
+    }
+
+    const replaceIndex = findReplaceablePartIndex(parts, part)
+    if (replaceIndex >= 0) {
+      parts[replaceIndex] = { ...parts[replaceIndex], ...part }
+      continue
+    }
+    parts.push({ ...part })
+  }
+  return parts
+}
+
+function findTextPartIndex(parts: MessagePart[], part: Extract<MessagePart, { type: 'text' }>) {
+  if (part.id) return parts.findIndex((item) => item.type === 'text' && item.id === part.id)
+  const lastIndex = parts.length - 1
+  return parts[lastIndex]?.type === 'text' && !parts[lastIndex].id ? lastIndex : -1
+}
+
+function findReplaceablePartIndex(parts: MessagePart[], part: MessagePart) {
+  if (isToolMessagePart(part)) {
+    return parts.findIndex((item) => isToolMessagePart(item) && item.toolCallId === part.toolCallId)
+  }
+  if ('id' in part && part.id) {
+    return parts.findIndex((item) => item.type === part.type && 'id' in item && item.id === part.id)
+  }
+  return -1
+}
+
+function isToolMessagePart(
+  part: MessagePart
+): part is Extract<MessagePart, { toolCallId: string }> {
+  return part.type.startsWith('tool-') && 'toolCallId' in part
+}
+
+function streamDataToMessagePart(part: StreamDataPart): MessagePart {
+  if (part.type?.startsWith('source-')) {
+    const data = isRecord(part.data) ? part.data : {}
+    return {
+      type: 'source',
+      id: part.id,
+      sourceType: part.type === 'source-url' ? 'url' : 'document',
+      ...(typeof data.url === 'string' ? { url: data.url } : {}),
+      ...(typeof data.title === 'string' ? { title: data.title } : {}),
+      ...(typeof data.mediaType === 'string' ? { mediaType: data.mediaType } : {}),
+      data: part.data
+    }
+  }
+
+  if (part.type === 'file' && isRecord(part.data) && typeof part.data.url === 'string') {
+    return {
+      type: 'file',
+      id: part.id,
+      url: part.data.url,
+      ...(typeof part.data.mediaType === 'string' ? { mediaType: part.data.mediaType } : {}),
+      ...(typeof part.data.name === 'string' ? { name: part.data.name } : {}),
+      data: part.data
+    }
+  }
+
+  if (part.type?.startsWith('tool-output-') && isRecord(part.data)) {
+    const toolCallId = typeof part.data.toolCallId === 'string' ? part.data.toolCallId : part.id
+    const toolName = typeof part.data.toolName === 'string' ? part.data.toolName : 'tool'
+    return {
+      type: `tool-${toolName}`,
+      toolCallId,
+      toolName,
+      state: part.type === 'tool-output-error' ? 'output-error' : 'output-available',
+      ...('output' in part.data ? { output: part.data.output } : {}),
+      ...(typeof part.data.errorText === 'string' ? { errorText: part.data.errorText } : {})
+    }
+  }
+
+  const dataType = part.type?.startsWith('data-') ? (part.type as `data-${string}`) : 'data'
+  return {
+    type: dataType,
+    id: part.id,
+    data: part.data,
+    transient: part.transient
+  }
+}
+
+function toolCallsToMessageParts(calls: ToolCall[]): MessagePart[] {
+  return calls.map((call) => ({
+    type: `tool-${call.function.name || 'call'}`,
+    toolCallId: call.id,
+    toolName: call.function.name || 'call',
+    state: 'input-streaming',
+    inputText: call.function.arguments
+  }))
 }
 
 /**
@@ -347,6 +504,12 @@ export function deserializeMessages(raw: unknown): Message[] | null {
       const toolCalls = deserializeToolCalls(rawMessage.toolCalls)
       if (toolCalls === null) return null
       message.toolCalls = toolCalls
+    }
+
+    if (rawMessage.parts !== undefined) {
+      const parts = deserializeMessageParts(rawMessage.parts)
+      if (parts === null) return null
+      message.parts = parts
     }
 
     if (isRecord(rawMessage.metadata)) message.metadata = { ...rawMessage.metadata }
@@ -779,8 +942,11 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       resultMessage: { ...resultMessage }
     })
   }
-  function processStreamData(chunk: ChatChunk, scheduleStreamData: () => void) {
-    if (!('data' in chunk)) return
+  function processStreamData(
+    chunk: ChatChunk,
+    scheduleStreamData: () => void
+  ): StreamDataPart | null {
+    if (!('data' in chunk)) return null
 
     const part: StreamDataPart = {
       id: chunk.dataId || nextId('data'),
@@ -791,7 +957,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     }
     onData?.({ ...part })
 
-    if (part.transient) return
+    if (part.transient) return part
     const idx = state.bufferedStreamData.findIndex((item) => item.id === part.id)
     state.bufferedStreamData =
       idx >= 0
@@ -802,6 +968,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
           ]
         : [...state.bufferedStreamData, part]
     scheduleStreamData()
+    return part
   }
   async function executeToolCall(
     call: ToolCall,
@@ -866,14 +1033,22 @@ export function useChat(options: UseChatOptions): UseChatReturn {
   ) {
     let changedAssistant = false
     let notifyUpdate = false
+    const incomingParts: MessagePart[] = []
     if (chunk.content) {
       assistant.content += chunk.content
+      incomingParts.push({ type: 'text', text: chunk.content })
       changedAssistant = true
       notifyUpdate = true
     }
     if (chunk.toolCalls?.length) {
       assistant.toolCalls = mergeD(assistant.toolCalls, chunk.toolCalls)
+      incomingParts.push(...toolCallsToMessageParts(assistant.toolCalls))
       changedAssistant = true
+    }
+    if (chunk.parts?.length) {
+      incomingParts.push(...chunk.parts)
+      changedAssistant = true
+      notifyUpdate = true
     }
     if (chunk.finishReason) {
       assistant.metadata = { ...(assistant.metadata ?? {}), finishReason: chunk.finishReason }
@@ -888,8 +1063,16 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       assistant.metadata = { ...(assistant.metadata ?? {}), ...chunk.metadata }
       changedAssistant = true
     }
+    const streamPart = processStreamData(chunk, scheduleStreamData)
+    if (streamPart && !streamPart.transient) {
+      incomingParts.push(streamDataToMessagePart(streamPart))
+      changedAssistant = true
+      notifyUpdate = true
+    }
+    if (incomingParts.length) {
+      assistant.parts = mergeMessageParts(assistant.parts, incomingParts)
+    }
     if (changedAssistant) scheduleAssistant(notifyUpdate)
-    processStreamData(chunk, scheduleStreamData)
     onChunk?.(chunk, { ...assistant })
   }
   function resumeAssistant(): Message {

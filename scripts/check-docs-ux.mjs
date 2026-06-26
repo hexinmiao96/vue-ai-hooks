@@ -8,6 +8,8 @@ const files = {
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
+  types: readFileSync('docs/reference/types.md', 'utf8'),
+  zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
   providers: readFileSync('docs/reference/providers.md', 'utf8'),
   zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
@@ -190,6 +192,15 @@ expect(
   'English useChat docs must document Date-safe message persistence helpers and public types'
 )
 expect(
+  files.useChat.includes('## Structured message parts') &&
+    files.useChat.includes('Message.parts') &&
+    files.useChat.includes('MessagePart') &&
+    files.useChat.includes('data-*') &&
+    files.useChat.includes("part.type.startsWith('tool-')") &&
+    files.useChat.includes('serializeMessages()'),
+  'English useChat docs must document structured Message.parts rendering and persistence'
+)
+expect(
   files.zhUseChat.includes('共享内存中的聊天状态') &&
     files.zhUseChat.includes('initialMessages') &&
     files.zhUseChat.includes('initialInput') &&
@@ -210,6 +221,31 @@ expect(
     files.zhUseChat.includes('serializeMessages(messages.value)') &&
     files.zhUseChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'Chinese useChat docs must document Date-safe message persistence helpers and public types'
+)
+expect(
+  files.zhUseChat.includes('## 结构化消息 parts') &&
+    files.zhUseChat.includes('Message.parts') &&
+    files.zhUseChat.includes('MessagePart') &&
+    files.zhUseChat.includes('data-*') &&
+    files.zhUseChat.includes("part.type.startsWith('tool-')") &&
+    files.zhUseChat.includes('serializeMessages()'),
+  'Chinese useChat docs must document structured Message.parts rendering and persistence'
+)
+expect(
+  files.types.includes('type MessagePart =') &&
+    files.types.includes('parts?: MessagePart[]') &&
+    files.types.includes('MessageToolPart') &&
+    files.types.includes('tool-*') &&
+    files.types.includes('ChatChunk.parts'),
+  'English public type docs must expose Message.parts and ChatChunk.parts'
+)
+expect(
+  files.zhTypes.includes('type MessagePart =') &&
+    files.zhTypes.includes('parts?: MessagePart[]') &&
+    files.zhTypes.includes('MessageToolPart') &&
+    files.zhTypes.includes('tool-*') &&
+    files.zhTypes.includes('ChatChunk.parts'),
+  'Chinese public type docs must expose Message.parts and ChatChunk.parts'
 )
 expect(
   files.providers.includes('AI SDK UI message stream protocol') &&

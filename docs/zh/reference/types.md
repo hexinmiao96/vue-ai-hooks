@@ -28,6 +28,67 @@ interface ChatFileAttachment {
 它支持浏览器 `File`，也支持预加载的 `ChatFileAttachment` 对象。`useChat`
 会在发送 Provider 请求前，把支持的文件转换成 `ContentPart[]`。
 
+assistant 消息也可以暴露结构化 UI parts：
+
+```ts
+type MessagePart =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | MessageDataPart
+  | MessageToolPart
+
+interface MessageTextPart {
+  type: 'text'
+  text: string
+  id?: string
+}
+
+interface MessageReasoningPart {
+  type: 'reasoning'
+  text: string
+  id?: string
+}
+
+interface MessageSourcePart {
+  type: 'source'
+  id?: string
+  sourceType?: 'url' | 'document'
+  url?: string
+  title?: string
+  mediaType?: string
+  data?: unknown
+}
+
+interface MessageFilePart {
+  type: 'file'
+  id?: string
+  url: string
+  mediaType?: string
+  name?: string
+  data?: unknown
+}
+
+interface MessageDataPart {
+  type: 'data' | `data-${string}`
+  id?: string
+  data: unknown
+  transient?: boolean
+}
+
+interface MessageToolPart {
+  type: `tool-${string}`
+  toolCallId: string
+  toolName: string
+  state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+}
+```
+
 ```ts
 interface Message {
   id: string
@@ -36,10 +97,14 @@ interface Message {
   name?: string
   toolCallId?: string
   toolCalls?: ToolCall[]
+  parts?: MessagePart[]
   createdAt?: Date
   metadata?: Record<string, unknown>
 }
 ```
+
+`Message.parts` 是可选字段，`content` 仍保持向后兼容。它为 Vue UI 提供可以直接渲染的
+text、reasoning、source、file、自定义 data 和 `tool-*` 状态，避免从 assistant 文本里再解析结构。
 
 `SerializedMessage` 是 `serializeMessages(messages)` 返回的 JSON-safe 结构：
 
@@ -252,6 +317,7 @@ interface ChatChunk {
   usage?: TokenUsage
   metadata?: Record<string, unknown>
   data?: unknown
+  parts?: MessagePart[]
   dataId?: string
   dataType?: string
   transient?: boolean
@@ -270,6 +336,8 @@ interface EmbeddingResult {
 `ChatChunk.metadata` 会合并到当前 assistant 消息的 metadata。`ChatChunk.data`
 会通过 `useChat().streamData` 和 `onData` 暴露；使用稳定的 `dataId` 可以替换之前的片段，设置
 `transient: true` 则只触发 `onData`、不写入 `streamData`。
+`ChatChunk.parts` 会合并进 assistant 的 `Message.parts`，并和文本 delta、自定义 data
+parts、累积后的工具调用状态一起维护。
 
 ## `AiHooksError`
 

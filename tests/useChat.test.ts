@@ -147,6 +147,7 @@ describe('useChat', () => {
         id: 'm1',
         role: 'user',
         content: 'hi',
+        parts: [{ type: 'text', text: 'hi' }],
         createdAt: '2026-01-02T03:04:05.000Z',
         metadata: { source: 'storage' }
       }
@@ -154,9 +155,106 @@ describe('useChat', () => {
 
     expect(restored?.[0].createdAt).toBeInstanceOf(Date)
     expect(restored?.[0].createdAt?.toISOString()).toBe('2026-01-02T03:04:05.000Z')
+    expect(restored?.[0].parts).toEqual([{ type: 'text', text: 'hi' }])
     expect(restored?.[0].metadata).toEqual({ source: 'storage' })
     expect(deserializeMessages({})).toBeNull()
     expect(deserializeMessages([{ id: 'bad', role: 'invalid', content: 'x' }])).toBeNull()
+    expect(
+      deserializeMessages([
+        { id: 'bad-parts', role: 'user', content: 'x', parts: [{ type: 'file' }] }
+      ])
+    ).toBeNull()
+  })
+
+  it('deserializes all structured message part variants', () => {
+    const restored = deserializeMessages([
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: 'answer',
+        parts: [
+          { type: 'reasoning', id: 'r1', text: 'Think first.' },
+          { type: 'source', id: 's1', sourceType: 'document', title: 'Spec' },
+          {
+            type: 'file',
+            id: 'f1',
+            url: 'https://example.test/a.pdf',
+            mediaType: 'application/pdf'
+          },
+          { type: 'data', id: 'd1', data: { score: 1 } },
+          { type: 'data-progress', id: 'p1', data: { step: 2 }, transient: true },
+          {
+            type: 'tool-lookup',
+            toolCallId: 'call_1',
+            toolName: 'lookup',
+            state: 'output-available',
+            output: { ok: true }
+          }
+        ]
+      }
+    ])
+
+    expect(restored?.[0].parts).toEqual([
+      { type: 'reasoning', id: 'r1', text: 'Think first.' },
+      { type: 'source', id: 's1', sourceType: 'document', title: 'Spec' },
+      { type: 'file', id: 'f1', url: 'https://example.test/a.pdf', mediaType: 'application/pdf' },
+      { type: 'data', id: 'd1', data: { score: 1 } },
+      { type: 'data-progress', id: 'p1', data: { step: 2 }, transient: true },
+      {
+        type: 'tool-lookup',
+        toolCallId: 'call_1',
+        toolName: 'lookup',
+        state: 'output-available',
+        output: { ok: true }
+      }
+    ])
+    expect(
+      deserializeMessages([
+        { id: 'bad-text-part', role: 'assistant', content: '', parts: [{ type: 'text', text: 1 }] }
+      ])
+    ).toBeNull()
+    expect(
+      deserializeMessages([
+        {
+          id: 'bad-tool-part',
+          role: 'assistant',
+          content: '',
+          parts: [{ type: 'tool-lookup', toolCallId: 'call_1', state: 'input-available' }]
+        }
+      ])
+    ).toBeNull()
+    expect(
+      deserializeMessages([
+        {
+          id: 'bad-tool-state',
+          role: 'assistant',
+          content: '',
+          parts: [
+            {
+              type: 'tool-lookup',
+              toolCallId: 'call_1',
+              toolName: 'lookup',
+              state: 'queued'
+            }
+          ]
+        }
+      ])
+    ).toBeNull()
+    expect(
+      deserializeMessages([
+        {
+          id: 'bad-source-type',
+          role: 'assistant',
+          content: '',
+          parts: [{ type: 'source', sourceType: 'web' }]
+        }
+      ])
+    ).toBeNull()
+    expect(
+      deserializeMessages([
+        { id: 'unknown-part', role: 'assistant', content: '', parts: [{ type: 'unknown' }] }
+      ])
+    ).toBeNull()
   })
 
   it('persists chat messages with Date-safe defaults', async () => {
@@ -589,6 +687,156 @@ describe('useChat', () => {
     expect(streamData.value[0].createdAt).toBeInstanceOf(Date)
     expect(onData).toHaveBeenCalledTimes(4)
     expect(messages.value[1].metadata).toMatchObject({ model: 'test-model', runId: 'run_1' })
+  })
+
+  it('builds structured assistant message parts from stream chunks', async () => {
+    const { append, messages } = useChat({
+      provider: fakeProvider([
+        { content: 'Hel' },
+        { content: 'lo' },
+        {
+          dataId: 'source_1',
+          dataType: 'source-url',
+          data: { url: 'https://example.test/docs', title: 'Docs' }
+        },
+        {
+          dataId: 'file_1',
+          dataType: 'file',
+          data: { url: 'https://example.test/a.txt', mediaType: 'text/plain', name: 'a.txt' }
+        },
+        {
+          toolCalls: [
+            {
+              index: 0,
+              id: 'call_1',
+              type: 'function',
+              function: { name: 'lookup', arguments: '{"q":"' }
+            }
+          ]
+        },
+        {
+          toolCalls: [
+            {
+              index: 0,
+              id: 'call_1',
+              type: 'function',
+              function: { arguments: 'vue"}' }
+            }
+          ]
+        },
+        { parts: [{ type: 'reasoning', id: 'r1', text: 'Check docs.' }] }
+      ])
+    })
+
+    await append('with parts')
+
+    expect(messages.value[1].parts).toEqual([
+      { type: 'text', text: 'Hello' },
+      {
+        type: 'source',
+        id: 'source_1',
+        sourceType: 'url',
+        url: 'https://example.test/docs',
+        title: 'Docs',
+        data: { url: 'https://example.test/docs', title: 'Docs' }
+      },
+      {
+        type: 'file',
+        id: 'file_1',
+        url: 'https://example.test/a.txt',
+        mediaType: 'text/plain',
+        name: 'a.txt',
+        data: { url: 'https://example.test/a.txt', mediaType: 'text/plain', name: 'a.txt' }
+      },
+      {
+        type: 'tool-lookup',
+        toolCallId: 'call_1',
+        toolName: 'lookup',
+        state: 'input-streaming',
+        inputText: '{"q":"vue"}'
+      },
+      { type: 'reasoning', id: 'r1', text: 'Check docs.' }
+    ])
+  })
+
+  it('merges explicit and data-backed structured message parts', async () => {
+    const { append, messages, streamData } = useChat({
+      provider: fakeProvider([
+        { parts: [{ type: 'source', id: 's1', title: 'Draft title' }] },
+        { parts: [{ type: 'source', id: 's1', url: 'https://example.test/source' }] },
+        { parts: [{ type: 'text', id: 't1', text: 'A' }] },
+        { parts: [{ type: 'text', id: 't1', text: 'B' }] },
+        {
+          dataId: 'doc_1',
+          dataType: 'source-document',
+          data: { title: 'Spec', mediaType: 'text/markdown' }
+        },
+        { dataId: 'trace_1', dataType: 'data-debug', data: { trace: 'visible' } },
+        { dataId: 'fallback_1', dataType: 'debug', data: { trace: 'fallback' } },
+        { dataId: 'file_missing_url', dataType: 'file', data: { name: 'missing-url.txt' } },
+        {
+          dataId: 'tool_ok',
+          dataType: 'tool-output-available',
+          data: { toolCallId: 'call_ok', toolName: 'lookup', output: { ok: true } }
+        },
+        {
+          dataId: 'tool_err',
+          dataType: 'tool-output-error',
+          data: { toolCallId: 'call_err', errorText: 'failed' }
+        },
+        { dataId: 'tick', dataType: 'data-progress', data: { step: 1 }, transient: true }
+      ])
+    })
+
+    await append('merge parts')
+
+    expect(streamData.value.map((part) => part.id)).toEqual([
+      'doc_1',
+      'trace_1',
+      'fallback_1',
+      'file_missing_url',
+      'tool_ok',
+      'tool_err'
+    ])
+    expect(messages.value[1].parts).toEqual([
+      {
+        type: 'source',
+        id: 's1',
+        title: 'Draft title',
+        url: 'https://example.test/source'
+      },
+      { type: 'text', id: 't1', text: 'AB' },
+      {
+        type: 'source',
+        id: 'doc_1',
+        sourceType: 'document',
+        title: 'Spec',
+        mediaType: 'text/markdown',
+        data: { title: 'Spec', mediaType: 'text/markdown' }
+      },
+      { type: 'data-debug', id: 'trace_1', data: { trace: 'visible' }, transient: undefined },
+      { type: 'data', id: 'fallback_1', data: { trace: 'fallback' }, transient: undefined },
+      {
+        type: 'data',
+        id: 'file_missing_url',
+        data: { name: 'missing-url.txt' },
+        transient: undefined
+      },
+      {
+        type: 'tool-lookup',
+        toolCallId: 'call_ok',
+        toolName: 'lookup',
+        state: 'output-available',
+        output: { ok: true }
+      },
+      {
+        type: 'tool-tool',
+        toolCallId: 'call_err',
+        toolName: 'tool',
+        state: 'output-error',
+        errorText: 'failed'
+      }
+    ])
   })
 
   it('throttles chat message and stream data ref updates', async () => {

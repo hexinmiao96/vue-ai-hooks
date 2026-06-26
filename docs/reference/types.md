@@ -30,6 +30,67 @@ interface ChatFileAttachment {
 preloaded `ChatFileAttachment` objects. `useChat` converts supported files into
 `ContentPart[]` before the provider request is sent.
 
+Assistant messages can also expose structured UI parts:
+
+```ts
+type MessagePart =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | MessageDataPart
+  | MessageToolPart
+
+interface MessageTextPart {
+  type: 'text'
+  text: string
+  id?: string
+}
+
+interface MessageReasoningPart {
+  type: 'reasoning'
+  text: string
+  id?: string
+}
+
+interface MessageSourcePart {
+  type: 'source'
+  id?: string
+  sourceType?: 'url' | 'document'
+  url?: string
+  title?: string
+  mediaType?: string
+  data?: unknown
+}
+
+interface MessageFilePart {
+  type: 'file'
+  id?: string
+  url: string
+  mediaType?: string
+  name?: string
+  data?: unknown
+}
+
+interface MessageDataPart {
+  type: 'data' | `data-${string}`
+  id?: string
+  data: unknown
+  transient?: boolean
+}
+
+interface MessageToolPart {
+  type: `tool-${string}`
+  toolCallId: string
+  toolName: string
+  state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+}
+```
+
 ```ts
 interface Message {
   id: string
@@ -38,10 +99,15 @@ interface Message {
   name?: string
   toolCallId?: string
   toolCalls?: ToolCall[]
+  parts?: MessagePart[]
   createdAt?: Date
   metadata?: Record<string, unknown>
 }
 ```
+
+`Message.parts` is optional and keeps `content` backward-compatible. It gives
+Vue UIs a render-ready structure for text, reasoning, sources, files, custom
+data, and `tool-*` states without parsing the assistant text.
 
 `SerializedMessage` is the JSON-safe shape returned by
 `serializeMessages(messages)`:
@@ -262,6 +328,7 @@ interface ChatChunk {
   usage?: TokenUsage
   metadata?: Record<string, unknown>
   data?: unknown
+  parts?: MessagePart[]
   dataId?: string
   dataType?: string
   transient?: boolean
@@ -281,6 +348,8 @@ interface EmbeddingResult {
 `ChatChunk.data` is exposed through `useChat().streamData` and `onData`; use a
 stable `dataId` to replace an earlier part, and set `transient: true` for parts
 that should only trigger `onData`.
+`ChatChunk.parts` is merged into the assistant `Message.parts` array, alongside
+text deltas, custom data parts, and accumulated tool call states.
 
 ## `AiHooksError`
 

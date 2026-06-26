@@ -51,6 +51,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
+- 🧱 **Structured message parts** — render assistant text, sources, files, custom data, and `tool-*` states from `Message.parts`
 - 🧯 **Retry controls** — opt into `maxRetries`, `retryDelayMs`, `shouldRetry`, and `onRetry` for transient provider failures
 - 🪶 **Stream throttling** — use `throttleMs` to reduce reactive updates during fast token streams
 - 🆔 **Custom IDs** — pass `generateId` for deterministic chat, completion, message, tool, and stream data IDs
@@ -336,7 +337,7 @@ state across components. Omit `id` for independent generated state.
 Persists any Vue `Ref` to `localStorage`, with optional versioning and custom
 serialization. `useChat({ persist })` uses Date-safe message serialization
 internally, and the exported `serializeMessages()` / `deserializeMessages()`
-helpers can be reused for backend persistence. See the
+helpers also preserve valid `Message.parts` for structured chat rendering. See the
 [usePersist reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-persist.md) for details.
 
 See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),

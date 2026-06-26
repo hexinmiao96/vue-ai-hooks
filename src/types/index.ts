@@ -26,6 +26,64 @@ export type ContentPart = TextPart | ImageUrlPart
 /** Content can be plain text (the common case) or a list of content parts. */
 export type MessageContent = string | ContentPart[]
 
+export interface MessageTextPart {
+  type: 'text'
+  text: string
+  id?: string
+}
+
+export interface MessageReasoningPart {
+  type: 'reasoning'
+  text: string
+  id?: string
+}
+
+export interface MessageSourcePart {
+  type: 'source'
+  id?: string
+  sourceType?: 'url' | 'document'
+  url?: string
+  title?: string
+  mediaType?: string
+  data?: unknown
+}
+
+export interface MessageFilePart {
+  type: 'file'
+  id?: string
+  url: string
+  mediaType?: string
+  name?: string
+  data?: unknown
+}
+
+export interface MessageDataPart {
+  type: 'data' | `data-${string}`
+  id?: string
+  data: unknown
+  transient?: boolean
+}
+
+export interface MessageToolPart {
+  type: `tool-${string}`
+  toolCallId: string
+  toolName: string
+  state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error'
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+}
+
+/** Structured UI part for rendering modern chat messages. */
+export type MessagePart =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | MessageDataPart
+  | MessageToolPart
+
 /** A preloaded file attachment that `useChat().append()` can convert into message content. */
 export interface ChatFileAttachment {
   /** File display name, used as a label for text attachments. */
@@ -72,6 +130,7 @@ export interface Message {
   name?: string
   toolCallId?: string
   toolCalls?: ToolCall[]
+  parts?: MessagePart[]
   createdAt?: Date
   /** Provider-specific metadata. Useful for OpenAI's `logprobs` etc. */
   metadata?: Record<string, unknown>
@@ -166,6 +225,8 @@ export interface ChatChunk {
   metadata?: Record<string, unknown>
   /** Custom stream data such as sources, progress, or citations. */
   data?: unknown
+  /** Structured message parts to merge into the assistant message. */
+  parts?: MessagePart[]
   /** Stable id used to replace a previous custom data part. */
   dataId?: string
   /** Optional custom data kind, for example `source` or `progress`. */
