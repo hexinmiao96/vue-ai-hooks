@@ -46,6 +46,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **Tool calling helper**：自动执行本地 handler，也支持先审批再执行，或通过 `sendAutomaticallyWhen` 控制工具结果后的续跑
 - **活跃工具筛选**：用 `activeTools` 保留一套工具注册表，并按请求只开放选中的工具
 - **工具循环停止条件**：用 `isStepCount()` 或 `hasToolCall()` 控制多步工具循环何时停止
+- **逐步骤工具循环请求**：用 `prepareStep` 在每个自动 assistant 步骤调整 body、metadata 或 active tools
 - **文件附件**：把浏览器文件或预加载文件对象传给 `append(..., { attachments })`
 - **AI SDK 风格别名**：提供 `sendMessage`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
 - **可恢复流 hook**：用 `resumeStream()` 和 `resumeUrl` 重新连接代理后端的聊天流
@@ -256,6 +257,8 @@ import type { ChatProvider } from 'vue-ai-hooks'
 代理后端需要在最终 chat id、消息列表和 metadata 确定后再补 tenant headers、trace
 metadata 或后端专属 body 字段时，可以使用 `prepareSendMessagesRequest` 和
 `prepareReconnectToStreamRequest`。
+自动工具循环需要按 assistant 步骤调整请求时，可以使用 `prepareStep`，例如工具结果回来后收窄
+`activeTools`。
 
 `useChat`、`useCompletion` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
 
@@ -331,6 +334,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - Tool-calling helper
 - 通过 `activeTools` 按请求筛选可用工具
 - 通过 `stopWhen` 控制工具循环停止条件
+- 通过 `prepareStep` 按步骤准备工具循环请求
 - AI SDK 风格的发送、工具输出和工具审批别名
 - 需要审批的本地工具 handler 流程
 - AI SDK 风格 `sendAutomaticallyWhen`

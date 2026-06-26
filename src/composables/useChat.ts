@@ -104,6 +104,15 @@ export type PrepareSendMessagesRequest = (
   options: PrepareSendMessagesRequestOptions
 ) => Partial<ChatRequest> | void | Promise<Partial<ChatRequest> | void>
 
+export interface PrepareStepOptions extends PrepareSendMessagesRequestOptions {
+  stepNumber: number
+  toolCalls: ToolCall[]
+}
+
+export type PrepareStep = (
+  options: PrepareStepOptions
+) => Partial<ChatRequest> | void | Promise<Partial<ChatRequest> | void>
+
 export interface PrepareReconnectToStreamRequestOptions {
   id: string
   requestMetadata: unknown
@@ -180,6 +189,7 @@ export interface UseChatOptions extends RetryOptions, StreamThrottleOptions {
   id?: string
   generateId?: IdGenerator
   resume?: boolean
+  prepareStep?: PrepareStep
   prepareSendMessagesRequest?: PrepareSendMessagesRequest
   prepareReconnectToStreamRequest?: PrepareReconnectToStreamRequest
   persist?: ChatPersistOptions
@@ -715,6 +725,7 @@ export function pruneMessages(options: PruneMessagesOptions): Message[] {
 interface SendChatContext {
   trigger: SendChatTrigger
   messageId?: string
+  stepNumber: number
 }
 
 interface ChatState {
@@ -1397,7 +1408,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       id: id.value,
       signal
     }
-    const prepared = await options.prepareSendMessagesRequest?.({
+    const stepPrepared = await options.prepareStep?.({
       id: id.value,
       messages: base.messages.map((message) => ({ ...message })),
       requestMetadata: base.metadata,
@@ -1405,9 +1416,28 @@ export function useChat(options: UseChatOptions): UseChatReturn {
       headers: base.headers,
       request: { ...base, messages: base.messages.map((message) => ({ ...message })) },
       trigger: context.trigger,
+      messageId: context.messageId,
+      stepNumber: context.stepNumber,
+      toolCalls: latestAssistantToolCalls(base.messages).map((call) => ({
+        ...call,
+        function: { ...call.function }
+      }))
+    })
+    const stepRequest = mergePreparedChatRequest(base, stepPrepared)
+    const prepared = await options.prepareSendMessagesRequest?.({
+      id: id.value,
+      messages: stepRequest.messages.map((message) => ({ ...message })),
+      requestMetadata: stepRequest.metadata,
+      body: stepRequest.body,
+      headers: stepRequest.headers,
+      request: {
+        ...stepRequest,
+        messages: stepRequest.messages.map((message) => ({ ...message }))
+      },
+      trigger: context.trigger,
       messageId: context.messageId
     })
-    return applyActiveTools(mergePreparedChatRequest(base, prepared))
+    return applyActiveTools(mergePreparedChatRequest(stepRequest, prepared))
   }
   async function prepareResumeRequest(
     resumeOptions: ResumeChatOptions,
@@ -1499,7 +1529,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         messages: messages.value.filter((m) => m.id !== nextAssistant.id)
       },
       remainingToolRoundtrips - 1,
-      context
+      { ...context, stepNumber: context.stepNumber + 1 }
     )
   }
 
@@ -1553,7 +1583,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         ...chatRequestOptions
       },
       maxToolRoundtrips,
-      { trigger: 'submit-message', messageId }
+      { trigger: 'submit-message', messageId, stepNumber: 0 }
     )
   }
   async function submitCurrentMessages(requestOptions: AppendChatOptions = {}) {
@@ -1576,7 +1606,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         ...chatRequestOptions
       },
       maxToolRoundtrips,
-      { trigger: 'submit-message' }
+      { trigger: 'submit-message', stepNumber: 0 }
     )
   }
   async function sendMessage(content?: string | Message, requestOptions: AppendChatOptions = {}) {
@@ -1605,7 +1635,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
     const request = pendingToolRequest.value
     if (!request) return
 
-    const context = state.pendingToolSendContext ?? { trigger: 'submit-message' }
+    const context = state.pendingToolSendContext ?? { trigger: 'submit-message', stepNumber: 0 }
     let shouldContinue = false
     try {
       shouldContinue = !(await shouldStopWhen()) && (await shouldSendAutomatically())
@@ -1626,7 +1656,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         messages: messages.value.filter((m) => m.id !== nextAssistant.id)
       },
       maxToolRoundtrips,
-      context
+      { ...context, stepNumber: context.stepNumber + 1 }
     )
   }
   async function addToolResult(
@@ -1718,7 +1748,7 @@ export function useChat(options: UseChatOptions): UseChatReturn {
         ...requestOptions
       },
       maxToolRoundtrips,
-      { trigger: 'regenerate-message', messageId }
+      { trigger: 'regenerate-message', messageId, stepNumber: 0 }
     )
   }
   if (options.resume) {

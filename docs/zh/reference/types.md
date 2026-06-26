@@ -169,6 +169,23 @@ type ToolApprovalPredicate = (
 
 type SendAutomaticallyWhen = (options: { messages: Message[] }) => boolean | PromiseLike<boolean>
 
+interface PrepareStepOptions {
+  id: string
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+  request: ChatRequest
+  trigger: 'submit-message' | 'regenerate-message'
+  messageId?: string
+  stepNumber: number
+  toolCalls: ToolCall[]
+}
+
+type PrepareStep = (
+  options: PrepareStepOptions
+) => Partial<ChatRequest> | void | Promise<Partial<ChatRequest> | void>
+
 interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
@@ -180,6 +197,9 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 
 `SendAutomaticallyWhen` 用于控制工具结果齐备后是否发起下一轮 provider 请求。
 `lastAssistantMessageIsCompleteWithToolCalls` 是默认 helper。
+
+`PrepareStep` 用于自定义每个 assistant 步骤的请求。`stepNumber` 从 `0`
+开始；准备工具结果后的续跑请求时，`toolCalls` 会包含最新 assistant 步骤的工具调用。
 
 ## ID
 

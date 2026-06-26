@@ -176,6 +176,23 @@ type ToolApprovalPredicate = (
 
 type SendAutomaticallyWhen = (options: { messages: Message[] }) => boolean | PromiseLike<boolean>
 
+interface PrepareStepOptions {
+  id: string
+  messages: Message[]
+  requestMetadata: unknown
+  body?: Record<string, unknown>
+  headers?: Record<string, string>
+  request: ChatRequest
+  trigger: 'submit-message' | 'regenerate-message'
+  messageId?: string
+  stepNumber: number
+  toolCalls: ToolCall[]
+}
+
+type PrepareStep = (
+  options: PrepareStepOptions
+) => Partial<ChatRequest> | void | Promise<Partial<ChatRequest> | void>
+
 interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
@@ -189,6 +206,10 @@ be appended before the follow-up model call.
 `SendAutomaticallyWhen` controls whether completed tool results should trigger
 the next provider request. `lastAssistantMessageIsCompleteWithToolCalls` is the
 default helper.
+
+`PrepareStep` customizes every assistant step request. `stepNumber` starts at
+`0`, and `toolCalls` contains the latest assistant step's tool calls when a
+follow-up request is being prepared.
 
 ## IDs
 

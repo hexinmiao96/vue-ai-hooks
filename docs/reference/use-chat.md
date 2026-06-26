@@ -6,6 +6,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `AppendChatOptions`, `AddToolOutputOptions`, `ToolApprovalResponse`,
 `ChatFinishInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
+`PrepareStep`, `PrepareStepOptions`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
 `SendChatTrigger`, `SetMessagesInput`, `PruneMessagesOptions`,
 `PruneToolCallsStrategy`, `PruneToolCallsRule`, `PruneToolCallsOption`,
@@ -54,6 +55,7 @@ Use `input` with a Vue form for the common composer flow:
 | `initialInput`                    | `string`                                                               | `''`       | Seed the composer input for the first instance of an id.               |
 | `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`       | Default options merged into every chat request.                        |
 | `resume`                          | `boolean`                                                              | `false`    | Automatically try `resumeStream()` when the composable is created.     |
+| `prepareStep`                     | `PrepareStep`                                                          | —          | Customize each assistant step request before the final send hook.      |
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | —          | Customize the final provider request before send/regenerate calls.     |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | —          | Customize the final resume request before `resumeStream()` reconnects. |
 | `tools`                           | `Tool[]`                                                               | —          | Default tool list. Override per-call by passing `tools` to `append()`. |
@@ -532,6 +534,30 @@ const chat = useChat({
 
 `stopWhen` runs after tool results have been added and before the next assistant
 request is started. It does not abort the current stream.
+
+Use `prepareStep` when automatic tool loops need per-step request changes such
+as switching active tools, adding trace metadata, or lowering temperature after
+tool results arrive. It runs before `prepareSendMessagesRequest`, and receives
+the zero-based `stepNumber` plus the latest assistant `toolCalls`:
+
+```ts
+const chat = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  toolHandlers,
+  maxToolRoundtrips: 3,
+  prepareStep({ stepNumber, toolCalls, body }) {
+    return {
+      body: {
+        ...body,
+        stepNumber,
+        lastToolNames: toolCalls.map((call) => call.function.name)
+      },
+      activeTools: stepNumber === 0 ? ['searchDocs'] : ['chargeCard']
+    }
+  }
+})
+```
 
 When automatic continuation is disabled, call `sendMessage()` without content
 after `addToolResult()` or `addToolOutput()` to submit the current messages and

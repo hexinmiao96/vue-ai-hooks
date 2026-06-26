@@ -22,6 +22,8 @@ export {
   type PrepareReconnectToStreamRequestOptions,
   type PrepareSendMessagesRequest,
   type PrepareSendMessagesRequestOptions,
+  type PrepareStep,
+  type PrepareStepOptions,
   type PruneMessagesOptions,
   type PruneReasoningStrategy,
   type PruneToolCallsOption,

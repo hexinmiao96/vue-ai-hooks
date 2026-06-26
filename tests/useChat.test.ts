@@ -10,7 +10,14 @@ import {
   useChat
 } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
-import type { ChatChunk, ChatRequest, ChatResumeRequest, Message, Tool } from '../src/types'
+import type {
+  ChatChunk,
+  ChatRequest,
+  ChatResumeRequest,
+  Message,
+  Tool,
+  ToolCall
+} from '../src/types'
 
 /**
  * Build a fake ChatProvider that yields the chunks you pass in.
@@ -2624,6 +2631,114 @@ describe('useChat', () => {
       'assistant',
       'tool'
     ])
+  })
+
+  it('prepares each automatic tool step request with step context', async () => {
+    const requests: ChatRequest[] = []
+    const prepareStep = vi.fn(({ body, stepNumber, toolCalls, trigger }) => ({
+      body: {
+        ...body,
+        stepNumber,
+        toolNames: toolCalls.map((call: ToolCall) => call.function.name)
+      },
+      headers: { [`X-Step-${stepNumber}`]: trigger }
+    }))
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Prepared follow-up.' }]
+      ],
+      requests
+    )
+    const { append } = useChat({
+      provider,
+      prepareStep,
+      toolHandlers: {
+        lookup() {
+          return 'docs'
+        }
+      }
+    })
+
+    await append('Use a tool.', { body: { traceId: 'trace_1' } })
+
+    expect(prepareStep).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        stepNumber: 0,
+        toolCalls: [],
+        trigger: 'submit-message'
+      })
+    )
+    expect(prepareStep).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        stepNumber: 1,
+        toolCalls: [expect.objectContaining({ id: 'call_1' })],
+        trigger: 'submit-message'
+      })
+    )
+    expect(requests).toHaveLength(2)
+    expect(requests[0]).toMatchObject({
+      body: { traceId: 'trace_1', stepNumber: 0, toolNames: [] },
+      headers: { 'X-Step-0': 'submit-message' }
+    })
+    expect(requests[1]).toMatchObject({
+      body: { traceId: 'trace_1', stepNumber: 1, toolNames: ['lookup'] },
+      headers: { 'X-Step-1': 'submit-message' }
+    })
+    expect(requests[1].messages.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool'
+    ])
+  })
+
+  it('prepares manual tool follow-up requests with the completed tool step', async () => {
+    const requests: ChatRequest[] = []
+    const prepareStep = vi.fn(({ stepNumber, toolCalls }) => ({
+      metadata: { stepNumber, toolCallCount: toolCalls.length }
+    }))
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Manual result accepted.' }]
+      ],
+      requests
+    )
+    const { addToolResult, append } = useChat({ provider, prepareStep })
+
+    await append('Use a manual tool.')
+    await addToolResult('call_1', 'done')
+
+    expect(prepareStep).toHaveBeenCalledTimes(2)
+    expect(requests[1]).toMatchObject({
+      metadata: { stepNumber: 1, toolCallCount: 1 }
+    })
   })
 
   it('can disable automatic continuation after local tool handlers', async () => {

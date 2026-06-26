@@ -59,6 +59,8 @@ import type {
   PrepareReconnectToStreamRequestOptions,
   PrepareSendMessagesRequest,
   PrepareSendMessagesRequestOptions,
+  PrepareStep,
+  PrepareStepOptions,
   PruneMessagesOptions,
   PruneReasoningStrategy,
   PruneToolCallsOption,
@@ -233,6 +235,7 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions['prepareSendMessagesRequest']>().toEqualTypeOf<
       PrepareSendMessagesRequest | undefined
     >()
+    expectTypeOf<UseChatOptions['prepareStep']>().toEqualTypeOf<PrepareStep | undefined>()
     expectTypeOf<UseChatOptions['prepareReconnectToStreamRequest']>().toEqualTypeOf<
       PrepareReconnectToStreamRequest | undefined
     >()
@@ -420,6 +423,11 @@ describe('public API types', () => {
       trigger: sendTrigger,
       messageId: 'msg_1'
     }
+    const prepareStepOptions: PrepareStepOptions = {
+      ...prepareSendOptions,
+      stepNumber: 1,
+      toolCalls: [toolCall]
+    }
     const prepareReconnectOptions: PrepareReconnectToStreamRequestOptions = {
       id: 'chat_1',
       requestMetadata: { traceId: 'resume_1' },
@@ -430,6 +438,10 @@ describe('public API types', () => {
     const prepareSend: PrepareSendMessagesRequest = (options) => {
       expectTypeOf(options).toEqualTypeOf<PrepareSendMessagesRequestOptions>()
       return { body: options.body }
+    }
+    const prepareStep: PrepareStep = (options) => {
+      expectTypeOf(options).toEqualTypeOf<PrepareStepOptions>()
+      return { body: { ...options.body, stepNumber: options.stepNumber } }
     }
     const prepareReconnect: PrepareReconnectToStreamRequest = (options) => {
       expectTypeOf(options).toEqualTypeOf<PrepareReconnectToStreamRequestOptions>()
@@ -530,8 +542,13 @@ describe('public API types', () => {
     expectTypeOf(request.metadata).toEqualTypeOf<unknown>()
     expectTypeOf(resumeRequest.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(prepareSendOptions.trigger).toEqualTypeOf<SendChatTrigger>()
+    expectTypeOf(prepareStepOptions.stepNumber).toEqualTypeOf<number>()
+    expectTypeOf(prepareStepOptions.toolCalls).toEqualTypeOf<ToolCall[]>()
     expectTypeOf(prepareReconnectOptions.request).toEqualTypeOf<ChatResumeRequest>()
     expectTypeOf(prepareSend).returns.toEqualTypeOf<
+      void | Partial<ChatRequest> | Promise<void | Partial<ChatRequest>>
+    >()
+    expectTypeOf(prepareStep).returns.toEqualTypeOf<
       void | Partial<ChatRequest> | Promise<void | Partial<ChatRequest>>
     >()
     expectTypeOf(prepareReconnect).returns.toEqualTypeOf<
@@ -567,6 +584,7 @@ describe('public API types', () => {
       SendAutomaticallyWhen | false | undefined
     >()
     expectTypeOf(options.stopWhen).toEqualTypeOf<StopWhen | readonly StopWhen[] | undefined>()
+    expectTypeOf(prepareStep).toEqualTypeOf<PrepareStep>()
     expectTypeOf(sendAutomaticallyWhen).toEqualTypeOf<SendAutomaticallyWhen>()
     expectTypeOf(stopWhen).toEqualTypeOf<StopWhen>()
     expectTypeOf(isStepCount).parameter(0).toEqualTypeOf<number>()

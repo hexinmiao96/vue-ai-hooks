@@ -6,6 +6,7 @@
 `AppendChatOptions`、`AddToolOutputOptions`、`ToolApprovalResponse`、
 `ChatFinishInfo`、`ChatStatus`、`RegenerateChatOptions`、`ResumeChatOptions`、
 `PrepareSendMessagesRequest`、`PrepareSendMessagesRequestOptions`、
+`PrepareStep`、`PrepareStepOptions`、
 `PrepareReconnectToStreamRequest`、`PrepareReconnectToStreamRequestOptions`、
 `SendChatTrigger`、`SetMessagesInput`、`PruneMessagesOptions`、
 `PruneToolCallsStrategy`、`PruneToolCallsRule`、`PruneToolCallsOption`、
@@ -54,6 +55,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | `initialInput`                    | `string`                                                               | `''`       | 同一个 id 的第一个实例用于初始化输入区。                       |
 | `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`       | 合并到每次聊天请求中的默认选项。                               |
 | `resume`                          | `boolean`                                                              | `false`    | 组合式函数创建时自动尝试 `resumeStream()`。                    |
+| `prepareStep`                     | `PrepareStep`                                                          | -          | 每个 assistant 步骤请求发出前做请求级自定义。                  |
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | -          | 发送或重新生成前，自定义最终 provider request。                |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | -          | `resumeStream()` 重连前，自定义最终恢复请求。                  |
 | `tools`                           | `Tool[]`                                                               | -          | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。      |
@@ -502,6 +504,30 @@ const chat = useChat({
 ```
 
 `stopWhen` 会在工具结果已经追加、下一次 assistant request 发起之前执行；它不会中止当前流。
+
+自动工具循环需要按步骤调整请求时，可以使用 `prepareStep`，例如切换
+`activeTools`、追加 trace metadata，或在工具结果回来后降低 temperature。它会在
+`prepareSendMessagesRequest` 之前执行，并收到从 0 开始的 `stepNumber` 和最新
+assistant 的 `toolCalls`：
+
+```ts
+const chat = useChat({
+  provider,
+  tools: [searchDocsTool, chargeCardTool],
+  toolHandlers,
+  maxToolRoundtrips: 3,
+  prepareStep({ stepNumber, toolCalls, body }) {
+    return {
+      body: {
+        ...body,
+        stepNumber,
+        lastToolNames: toolCalls.map((call) => call.function.name)
+      },
+      activeTools: stepNumber === 0 ? ['searchDocs'] : ['chargeCard']
+    }
+  }
+})
+```
 
 关闭自动续跑时，可以在 `addToolResult()` 或 `addToolOutput()` 之后无参调用
 `sendMessage()`，提交当前 messages，让模型从工具结果继续生成。

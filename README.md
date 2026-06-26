@@ -50,6 +50,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
 - 🎚️ **Active tool filtering** — keep one tool registry and expose only selected tools per request with `activeTools`
 - 🛑 **Tool loop stop conditions** — stop multi-step tool loops with `isStepCount()` or `hasToolCall()`
+- 🔁 **Per-step tool loop requests** — adjust body, metadata, or active tools on each automatic assistant step with `prepareStep`
 - 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
 - 🔁 **AI SDK-style aliases** — `sendMessage`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
 - 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
@@ -292,6 +293,8 @@ requests. Explicit typed fields still win on conflicts.
 Use `prepareSendMessagesRequest` or `prepareReconnectToStreamRequest` when a
 proxy-backed app needs tenant headers, trace metadata, or backend-only body
 fields after the final chat id, messages, and request metadata are known.
+Use `prepareStep` when automatic tool loops need request changes per assistant
+step, such as narrowing `activeTools` after a tool result arrives.
 
 Set `throttleMs` on `useChat`, `useCompletion`, or `useObject` to batch reactive
 stream updates for busy UIs. The final stream state is always flushed before the
@@ -400,6 +403,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Tool-calling helpers
 - ✅ Active tool filtering with `activeTools`
 - ✅ Tool loop stop conditions with `stopWhen`
+- ✅ Per-step tool loop request preparation with `prepareStep`
 - ✅ AI SDK-style chat aliases for send and tool output flows
 - ✅ Tool approval flow for gated local handlers
 - ✅ AI SDK-style `sendAutomaticallyWhen` for tool-result follow-up control
