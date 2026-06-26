@@ -8,7 +8,8 @@
 `PrepareSendMessagesRequest`、`PrepareSendMessagesRequestOptions`、
 `PrepareReconnectToStreamRequest`、`PrepareReconnectToStreamRequestOptions`、
 `SendChatTrigger`、`SetMessagesInput`、`PruneMessagesOptions`、
-`PruneToolCallsStrategy`、`ChatPersistOptions`、`SerializedMessage`、
+`PruneToolCallsStrategy`、`PruneToolCallsRule`、`PruneToolCallsOption`、
+`ChatPersistOptions`、`SerializedMessage`、
 `StreamDataPart`、`ChatAttachmentInput`、`ChatAttachmentsInput`、
 `MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
 `MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
@@ -307,7 +308,7 @@ const { append } = useChat({
         messages: request.messages,
         maxMessages: 12,
         reasoning: 'before-last-message',
-        toolCalls: 'before-last-message'
+        toolCalls: [{ type: 'before-last-message', tools: ['searchDocs', 'lookupAccount'] }]
       })
     }
   }
@@ -323,7 +324,11 @@ await append('使用最近的相关上下文。')
 | `keepSystem`    | `boolean`                                                            | `true`     | 即使 `maxMessages` 裁剪历史，也保留 system 消息。      |
 | `emptyMessages` | `'keep' \| 'remove'`                                                 | `'remove'` | 移除没有文本/图片内容且没有 tool call 的消息。         |
 | `reasoning`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | 移除历史 `reasoning` message parts。                   |
-| `toolCalls`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | 移除历史 assistant tool calls 和对应的 tool 结果消息。 |
+| `toolCalls`     | strategy 或 `{ type, tools? }[]`                                     | `'none'`   | 移除历史 assistant tool calls 和对应的 tool 结果消息。 |
+
+`toolCalls` 可以使用和 `reasoning` 相同的字符串策略；如果只想裁剪指定工具，
+也可以传规则数组。每条规则包含 `type: 'all' | 'before-last-message' |
+before-last-N-messages`，以及可选的 `tools: string[]`。省略 `tools` 时，该规则会应用到所有工具调用。
 
 ## 请求准备钩子
 

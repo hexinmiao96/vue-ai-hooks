@@ -190,9 +190,10 @@ expect(
   files.useChat.includes('## Message pruning') &&
     files.useChat.includes('pruneMessages({') &&
     files.useChat.includes('reasoning') &&
+    files.useChat.includes("tools: ['searchDocs', 'lookupAccount']") &&
     files.useChat.includes('PruneMessagesOptions') &&
-    files.useChat.includes('PruneToolCallsStrategy'),
-  'English useChat docs must document message pruning utility, reasoning pruning, and public types'
+    files.useChat.includes('PruneToolCallsOption'),
+  'English useChat docs must document message pruning utility, reasoning pruning, selected tool pruning, and public types'
 )
 expect(
   files.useChat.includes('## Message persistence') &&
@@ -229,9 +230,10 @@ expect(
   files.zhUseChat.includes('## 消息裁剪') &&
     files.zhUseChat.includes('pruneMessages({') &&
     files.zhUseChat.includes('reasoning') &&
+    files.zhUseChat.includes("tools: ['searchDocs', 'lookupAccount']") &&
     files.zhUseChat.includes('PruneMessagesOptions') &&
-    files.zhUseChat.includes('PruneToolCallsStrategy'),
-  'Chinese useChat docs must document message pruning utility, reasoning pruning, and public types'
+    files.zhUseChat.includes('PruneToolCallsOption'),
+  'Chinese useChat docs must document message pruning utility, reasoning pruning, selected tool pruning, and public types'
 )
 expect(
   files.zhUseChat.includes('## 消息持久化') &&

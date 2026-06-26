@@ -59,6 +59,8 @@ import type {
   PrepareSendMessagesRequestOptions,
   PruneMessagesOptions,
   PruneReasoningStrategy,
+  PruneToolCallsOption,
+  PruneToolCallsRule,
   PruneToolCallsStrategy,
   ProxyRequestContext,
   ProxyRequestKind,
@@ -228,6 +230,13 @@ describe('public API types', () => {
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()
     expectTypeOf<PruneToolCallsStrategy>().toEqualTypeOf<
       'none' | 'all' | 'before-last-message' | `before-last-${number}-messages`
+    >()
+    expectTypeOf<PruneToolCallsRule>().toEqualTypeOf<{
+      type: 'all' | 'before-last-message' | `before-last-${number}-messages`
+      tools?: readonly string[]
+    }>()
+    expectTypeOf<PruneToolCallsOption>().toEqualTypeOf<
+      PruneToolCallsStrategy | readonly PruneToolCallsRule[]
     >()
     expectTypeOf<PruneReasoningStrategy>().toEqualTypeOf<PruneToolCallsStrategy>()
     expectTypeOf<UseCompletionOptions['id']>().toEqualTypeOf<string | undefined>()

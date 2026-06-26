@@ -22,6 +22,8 @@ export {
   type PrepareSendMessagesRequestOptions,
   type PruneMessagesOptions,
   type PruneReasoningStrategy,
+  type PruneToolCallsOption,
+  type PruneToolCallsRule,
   type PruneToolCallsStrategy,
   type RegenerateChatOptions,
   type ResumeChatOptions,

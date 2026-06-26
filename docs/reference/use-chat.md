@@ -8,7 +8,8 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
 `SendChatTrigger`, `SetMessagesInput`, `PruneMessagesOptions`,
-`PruneToolCallsStrategy`, `ChatPersistOptions`, `SerializedMessage`,
+`PruneToolCallsStrategy`, `PruneToolCallsRule`, `PruneToolCallsOption`,
+`ChatPersistOptions`, `SerializedMessage`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
@@ -317,7 +318,7 @@ const { append } = useChat({
         messages: request.messages,
         maxMessages: 12,
         reasoning: 'before-last-message',
-        toolCalls: 'before-last-message'
+        toolCalls: [{ type: 'before-last-message', tools: ['searchDocs', 'lookupAccount'] }]
       })
     }
   }
@@ -333,7 +334,12 @@ await append('Use the latest relevant context.')
 | `keepSystem`    | `boolean`                                                            | `true`     | Preserve system messages even when `maxMessages` trims history. |
 | `emptyMessages` | `'keep' \| 'remove'`                                                 | `'remove'` | Drop messages with no text/image content or tool calls.         |
 | `reasoning`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | Remove historical `reasoning` message parts.                    |
-| `toolCalls`     | `'none' \| 'all' \| 'before-last-message' \| before-last-N-messages` | `'none'`   | Remove historical assistant tool calls and matching tool rows.  |
+| `toolCalls`     | strategy or `{ type, tools? }[]`                                     | `'none'`   | Remove historical assistant tool calls and matching tool rows.  |
+
+`toolCalls` can use the same string strategies as `reasoning`, or an array of
+rules when only selected tools should be pruned. Each rule accepts `type: 'all' |
+'before-last-message' | before-last-N-messages` and optional `tools: string[]`.
+Omitting `tools` applies that rule to every tool call.
 
 ## Request preparation hooks
 

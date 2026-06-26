@@ -349,6 +349,52 @@ describe('useChat', () => {
     ])
   })
 
+  it('can prune selected tool call details without removing other tools', () => {
+    const messages: Message[] = [
+      {
+        id: 'assistant',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_lookup',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"old"}' }
+          },
+          {
+            id: 'call_calculate',
+            type: 'function',
+            function: { name: 'calculate', arguments: '{"value":2}' }
+          }
+        ]
+      },
+      { id: 'lookup-tool', role: 'tool', toolCallId: 'call_lookup', content: '{"old":true}' },
+      {
+        id: 'calculate-tool',
+        role: 'tool',
+        toolCallId: 'call_calculate',
+        content: '{"value":4}'
+      },
+      { id: 'latest', role: 'user', content: 'Use the calculator result.' }
+    ]
+
+    const pruned = pruneMessages({
+      messages,
+      emptyMessages: 'keep',
+      toolCalls: [{ type: 'all', tools: ['lookup'] }]
+    })
+
+    expect(pruned.map((message) => message.id)).toEqual(['assistant', 'calculate-tool', 'latest'])
+    expect(pruned[0].toolCalls).toEqual([
+      {
+        id: 'call_calculate',
+        type: 'function',
+        function: { name: 'calculate', arguments: '{"value":2}' }
+      }
+    ])
+    expect(messages[0].toolCalls).toHaveLength(2)
+  })
+
   it('can prune historical reasoning parts without mutating original messages', () => {
     const messages: Message[] = [
       {

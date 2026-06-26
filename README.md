@@ -57,7 +57,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 🪶 **Stream throttling** — use `throttleMs` to reduce reactive updates during fast token streams
 - 🆔 **Custom IDs** — pass `generateId` for deterministic chat, completion, message, tool, and stream data IDs
 - 🔗 **Shared state by ID** — reuse chat, completion, and object state across Vue components with the same `id`
-- ✂️ **Message pruning** — trim long chat histories, reasoning parts, and historical tool calls before provider requests
+- ✂️ **Message pruning** — trim long chat histories, reasoning parts, and selected historical tool calls before provider requests
 - ✏️ **Edit and resend** — replace an earlier message with `append(..., { messageId })`
 - 🚦 **Consistent statuses** — `status`, `isLoading`, `error`, and `clearError()` work across the core composables
 - 🧱 **Optimistic message edits** — `setMessages()` accepts arrays or updater functions for local chat history changes
@@ -311,7 +311,8 @@ components. The first instance seeds `initialMessages` and `initialInput`;
 `setId()` only changes the id sent with future provider requests.
 
 Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
-send only recent context, system prompts, and current tool details to a provider.
+send only recent context, system prompts, and current or selected tool details to
+a provider.
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useObject(options)`
 

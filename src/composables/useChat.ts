@@ -135,6 +135,13 @@ export type PruneToolCallsStrategy =
   | 'before-last-message'
   | `before-last-${number}-messages`
 
+export interface PruneToolCallsRule {
+  type: Exclude<PruneToolCallsStrategy, 'none'>
+  tools?: readonly string[]
+}
+
+export type PruneToolCallsOption = PruneToolCallsStrategy | readonly PruneToolCallsRule[]
+
 export type PruneReasoningStrategy = PruneToolCallsStrategy
 
 export interface PruneMessagesOptions {
@@ -142,7 +149,7 @@ export interface PruneMessagesOptions {
   maxMessages?: number
   keepSystem?: boolean
   emptyMessages?: 'keep' | 'remove'
-  toolCalls?: PruneToolCallsStrategy
+  toolCalls?: PruneToolCallsOption
   reasoning?: PruneReasoningStrategy
 }
 
@@ -587,6 +594,12 @@ function pruneHistoricalDetails(
   return index < total - Number(match[1])
 }
 
+function isPruneToolCallsRules(
+  option: PruneToolCallsOption
+): option is readonly PruneToolCallsRule[] {
+  return Array.isArray(option)
+}
+
 /**
  * Trim chat history before sending it to a provider or proxy.
  */
@@ -604,6 +617,28 @@ export function pruneMessages(options: PruneMessagesOptions): Message[] {
   }
 
   const total = messages.length
+  let toolCallStrategy: PruneToolCallsStrategy = 'none'
+  let toolCallRules: readonly PruneToolCallsRule[] | null = null
+  if (isPruneToolCallsRules(toolCalls)) {
+    toolCallRules = toolCalls
+  } else {
+    toolCallStrategy = toolCalls
+  }
+
+  const prunedToolCallIds = new Set<string>()
+  messages.forEach((message, index) => {
+    message.toolCalls?.forEach((call) => {
+      const shouldPrune = toolCallRules
+        ? toolCallRules.some(
+            (rule) =>
+              (!rule.tools?.length || rule.tools.includes(call.function.name)) &&
+              pruneHistoricalDetails(index, total, rule.type, 'tool call')
+          )
+        : pruneHistoricalDetails(index, total, toolCallStrategy, 'tool call')
+      if (shouldPrune) prunedToolCallIds.add(call.id)
+    })
+  })
+
   let pruned = messages
     .map((message, index) => {
       const next = cloneMessage(message)
@@ -611,7 +646,20 @@ export function pruneMessages(options: PruneMessagesOptions): Message[] {
         next.parts = next.parts.filter((part) => part.type !== 'reasoning')
         if (!next.parts.length) delete next.parts
       }
-      if (pruneHistoricalDetails(index, total, toolCalls, 'tool call')) {
+      const pruneToolResult =
+        !toolCallRules && pruneHistoricalDetails(index, total, toolCallStrategy, 'tool call')
+      if (
+        next.role === 'tool' &&
+        (pruneToolResult ||
+          (next.toolCallId !== undefined && prunedToolCallIds.has(next.toolCallId)))
+      ) {
+        return null
+      }
+      if (next.toolCalls?.length) {
+        next.toolCalls = next.toolCalls.filter((call) => !prunedToolCallIds.has(call.id))
+        if (!next.toolCalls.length) delete next.toolCalls
+      }
+      if (pruneToolResult) {
         if (next.role === 'tool') return null
         delete next.toolCalls
       }
