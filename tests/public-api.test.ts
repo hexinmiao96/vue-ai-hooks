@@ -43,6 +43,9 @@ import type {
   CompletionRequestInfo,
   CompletionResponseInfo,
   ContentPart,
+  DataPartSchema,
+  DataPartSchemas,
+  DataPartValidator,
   DeepPartial,
   EmbeddingRequestInfo,
   EmbeddingRequest,
@@ -302,6 +305,18 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseChatOptions<{ progress: number }>['onData']>().toEqualTypeOf<
       ((part: StreamDataPart<{ progress: number }>) => void) | undefined
+    >()
+    expectTypeOf<UseChatOptions<{ progress: number }>['dataPartSchemas']>().toEqualTypeOf<
+      DataPartSchemas<{ progress: number }> | undefined
+    >()
+    expectTypeOf<DataPartValidator<{ progress: number }>>().toEqualTypeOf<
+      (data: unknown) => data is { progress: number }
+    >()
+    expectTypeOf<DataPartSchema<{ progress: number }>>().toEqualTypeOf<
+      Record<string, unknown> | DataPartValidator<{ progress: number }>
+    >()
+    expectTypeOf<DataPartSchemas<{ progress: number }>>().toEqualTypeOf<
+      Record<string, DataPartSchema<{ progress: number }>>
     >()
     expectTypeOf(pruneMessages).parameter(0).toEqualTypeOf<PruneMessagesOptions>()
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()

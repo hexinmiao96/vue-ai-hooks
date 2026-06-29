@@ -15,6 +15,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
+`DataPartSchema`, `DataPartSchemas`, `DataPartValidator`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
 `StopWhenOptions`, `RetryOptions`, and `RetryContext`.
@@ -81,6 +82,7 @@ Use `input` with a Vue form for the common composer flow:
 | `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | Decide whether completed tool results should trigger the next request. |
 | `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | —          | Stop automatic tool continuation when a condition matches.             |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | Maximum automatic tool-call rounds after a user message.               |
+| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | —          | Validate custom stream data by `dataType` before `onData`/storage.     |
 | `persist`                         | `ChatPersistOptions`                                                   | —          | Auto-save Date-safe messages to localStorage or a custom `Storage`.    |
 | `maxRetries`                      | `number`                                                               | `0`        | Retry attempts for failures before the first stream chunk.             |
 | `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                               |
@@ -763,6 +765,43 @@ Set `transient: true` for progress ticks or debug events that should call
 `onData` without being stored in `streamData` or `Message.parts`.
 The `useChat<TData>()` generic only types `streamData` and `onData`; persisted
 `Message.parts` stay provider-agnostic and keep `unknown` data payloads.
+
+Use `dataPartSchemas` when proxy or provider chunks should be validated before
+your UI consumes them:
+
+```ts
+const { append, streamData } = useChat<{ title: string; url?: string }>({
+  provider,
+  dataPartSchemas: {
+    source: {
+      type: 'object',
+      required: ['title'],
+      properties: {
+        title: { type: 'string' },
+        url: { type: 'string' }
+      },
+      additionalProperties: false
+    }
+  }
+})
+```
+
+Schema keys match `ChatChunk.dataType`. Values can be JSON Schema objects using
+the same supported subset as `useObject` (`type`, `required`, `enum`,
+`properties`, `items`, and `additionalProperties`) or validator functions:
+
+```ts
+const chat = useChat<{ url: string }>({
+  provider,
+  dataPartSchemas: {
+    source: (data): data is { url: string } =>
+      typeof data === 'object' && data !== null && 'url' in data && typeof data.url === 'string'
+  }
+})
+```
+
+Invalid data parts reject the active request with `AiHooksError`, do not call
+`onData`, and are not stored in `streamData` or `Message.parts`.
 
 ## Vision input
 

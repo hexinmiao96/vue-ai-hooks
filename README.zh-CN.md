@@ -65,6 +65,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **表单辅助**：`useChat` 和 `useCompletion` 提供 `setInput`、`handleInputChange` 和 `handleSubmit`
 - **生命周期回调**：观察 chunk、工具调用、delta、部分对象、完成和错误
 - **自定义流数据**：在一次聊天轮次里收集 sources、进度、引用和消息 metadata
+- **流数据 schema**：按 `dataType` 校验自定义 data part，再交给 UI 回调消费
 - **结构化输出**：`useObject` 会发送 JSON Schema response format，流式更新部分对象，并校验最终对象
 - **自定义生成任务**：`useGeneration` 为图片、音频、摘要或业务自定义 AI 任务提供统一状态、进度、chunk、取消和重试
 - **TypeScript 优先**：严格模式、无 `any` 泄漏、完整 IDE 自动补全

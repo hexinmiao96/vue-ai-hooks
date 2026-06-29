@@ -70,6 +70,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 📝 **Form helpers** — `useChat` and `useCompletion` include `setInput`, `handleInputChange`, and `handleSubmit`
 - 👀 **Lifecycle callbacks** — observe chunks, tool calls, deltas, partial objects, finishes, and errors
 - 🧩 **Custom stream data** — collect sources, progress, citations, and AI SDK message metadata during a chat turn
+- 🧪 **Stream data schemas** — validate custom data parts by `dataType` before they reach UI callbacks
 - 📐 **Structured output** — `useObject` sends JSON Schema response formats, streams partial objects, and validates the final object
 - 🧬 **Custom generation tasks** — `useGeneration` wraps image, audio, summary, or app-specific AI jobs with shared status, progress, chunks, aborts, and retries
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete

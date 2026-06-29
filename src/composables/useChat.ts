@@ -29,6 +29,7 @@ import { AiHooksError } from '../types'
 import { cloneMessageSnapshot as cloneMessage, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
+import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 
 export interface ToolCallHandlerContext {
@@ -203,6 +204,12 @@ export interface ChatPersistOptions {
   deserialize?: UsePersistOptions<Message[]>['deserialize']
 }
 
+export type DataPartValidator<TData = unknown> = (data: unknown) => data is TData
+
+export type DataPartSchema<TData = unknown> = Record<string, unknown> | DataPartValidator<TData>
+
+export type DataPartSchemas<TData = unknown> = Record<string, DataPartSchema<TData>>
+
 export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
   initialMessages?: Message[]
@@ -227,6 +234,7 @@ export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThr
   sendAutomaticallyWhen?: SendAutomaticallyWhen | false
   stopWhen?: StopWhen | readonly StopWhen[]
   maxToolRoundtrips?: number
+  dataPartSchemas?: DataPartSchemas<TData>
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
   onData?: (part: StreamDataPart<TData>) => void
   onRequest?: (info: ChatRequestInfo) => void
@@ -800,6 +808,7 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
     sendAutomaticallyWhen,
     stopWhen,
     maxToolRoundtrips = 1,
+    dataPartSchemas,
     onChunk,
     onData,
     onRequest,
@@ -1174,6 +1183,7 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
       transient: chunk.transient,
       createdAt: new Date()
     }
+    validateDataPart(part)
     onData?.({ ...part })
 
     if (part.transient) return part
@@ -1188,6 +1198,20 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
         : [...state.bufferedStreamData, part]
     scheduleStreamData()
     return part
+  }
+  function validateDataPart(part: StreamDataPart<TData>) {
+    const schema = part.type ? dataPartSchemas?.[part.type] : undefined
+    if (!schema) return
+
+    const error =
+      typeof schema === 'function'
+        ? schema(part.data)
+          ? null
+          : `data.${part.type} did not pass validator`
+        : validateJsonSchema(part.data, schema, `data.${part.type}`)
+    if (error) {
+      throw new AiHooksError(`Stream data part "${part.type}" did not match schema: ${error}`)
+    }
   }
   async function executeToolCall(
     call: ToolCall,

@@ -15,6 +15,7 @@
 `StreamDataPart`、`ChatAttachmentInput`、`ChatAttachmentsInput`、
 `MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
 `MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
+`DataPartSchema`、`DataPartSchemas`、`DataPartValidator`、
 `SendAutomaticallyWhen`、`SendAutomaticallyWhenOptions`、`IdGenerator`、
 `ToolCallHandlerContext`、`ToolResultHandlerContext`、`StopWhen`、
 `StopWhenOptions`、`RetryOptions` 和 `RetryContext`。
@@ -81,6 +82,7 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 | `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | 控制工具结果齐备后是否自动发起下一轮请求。                     |
 | `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | -          | 条件命中时停止工具结果后的自动续跑。                           |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | 用户消息之后最多自动执行几轮工具调用。                         |
+| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | -          | 按 `dataType` 校验自定义流数据，再触发 `onData` 或保存。       |
 | `persist`                         | `ChatPersistOptions`                                                   | -          | 把 Date-safe 消息自动保存到 localStorage 或自定义 `Storage`。  |
 | `maxRetries`                      | `number`                                                               | `0`        | 首个 stream chunk 到达前失败时最多重试几次。                   |
 | `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`        | 每次重试前等待的毫秒数。                                       |
@@ -707,6 +709,43 @@ const { messages, streamData } = useChat<{ title: string; url?: string }>({
 `transient: true`，这样只触发 `onData`，不会写入 `streamData` 或 `Message.parts`。
 `useChat<TData>()` 泛型只作用于 `streamData` 和 `onData`；持久化的
 `Message.parts` 仍保持 Provider 无关，数据 payload 类型继续是 `unknown`。
+
+当 proxy 或 Provider chunk 需要先校验再交给 UI 消费时，可以使用
+`dataPartSchemas`：
+
+```ts
+const { append, streamData } = useChat<{ title: string; url?: string }>({
+  provider,
+  dataPartSchemas: {
+    source: {
+      type: 'object',
+      required: ['title'],
+      properties: {
+        title: { type: 'string' },
+        url: { type: 'string' }
+      },
+      additionalProperties: false
+    }
+  }
+})
+```
+
+schema key 对应 `ChatChunk.dataType`。value 可以是 JSON Schema 对象，支持和
+`useObject` 相同的常见子集（`type`、`required`、`enum`、`properties`、`items`
+和 `additionalProperties`），也可以是 validator 函数：
+
+```ts
+const chat = useChat<{ url: string }>({
+  provider,
+  dataPartSchemas: {
+    source: (data): data is { url: string } =>
+      typeof data === 'object' && data !== null && 'url' in data && typeof data.url === 'string'
+  }
+})
+```
+
+无效 data part 会让当前请求以 `AiHooksError` reject，不会触发 `onData`，也不会写入
+`streamData` 或 `Message.parts`。
 
 ## 视觉输入
 

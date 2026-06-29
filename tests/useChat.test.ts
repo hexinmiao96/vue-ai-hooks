@@ -916,6 +916,83 @@ describe('useChat', () => {
     expect(messages.value[1].metadata).toMatchObject({ model: 'test-model', runId: 'run_1' })
   })
 
+  it('validates custom stream data with dataPartSchemas', async () => {
+    const onData = vi.fn()
+    const { append, streamData } = useChat<{ state: 'loading' | 'done' }>({
+      provider: fakeProvider([
+        { dataId: 'status', dataType: 'progress', data: { state: 'loading' } },
+        { dataId: 'status', dataType: 'progress', data: { state: 'done' } }
+      ]),
+      dataPartSchemas: {
+        progress: {
+          type: 'object',
+          required: ['state'],
+          properties: {
+            state: { type: 'string', enum: ['loading', 'done'] }
+          },
+          additionalProperties: false
+        }
+      },
+      onData
+    })
+
+    await append('with typed stream data')
+
+    expect(streamData.value).toMatchObject([{ id: 'status', data: { state: 'done' } }])
+    expect(onData).toHaveBeenCalledTimes(2)
+  })
+
+  it('validates custom stream data with function schemas', async () => {
+    const { append, streamData } = useChat<{ url: string }>({
+      provider: fakeProvider([
+        { dataId: 'source-1', dataType: 'source', data: { url: 'https://example.test/docs' } }
+      ]),
+      dataPartSchemas: {
+        source: (data): data is { url: string } =>
+          typeof data === 'object' && data !== null && 'url' in data && typeof data.url === 'string'
+      }
+    })
+
+    await append('with validator stream data')
+
+    expect(streamData.value).toMatchObject([
+      { id: 'source-1', type: 'source', data: { url: 'https://example.test/docs' } }
+    ])
+  })
+
+  it('rejects custom stream data that fails dataPartSchemas', async () => {
+    const onData = vi.fn()
+    const onError = vi.fn()
+    const { append, error, status, streamData } = useChat<{ state: 'done' }>({
+      provider: fakeProvider([
+        { dataId: 'status', dataType: 'progress', data: { state: 'loading' } }
+      ]),
+      dataPartSchemas: {
+        progress: {
+          type: 'object',
+          required: ['state'],
+          properties: {
+            state: { type: 'string', enum: ['done'] }
+          },
+          additionalProperties: false
+        }
+      },
+      onData,
+      onError
+    })
+
+    await expect(append('with invalid stream data')).rejects.toThrow(
+      /Stream data part "progress" did not match schema/
+    )
+
+    expect(status.value).toBe('error')
+    expect(error.value?.name).toBe('AiHooksError')
+    expect(error.value?.message).toContain('data.progress.state must be one of')
+    expect(streamData.value).toEqual([])
+    expect(onData).not.toHaveBeenCalled()
+    expect(onError).toHaveBeenCalledWith(error.value)
+  })
+
   it('uses stream messageId as the assistant message id', async () => {
     const onFinish = vi.fn()
     const { append, messages } = useChat({

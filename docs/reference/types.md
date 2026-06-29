@@ -415,9 +415,10 @@ message id before the text deltas arrive.
 SDK UI stream `messageMetadata` values are normalized into this field by
 `proxyProvider`.
 `ChatChunk.data` is exposed through `useChat().streamData` and `onData`; pass
-`useChat<TData>()` to type those custom stream data values. Use a stable
-`dataId` to replace an earlier part, and set `transient: true` for parts that
-should only trigger `onData`.
+`useChat<TData>()` to type those custom stream data values, and pass
+`dataPartSchemas` to validate them by `dataType` before UI callbacks run. Use a
+stable `dataId` to replace an earlier part, and set `transient: true` for parts
+that should only trigger `onData`.
 `ChatChunk.parts` is merged into the assistant `Message.parts` array, alongside
 text deltas, custom data parts, and accumulated tool call states.
 

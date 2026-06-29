@@ -400,8 +400,9 @@ stream 在文本 delta 到达前下发服务端权威 message id 时，可以用
 `ChatChunk.metadata` 会合并到当前 assistant 消息的 metadata。`proxyProvider`
 会把 AI SDK UI stream 的 `messageMetadata` 归一化到这个字段。`ChatChunk.data`
 会通过 `useChat().streamData` 和 `onData` 暴露；传入 `useChat<TData>()` 可以给这些
-自定义流数据加类型。使用稳定的 `dataId` 可以替换之前的片段，设置 `transient: true`
-则只触发 `onData`、不写入 `streamData`。
+自定义流数据加类型，也可以传入 `dataPartSchemas` 按 `dataType` 在 UI 回调前校验。
+使用稳定的 `dataId` 可以替换之前的片段，设置 `transient: true` 则只触发 `onData`、
+不写入 `streamData`。
 `ChatChunk.parts` 会合并进 assistant 的 `Message.parts`，并和文本 delta、自定义 data
 parts、累积后的工具调用状态一起维护。
 
