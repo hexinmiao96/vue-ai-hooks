@@ -376,7 +376,7 @@ For upgrade guarantees, see the [API stability guide](https://github.com/hexinmi
 Four runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
-- `examples/proxy-server` — local backend proxy template for the `/api/ai/*` contract
+- `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
 
@@ -398,6 +398,11 @@ pnpm example:proxy-server
 # in another terminal
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
+
+The same proxy template also accepts `useChat({ baseURL })`,
+`useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
+`useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
+`/api/embedding`, and `/api/object`.
 
 For deterministic component and composable tests without live provider calls, see
 the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/testing.md).

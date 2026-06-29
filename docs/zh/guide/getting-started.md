@@ -41,10 +41,11 @@ pnpm example:chat
 
 ```vue
 <script setup lang="ts">
-import { useChat, openai } from 'vue-ai-hooks'
+import { useChat } from 'vue-ai-hooks'
 
 const { messages, input, append, isLoading, stop, error } = useChat({
-  provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+  api: '/api/chat',
+  credentials: 'include'
 })
 </script>
 
@@ -70,8 +71,8 @@ const { messages, input, append, isLoading, stop, error } = useChat({
 
 就这些。每条消息都会随着流式响应到达而写入 `messages`，内容会逐词增长。`isLoading` 会在流开始和结束时自动切换。
 
-这段浏览器 key 写法只适合本地探索。生产环境应切到 `proxyProvider`，让上游模型 key
-留在服务端。
+浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由。上游模型 key 留在该服务端路由中，
+然后返回 SSE `ChatChunk` 对象或 AI SDK UI stream parts。
 
 ## 添加持久化
 
@@ -92,8 +93,9 @@ const { messages, append, clear } = useChat({
 
 ## 本地试用后端代理模板
 
-proxy 示例实现了 `proxyProvider` 使用的同一套 `/api/ai/*` 契约。它会返回确定性的
-流式片段和 embedding，不需要任何第三方 API key：
+proxy 示例同时支持默认组合式函数端点（`/api/chat`、`/api/completion`、
+`/api/embedding`、`/api/object`）和显式 `proxyProvider` 端点（`/api/ai/*`）。它会返回确定性的
+流式片段、结构化 JSON 和 embedding，不需要任何第三方 API key：
 
 ```bash
 pnpm example:proxy-server
@@ -101,8 +103,17 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
-这一步跑通后，把模板服务替换成你自己的 `/api/ai/chat`、`/api/ai/completion` 和
-`/api/ai/embedding` 路由即可。
+也可以把默认 transport 指到同一个本地服务：
+
+```ts
+useChat({ baseURL: 'http://127.0.0.1:8787' })
+useCompletion({ baseURL: 'http://127.0.0.1:8787' })
+useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
+useObject({ baseURL: 'http://127.0.0.1:8787', schema })
+```
+
+这一步跑通后，把模板服务替换成你自己的 `/api/chat`、`/api/completion`、
+`/api/embedding` 和 `/api/object` 路由即可。
 
 ## 使用不同 Provider
 

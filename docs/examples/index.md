@@ -27,6 +27,11 @@ the deterministic `local-tools` provider, streams a reply, pauses on a
 `chargeCard` tool call, and continues after approval or rejection. Use that flow
 to verify the UI before wiring real provider keys or a backend proxy.
 
+To test the backend contract, run `pnpm example:proxy-server`. It accepts the
+default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`
+routes, plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
+examples.
+
 ## Which demo should I open first?
 
 | Goal                                                     | Start with                               |

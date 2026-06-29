@@ -45,10 +45,11 @@ server-side.
 
 ```vue
 <script setup lang="ts">
-import { useChat, openai } from 'vue-ai-hooks'
+import { useChat } from 'vue-ai-hooks'
 
 const { messages, input, append, isLoading, stop, error } = useChat({
-  provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+  api: '/api/chat',
+  credentials: 'include'
 })
 </script>
 
@@ -76,8 +77,9 @@ That's it — every message is streamed into `messages` as it arrives, with the
 content growing word by word. `isLoading` flips between true and false as the
 stream starts and ends.
 
-Use this browser-key version for local exploration only. For production, switch
-to `proxyProvider` so your upstream model key stays on the server.
+The browser sends provider-agnostic JSON to your own `/api/chat` route. Keep the
+upstream model key on that server route, then return SSE `ChatChunk` objects or
+AI SDK UI stream parts.
 
 ## Adding persistence
 
@@ -101,9 +103,10 @@ before calling `setMessages()`.
 
 ## Try the backend proxy template locally
 
-The proxy example implements the same `/api/ai/*` contract used by
-`proxyProvider`. It streams deterministic chunks and embeddings without any
-third-party API key:
+The proxy example supports both the default composable endpoints (`/api/chat`,
+`/api/completion`, `/api/embedding`, `/api/object`) and the explicit
+`proxyProvider` endpoints (`/api/ai/*`). It streams deterministic chunks,
+structured JSON, and embeddings without any third-party API key:
 
 ```bash
 pnpm example:proxy-server
@@ -111,8 +114,17 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
-When this works, replace the template server with your own `/api/ai/chat`,
-`/api/ai/completion`, and `/api/ai/embedding` routes.
+You can also point the default transport at the same local server:
+
+```ts
+useChat({ baseURL: 'http://127.0.0.1:8787' })
+useCompletion({ baseURL: 'http://127.0.0.1:8787' })
+useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
+useObject({ baseURL: 'http://127.0.0.1:8787', schema })
+```
+
+When this works, replace the template server with your own `/api/chat`,
+`/api/completion`, `/api/embedding`, and `/api/object` routes.
 
 ## Using a different provider
 

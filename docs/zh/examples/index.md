@@ -24,6 +24,10 @@ pnpm example:chat
 `local-tools` Provider，流式输出回复，在 `chargeCard` 工具调用处暂停，并在审批或拒绝后继续。
 先用这条路径确认 UI，再接真实 Provider key 或后端代理。
 
+要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
+`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object` 路由，以及浏览器示例通过
+`proxyProvider` 使用的 `/api/ai/*` 路由。
+
 ## 先看哪个示例？
 
 | 目标                             | 从这里开始                     |

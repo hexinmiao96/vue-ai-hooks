@@ -302,7 +302,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 四个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
 
 - `examples/chat`：支持 Provider 切换、结构化 `Message.parts` 和本地工具审批演示的流式聊天 UI
-- `examples/proxy-server`：本地后端代理模板，覆盖 `/api/ai/*` 契约
+- `examples/proxy-server`：本地后端代理模板，覆盖默认 `/api/*` 路由和显式 `/api/ai/*` 契约
 - `examples/completion`：单次补全表单
 - `examples/embedding`：成对余弦相似度热力图
 
@@ -324,6 +324,10 @@ pnpm example:proxy-server
 # 另开一个终端
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
+
+同一个代理模板也支持 `useChat({ baseURL })`、`useCompletion({ baseURL })`、
+`useEmbedding({ baseURL })` 和 `useObject({ baseURL, schema })` 默认路径：
+`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`。
 
 如果要在不调用真实 Provider 的情况下稳定测试组件和组合式函数，请查看
 [测试指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/testing.md)。

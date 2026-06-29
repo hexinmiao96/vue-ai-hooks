@@ -50,7 +50,8 @@ for (const snippet of [
   'pnpm example:chat',
   'falls back to `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
-  'Use this browser-key version for local exploration only',
+  'The browser sends provider-agnostic JSON to your own `/api/chat` route',
+  "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[Examples](/examples/)'
 ]) {
   expect(files.gettingStarted.includes(snippet), `English getting started must include: ${snippet}`)
@@ -62,7 +63,8 @@ for (const snippet of [
   'pnpm example:chat',
   '自动回退到 `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
-  '这段浏览器 key 写法只适合本地探索',
+  '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
+  "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[示例](/zh/examples/)'
 ]) {
   expect(
@@ -108,6 +110,7 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
+  'default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
@@ -123,6 +126,7 @@ for (const snippet of [
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
+  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',

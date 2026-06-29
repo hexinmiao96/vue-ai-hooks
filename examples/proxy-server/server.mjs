@@ -3,6 +3,12 @@ import { createServer } from 'node:http'
 
 const port = Number(process.env.PORT || 8787)
 const chatStreams = new Map()
+const routes = {
+  chat: new Set(['/api/chat', '/api/ai/chat']),
+  completion: new Set(['/api/completion', '/api/ai/completion']),
+  embedding: new Set(['/api/embedding', '/api/ai/embedding']),
+  object: new Set(['/api/object', '/api/ai/object'])
+}
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`)
@@ -15,24 +21,29 @@ const server = createServer(async (request, response) => {
   }
 
   try {
-    if (request.method === 'POST' && url.pathname === '/api/ai/chat') {
+    if (request.method === 'POST' && routes.chat.has(url.pathname)) {
       await handleChat(request, response)
       return
     }
 
-    const resumeMatch = url.pathname.match(/^\/api\/ai\/chat\/([^/]+)\/stream$/)
+    const resumeMatch = url.pathname.match(/^\/api(?:\/ai)?\/chat\/([^/]+)\/stream$/)
     if (request.method === 'GET' && resumeMatch) {
       handleResume(response, decodeURIComponent(resumeMatch[1]))
       return
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/ai/completion') {
+    if (request.method === 'POST' && routes.completion.has(url.pathname)) {
       await handleCompletion(request, response)
       return
     }
 
-    if (request.method === 'POST' && url.pathname === '/api/ai/embedding') {
+    if (request.method === 'POST' && routes.embedding.has(url.pathname)) {
       await handleEmbedding(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.object.has(url.pathname)) {
+      await handleObject(request, response)
       return
     }
 
@@ -107,6 +118,28 @@ async function handleEmbedding(request, response) {
   })
 }
 
+async function handleObject(request, response) {
+  const body = await readJson(request)
+  const prompt = latestUserText(body.messages)
+  const object = {
+    title: titleFromPrompt(prompt),
+    priority: prompt.toLowerCase().includes('urgent') ? 'high' : 'low'
+  }
+  const text = JSON.stringify(object)
+  sendSse(response, [
+    { content: text.slice(0, Math.ceil(text.length / 2)) },
+    { content: text.slice(Math.ceil(text.length / 2)) },
+    {
+      finishReason: 'stop',
+      usage: {
+        promptTokens: estimateTokens(prompt),
+        completionTokens: estimateTokens(text),
+        totalTokens: estimateTokens(prompt) + estimateTokens(text)
+      }
+    }
+  ])
+}
+
 function setCors(request, response) {
   response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*')
   response.setHeader('Access-Control-Allow-Credentials', 'true')
@@ -175,4 +208,11 @@ function estimateTokens(text) {
 function deterministicVector(text) {
   const hash = createHash('sha256').update(text).digest()
   return Array.from({ length: 8 }, (_, index) => Number((hash[index] / 255).toFixed(6)))
+}
+
+function titleFromPrompt(prompt) {
+  const normalized = String(prompt || 'Proxy object output')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return normalized.length > 48 ? `${normalized.slice(0, 45)}...` : normalized
 }

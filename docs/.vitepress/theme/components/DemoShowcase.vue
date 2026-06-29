@@ -75,7 +75,7 @@ async function approveFirstTool() {
   if (call) await approveToolCall(call.id)
 }`,
     completion: `const { completion, input: prompt, complete, stop, clear, isLoading } = useCompletion({
-  provider,
+  api: '/api/completion',
   defaultRequest: {
     model: 'gpt-4o-mini',
     temperature: 0.6
@@ -84,7 +84,7 @@ async function approveFirstTool() {
 
 await complete('Write a concise release note for a Vue composable.')`,
     embedding: `const { embed, embeddings, result, stop, clear } = useEmbedding({
-  provider,
+  api: '/api/embedding',
   onSuccess: (res) => {
     console.log('tokens:', res.usage?.totalTokens)
   }
@@ -98,7 +98,7 @@ await embed([
     object: `type Ticket = { title: string; priority: 'low' | 'high' }
 
 const { object, partialObject, text, input, submit, stop, clear } = useObject<Ticket>({
-  provider,
+  api: '/api/object',
   id: 'support-ticket-draft',
   initialValue: { priority: 'high' },
   schemaName: 'ticket',
@@ -150,7 +150,7 @@ async function approveFirstTool() {
   if (call) await approveToolCall(call.id)
 }`,
     completion: `const { completion: 补全结果, input: 输入文本, complete, stop, clear, isLoading } = useCompletion({
-  provider,
+  api: '/api/completion',
   defaultRequest: {
     model: 'gpt-4o-mini',
     temperature: 0.6
@@ -161,7 +161,7 @@ async function approveFirstTool() {
 // 给出一段可供发布说明复用的提示词
 await complete('为新的 useEmbedding.clear() 接口补充一段发布说明。')`,
     embedding: `const { embed, embeddings: 向量列表, result: 向量结果, stop, clear } = useEmbedding({
-  provider,
+  api: '/api/embedding',
   onSuccess: (res) => {
     console.log('令牌数:', res.usage?.totalTokens)
   }
@@ -176,7 +176,7 @@ await embed([
     object: `type 工单 = { title: string; priority: 'low' | 'high' }
 
 const { object: 工单对象, partialObject: 部分工单, text: 原始JSON, input: 输入文本, submit, stop, clear } = useObject<工单>({
-  provider,
+  api: '/api/object',
   id: 'support-ticket-draft',
   initialValue: { priority: 'high' },
   schemaName: 'ticket',
@@ -271,8 +271,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: 'required',
-            description: 'Provider adapter used to send chat completions.'
+            required: 'optional',
+            description: 'Provider adapter. Omit it to use the default proxy transport.'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Chat endpoint for the default proxy transport.'
           },
           {
             name: 'options',
@@ -367,8 +373,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: 'required',
-            description: 'Provider adapter used to complete text prompts.'
+            required: 'optional',
+            description: 'Provider adapter. Omit it to use the default proxy transport.'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Completion endpoint for the default proxy transport.'
           },
           {
             name: 'defaultRequest',
@@ -421,8 +433,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: 'required',
-            description: 'Provider adapter used to compute text embeddings.'
+            required: 'optional',
+            description: 'Provider adapter. Omit it to use the default proxy transport.'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Embedding endpoint for the default proxy transport.'
           },
           {
             name: 'onSuccess',
@@ -478,8 +496,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: 'required',
-            description: 'Provider adapter used to send structured chat requests.'
+            required: 'optional',
+            description: 'Provider adapter. Omit it to use the default proxy transport.'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Structured output endpoint for the default proxy transport.'
           },
           {
             name: 'id',
@@ -633,8 +657,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: '必填',
-            description: '用于发送对话请求的适配器。'
+            required: '可选',
+            description: 'Provider 适配器；省略时使用默认 proxy transport。'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认 proxy transport 的对话端点。'
           },
           {
             name: 'options',
@@ -723,8 +753,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: '必填',
-            description: '用于发送补全请求的适配器。'
+            required: '可选',
+            description: 'Provider 适配器；省略时使用默认 proxy transport。'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认 proxy transport 的补全端点。'
           },
           {
             name: 'defaultRequest',
@@ -776,8 +812,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: '必填',
-            description: '用于生成文本 embedding 的提供者适配器。'
+            required: '可选',
+            description: 'Provider 适配器；省略时使用默认 proxy transport。'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认 proxy transport 的 embedding 端点。'
           },
           {
             name: 'onSuccess',
@@ -833,8 +875,14 @@ const copy = {
           {
             name: 'provider',
             type: 'Provider',
-            required: '必填',
-            description: '用于发送结构化聊天请求的适配器。'
+            required: '可选',
+            description: 'Provider 适配器；省略时使用默认 proxy transport。'
+          },
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认 proxy transport 的结构化输出端点。'
           },
           {
             name: 'id',
