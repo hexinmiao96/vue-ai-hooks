@@ -134,8 +134,6 @@ const provider: ChatProvider = openaiCompatible({
 })
 
 function assertInvalidPublicApiUsage() {
-  // @ts-expect-error provider is required by the public useChat contract.
-  useChat({})
   // @ts-expect-error provider is required by the public useCompletion contract.
   useCompletion({})
   // @ts-expect-error provider is required by the public useEmbedding contract.
@@ -186,6 +184,8 @@ describe('public API types', () => {
 
   it('keeps composable return types stable for consumers', () => {
     const chat = useChat({ provider } satisfies UseChatOptions)
+    const defaultTransportChat = useChat({} satisfies UseChatOptions)
+    const apiChat = useChat({ api: '/api/chat' } satisfies UseChatOptions)
     const typedChat = useChat<{ progress: number; label?: string }>({
       provider,
       onData(part) {
@@ -222,6 +222,8 @@ describe('public API types', () => {
     } satisfies UseObjectOptions<{ answer: string }>)
 
     expectTypeOf(chat).toEqualTypeOf<UseChatReturn>()
+    expectTypeOf(defaultTransportChat).toEqualTypeOf<UseChatReturn>()
+    expectTypeOf(apiChat).toEqualTypeOf<UseChatReturn>()
     expectTypeOf(chat.id).toEqualTypeOf<Ref<string>>()
     expectTypeOf(chat.messages).toEqualTypeOf<Ref<Message[]>>()
     expectTypeOf(chat.status).toEqualTypeOf<Ref<ChatStatus>>()
@@ -281,6 +283,16 @@ describe('public API types', () => {
     expectTypeOf(chat.setMessages).parameter(0).toEqualTypeOf<SetMessagesInput>()
     expectTypeOf(chat.clearError).toEqualTypeOf<() => void>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseChatOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseChatOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseChatOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseChatOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseChatOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseChatOptions['headers']>().toEqualTypeOf<
+      ProxyProviderConfig['headers'] | undefined
+    >()
+    expectTypeOf<UseChatOptions['body']>().toEqualTypeOf<ProxyProviderConfig['body'] | undefined>()
+    expectTypeOf<UseChatOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseChatOptions['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<ChatRequest['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<UseChatOptions['stopWhen']>().toEqualTypeOf<

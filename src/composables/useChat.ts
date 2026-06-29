@@ -3,6 +3,7 @@ import { mergeDeltas as mergeD } from './_tc_merge'
 import { ref, shallowRef, type Ref } from 'vue'
 import { usePersist, type UsePersistOptions } from './usePersist'
 import type { ChatProvider } from '../providers/types'
+import { proxyProvider, type ProxyProviderConfig } from '../providers/proxy'
 import type {
   ChatChunk,
   ChatRequest,
@@ -235,7 +236,14 @@ export interface UseChatOptions<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 >
   extends RetryOptions, StreamThrottleOptions {
-  provider: ChatProvider
+  provider?: ChatProvider
+  transport?: ChatProvider
+  api?: string
+  baseURL?: string
+  credentials?: RequestCredentials
+  headers?: ProxyProviderConfig['headers']
+  body?: ProxyProviderConfig['body']
+  fetch?: typeof fetch
   initialMessages?: Message[]
   messages?: Message[]
   initialInput?: string
@@ -820,9 +828,16 @@ function getChatState<TData = unknown>(
 export function useChat<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
->(options: UseChatOptions<TData, TMessageMetadata>): UseChatReturn<TData, TMessageMetadata> {
+>(options: UseChatOptions<TData, TMessageMetadata> = {}): UseChatReturn<TData, TMessageMetadata> {
   const {
     provider: providedProvider,
+    transport,
+    api,
+    baseURL,
+    credentials,
+    headers: transportHeaders,
+    body: transportBody,
+    fetch: transportFetch,
     initialMessages,
     messages: messagesOption,
     initialInput = '',
@@ -851,8 +866,17 @@ export function useChat<
     onToolCall,
     onToolResult
   } = options
-  if (!providedProvider) throw new Error('useChat requires a provider option')
-  const provider = providedProvider
+  const provider =
+    providedProvider ??
+    transport ??
+    proxyProvider({
+      baseURL,
+      chatUrl: api ?? '/api/chat',
+      credentials,
+      headers: transportHeaders,
+      body: transportBody,
+      fetch: transportFetch
+    })
   const nextId = options.generateId ?? createId
   const id = ref(options.id || nextId('chat'))
   const state = getChatState<TData>(

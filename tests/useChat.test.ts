@@ -104,10 +104,32 @@ describe('useChat', () => {
     vi.useRealTimers()
   })
 
-  it('throws if no provider is given', () => {
-    expect(() => useChat({ provider: undefined as unknown as ChatProvider })).toThrow(
-      /requires a provider option/
+  it('uses a proxy transport when provider is omitted', async () => {
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify([{ content: 'ok' }]), {
+          headers: { 'Content-Type': 'application/json' }
+        })
     )
+    const { append, messages } = useChat({
+      api: '/api/chat',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      credentials: 'include',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await append('hi')
+
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/chat')
+    expect(init.credentials).toBe('include')
+    expect(init.headers).toMatchObject({ 'X-Session': 'session_1' })
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      tenantId: 'tenant_1',
+      messages: [{ role: 'user', content: 'hi' }]
+    })
+    expect(messages.value[1]).toMatchObject({ role: 'assistant', content: 'ok' })
   })
 
   it('starts with empty messages by default', () => {

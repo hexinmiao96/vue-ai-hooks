@@ -34,6 +34,16 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 })
 ```
 
+如果走应用自己的后端，可以不传 `provider`，直接使用默认 proxy transport：
+
+```ts
+const chat = useChat({
+  api: '/api/chat',
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 传入自定义数据类型后，`streamData` 和 `onData` 会带上类型：
 
 ```ts
@@ -59,48 +69,55 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 
 ## 选项
 
-| 名称                              | 类型                                                                   | 默认值     | 说明                                                           |
-| --------------------------------- | ---------------------------------------------------------------------- | ---------- | -------------------------------------------------------------- |
-| `provider`                        | `ChatProvider`                                                         | 必填       | 要使用的 Provider。                                            |
-| `id`                              | `string`                                                               | 自动生成   | 随 provider request 透传的稳定 chat id。                       |
-| `threadId`                        | `string`                                                               | -          | 随 chat 和 resume request 透传的后端 thread id。               |
-| `forwardedProps`                  | `Record<string, unknown>`                                              | -          | 转发给 proxy/agent 后端的应用上下文 props。                    |
-| `context`                         | `unknown`                                                              | -          | 只传给本地工具回调的客户端上下文。                             |
-| `generateId`                      | `IdGenerator`                                                          | `createId` | 覆盖自动生成 chat、message、tool 和 stream data id 的逻辑。    |
-| `initialMessages`                 | `Message[]`                                                            | `[]`       | 初始消息历史。                                                 |
-| `messages`                        | `Message[]`                                                            | `[]`       | AI SDK 风格的 `initialMessages` 别名；两者同时存在时后者优先。 |
-| `initialInput`                    | `string`                                                               | `''`       | 同一个 id 的第一个实例用于初始化输入区。                       |
-| `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`       | 合并到每次聊天请求中的默认选项。                               |
-| `resume`                          | `boolean`                                                              | `false`    | 组合式函数创建时自动尝试 `resumeStream()`。                    |
-| `prepareStep`                     | `PrepareStep`                                                          | -          | 每个 assistant 步骤请求发出前做请求级自定义。                  |
-| `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | -          | 发送或重新生成前，自定义最终 provider request。                |
-| `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | -          | `resumeStream()` 重连前，自定义最终恢复请求。                  |
-| `tools`                           | `Tool[]`                                                               | -          | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。      |
-| `activeTools`                     | `string[]`                                                             | -          | 按函数名筛选本次聊天/请求真正发送给 Provider 的工具。          |
-| `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | -          | 默认工具选择策略。                                             |
-| `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -          | 用于自动执行工具调用的本地 handler。                           |
-| `requiresToolApproval`            | `ToolApprovalPredicate`                                                | -          | 返回 true 时暂停工具调用，等待 UI 确认后再执行。               |
-| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper     | 控制工具结果齐备后是否自动发起下一轮请求。                     |
-| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | -          | 条件命中时停止工具结果后的自动续跑。                           |
-| `maxToolRoundtrips`               | `number`                                                               | `1`        | 用户消息之后最多自动执行几轮工具调用。                         |
-| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | -          | 按 `dataType` 校验自定义流数据，再触发 `onData` 或保存。       |
-| `messageMetadataSchema`           | `MessageMetadataSchema<TMetadata>`                                     | -          | 消息 metadata 写入历史前先校验。                               |
-| `persist`                         | `ChatPersistOptions`                                                   | -          | 把 Date-safe 消息自动保存到 localStorage 或自定义 `Storage`。  |
-| `maxRetries`                      | `number`                                                               | `0`        | 首个 stream chunk 到达前失败时最多重试几次。                   |
-| `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`        | 每次重试前等待的毫秒数。                                       |
-| `shouldRetry`                     | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -          | 覆盖默认的错误是否可重试判断。                                 |
-| `onRetry`                         | `(error: Error, context: RetryContext) => void`                        | -          | 等待并重新发起请求前调用。                                     |
-| `throttleMs`                      | `number`                                                               | -          | 响应式消息和 `streamData` 更新之间的最小等待毫秒数。           |
-| `experimental_throttle`           | `number`                                                               | -          | AI SDK 风格兼容别名。新代码建议使用 `throttleMs`。             |
-| `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | -          | 每个原始 chat chunk 应用到助手消息后调用。                     |
-| `onData`                          | `(part: StreamDataPart<TData>) => void`                                | -          | 收到自定义流数据片段时调用，包括 transient 片段。              |
-| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | -          | Provider 调用前，拿到最终 chat/resume request。                |
-| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | -          | Provider 返回 chat/resume stream 或无活动 stream 后调用。      |
-| `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | -          | 注册的本地工具 handler 执行前调用。                            |
-| `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | -          | 本地工具 handler 返回并生成 `tool` 消息后调用。                |
-| `onUpdate`                        | `(m: Message) => void`                                                 | -          | 每次流式片段更新时调用。                                       |
-| `onFinish`                        | `(m: Message, info: ChatFinishInfo) => void`                           | -          | 助手消息完成时调用一次。                                       |
-| `onError`                         | `(e: Error) => void`                                                   | -          | 发生错误时调用；未传入时会写入 `error` ref。                   |
+| 名称                              | 类型                                                                   | 默认值      | 说明                                                           |
+| --------------------------------- | ---------------------------------------------------------------------- | ----------- | -------------------------------------------------------------- |
+| `provider`                        | `ChatProvider`                                                         | proxy       | 要使用的 Provider；省略时使用默认 proxy transport。            |
+| `transport`                       | `ChatProvider`                                                         | -           | AI SDK 风格的 `provider` 别名。                                |
+| `api`                             | `string`                                                               | `/api/chat` | 默认 proxy transport 的 chat URL。                             |
+| `baseURL`                         | `string`                                                               | -           | 拼接到默认 proxy transport URL 前的 base URL。                 |
+| `headers`                         | `Record<string, string> \| () => ...`                                  | -           | 默认 proxy transport 的静态或动态 headers。                    |
+| `body`                            | `Record<string, unknown> \| () => ...`                                 | -           | 默认 proxy transport 附加到 JSON body 的字段。                 |
+| `credentials`                     | `RequestCredentials`                                                   | -           | 默认 proxy transport 的浏览器 credentials 模式。               |
+| `fetch`                           | `typeof fetch`                                                         | global      | 默认 proxy transport 的自定义 fetch 实现。                     |
+| `id`                              | `string`                                                               | 自动生成    | 随 provider request 透传的稳定 chat id。                       |
+| `threadId`                        | `string`                                                               | -           | 随 chat 和 resume request 透传的后端 thread id。               |
+| `forwardedProps`                  | `Record<string, unknown>`                                              | -           | 转发给 proxy/agent 后端的应用上下文 props。                    |
+| `context`                         | `unknown`                                                              | -           | 只传给本地工具回调的客户端上下文。                             |
+| `generateId`                      | `IdGenerator`                                                          | `createId`  | 覆盖自动生成 chat、message、tool 和 stream data id 的逻辑。    |
+| `initialMessages`                 | `Message[]`                                                            | `[]`        | 初始消息历史。                                                 |
+| `messages`                        | `Message[]`                                                            | `[]`        | AI SDK 风格的 `initialMessages` 别名；两者同时存在时后者优先。 |
+| `initialInput`                    | `string`                                                               | `''`        | 同一个 id 的第一个实例用于初始化输入区。                       |
+| `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`        | 合并到每次聊天请求中的默认选项。                               |
+| `resume`                          | `boolean`                                                              | `false`     | 组合式函数创建时自动尝试 `resumeStream()`。                    |
+| `prepareStep`                     | `PrepareStep`                                                          | -           | 每个 assistant 步骤请求发出前做请求级自定义。                  |
+| `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | -           | 发送或重新生成前，自定义最终 provider request。                |
+| `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | -           | `resumeStream()` 重连前，自定义最终恢复请求。                  |
+| `tools`                           | `Tool[]`                                                               | -           | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。      |
+| `activeTools`                     | `string[]`                                                             | -           | 按函数名筛选本次聊天/请求真正发送给 Provider 的工具。          |
+| `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | -           | 默认工具选择策略。                                             |
+| `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -           | 用于自动执行工具调用的本地 handler。                           |
+| `requiresToolApproval`            | `ToolApprovalPredicate`                                                | -           | 返回 true 时暂停工具调用，等待 UI 确认后再执行。               |
+| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper      | 控制工具结果齐备后是否自动发起下一轮请求。                     |
+| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | -           | 条件命中时停止工具结果后的自动续跑。                           |
+| `maxToolRoundtrips`               | `number`                                                               | `1`         | 用户消息之后最多自动执行几轮工具调用。                         |
+| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | -           | 按 `dataType` 校验自定义流数据，再触发 `onData` 或保存。       |
+| `messageMetadataSchema`           | `MessageMetadataSchema<TMetadata>`                                     | -           | 消息 metadata 写入历史前先校验。                               |
+| `persist`                         | `ChatPersistOptions`                                                   | -           | 把 Date-safe 消息自动保存到 localStorage 或自定义 `Storage`。  |
+| `maxRetries`                      | `number`                                                               | `0`         | 首个 stream chunk 到达前失败时最多重试几次。                   |
+| `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`         | 每次重试前等待的毫秒数。                                       |
+| `shouldRetry`                     | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -           | 覆盖默认的错误是否可重试判断。                                 |
+| `onRetry`                         | `(error: Error, context: RetryContext) => void`                        | -           | 等待并重新发起请求前调用。                                     |
+| `throttleMs`                      | `number`                                                               | -           | 响应式消息和 `streamData` 更新之间的最小等待毫秒数。           |
+| `experimental_throttle`           | `number`                                                               | -           | AI SDK 风格兼容别名。新代码建议使用 `throttleMs`。             |
+| `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | -           | 每个原始 chat chunk 应用到助手消息后调用。                     |
+| `onData`                          | `(part: StreamDataPart<TData>) => void`                                | -           | 收到自定义流数据片段时调用，包括 transient 片段。              |
+| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | -           | Provider 调用前，拿到最终 chat/resume request。                |
+| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | -           | Provider 返回 chat/resume stream 或无活动 stream 后调用。      |
+| `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | -           | 注册的本地工具 handler 执行前调用。                            |
+| `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | -           | 本地工具 handler 返回并生成 `tool` 消息后调用。                |
+| `onUpdate`                        | `(m: Message) => void`                                                 | -           | 每次流式片段更新时调用。                                       |
+| `onFinish`                        | `(m: Message, info: ChatFinishInfo) => void`                           | -           | 助手消息完成时调用一次。                                       |
+| `onError`                         | `(e: Error) => void`                                                   | -           | 发生错误时调用；未传入时会写入 `error` ref。                   |
 
 ## 文件附件
 

@@ -422,51 +422,10 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.2.1** — a working foundation, not feature-complete. What's in:
-
-- ✅ Chat with streaming, abort, message history, finish metadata
-- ✅ Single-shot completion
-- ✅ Embedding
-- ✅ Custom generation tasks
-- ✅ Structured object output with final schema validation
-- ✅ OpenAI + OpenAI-compatible provider
-- ✅ OpenRouter provider
-- ✅ Gemini provider
-- ✅ Backend proxy provider
-- ✅ Anthropic Claude provider
-- ✅ Multimodal image input
-- ✅ Date-safe localStorage persistence
-- ✅ Tool-calling helpers
-- ✅ Active tool filtering with `activeTools`
-- ✅ Tool loop stop conditions with `stopWhen`
-- ✅ Per-step tool loop request preparation with `prepareStep`
-- ✅ AI SDK-style chat aliases for send objects and tool output flows
-- ✅ Tool approval flow for gated local handlers
-- ✅ AI SDK-style `sendAutomaticallyWhen` for tool-result follow-up control
-- ✅ Custom stream data and assistant metadata
-- ✅ Message metadata schemas and `messageMetadata` send options
-- ✅ Chat status, clearError, and regenerate controls
-- ✅ Function updater support for `setMessages()`
-- ✅ Consistent status and clearError controls across completion, embedding, custom generation, and object output
-- ✅ Stream update throttling with `throttleMs`
-- ✅ Custom `generateId` hooks for deterministic chat, completion, generation, and message ids
-- ✅ Completion form helpers for input and submit handling
-- ✅ Shared completion state with explicit `useCompletion({ id })`
-- ✅ Chat id and request metadata passthrough for proxy-backed apps
-- ✅ Thread id and forwarded props passthrough for proxy/agent backends
-- ✅ Client-local tool context for handlers, approval predicates, and tool lifecycle hooks
-- ✅ AI SDK UI message stream compatibility for proxy-backed apps
-- ✅ Resumable stream client hook for proxy-backed apps
-- ✅ Edit-and-resend flow with `append(..., { messageId })`
-- ✅ Proxy request `body` and `prepareRequest` hooks for app backends
-- ✅ Request-level `body` extensions for provider-specific JSON options
-- ✅ Opt-in retry controls for transient provider failures
-- ✅ Quality gates for tests, coverage, build, package contents, install smoke tests, examples, and docs
-
-What we're planning next:
-
-- 🔜 Vue DevTools tab for inspecting streams
-- 🔜 More providers and production hardening
+This is **v0.2.1** — a working foundation, not feature-complete. The core
+surface covers the main composables, provider/proxy adapters, tool flows,
+persistence, retries, stream data, metadata, shared state, and quality gates.
+Next focus: clearer inspection, more providers, and production hardening.
 
 ## Known limitations
 
@@ -485,10 +444,6 @@ the workflow, read the [`CODE_OF_CONDUCT.md`](https://github.com/hexinmiao96/vue
 for reproducible defects that need hands.
 
 For usage questions, feature ideas, or support channels, see [`SUPPORT.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/SUPPORT.md).
-
-Adding a new provider is the single best first contribution — it's one file,
-a small interface, and high-value. See [`src/providers/openai.ts`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/src/providers/openai.ts)
-for the reference implementation.
 
 ## License
 

@@ -352,51 +352,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 ## 项目状态
 
-这是 **v0.2.1**，是一个可工作的基础版本，但还不是功能完备版本。目前已包含：
-
-- Chat 流式响应、中止、消息历史、完成状态元信息
-- 单次补全
-- Embedding
-- 自定义生成任务
-- 带最终 schema 校验的结构化对象输出
-- OpenAI + OpenAI-compatible Provider
-- OpenRouter Provider
-- Gemini Provider
-- 后端代理 Provider
-- Anthropic Claude Provider
-- 多模态图片输入
-- Date-safe localStorage 持久化
-- Tool-calling helper
-- 通过 `activeTools` 按请求筛选可用工具
-- 通过 `stopWhen` 控制工具循环停止条件
-- 通过 `prepareStep` 按步骤准备工具循环请求
-- AI SDK 风格的发送对象、工具输出和工具审批别名
-- 需要审批的本地工具 handler 流程
-- AI SDK 风格 `sendAutomaticallyWhen`
-- 自定义流数据和 assistant metadata
-- 消息 metadata schema 和 `messageMetadata` 发送选项
-- Chat status、clearError 和 regenerate 控制
-- `setMessages()` 支持函数式 updater
-- Completion、Embedding、自定义生成和结构化输出也提供一致的 status 与 clearError 控制
-- 通过 `throttleMs` 控制流式响应式更新频率
-- 通过 `generateId` 自定义 chat、completion 和 message id
-- Completion 表单输入和提交辅助函数
-- 显式 `useCompletion({ id })` 支持共享补全状态
-- 面向代理后端应用的 chat id 和请求 metadata 透传
-- 面向 proxy/agent 后端的 thread id 和 forwarded props 透传
-- 面向 handler、审批 predicate 和工具生命周期 hook 的客户端本地 tool context
-- 面向代理后端应用的 AI SDK UI message stream 兼容
-- 面向代理后端应用的可恢复流客户端 hook
-- 通过 `append(..., { messageId })` 实现编辑后重发
-- 请求级 `body` 扩展，支持 Provider 专属 JSON 选项
-- 面向应用后端的 proxy request `body` 和 `prepareRequest` hook
-- 面向临时 Provider 失败的可选重试控制
-- 覆盖测试、类型检查、构建、包内容、安装 smoke test、示例和文档的质量门禁
-
-下一步计划：
-
-- 用于检查流的 Vue DevTools tab
-- 更多 Provider 和生产级增强
+这是 **v0.2.1**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
+composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
+质量门禁。下一步重点是更清晰的调试检查、更多 Provider 覆盖和生产级增强。
 
 ## 已知限制
 
@@ -411,8 +369,6 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 欢迎贡献。请查看 [`CONTRIBUTING.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md) 了解工作流，阅读 [`CODE_OF_CONDUCT.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CODE_OF_CONDUCT.md)，也可以查看 [open bug issues](https://github.com/hexinmiao96/vue-ai-hooks/issues?q=is%3Aissue%20is%3Aopen%20label%3Abug) 中待处理的可复现缺陷。
 
 使用问题、功能想法和支持渠道请查看 [`SUPPORT.md`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/SUPPORT.md)。
-
-新增 Provider 是最适合作为第一次贡献的方向：只需要一个文件、一个小接口，而且价值很高。参考实现见 [`src/providers/openai.ts`](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/src/providers/openai.ts)。
 
 ## License
 
