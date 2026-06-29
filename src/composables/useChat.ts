@@ -1932,7 +1932,13 @@ export function useChat<
     requestOptions: Partial<ChatRequest> = {}
   ) {
     if (response.approved) {
-      await approveToolCall(response.id, requestOptions)
+      const call = requirePendingToolCall(response.id)
+      if (toolHandlers?.[call.function.name]) {
+        await approveToolCall(response.id, requestOptions)
+        return
+      }
+      const result = response.reason === undefined ? { approved: true } : response
+      await addToolResult(response.id, result, requestOptions)
       return
     }
     await rejectToolCall(response.id, response.reason, requestOptions)

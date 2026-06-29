@@ -2679,6 +2679,53 @@ describe('useChat', () => {
     expect(messages.value[3].content).toBe('Card charged.')
   })
 
+  it('sends approved tool responses to the backend when no local handler is registered', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'chargeCard', arguments: '{"amount":49}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Server-side charge approved.' }, { finishReason: 'stop' }]
+      ],
+      requests
+    )
+    const { addToolApprovalResponse, append, messages, pendingToolCalls } = useChat({
+      provider
+    })
+
+    await append('Charge my card.')
+
+    expect(requests).toHaveLength(1)
+    expect(pendingToolCalls.value.map((call) => call.id)).toEqual(['call_1'])
+
+    await addToolApprovalResponse(
+      { id: 'call_1', approved: true, reason: 'User confirmed' },
+      { body: { approvalSource: 'modal' } }
+    )
+
+    expect(pendingToolCalls.value).toEqual([])
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toMatchObject({ body: { approvalSource: 'modal' } })
+    expect(requests[1].messages.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+    expect(messages.value[2]).toMatchObject({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: '{"id":"call_1","approved":true,"reason":"User confirmed"}'
+    })
+    expect(messages.value[3].content).toBe('Server-side charge approved.')
+  })
+
   it('continues with a rejected tool result when approval is denied', async () => {
     const requests: ChatRequest[] = []
     const chargeCard = vi.fn(() => ({ charged: true }))

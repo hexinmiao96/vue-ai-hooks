@@ -627,8 +627,10 @@ await approveToolCall(call.id)
 // or: await rejectToolCall(call.id, 'User denied')
 ```
 
-`addToolApprovalResponse({ id, approved, reason })` is the AI SDK-style alias
-for the same approval flow.
+`addToolApprovalResponse({ id, approved, reason })` is the AI SDK-style alias.
+When a matching local handler exists, approved responses run that handler. When
+there is no local handler, approved or denied responses are appended as `tool`
+messages so a proxy/backend can continue from the approval decision.
 
 ## Status and regeneration
 

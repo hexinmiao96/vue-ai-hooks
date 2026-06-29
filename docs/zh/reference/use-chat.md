@@ -594,7 +594,9 @@ await approveToolCall(call.id)
 // 或：await rejectToolCall(call.id, '用户拒绝')
 ```
 
-`addToolApprovalResponse({ id, approved, reason })` 是同一审批流程的 AI SDK 风格别名。
+`addToolApprovalResponse({ id, approved, reason })` 是 AI SDK 风格别名。有匹配的本地
+handler 时，approved response 会运行该 handler；没有本地 handler 时，approved 或
+denied response 会作为 `tool` 消息追加，让 proxy/backend 根据审批结果继续。
 
 ## 状态和重新生成
 
