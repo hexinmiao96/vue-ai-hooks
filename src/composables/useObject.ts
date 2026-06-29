@@ -1,5 +1,6 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { ChatProvider } from '../providers/types'
+import { proxyProvider, type ProxyProviderConfig } from '../providers/proxy'
 import type {
   AiRequestStatus,
   ChatChunk,
@@ -42,7 +43,14 @@ export interface ObjectResponseInfo extends ObjectRequestInfo {
 }
 
 export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
-  provider: ChatProvider
+  provider?: ChatProvider
+  transport?: ChatProvider
+  api?: string
+  baseURL?: string
+  credentials?: RequestCredentials
+  headers?: ProxyProviderConfig['headers']
+  body?: ProxyProviderConfig['body']
+  fetch?: typeof fetch
   id?: string
   schema: Record<string, unknown>
   schemaName?: string
@@ -120,7 +128,9 @@ function getObjectState<T>(
  */
 export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectReturn<T> {
   const {
-    provider,
+    provider: providedProvider,
+    transport,
+    api,
     id: explicitId,
     schema,
     schemaName = 'object',
@@ -137,8 +147,14 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     onFinish,
     onError
   } = options
-
-  if (!provider) throw new Error('useObject requires a provider option')
+  const provider =
+    providedProvider ??
+    transport ??
+    proxyProvider({
+      ...options,
+      id: undefined,
+      chatUrl: api ?? '/api/object'
+    })
 
   const id = ref(explicitId || generateId('object'))
   const initialPartialObject =

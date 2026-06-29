@@ -35,35 +35,53 @@ console.log(partialObject.value?.title)
 console.log(object.value?.priority)
 ```
 
+如果走应用自己的后端，可以不传 `provider`，把结构化请求发送到你的 API 路由：
+
+```ts
+const { object, partialObject, submit } = useObject<Ticket>({
+  api: '/api/object',
+  schema: ticketSchema,
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 `text` 保存流式返回的原始 JSON 文本。`partialObject` 会在当前流可以修复成合法 JSON 时更新为
 `DeepPartial<T>`。只有最终文本成功解析后，`object` 才会被赋值。
 
 ## 选项
 
-| 名称                    | 类型                                                                   | 默认值     | 说明                                                        |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | ----------------------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | 必填       | 用于发送结构化聊天请求的 Provider。                         |
-| `id`                    | `string`                                                               | 自动生成   | Object 状态 id；相同 id 会在多个实例间共享状态。            |
-| `schema`                | `Record<string, unknown>`                                              | 必填       | 通过 `responseFormat` 发送的 JSON Schema。                  |
-| `schemaName`            | `string`                                                               | `'object'` | Provider 侧 JSON Schema 的名称。                            |
-| `schemaDescription`     | `string`                                                               | -          | 可选的 schema 描述。                                        |
-| `strict`                | `boolean`                                                              | `true`     | 支持该能力的 Provider 会使用 strict 模式。                  |
-| `initialObject`         | `T \| null`                                                            | `null`     | submit 前和 `clear()` 后使用的对象值。                      |
-| `initialValue`          | `DeepPartial<T> \| null`                                               | -          | AI SDK 风格的初始部分对象值。                               |
-| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`       | 每次 submit 都会合并的默认请求参数。                        |
-| `generateId`            | `IdGenerator`                                                          | `createId` | 覆盖自动生成 object 和 prompt message id 的逻辑。           |
-| `maxRetries`            | `number`                                                               | `0`        | 首个 stream chunk 到达前失败时最多重试几次。                |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | 每次重试前等待的毫秒数。                                    |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -          | 覆盖默认的错误是否可重试判断。                              |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -          | 等待并重新发起请求前调用。                                  |
-| `throttleMs`            | `number`                                                               | -          | 响应式 `text` 和 `partialObject` 更新之间的最小等待毫秒数。 |
-| `experimental_throttle` | `number`                                                               | -          | AI SDK 风格兼容别名，建议用 `throttleMs`。                  |
-| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -          | 每个流式 chat chunk 应用后调用。                            |
-| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -          | 当前 JSON 流可以解析为部分对象时调用。                      |
-| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -          | Provider 调用前，拿到最终结构化 chat 请求。                 |
-| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -          | Provider 返回结构化 chat stream 后调用。                    |
-| `onFinish`              | `(object: T) => void`                                                  | -          | 最终 JSON 成功解析后调用。                                  |
-| `onError`               | `(err: Error) => void`                                                 | -          | Provider 错误或 JSON 解析失败时调用。                       |
+| 名称                    | 类型                                                                   | 默认值        | 说明                                                        |
+| ----------------------- | ---------------------------------------------------------------------- | ------------- | ----------------------------------------------------------- |
+| `provider`              | `ChatProvider`                                                         | proxy         | 用于发送结构化聊天请求的 Provider；省略时使用默认 proxy。   |
+| `transport`             | `ChatProvider`                                                         | -             | AI SDK 风格的 `provider` 别名。                             |
+| `api`                   | `string`                                                               | `/api/object` | 默认 proxy transport 的 chat URL。                          |
+| `baseURL`               | `string`                                                               | -             | 拼接到默认 proxy transport URL 前的 base URL。              |
+| `headers`               | `Record<string, string> \| () => ...`                                  | -             | 默认 proxy transport 的静态或动态 headers。                 |
+| `body`                  | `Record<string, unknown> \| () => ...`                                 | -             | 默认 proxy transport 附加到 JSON body 的字段。              |
+| `credentials`           | `RequestCredentials`                                                   | -             | 默认 proxy transport 的浏览器 credentials 模式。            |
+| `fetch`                 | `typeof fetch`                                                         | global        | 默认 proxy transport 的自定义 fetch 实现。                  |
+| `id`                    | `string`                                                               | 自动生成      | Object 状态 id；相同 id 会在多个实例间共享状态。            |
+| `schema`                | `Record<string, unknown>`                                              | 必填          | 通过 `responseFormat` 发送的 JSON Schema。                  |
+| `schemaName`            | `string`                                                               | `'object'`    | Provider 侧 JSON Schema 的名称。                            |
+| `schemaDescription`     | `string`                                                               | -             | 可选的 schema 描述。                                        |
+| `strict`                | `boolean`                                                              | `true`        | 支持该能力的 Provider 会使用 strict 模式。                  |
+| `initialObject`         | `T \| null`                                                            | `null`        | submit 前和 `clear()` 后使用的对象值。                      |
+| `initialValue`          | `DeepPartial<T> \| null`                                               | -             | AI SDK 风格的初始部分对象值。                               |
+| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | 每次 submit 都会合并的默认请求参数。                        |
+| `generateId`            | `IdGenerator`                                                          | `createId`    | 覆盖自动生成 object 和 prompt message id 的逻辑。           |
+| `maxRetries`            | `number`                                                               | `0`           | 首个 stream chunk 到达前失败时最多重试几次。                |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | 每次重试前等待的毫秒数。                                    |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | 覆盖默认的错误是否可重试判断。                              |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -             | 等待并重新发起请求前调用。                                  |
+| `throttleMs`            | `number`                                                               | -             | 响应式 `text` 和 `partialObject` 更新之间的最小等待毫秒数。 |
+| `experimental_throttle` | `number`                                                               | -             | AI SDK 风格兼容别名，建议用 `throttleMs`。                  |
+| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -             | 每个流式 chat chunk 应用后调用。                            |
+| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | 当前 JSON 流可以解析为部分对象时调用。                      |
+| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Provider 调用前，拿到最终结构化 chat 请求。                 |
+| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Provider 返回结构化 chat stream 后调用。                    |
+| `onFinish`              | `(object: T) => void`                                                  | -             | 最终 JSON 成功解析后调用。                                  |
+| `onError`               | `(err: Error) => void`                                                 | -             | Provider 错误或 JSON 解析失败时调用。                       |
 
 ## 返回值
 
@@ -88,6 +106,8 @@ console.log(object.value?.priority)
 `useObject` 会通过 `ChatRequest.responseFormat` 发送 JSON Schema response
 format。`openai`、`openaiCompatible`、`openrouter` 和 `gemini` 会把它序列化为
 OpenAI-compatible 的 `response_format`；`proxyProvider` 会把它原样转发给你的后端。
+省略 `provider` 和 `transport` 时，`useObject` 会使用内置 proxy transport 并调用
+`api` 或 `/api/object`。
 
 不强制结构化输出的 Provider 仍然可能在提示词约束下返回合法 JSON。客户端会对最终解析后的 JSON 校验常见 schema 关键字：`type`、`required`、`enum`、`properties`、`items` 和 `additionalProperties`。如果返回内容不是合法 JSON，或最终对象不符合 schema，`submit()` 会以 `AiHooksError` reject。
 

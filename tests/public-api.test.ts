@@ -136,7 +136,7 @@ const provider: ChatProvider = openaiCompatible({
 function assertInvalidPublicApiUsage() {
   // @ts-expect-error provider is required by the public useEmbedding contract.
   useEmbedding({})
-  // @ts-expect-error provider and schema are required by the public useObject contract.
+  // @ts-expect-error schema is required by the public useObject contract.
   useObject({})
 }
 
@@ -220,6 +220,13 @@ describe('public API types', () => {
     } satisfies UseGenerationOptions<string, { url: string }, { percent: number }, string>)
     const structured = useObject<{ answer: string }>({
       provider,
+      schema: { type: 'object' }
+    } satisfies UseObjectOptions<{ answer: string }>)
+    const defaultTransportObject = useObject<{ answer: string }>({
+      schema: { type: 'object' }
+    } satisfies UseObjectOptions<{ answer: string }>)
+    const objectApi = useObject<{ answer: string }>({
+      api: '/api/object',
       schema: { type: 'object' }
     } satisfies UseObjectOptions<{ answer: string }>)
 
@@ -321,6 +328,18 @@ describe('public API types', () => {
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseObjectOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseObjectOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseObjectOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseObjectOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseObjectOptions['headers']>().toEqualTypeOf<
+      ProxyProviderConfig['headers'] | undefined
+    >()
+    expectTypeOf<UseObjectOptions['body']>().toEqualTypeOf<
+      ProxyProviderConfig['body'] | undefined
+    >()
+    expectTypeOf<UseObjectOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<StreamThrottleOptions>()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<StreamThrottleOptions>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<StreamThrottleOptions>()
@@ -511,6 +530,8 @@ describe('public API types', () => {
     >()
 
     expectTypeOf(structured).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
+    expectTypeOf(defaultTransportObject).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
+    expectTypeOf(objectApi).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
     expectTypeOf(structured.id).toEqualTypeOf<Ref<string>>()
     expectTypeOf(structured.object).toEqualTypeOf<Ref<{ answer: string } | null>>()
     expectTypeOf(structured.status).toEqualTypeOf<Ref<AiRequestStatus>>()

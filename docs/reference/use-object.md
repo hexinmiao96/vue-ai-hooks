@@ -36,36 +36,55 @@ console.log(partialObject.value?.title)
 console.log(object.value?.priority)
 ```
 
+For an app-owned backend, omit `provider` and send the structured request to
+your API route:
+
+```ts
+const { object, partialObject, submit } = useObject<Ticket>({
+  api: '/api/object',
+  schema: ticketSchema,
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 `text` stores the streamed raw JSON text. `partialObject` is updated with a
 `DeepPartial<T>` whenever the current stream can be repaired into valid JSON.
 `object` is assigned only after the final text parses successfully.
 
 ## Options
 
-| Name                    | Type                                                                   | Default    | Description                                                                |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | required   | Provider used to send the structured chat request.                         |
-| `id`                    | `string`                                                               | generated  | Object state id. Matching ids share state across instances.                |
-| `schema`                | `Record<string, unknown>`                                              | required   | JSON Schema sent through `responseFormat`.                                 |
-| `schemaName`            | `string`                                                               | `'object'` | Name for the provider-side JSON schema.                                    |
-| `schemaDescription`     | `string`                                                               | -          | Optional schema description.                                               |
-| `strict`                | `boolean`                                                              | `true`     | Strict JSON Schema mode for providers that support it.                     |
-| `initialObject`         | `T \| null`                                                            | `null`     | Object value used before submit and after `clear()`.                       |
-| `initialValue`          | `DeepPartial<T> \| null`                                               | —          | AI SDK-style initial partial object value.                                 |
-| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`       | Default request payload merged into every submit.                          |
-| `generateId`            | `IdGenerator`                                                          | `createId` | Override automatic object and prompt message id generation.                |
-| `maxRetries`            | `number`                                                               | `0`        | Retry attempts for failures before the first stream chunk.                 |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                                   |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -          | Override the default retryable error decision.                             |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -          | Called before a retry attempt waits and re-runs.                           |
-| `throttleMs`            | `number`                                                               | -          | Minimum wait in ms between reactive `text` and `partialObject` updates.    |
-| `experimental_throttle` | `number`                                                               | -          | AI SDK-compatible alias. Prefer `throttleMs`.                              |
-| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -          | Called after each streamed chat chunk is applied.                          |
-| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -          | Called whenever the current JSON stream can be parsed as a partial object. |
-| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -          | Called with the final structured chat request before send.                 |
-| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -          | Called after the provider returns a structured chat stream.                |
-| `onFinish`              | `(object: T) => void`                                                  | -          | Called after the final JSON parses successfully.                           |
-| `onError`               | `(err: Error) => void`                                                 | -          | Called on provider errors or invalid JSON parse failures.                  |
+| Name                    | Type                                                                   | Default       | Description                                                                |
+| ----------------------- | ---------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------------- |
+| `provider`              | `ChatProvider`                                                         | proxy         | Provider used to send the structured chat request. Omit to use proxy.      |
+| `transport`             | `ChatProvider`                                                         | -             | AI SDK-style alias for `provider`.                                         |
+| `api`                   | `string`                                                               | `/api/object` | Chat URL for the default proxy transport.                                  |
+| `baseURL`               | `string`                                                               | -             | Base URL prepended to default proxy transport URLs.                        |
+| `headers`               | `Record<string, string> \| () => ...`                                  | -             | Static or dynamic headers for the default proxy transport.                 |
+| `body`                  | `Record<string, unknown> \| () => ...`                                 | -             | Extra JSON body fields for the default proxy transport.                    |
+| `credentials`           | `RequestCredentials`                                                   | -             | Browser credentials mode for the default proxy transport.                  |
+| `fetch`                 | `typeof fetch`                                                         | global        | Custom fetch implementation for the default proxy transport.               |
+| `id`                    | `string`                                                               | generated     | Object state id. Matching ids share state across instances.                |
+| `schema`                | `Record<string, unknown>`                                              | required      | JSON Schema sent through `responseFormat`.                                 |
+| `schemaName`            | `string`                                                               | `'object'`    | Name for the provider-side JSON schema.                                    |
+| `schemaDescription`     | `string`                                                               | -             | Optional schema description.                                               |
+| `strict`                | `boolean`                                                              | `true`        | Strict JSON Schema mode for providers that support it.                     |
+| `initialObject`         | `T \| null`                                                            | `null`        | Object value used before submit and after `clear()`.                       |
+| `initialValue`          | `DeepPartial<T> \| null`                                               | —             | AI SDK-style initial partial object value.                                 |
+| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | Default request payload merged into every submit.                          |
+| `generateId`            | `IdGenerator`                                                          | `createId`    | Override automatic object and prompt message id generation.                |
+| `maxRetries`            | `number`                                                               | `0`           | Retry attempts for failures before the first stream chunk.                 |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | Delay before each retry.                                                   |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | Override the default retryable error decision.                             |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -             | Called before a retry attempt waits and re-runs.                           |
+| `throttleMs`            | `number`                                                               | -             | Minimum wait in ms between reactive `text` and `partialObject` updates.    |
+| `experimental_throttle` | `number`                                                               | -             | AI SDK-compatible alias. Prefer `throttleMs`.                              |
+| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -             | Called after each streamed chat chunk is applied.                          |
+| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | Called whenever the current JSON stream can be parsed as a partial object. |
+| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Called with the final structured chat request before send.                 |
+| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Called after the provider returns a structured chat stream.                |
+| `onFinish`              | `(object: T) => void`                                                  | -             | Called after the final JSON parses successfully.                           |
+| `onError`               | `(err: Error) => void`                                                 | -             | Called on provider errors or invalid JSON parse failures.                  |
 
 ## Return value
 
@@ -90,7 +109,8 @@ console.log(object.value?.priority)
 `useObject` sends `ChatRequest.responseFormat` with a JSON Schema response
 format. `openai`, `openaiCompatible`, `openrouter`, and `gemini` serialize it to
 OpenAI-compatible `response_format`; `proxyProvider` forwards it to your backend
-unchanged.
+unchanged. When `provider` and `transport` are omitted, `useObject` uses the
+built-in proxy transport and calls `api` or `/api/object`.
 
 Providers that do not enforce structured output may still return valid JSON if
 prompted carefully. The client validates the final parsed JSON against common

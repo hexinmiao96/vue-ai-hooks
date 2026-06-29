@@ -42,6 +42,48 @@ const schema = {
 }
 
 describe('useObject', () => {
+  it('uses a proxy transport when provider is omitted', async () => {
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify([{ content: '{"title":"Proxy","priority":"high"}' }]), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { object, submit } = useObject<TaskSummary>({
+      api: '/api/object',
+      schema,
+      schemaName: 'task_summary',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      credentials: 'include',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(submit('Extract a task.')).resolves.toEqual({
+      title: 'Proxy',
+      priority: 'high'
+    })
+
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/object')
+    expect(init.credentials).toBe('include')
+    expect(init.headers).toMatchObject({ 'X-Session': 'session_1' })
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      tenantId: 'tenant_1',
+      messages: [{ role: 'user', content: 'Extract a task.' }],
+      responseFormat: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'task_summary',
+          schema,
+          strict: true
+        }
+      },
+      stream: true
+    })
+    expect(object.value).toEqual({ title: 'Proxy', priority: 'high' })
+  })
+
   it('streams JSON text, parses the final object, and sends responseFormat', async () => {
     const requests: ChatRequest[] = []
     const onChunk = vi.fn()
