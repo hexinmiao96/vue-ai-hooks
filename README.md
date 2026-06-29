@@ -71,6 +71,7 @@ The AI-in-Vue story is currently fragmented. Options today:
 - 👀 **Lifecycle callbacks** — observe chunks, tool calls, deltas, partial objects, finishes, and errors
 - 🧩 **Custom stream data** — collect sources, progress, citations, and AI SDK message metadata during a chat turn
 - 🧪 **Stream data schemas** — validate custom data parts by `dataType` before they reach UI callbacks
+- 🧾 **Message metadata schemas** — attach typed user-message metadata and validate assistant metadata before storage
 - 📐 **Structured output** — `useObject` sends JSON Schema response formats, streams partial objects, and validates the final object
 - 🧬 **Custom generation tasks** — `useGeneration` wraps image, audio, summary, or app-specific AI jobs with shared status, progress, chunks, aborts, and retries
 - 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
@@ -443,6 +444,7 @@ This is **v0.2.1** — a working foundation, not feature-complete. What's in:
 - ✅ Tool approval flow for gated local handlers
 - ✅ AI SDK-style `sendAutomaticallyWhen` for tool-result follow-up control
 - ✅ Custom stream data and assistant metadata
+- ✅ Message metadata schemas and `messageMetadata` send options
 - ✅ Chat status, clearError, and regenerate controls
 - ✅ Function updater support for `setMessages()`
 - ✅ Consistent status and clearError controls across completion, embedding, custom generation, and object output

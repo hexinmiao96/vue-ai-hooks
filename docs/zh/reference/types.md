@@ -106,6 +106,20 @@ interface Message {
 `Message.parts` 是可选字段，`content` 仍保持向后兼容。它为 Vue UI 提供可以直接渲染的
 text、reasoning、source、file、自定义 data 和 `tool-*` 状态，避免从 assistant 文本里再解析结构。
 
+`append(message, { messageMetadata })` 会把 metadata 写到用户消息上，请求级
+`metadata` 仍然保留在 `ChatRequest`。`useChat()` 可以用 JSON Schema 子集或自定义
+predicate 校验消息 metadata：
+
+```ts
+type MessageMetadataValidator<TMetadata extends Record<string, unknown>> = (
+  metadata: unknown
+) => metadata is TMetadata
+
+type MessageMetadataSchema<TMetadata extends Record<string, unknown>> =
+  | Record<string, unknown>
+  | MessageMetadataValidator<TMetadata>
+```
+
 `SerializedMessage` 是 `serializeMessages(messages)` 返回的 JSON-safe 结构：
 
 ```ts

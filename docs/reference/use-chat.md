@@ -16,6 +16,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
 `DataPartSchema`, `DataPartSchemas`, `DataPartValidator`,
+`MessageMetadataSchema`, `MessageMetadataValidator`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
 `StopWhenOptions`, `RetryOptions`, and `RetryContext`.
@@ -83,6 +84,7 @@ Use `input` with a Vue form for the common composer flow:
 | `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | —          | Stop automatic tool continuation when a condition matches.             |
 | `maxToolRoundtrips`               | `number`                                                               | `1`        | Maximum automatic tool-call rounds after a user message.               |
 | `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | —          | Validate custom stream data by `dataType` before `onData`/storage.     |
+| `messageMetadataSchema`           | `MessageMetadataSchema<TMetadata>`                                     | —          | Validate user and assistant message metadata before it is stored.      |
 | `persist`                         | `ChatPersistOptions`                                                   | —          | Auto-save Date-safe messages to localStorage or a custom `Storage`.    |
 | `maxRetries`                      | `number`                                                               | `0`        | Retry attempts for failures before the first stream chunk.             |
 | `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                               |
@@ -682,6 +684,12 @@ Per-request `metadata` is also passed through `ChatRequest`; direct provider
 adapters ignore it unless their upstream API supports it, while `proxyProvider`
 sends it to your backend JSON body.
 
+Use `messageMetadata` on `append()`, `sendMessage()`, or `handleSubmit()` when
+the metadata belongs to the user message itself. It is stored on
+`Message.metadata` and sent with that message in the provider request. Keep
+request tracing, tenant data, or backend-only fields in request `metadata`,
+`body`, or `forwardedProps`.
+
 ```ts
 const mainChat = useChat({
   provider,
@@ -703,6 +711,7 @@ const sidebarChat = useChat({
 
 await sidebarChat.handleSubmit(undefined, {
   metadata: { traceId: 'req_1' },
+  messageMetadata: { source: 'composer' },
   forwardedProps: { route: '/support/ticket-1' }
 })
 
@@ -802,6 +811,31 @@ const chat = useChat<{ url: string }>({
 
 Invalid data parts reject the active request with `AiHooksError`, do not call
 `onData`, and are not stored in `streamData` or `Message.parts`.
+
+Use `messageMetadataSchema` when message metadata should be checked before it
+enters the history. Validation runs for metadata passed with `messageMetadata`,
+metadata already present on initial or `setMessages()` messages, and
+provider/proxy chunk `metadata` before it is merged into the assistant message.
+Request-level `metadata` is not validated by this option.
+
+```ts
+const chat = useChat<unknown, { source: string; confidence?: number }>({
+  provider,
+  messageMetadataSchema: {
+    type: 'object',
+    required: ['source'],
+    properties: {
+      source: { type: 'string' },
+      confidence: { type: 'number' }
+    },
+    additionalProperties: false
+  }
+})
+
+await chat.append('Search release notes.', {
+  messageMetadata: { source: 'composer', confidence: 0.9 }
+})
+```
 
 ## Vision input
 

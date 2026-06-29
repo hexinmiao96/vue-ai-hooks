@@ -63,6 +63,8 @@ import type {
   MessageContent,
   MessageDataPart,
   MessageFilePart,
+  MessageMetadataSchema,
+  MessageMetadataValidator,
   MessagePart,
   MessageReasoningPart,
   MessageRole,
@@ -191,6 +193,15 @@ describe('public API types', () => {
         expectTypeOf(part.data.label).toEqualTypeOf<string | undefined>()
       }
     } satisfies UseChatOptions<{ progress: number; label?: string }>)
+    const metadataChat = useChat<unknown, { source: string; intent?: string }>({
+      provider,
+      messageMetadataSchema: {
+        type: 'object',
+        properties: {
+          source: { type: 'string' }
+        }
+      }
+    } satisfies UseChatOptions<unknown, { source: string; intent?: string }>)
     const completion = useCompletion({ provider } satisfies UseCompletionOptions)
     const embedding = useEmbedding({ provider } satisfies UseEmbeddingOptions)
     const generation = useGeneration<string, { url: string }, { percent: number }, string>({
@@ -220,9 +231,15 @@ describe('public API types', () => {
     expectTypeOf(typedChat.streamData).toEqualTypeOf<
       Ref<StreamDataPart<{ progress: number; label?: string }>[]>
     >()
+    expectTypeOf(metadataChat).toEqualTypeOf<
+      UseChatReturn<unknown, { source: string; intent?: string }>
+    >()
     expectTypeOf(chat.pendingToolCalls).toEqualTypeOf<Ref<ToolCall[]>>()
     expectTypeOf(chat.append).parameter(0).toEqualTypeOf<string | Message>()
     expectTypeOf(chat.append).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
+    expectTypeOf(metadataChat.append)
+      .parameter(1)
+      .toEqualTypeOf<AppendChatOptions<{ source: string; intent?: string }> | undefined>()
     expectTypeOf(chat.sendMessage).parameter(0).toEqualTypeOf<string | Message | undefined>()
     expectTypeOf(chat.sendMessage).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
     expectTypeOf(chat.addToolResult).parameter(0).toEqualTypeOf<string>()
@@ -317,6 +334,15 @@ describe('public API types', () => {
     >()
     expectTypeOf<DataPartSchemas<{ progress: number }>>().toEqualTypeOf<
       Record<string, DataPartSchema<{ progress: number }>>
+    >()
+    expectTypeOf<
+      UseChatOptions<unknown, { source: string }>['messageMetadataSchema']
+    >().toEqualTypeOf<MessageMetadataSchema<{ source: string }> | undefined>()
+    expectTypeOf<MessageMetadataValidator<{ source: string }>>().toEqualTypeOf<
+      (metadata: unknown) => metadata is { source: string }
+    >()
+    expectTypeOf<MessageMetadataSchema<{ source: string }>>().toEqualTypeOf<
+      Record<string, unknown> | MessageMetadataValidator<{ source: string }>
     >()
     expectTypeOf(pruneMessages).parameter(0).toEqualTypeOf<PruneMessagesOptions>()
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()
@@ -570,7 +596,8 @@ describe('public API types', () => {
     const appendOptions: AppendChatOptions = {
       messageId: 'msg_1',
       temperature: 0.2,
-      attachments: [attachment, fileAttachment]
+      attachments: [attachment, fileAttachment],
+      messageMetadata: { source: 'public-api-test' }
     }
     const status: ChatStatus = 'ready'
     const regenerateOptions: RegenerateChatOptions = { messageId: 'msg_1', temperature: 0.2 }
@@ -727,6 +754,7 @@ describe('public API types', () => {
     expectTypeOf<EmbeddingRequest['body']>().toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(appendOptions).toEqualTypeOf<AppendChatOptions>()
     expectTypeOf(appendOptions.attachments).toEqualTypeOf<ChatAttachmentsInput | undefined>()
+    expectTypeOf(appendOptions.messageMetadata).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(resumeRequest).toEqualTypeOf<ChatResumeRequest>()
     expectTypeOf(resumeOptions).toEqualTypeOf<ResumeChatOptions>()
     expectTypeOf(responseFormat).toMatchTypeOf<ResponseFormat>()

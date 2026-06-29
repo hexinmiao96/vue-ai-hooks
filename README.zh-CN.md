@@ -66,6 +66,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生命周期回调**：观察 chunk、工具调用、delta、部分对象、完成和错误
 - **自定义流数据**：在一次聊天轮次里收集 sources、进度、引用和消息 metadata
 - **流数据 schema**：按 `dataType` 校验自定义 data part，再交给 UI 回调消费
+- **消息 metadata schema**：发送 typed 用户消息 metadata，并在 assistant metadata 入库前校验
 - **结构化输出**：`useObject` 会发送 JSON Schema response format，流式更新部分对象，并校验最终对象
 - **自定义生成任务**：`useGeneration` 为图片、音频、摘要或业务自定义 AI 任务提供统一状态、进度、chunk、取消和重试
 - **TypeScript 优先**：严格模式、无 `any` 泄漏、完整 IDE 自动补全
@@ -373,6 +374,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - 需要审批的本地工具 handler 流程
 - AI SDK 风格 `sendAutomaticallyWhen`
 - 自定义流数据和 assistant metadata
+- 消息 metadata schema 和 `messageMetadata` 发送选项
 - Chat status、clearError 和 regenerate 控制
 - `setMessages()` 支持函数式 updater
 - Completion、Embedding、自定义生成和结构化输出也提供一致的 status 与 clearError 控制

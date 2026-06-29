@@ -916,6 +916,99 @@ describe('useChat', () => {
     expect(messages.value[1].metadata).toMatchObject({ model: 'test-model', runId: 'run_1' })
   })
 
+  it('adds and validates user message metadata', async () => {
+    const requests: ChatRequest[] = []
+    const { append, messages } = useChat<unknown, { source: string; intent?: string }>({
+      provider: fakeTurnProvider([[{ content: 'ok' }]], requests),
+      messageMetadataSchema: {
+        type: 'object',
+        required: ['source'],
+        properties: {
+          source: { type: 'string' },
+          intent: { type: 'string' }
+        },
+        additionalProperties: false
+      }
+    })
+
+    await append('with metadata', {
+      messageMetadata: { source: 'composer', intent: 'search' }
+    })
+
+    expect(messages.value[0].metadata).toEqual({ source: 'composer', intent: 'search' })
+    expect(requests[0].messages[0].metadata).toEqual({ source: 'composer', intent: 'search' })
+  })
+
+  it('validates assistant chunk metadata with function schemas', async () => {
+    const { append, messages } = useChat<unknown, { model: string }>({
+      provider: fakeProvider([{ content: 'Answer', metadata: { model: 'test-model' } }]),
+      messageMetadataSchema: (metadata): metadata is { model: string } =>
+        typeof metadata === 'object' &&
+        metadata !== null &&
+        'model' in metadata &&
+        typeof metadata.model === 'string'
+    })
+
+    await append('with typed assistant metadata')
+
+    expect(messages.value[1].metadata).toMatchObject({ model: 'test-model' })
+  })
+
+  it('rejects message metadata that fails messageMetadataSchema', async () => {
+    const requests: ChatRequest[] = []
+    const onError = vi.fn()
+    const { append, error, status, messages } = useChat<unknown, { source: string }>({
+      provider: fakeTurnProvider([[{ content: 'ok' }]], requests),
+      messageMetadataSchema: {
+        type: 'object',
+        required: ['source'],
+        properties: {
+          source: { type: 'string' }
+        },
+        additionalProperties: false
+      },
+      onError
+    })
+
+    await expect(
+      append('bad metadata', {
+        messageMetadata: { source: 1 as unknown as string }
+      })
+    ).rejects.toThrow(/Message metadata did not match schema/)
+
+    expect(status.value).toBe('error')
+    expect(error.value?.name).toBe('AiHooksError')
+    expect(messages.value).toEqual([])
+    expect(requests).toEqual([])
+    expect(onError).toHaveBeenCalledWith(error.value)
+  })
+
+  it('rejects assistant chunk metadata that fails messageMetadataSchema', async () => {
+    const onError = vi.fn()
+    const { append, error, status, messages } = useChat<unknown, { model: string }>({
+      provider: fakeProvider([{ content: 'Answer', metadata: { model: 123 } }]),
+      messageMetadataSchema: {
+        type: 'object',
+        required: ['model'],
+        properties: {
+          model: { type: 'string' }
+        },
+        additionalProperties: false
+      },
+      onError
+    })
+
+    await expect(append('with invalid assistant metadata')).rejects.toThrow(
+      /Message metadata did not match schema/
+    )
+
+    expect(status.value).toBe('error')
+    expect(error.value?.name).toBe('AiHooksError')
+    expect(messages.value[1]).toMatchObject({ role: 'assistant', content: '' })
+    expect(messages.value[1].metadata).toBeUndefined()
+    expect(onError).toHaveBeenCalledWith(error.value)
+  })
+
   it('validates custom stream data with dataPartSchemas', async () => {
     const onData = vi.fn()
     const { append, streamData } = useChat<{ state: 'loading' | 'done' }>({

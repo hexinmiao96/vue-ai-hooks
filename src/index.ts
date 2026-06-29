@@ -24,6 +24,8 @@ export {
   type DataPartSchema,
   type DataPartSchemas,
   type DataPartValidator,
+  type MessageMetadataSchema,
+  type MessageMetadataValidator,
   type PrepareReconnectToStreamRequest,
   type PrepareReconnectToStreamRequestOptions,
   type PrepareSendMessagesRequest,

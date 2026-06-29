@@ -109,6 +109,20 @@ interface Message {
 Vue UIs a render-ready structure for text, reasoning, sources, files, custom
 data, and `tool-*` states without parsing the assistant text.
 
+`append(message, { messageMetadata })` stores metadata on the user message, while
+request-level `metadata` stays on `ChatRequest`. `useChat()` can validate message
+metadata with a JSON Schema subset or a custom predicate:
+
+```ts
+type MessageMetadataValidator<TMetadata extends Record<string, unknown>> = (
+  metadata: unknown
+) => metadata is TMetadata
+
+type MessageMetadataSchema<TMetadata extends Record<string, unknown>> =
+  | Record<string, unknown>
+  | MessageMetadataValidator<TMetadata>
+```
+
 `SerializedMessage` is the JSON-safe shape returned by
 `serializeMessages(messages)`:
 

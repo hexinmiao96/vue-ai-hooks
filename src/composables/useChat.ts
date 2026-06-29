@@ -106,9 +106,12 @@ export interface RegenerateChatOptions extends Partial<ChatRequest> {
 
 export interface ResumeChatOptions extends Partial<ChatResumeRequest> {}
 
-export interface AppendChatOptions extends Partial<ChatRequest> {
+export interface AppendChatOptions<
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> extends Partial<ChatRequest> {
   messageId?: string
   attachments?: ChatAttachmentsInput
+  messageMetadata?: TMessageMetadata
 }
 
 export type SendChatTrigger = 'submit-message' | 'regenerate-message'
@@ -210,7 +213,19 @@ export type DataPartSchema<TData = unknown> = Record<string, unknown> | DataPart
 
 export type DataPartSchemas<TData = unknown> = Record<string, DataPartSchema<TData>>
 
-export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThrottleOptions {
+export type MessageMetadataValidator<
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> = (metadata: unknown) => metadata is TMessageMetadata
+
+export type MessageMetadataSchema<
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> = Record<string, unknown> | MessageMetadataValidator<TMessageMetadata>
+
+export interface UseChatOptions<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+>
+  extends RetryOptions, StreamThrottleOptions {
   provider: ChatProvider
   initialMessages?: Message[]
   messages?: Message[]
@@ -235,6 +250,7 @@ export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThr
   stopWhen?: StopWhen | readonly StopWhen[]
   maxToolRoundtrips?: number
   dataPartSchemas?: DataPartSchemas<TData>
+  messageMetadataSchema?: MessageMetadataSchema<TMessageMetadata>
   onChunk?: (chunk: ChatChunk, assistant: Message) => void
   onData?: (part: StreamDataPart<TData>) => void
   onRequest?: (info: ChatRequestInfo) => void
@@ -246,7 +262,10 @@ export interface UseChatOptions<TData = unknown> extends RetryOptions, StreamThr
   onError?: (e: Error) => void
 }
 
-export interface UseChatReturn<TData = unknown> {
+export interface UseChatReturn<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> {
   id: Ref<string>
   messages: Ref<Message[]>
   input: Ref<string>
@@ -256,8 +275,8 @@ export interface UseChatReturn<TData = unknown> {
   pendingToolCalls: Ref<ToolCall[]>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
-  append: (c: string | Message, o?: AppendChatOptions) => Promise<void>
-  sendMessage: (c?: string | Message, o?: AppendChatOptions) => Promise<void>
+  append: (c: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
+  sendMessage: (c?: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
   addToolResult: (toolCallId: string, result: unknown, o?: Partial<ChatRequest>) => Promise<void>
   addToolOutput: (output: AddToolOutputOptions, o?: Partial<ChatRequest>) => Promise<void>
   addToolApprovalResponse: (
@@ -275,7 +294,7 @@ export interface UseChatReturn<TData = unknown> {
   handleInputChange: (event: Event | { target?: { value?: unknown } } | string) => void
   handleSubmit: (
     event?: { preventDefault?: () => void },
-    options?: AppendChatOptions
+    options?: AppendChatOptions<TMessageMetadata>
   ) => Promise<void>
   setMessages: (m: SetMessagesInput) => void
   clearError: () => void
@@ -786,7 +805,10 @@ function getChatState<TData = unknown>(
   return state
 }
 
-export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseChatReturn<TData> {
+export function useChat<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+>(options: UseChatOptions<TData, TMessageMetadata>): UseChatReturn<TData, TMessageMetadata> {
   const {
     provider: providedProvider,
     initialMessages,
@@ -809,6 +831,7 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
     stopWhen,
     maxToolRoundtrips = 1,
     dataPartSchemas,
+    messageMetadataSchema,
     onChunk,
     onData,
     onRequest,
@@ -849,9 +872,11 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
         }
       })
     : null
+  validateMessagesMetadata(messages.value)
 
   function setMessages(next: SetMessagesInput) {
     const resolved = typeof next === 'function' ? next([...messages.value]) : next
+    validateMessagesMetadata(resolved)
     messages.value = [...resolved]
     resetTurnState()
     clearPendingToolCalls()
@@ -1213,6 +1238,29 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
       throw new AiHooksError(`Stream data part "${part.type}" did not match schema: ${error}`)
     }
   }
+  function validateMessageMetadata(metadata: unknown, path = 'message.metadata') {
+    if (metadata === undefined || !messageMetadataSchema) return
+
+    const error =
+      typeof messageMetadataSchema === 'function'
+        ? messageMetadataSchema(metadata)
+          ? null
+          : `${path} did not pass validator`
+        : validateJsonSchema(metadata, messageMetadataSchema, path)
+    if (error) throw new AiHooksError(`Message metadata did not match schema: ${error}`)
+  }
+  function validateMessagesMetadata(nextMessages: readonly Message[]) {
+    if (!messageMetadataSchema) return
+    nextMessages.forEach((message, index) => {
+      validateMessageMetadata(message.metadata, `messages[${index}].metadata`)
+    })
+  }
+  function withMessageMetadata(message: Message, metadata?: TMessageMetadata): Message {
+    const nextMetadata =
+      metadata === undefined ? message.metadata : { ...(message.metadata ?? {}), ...metadata }
+    validateMessageMetadata(nextMetadata)
+    return nextMetadata === undefined ? message : { ...message, metadata: nextMetadata }
+  }
   async function executeToolCall(
     call: ToolCall,
     args: unknown,
@@ -1309,6 +1357,7 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
       changedAssistant = true
     }
     if (chunk.metadata) {
+      validateMessageMetadata(chunk.metadata, 'assistant.metadata')
       assistant.metadata = { ...(assistant.metadata ?? {}), ...chunk.metadata }
       changedAssistant = true
     }
@@ -1644,24 +1693,34 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
   function buildAppendMessage(
     content: string | Message,
     messageId?: string,
-    attachmentParts: ContentPart[] = []
+    attachmentParts: ContentPart[] = [],
+    messageMetadata?: TMessageMetadata
   ): Message {
     if (typeof content === 'string') {
-      return {
-        id: messageId || nextId('user'),
-        role: 'user',
-        content: appendContentParts(content, attachmentParts),
-        createdAt: new Date()
-      }
+      return withMessageMetadata(
+        {
+          id: messageId || nextId('user'),
+          role: 'user',
+          content: appendContentParts(content, attachmentParts),
+          createdAt: new Date()
+        },
+        messageMetadata
+      )
     }
-    return {
-      ...content,
-      id: messageId || content.id || nextId(content.role),
-      content: appendContentParts(content.content, attachmentParts)
-    }
+    return withMessageMetadata(
+      {
+        ...content,
+        id: messageId || content.id || nextId(content.role),
+        content: appendContentParts(content.content, attachmentParts)
+      },
+      messageMetadata
+    )
   }
-  async function append(content: string | Message, requestOptions: AppendChatOptions = {}) {
-    const { messageId, attachments, ...chatRequestOptions } = requestOptions
+  async function append(
+    content: string | Message,
+    requestOptions: AppendChatOptions<TMessageMetadata> = {}
+  ) {
+    const { messageId, attachments, messageMetadata, ...chatRequestOptions } = requestOptions
     const attachmentFiles = attachments ? Array.from(attachments) : []
     let attachmentParts: ContentPart[] = []
     try {
@@ -1671,7 +1730,12 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
     } catch (err) {
       throw reportError(err)
     }
-    const userMessage = buildAppendMessage(content, messageId, attachmentParts)
+    let userMessage: Message
+    try {
+      userMessage = buildAppendMessage(content, messageId, attachmentParts, messageMetadata)
+    } catch (err) {
+      throw reportError(err)
+    }
     clearPendingToolCalls()
     const assistant = buildAssistant()
     resetTurnState()
@@ -1694,12 +1758,12 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
       { trigger: 'submit-message', messageId, stepNumber: 0 }
     )
   }
-  async function submitCurrentMessages(requestOptions: AppendChatOptions = {}) {
-    const { messageId, attachments, ...chatRequestOptions } = requestOptions
-    if (messageId || attachments) {
+  async function submitCurrentMessages(requestOptions: AppendChatOptions<TMessageMetadata> = {}) {
+    const { messageId, attachments, messageMetadata, ...chatRequestOptions } = requestOptions
+    if (messageId || attachments || messageMetadata) {
       throw reportError(
         new AiHooksError(
-          'sendMessage() without a message does not support messageId or attachments'
+          'sendMessage() without a message does not support messageId, attachments, or messageMetadata'
         )
       )
     }
@@ -1717,7 +1781,10 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
       { trigger: 'submit-message', stepNumber: 0 }
     )
   }
-  async function sendMessage(content?: string | Message, requestOptions: AppendChatOptions = {}) {
+  async function sendMessage(
+    content?: string | Message,
+    requestOptions: AppendChatOptions<TMessageMetadata> = {}
+  ) {
     if (content === undefined) {
       await submitCurrentMessages(requestOptions)
       return
@@ -1726,7 +1793,7 @@ export function useChat<TData = unknown>(options: UseChatOptions<TData>): UseCha
   }
   async function handleSubmit(
     event?: { preventDefault?: () => void },
-    requestOptions: AppendChatOptions = {}
+    requestOptions: AppendChatOptions<TMessageMetadata> = {}
   ) {
     event?.preventDefault?.()
     const hasAttachments = requestOptions.attachments
