@@ -40,44 +40,26 @@ The AI-in-Vue story is currently fragmented. Options today:
 
 ## Features
 
-- 🎯 **Five composables, one mental model** — `useChat`, `useCompletion`, `useEmbedding`, `useGeneration`, `useObject`
-- 🌊 **Streaming by default** — SSE parsing, AbortController, and reactivity handled for you
-- 🔌 **Multi-provider** — OpenAI, Gemini, OpenRouter, Anthropic, backend proxy, Azure OpenAI, DeepSeek, Moonshot, Zhipu, Ollama, vLLM, any OpenAI-compatible API
-- 🔐 **Production proxy path** — `proxyProvider` calls your `/api/ai/*` endpoints so upstream keys stay server-side
-- 🧭 **Proxy request control** — add app body fields or rewrite proxy URL, headers, and credentials per request
-- 🧵 **Thread-aware backend context** — pass `threadId` and `forwardedProps` to proxy/agent backends without overloading client state ids
-- 🧩 **Client-local tool context** — pass local runtime context to browser tool handlers without serializing it to the model backend
-- 🧾 **Request body extensions** — pass provider-specific JSON fields through `body` without losing typed options
-- 🪝 **Request preparation hooks** — customize send and resume requests after chat id, metadata, and messages resolve
-- 🔎 **Request lifecycle tracing** — observe final chat, completion, object, and embedding requests with `onRequest` and `onResponse`
-- 🧰 **Tool calling helpers** — run handlers automatically, gate them for approval, or control follow-up sends with `sendAutomaticallyWhen`
-- 🎚️ **Active tool filtering** — keep one tool registry and expose only selected tools per request with `activeTools`
-- 🛑 **Tool loop stop conditions** — stop multi-step tool loops with `isStepCount()` or `hasToolCall()`
-- 🔁 **Per-step tool loop requests** — adjust body, metadata, or active tools on each automatic assistant step with `prepareStep`
-- 🖼️ **File attachments** — pass browser files or preloaded file objects to `append(..., { attachments })`
-- 🔁 **AI SDK-style aliases** — `sendMessage({ text, files, metadata })`, `addToolOutput`, and `addToolApprovalResponse` for familiar chat integrations
-- 🔁 **Resumable stream hook** — reconnect proxy-backed chats with `resumeStream()` and `resumeUrl`
-- 🆔 **Server message IDs** — map proxy/UI stream `start.messageId` onto the assistant message id
-- 🧱 **Structured message parts** — render assistant text, reasoning, sources, files, custom data, and `tool-*` states from `Message.parts`
-- 🧯 **Retry controls** — opt into `maxRetries`, `retryDelayMs`, `shouldRetry`, and `onRetry` for transient provider failures
-- 🪶 **Stream throttling** — use `throttleMs` to reduce reactive updates during fast token streams
-- 🆔 **Custom IDs** — pass `generateId` for deterministic chat, completion, message, tool, and stream data IDs
-- 🔗 **Shared state by ID** — reuse chat, completion, and object state across Vue components with the same `id`
-- ✂️ **Message pruning** — trim long chat histories, reasoning parts, and selected historical tool calls before provider requests
-- ✏️ **Edit and resend** — replace an earlier message with `append(..., { messageId })`
-- 🚦 **Consistent statuses** — `status`, `isLoading`, `error`, and `clearError()` work across the core composables
-- 🧱 **Optimistic message edits** — `setMessages()` accepts arrays or updater functions for local chat history changes
-- 📝 **Form helpers** — `useChat` and `useCompletion` include `setInput`, `handleInputChange`, and `handleSubmit`
-- 👀 **Lifecycle callbacks** — observe chunks, tool calls, deltas, partial objects, finishes, and errors
-- 🧩 **Custom stream data** — collect sources, progress, citations, and AI SDK message metadata during a chat turn
-- 🧪 **Stream data schemas** — validate custom data parts by `dataType` before they reach UI callbacks
-- 🧾 **Message metadata schemas** — attach typed user-message metadata and validate assistant metadata before storage
-- 📐 **Structured output** — `useObject` sends JSON Schema response formats, streams partial objects, and validates the final object
-- 🧬 **Custom generation tasks** — `useGeneration` wraps image, audio, summary, or app-specific AI jobs with shared status, progress, chunks, aborts, and retries
-- 🛠 **TypeScript first** — strict mode, no `any` leaks, full IDE autocomplete
-- ⚡ **Tiny** — zero runtime deps beyond Vue itself
-- 🧪 **Tested** — Vitest + jsdom, with fake providers you can copy
-- 📦 **Tree-shakable** — ESM and CJS, named exports, no side effects
+- **Five composables, one mental model**: `useChat`, `useCompletion`,
+  `useEmbedding`, `useGeneration`, and `useObject`.
+- **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
+  retries, lifecycle callbacks, shared state by id, and consistent
+  `status`/`error` controls.
+- **Provider and proxy coverage**: OpenAI, Gemini, OpenRouter, Anthropic,
+  backend proxy, Azure OpenAI, DeepSeek, Moonshot, Zhipu, Ollama, vLLM, and
+  OpenAI-compatible APIs.
+- **Production chat workflows**: server-side proxy paths, resumable streams,
+  thread context, request preparation hooks, custom body fields, metadata, and
+  request tracing.
+- **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
+  file attachments, structured `Message.parts`, custom stream data, and message
+  pruning.
+- **Tool calling controls**: local handlers, approval gates, active tool
+  filtering, stop conditions, and per-step request preparation.
+- **Typed output and generation**: JSON Schema object output, embedding vectors,
+  custom generation jobs, deterministic ids, and Date-safe persistence helpers.
+- **Library quality**: strict TypeScript, no runtime dependencies beyond Vue,
+  tree-shakable ESM/CJS builds, and Vitest coverage.
 
 ## Installation
 

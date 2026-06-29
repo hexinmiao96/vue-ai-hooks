@@ -1,5 +1,6 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { ChatProvider } from '../providers/types'
+import { proxyProvider, type ProxyProviderConfig } from '../providers/proxy'
 import type {
   AiRequestStatus,
   CompletionRequest,
@@ -34,7 +35,14 @@ export interface CompletionResponseInfo extends CompletionRequestInfo {
 }
 
 export interface UseCompletionOptions extends RetryOptions, StreamThrottleOptions {
-  provider: ChatProvider
+  provider?: ChatProvider
+  transport?: ChatProvider
+  api?: string
+  baseURL?: string
+  credentials?: RequestCredentials
+  headers?: ProxyProviderConfig['headers']
+  body?: ProxyProviderConfig['body']
+  fetch?: typeof fetch
   id?: string
   generateId?: IdGenerator
   initialInput?: string
@@ -108,9 +116,11 @@ function getCompletionState(
  * })
  * ```
  */
-export function useCompletion(options: UseCompletionOptions): UseCompletionReturn {
+export function useCompletion(options: UseCompletionOptions = {}): UseCompletionReturn {
   const {
-    provider,
+    provider: providedProvider,
+    transport,
+    api,
     id: explicitId,
     generateId = createId,
     initialInput = '',
@@ -122,6 +132,14 @@ export function useCompletion(options: UseCompletionOptions): UseCompletionRetur
     onFinish,
     onError
   } = options
+  const provider =
+    providedProvider ??
+    transport ??
+    proxyProvider({
+      ...options,
+      id: undefined,
+      completionUrl: api ?? '/api/completion'
+    })
 
   const id = ref(explicitId || generateId('completion'))
   const { completion, input, status, isLoading, error, abortController } = getCompletionState(

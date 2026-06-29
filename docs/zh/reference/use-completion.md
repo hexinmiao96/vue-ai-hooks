@@ -18,27 +18,44 @@ const { completion, complete, isLoading, error } = useCompletion({
 await complete('Write a haiku about TypeScript:')
 ```
 
+如果走应用自己的后端，可以不传 `provider`，直接使用默认 proxy transport：
+
+```ts
+const { complete } = useCompletion({
+  api: '/api/completion',
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 ## 选项
 
-| 名称                    | 类型                                                                   | 默认值     | 说明                                       |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | ------------------------------------------ |
-| `provider`              | `ChatProvider`                                                         | 必填       | 要使用的 Provider。                        |
-| `id`                    | `string`                                                               | 自动生成   | Completion 状态标识；相同 id 会共享状态。  |
-| `generateId`            | `IdGenerator`                                                          | `createId` | 未传 `id` 时用于生成 id。                  |
-| `initialInput`          | `string`                                                               | `''`       | 初始表单 prompt。                          |
-| `initialCompletion`     | `string`                                                               | `''`       | 初始补全文本。                             |
-| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`       | 默认请求选项。                             |
-| `maxRetries`            | `number`                                                               | `0`        | 首个 delta 到达前失败时最多重试几次。      |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | 每次重试前等待的毫秒数。                   |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -          | 覆盖默认的错误是否可重试判断。             |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -          | 等待并重新发起请求前调用。                 |
-| `throttleMs`            | `number`                                                               | -          | 响应式补全更新之间的最小等待毫秒数。       |
-| `experimental_throttle` | `number`                                                               | -          | AI SDK 风格兼容别名，建议用 `throttleMs`。 |
-| `onUpdate`              | `(completion: string, delta: string) => void`                          | -          | 每个非空流式 delta 追加后调用。            |
-| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | -          | Provider 调用前，拿到最终补全请求。        |
-| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | -          | Provider 返回补全 stream 后调用。          |
-| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | -          | 补全完成时调用。                           |
-| `onError`               | `(e: Error) => void`                                                   | -          | 发生错误时调用。                           |
+| 名称                    | 类型                                                                   | 默认值            | 说明                                           |
+| ----------------------- | ---------------------------------------------------------------------- | ----------------- | ---------------------------------------------- |
+| `provider`              | `ChatProvider`                                                         | proxy             | 要使用的 Provider；省略时使用默认 proxy。      |
+| `transport`             | `ChatProvider`                                                         | -                 | AI SDK 风格的 `provider` 别名。                |
+| `api`                   | `string`                                                               | `/api/completion` | 默认 proxy transport 的 completion URL。       |
+| `baseURL`               | `string`                                                               | -                 | 拼接到默认 proxy transport URL 前的 base URL。 |
+| `headers`               | `Record<string, string> \| () => ...`                                  | -                 | 默认 proxy 的静态或动态 headers。              |
+| `body`                  | `Record<string, unknown> \| () => ...`                                 | -                 | 默认 proxy 附加到 JSON body 的字段。           |
+| `credentials`           | `RequestCredentials`                                                   | -                 | 默认 proxy 的浏览器 credentials 模式。         |
+| `fetch`                 | `typeof fetch`                                                         | global            | 默认 proxy 的自定义 fetch 实现。               |
+| `id`                    | `string`                                                               | 自动生成          | Completion 状态标识；相同 id 会共享状态。      |
+| `generateId`            | `IdGenerator`                                                          | `createId`        | 未传 `id` 时用于生成 id。                      |
+| `initialInput`          | `string`                                                               | `''`              | 初始表单 prompt。                              |
+| `initialCompletion`     | `string`                                                               | `''`              | 初始补全文本。                                 |
+| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | 默认请求选项。                                 |
+| `maxRetries`            | `number`                                                               | `0`               | 首个 delta 到达前失败时最多重试几次。          |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | 每次重试前等待的毫秒数。                       |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -                 | 覆盖默认的错误是否可重试判断。                 |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -                 | 等待并重新发起请求前调用。                     |
+| `throttleMs`            | `number`                                                               | -                 | 响应式补全更新之间的最小等待毫秒数。           |
+| `experimental_throttle` | `number`                                                               | -                 | AI SDK 风格兼容别名，建议用 `throttleMs`。     |
+| `onUpdate`              | `(completion: string, delta: string) => void`                          | -                 | 每个非空流式 delta 追加后调用。                |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | -                 | Provider 调用前，拿到最终补全请求。            |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | -                 | Provider 返回补全 stream 后调用。              |
+| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | -                 | 补全完成时调用。                               |
+| `onError`               | `(e: Error) => void`                                                   | -                 | 发生错误时调用。                               |
 
 ## 返回值
 
@@ -62,6 +79,9 @@ await complete('Write a haiku about TypeScript:')
 ## 说明
 
 - Anthropic 没有 `/v1/completions` 端点。使用 Anthropic Provider 时，`useCompletion` 会通过 `/v1/messages` 以单轮聊天形式实现。
+- 省略 `provider` 和 `transport` 时，`useCompletion` 会通过内置 proxy transport 调用
+  `/api/completion`。可以用 `api`、`baseURL`、`headers`、`body`、`credentials` 或
+  `fetch` 配置这次请求。
 - 多个 `useCompletion()` 传入同一个 `id` 时，会共享 `input`、`completion`、`status`、`error`、loading 和 abort 状态。某个 id 的第一次实例化会写入 `initialInput` 和 `initialCompletion`。
 - 不传 `id` 时，每个实例会创建独立的自动生成状态。
 - 每次调用 `complete()` 开始时，`completion` 都会重置为 `''`。

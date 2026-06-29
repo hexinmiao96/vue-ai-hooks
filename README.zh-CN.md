@@ -36,43 +36,21 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 
 ## 特性
 
-- **五个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、`useGeneration`、`useObject`
-- **默认支持流式响应**：SSE 解析、AbortController 和响应式状态都已处理好
-- **多 Provider**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、DeepSeek、Moonshot、智谱、Ollama、vLLM，以及任何 OpenAI-compatible API
-- **生产代理路径**：`proxyProvider` 调用你的 `/api/ai/*` 端点，让上游 key 留在服务端
-- **代理请求控制**：按请求追加应用 body 字段，或改写代理 URL、headers 和 credentials
-- **线程感知后端上下文**：用 `threadId` 和 `forwardedProps` 对接 proxy/agent 后端，不占用客户端共享状态 id
-- **客户端本地工具上下文**：把本地 runtime context 传给浏览器工具 handler，但不序列化给模型后端
-- **请求 body 扩展**：通过 `body` 透传 Provider 专属 JSON 字段，同时保留 typed options
-- **请求准备钩子**：在 chat id、metadata 和消息列表确定后，自定义发送和恢复请求
-- **请求生命周期追踪**：通过 `onRequest` 和 `onResponse` 观察最终 chat、completion、object 和 embedding 请求
-- **Tool calling helper**：自动执行本地 handler，也支持先审批再执行，或通过 `sendAutomaticallyWhen` 控制工具结果后的续跑
-- **活跃工具筛选**：用 `activeTools` 保留一套工具注册表，并按请求只开放选中的工具
-- **工具循环停止条件**：用 `isStepCount()` 或 `hasToolCall()` 控制多步工具循环何时停止
-- **逐步骤工具循环请求**：用 `prepareStep` 在每个自动 assistant 步骤调整 body、metadata 或 active tools
-- **文件附件**：把浏览器文件或预加载文件对象传给 `append(..., { attachments })`
-- **AI SDK 风格别名**：提供 `sendMessage({ text, files, metadata })`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
-- **可恢复流 hook**：用 `resumeStream()` 和 `resumeUrl` 重新连接代理后端的聊天流
-- **结构化消息 parts**：通过 `Message.parts` 渲染 assistant 文本、reasoning、source、file、自定义 data 和 `tool-*` 状态
-- **重试控制**：通过 `maxRetries`、`retryDelayMs`、`shouldRetry` 和 `onRetry` 处理临时 Provider 失败
-- **流式更新节流**：用 `throttleMs` 降低高频 token 流带来的响应式更新压力
-- **自定义 ID**：通过 `generateId` 生成稳定的 chat、completion、message、tool 和 stream data id
-- **同 ID 共享状态**：多个 Vue 组件传入同一个 `id` 时，可以复用 chat、completion 和 object 状态
-- **消息裁剪**：发送给 Provider 前裁剪长对话历史、reasoning parts 和指定历史工具调用
-- **编辑后重发**：用 `append(..., { messageId })` 替换历史消息并重新生成回复
-- **一致的状态模型**：核心组合式函数都暴露 `status`、`isLoading`、`error` 和 `clearError()`
-- **乐观消息编辑**：`setMessages()` 支持数组或 updater 函数，方便本地更新聊天历史
-- **表单辅助**：`useChat` 和 `useCompletion` 提供 `setInput`、`handleInputChange` 和 `handleSubmit`
-- **生命周期回调**：观察 chunk、工具调用、delta、部分对象、完成和错误
-- **自定义流数据**：在一次聊天轮次里收集 sources、进度、引用和消息 metadata
-- **流数据 schema**：按 `dataType` 校验自定义 data part，再交给 UI 回调消费
-- **消息 metadata schema**：发送 typed 用户消息 metadata，并在 assistant metadata 入库前校验
-- **结构化输出**：`useObject` 会发送 JSON Schema response format，流式更新部分对象，并校验最终对象
-- **自定义生成任务**：`useGeneration` 为图片、音频、摘要或业务自定义 AI 任务提供统一状态、进度、chunk、取消和重试
-- **TypeScript 优先**：严格模式、无 `any` 泄漏、完整 IDE 自动补全
-- **小而轻**：除 Vue 本身外没有运行时依赖
-- **已测试**：Vitest + jsdom，并提供可复制的 fake provider
-- **可 tree-shaking**：ESM 和 CJS、命名导出、无副作用
+- **五个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
+  `useGeneration` 和 `useObject`。
+- **流式优先的 Vue 状态**：内置 SSE 解析、AbortController、节流、重试、生命周期回调、
+  同 id 共享状态，以及统一的 `status`/`error` 控制。
+- **Provider 和代理覆盖**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、
+  DeepSeek、Moonshot、智谱、Ollama、vLLM，以及 OpenAI-compatible API。
+- **生产聊天工作流**：服务端代理路径、可恢复流、thread 上下文、请求准备钩子、自定义
+  body、metadata 和请求追踪。
+- **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
+  `Message.parts`、自定义流数据和消息裁剪。
+- **工具调用控制**：本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
+- **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自定义生成任务、稳定 id
+  和 Date-safe 持久化 helper。
+- **库级质量**：严格 TypeScript、除 Vue 外无运行时依赖、可 tree-shaking 的 ESM/CJS 构建、
+  Vitest 覆盖。
 
 ## 安装
 

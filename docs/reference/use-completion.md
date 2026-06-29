@@ -18,27 +18,44 @@ const { completion, complete, isLoading, error } = useCompletion({
 await complete('Write a haiku about TypeScript:')
 ```
 
+For an app-owned backend, omit `provider` and use the default proxy transport:
+
+```ts
+const { complete } = useCompletion({
+  api: '/api/completion',
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 ## Options
 
-| Name                    | Type                                                                   | Default    | Description                                             |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | ------------------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | required   | The provider to use.                                    |
-| `id`                    | `string`                                                               | generated  | Completion state identifier. Matching ids share state.  |
-| `generateId`            | `IdGenerator`                                                          | `createId` | Generate an id when `id` is omitted.                    |
-| `initialInput`          | `string`                                                               | `''`       | Seed the form input prompt.                             |
-| `initialCompletion`     | `string`                                                               | `''`       | Seed the completion.                                    |
-| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`       | Default options.                                        |
-| `maxRetries`            | `number`                                                               | `0`        | Retry attempts for failures before the first delta.     |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —          | Override the default retryable error decision.          |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —          | Called before a retry attempt waits and re-runs.        |
-| `throttleMs`            | `number`                                                               | —          | Minimum wait in ms between reactive completion updates. |
-| `experimental_throttle` | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs`.           |
-| `onUpdate`              | `(completion: string, delta: string) => void`                          | —          | Called after each non-empty streamed delta is appended. |
-| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | —          | Called with the final completion request before send.   |
-| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | —          | Called after the provider returns a completion stream.  |
-| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | —          | Called once the completion is finished.                 |
-| `onError`               | `(e: Error) => void`                                                   | —          | Called on any error.                                    |
+| Name                    | Type                                                                   | Default           | Description                                             |
+| ----------------------- | ---------------------------------------------------------------------- | ----------------- | ------------------------------------------------------- |
+| `provider`              | `ChatProvider`                                                         | proxy             | The provider to use. Omit to use the default proxy.     |
+| `transport`             | `ChatProvider`                                                         | —                 | AI SDK-style alias for `provider`.                      |
+| `api`                   | `string`                                                               | `/api/completion` | Completion URL for the default proxy transport.         |
+| `baseURL`               | `string`                                                               | —                 | Base URL prepended to default proxy transport URLs.     |
+| `headers`               | `Record<string, string> \| () => ...`                                  | —                 | Static or dynamic headers for the default proxy.        |
+| `body`                  | `Record<string, unknown> \| () => ...`                                 | —                 | Extra JSON body fields for the default proxy.           |
+| `credentials`           | `RequestCredentials`                                                   | —                 | Browser credentials mode for the default proxy.         |
+| `fetch`                 | `typeof fetch`                                                         | global            | Custom fetch implementation for the default proxy.      |
+| `id`                    | `string`                                                               | generated         | Completion state identifier. Matching ids share state.  |
+| `generateId`            | `IdGenerator`                                                          | `createId`        | Generate an id when `id` is omitted.                    |
+| `initialInput`          | `string`                                                               | `''`              | Seed the form input prompt.                             |
+| `initialCompletion`     | `string`                                                               | `''`              | Seed the completion.                                    |
+| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | Default options.                                        |
+| `maxRetries`            | `number`                                                               | `0`               | Retry attempts for failures before the first delta.     |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | Delay before each retry.                                |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —                 | Override the default retryable error decision.          |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —                 | Called before a retry attempt waits and re-runs.        |
+| `throttleMs`            | `number`                                                               | —                 | Minimum wait in ms between reactive completion updates. |
+| `experimental_throttle` | `number`                                                               | —                 | AI SDK-compatible alias. Prefer `throttleMs`.           |
+| `onUpdate`              | `(completion: string, delta: string) => void`                          | —                 | Called after each non-empty streamed delta is appended. |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | —                 | Called with the final completion request before send.   |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | —                 | Called after the provider returns a completion stream.  |
+| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | —                 | Called once the completion is finished.                 |
+| `onError`               | `(e: Error) => void`                                                   | —                 | Called on any error.                                    |
 
 ## Return value
 
@@ -63,6 +80,9 @@ await complete('Write a haiku about TypeScript:')
 
 - Anthropic has no `/v1/completions` endpoint. `useCompletion` with the Anthropic
   provider routes through `/v1/messages` as a single-turn chat.
+- When `provider` and `transport` are omitted, `useCompletion` calls
+  `/api/completion` through the built-in proxy transport. Pass `api`, `baseURL`,
+  `headers`, `body`, `credentials`, or `fetch` to configure that request.
 - Passing the same `id` to multiple `useCompletion()` calls shares `input`,
   `completion`, `status`, `error`, loading, and abort state across components.
   The first instance for an id seeds `initialInput` and `initialCompletion`.

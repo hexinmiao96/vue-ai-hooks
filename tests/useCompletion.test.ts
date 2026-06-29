@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { useCompletion } from '../src/composables/useCompletion'
 
-type CompletionProvider = Parameters<typeof useCompletion>[0]['provider']
+type CompletionProvider = NonNullable<NonNullable<Parameters<typeof useCompletion>[0]>['provider']>
 
 const flushPromises = () =>
   new Promise<void>((resolve) => {
@@ -22,6 +22,35 @@ const fakeProvider = (text: string) =>
   })
 
 describe('useCompletion', () => {
+  it('uses a proxy transport when provider is omitted', async () => {
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ completion: 'ok' }), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { complete, completion } = useCompletion({
+      api: '/api/completion',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      credentials: 'include',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(complete('finish this')).resolves.toBe('ok')
+
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/completion')
+    expect(init.credentials).toBe('include')
+    expect(init.headers).toMatchObject({ 'X-Session': 'session_1' })
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      tenantId: 'tenant_1',
+      prompt: 'finish this',
+      stream: true
+    })
+    expect(completion.value).toBe('ok')
+  })
+
   it('streams completion into ref', async () => {
     const onUpdate = vi.fn()
     const { complete, completion, status, isLoading, error } = useCompletion({

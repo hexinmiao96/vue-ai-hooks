@@ -134,8 +134,6 @@ const provider: ChatProvider = openaiCompatible({
 })
 
 function assertInvalidPublicApiUsage() {
-  // @ts-expect-error provider is required by the public useCompletion contract.
-  useCompletion({})
   // @ts-expect-error provider is required by the public useEmbedding contract.
   useEmbedding({})
   // @ts-expect-error provider and schema are required by the public useObject contract.
@@ -204,6 +202,10 @@ describe('public API types', () => {
       }
     } satisfies UseChatOptions<unknown, { source: string; intent?: string }>)
     const completion = useCompletion({ provider } satisfies UseCompletionOptions)
+    const defaultTransportCompletion = useCompletion({} satisfies UseCompletionOptions)
+    const completionApi = useCompletion({
+      api: '/api/completion'
+    } satisfies UseCompletionOptions)
     const embedding = useEmbedding({ provider } satisfies UseEmbeddingOptions)
     const generation = useGeneration<string, { url: string }, { percent: number }, string>({
       fetcher: async (input, context) => {
@@ -282,6 +284,9 @@ describe('public API types', () => {
     expectTypeOf(chat.handleSubmit).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
     expectTypeOf(chat.setMessages).parameter(0).toEqualTypeOf<SetMessagesInput>()
     expectTypeOf(chat.clearError).toEqualTypeOf<() => void>()
+    expectTypeOf(completion).toEqualTypeOf<UseCompletionReturn>()
+    expectTypeOf(defaultTransportCompletion).toEqualTypeOf<UseCompletionReturn>()
+    expectTypeOf(completionApi).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseChatOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseChatOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -299,6 +304,20 @@ describe('public API types', () => {
       StopWhen | readonly StopWhen[] | undefined
     >()
     expectTypeOf<UseCompletionOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseCompletionOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseCompletionOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseCompletionOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseCompletionOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseCompletionOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
+    expectTypeOf<UseCompletionOptions['headers']>().toEqualTypeOf<
+      ProxyProviderConfig['headers'] | undefined
+    >()
+    expectTypeOf<UseCompletionOptions['body']>().toEqualTypeOf<
+      ProxyProviderConfig['body'] | undefined
+    >()
+    expectTypeOf<UseCompletionOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
