@@ -17,7 +17,9 @@ const files = {
   readme: readFileSync('README.md', 'utf8'),
   zhReadme: readFileSync('README.zh-CN.md', 'utf8'),
   envExample: readFileSync('.env.example', 'utf8'),
+  packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
+  objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
 const failures = []
@@ -81,8 +83,11 @@ expect(
 expect(
   files.envExample.includes(
     'Supported chat values: local-tools, openai, openrouter, gemini, proxy'
-  ) && files.envExample.includes('VITE_CHAT_PROVIDER=local-tools'),
-  '.env.example must make the chat example runnable without provider keys by default'
+  ) &&
+    files.envExample.includes('VITE_CHAT_PROVIDER=local-tools') &&
+    files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&
+    files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object'),
+  '.env.example must make the chat and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -92,8 +97,16 @@ expect(
 )
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
-    files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider'),
-  'Readmes must explain the no-key chat example default'
+    files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
+    files.readme.includes('`examples/object`') &&
+    files.zhReadme.includes('`examples/object`'),
+  'Readmes must explain no-key chat defaults and list the object example'
+)
+expect(
+  files.packageJson.includes('"example:object"') &&
+    files.packageJson.includes('"example:object:build"') &&
+    files.packageJson.includes('pnpm example:object:build'),
+  'package scripts must expose and build the object example'
 )
 
 expect(
@@ -111,6 +124,7 @@ for (const snippet of [
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
   'default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`',
+  '`local-object` provider',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
@@ -127,6 +141,7 @@ for (const snippet of [
   '`local-tools` Provider',
   '点击 **Run approval demo**',
   '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`',
+  '`local-object` Provider',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
@@ -139,6 +154,15 @@ for (const snippet of [
 expect(
   files.demoShowcase.includes("locale: 'en'"),
   'DemoShowcase default locale must be English for root docs'
+)
+expect(
+  files.objectExample.includes("id: 'local-object'") &&
+    files.objectExample.includes('useObject<Ticket>') &&
+    files.objectExample.includes("schemaName: 'support_ticket'") &&
+    files.objectExample.includes('localObjectStream') &&
+    files.objectExample.includes('chatUrl:') &&
+    files.objectExample.includes("'/api/ai/object'"),
+  'Object example must run without keys and support the proxy object route'
 )
 expect(
   files.demoShowcase.includes("localeKey === 'zh' ? 'zh-CN' : 'en'"),

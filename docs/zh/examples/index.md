@@ -28,6 +28,10 @@ pnpm example:chat
 `/api/chat`、`/api/completion`、`/api/embedding`、`/api/object` 路由，以及浏览器示例通过
 `proxyProvider` 使用的 `/api/ai/*` 路由。
 
+如果要试结构化 JSON 流程，运行 `pnpm example:object`。它默认使用本地
+`local-object` Provider，不需要 key；之后也可以用和其它浏览器示例相同的环境变量切到
+`proxy` 或真实 Provider。
+
 ## 先看哪个示例？
 
 | 目标                             | 从这里开始                     |

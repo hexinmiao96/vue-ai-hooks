@@ -373,12 +373,13 @@ For upgrade guarantees, see the [API stability guide](https://github.com/hexinmi
 
 ## Examples
 
-Four runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Five runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
+- `examples/object` — no-key structured JSON extraction demo with a local object provider
 
 To run them:
 

@@ -32,6 +32,10 @@ default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`
 routes, plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
 examples.
 
+For a no-key structured JSON flow, run `pnpm example:object`. It uses the local
+`local-object` provider by default, then can switch to `proxy` or a real provider
+through the same environment variables as the other browser examples.
+
 ## Which demo should I open first?
 
 | Goal                                                     | Start with                               |
