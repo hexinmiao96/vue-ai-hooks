@@ -97,6 +97,9 @@ jobs:
       - name: Docs UX
         run: pnpm docs:ux:check
 
+      - name: Proxy example
+        run: pnpm proxy:check
+
       - name: Links
         run: pnpm links:check
 
