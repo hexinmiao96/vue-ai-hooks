@@ -1,8 +1,15 @@
 import { ref, shallowRef, type Ref } from 'vue'
 import type { ChatProvider } from '../providers/types'
+import { proxyProvider, type ProxyProviderConfig } from '../providers/proxy'
 import type { AiRequestStatus, EmbeddingRequest, EmbeddingResult, RetryOptions } from '../types'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
-import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import {
+  canRetry,
+  createAbortError,
+  createRetryContext,
+  getMaxRetries,
+  waitForRetry
+} from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 
 export interface EmbeddingRequestInfo {
@@ -19,7 +26,14 @@ export interface EmbeddingResponseInfo extends EmbeddingRequestInfo {
 }
 
 export interface UseEmbeddingOptions extends RetryOptions {
-  provider: ChatProvider
+  provider?: ChatProvider
+  transport?: ChatProvider
+  api?: string
+  baseURL?: string
+  credentials?: RequestCredentials
+  headers?: ProxyProviderConfig['headers']
+  body?: ProxyProviderConfig['body']
+  fetch?: typeof fetch
   defaultRequest?: Partial<EmbeddingRequest>
   onRequest?: (info: EmbeddingRequestInfo) => void
   onResponse?: (info: EmbeddingResponseInfo) => void
@@ -50,8 +64,15 @@ export interface UseEmbeddingReturn {
  * const { embeddings: vecs } = await embed('hello world')
  * ```
  */
-export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
-  const { provider, defaultRequest = {}, onRequest, onResponse, onSuccess, onError } = options
+export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingReturn {
+  const { defaultRequest = {}, onRequest, onResponse, onSuccess, onError } = options
+  const provider =
+    options.provider ??
+    options.transport ??
+    proxyProvider({
+      ...options,
+      embeddingUrl: options.api ?? '/api/embedding'
+    })
 
   const embeddings = ref<number[][]>([])
   const status = ref<AiRequestStatus>('ready')
@@ -72,18 +93,11 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
     embeddings.value = []
     result.value = null
     error.value = null
-    status.value = 'ready'
   }
 
   function clearError() {
     error.value = null
     status.value = 'ready'
-  }
-
-  function createAbortError(): Error {
-    const e = new Error('Embedding request aborted')
-    e.name = 'AbortError'
-    return e
   }
 
   function requestInfo(
@@ -96,8 +110,8 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
       attempt,
       input: Array.isArray(input) ? [...input] : input,
       request: cloneRequestSnapshot(request),
-      ...(request.body ? { body: { ...request.body } } : {}),
-      ...(request.headers ? { headers: { ...request.headers } } : {})
+      ...(request.body && { body: { ...request.body } }),
+      ...(request.headers && { headers: { ...request.headers } })
     }
   }
 
@@ -117,24 +131,25 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
           const request: EmbeddingRequest = {
             ...defaultRequest,
             ...requestOptions,
-            ...(body ? { body } : {}),
+            ...(body && { body }),
             input,
             signal: controller.signal
           }
           const info = requestInfo(input, request, retryAttempt + 1)
-          onRequest?.(info)
+          onRequest && onRequest(info)
           const res = await provider.embedding(request)
-          onResponse?.({
-            ...info,
-            result: res
-          })
+          onResponse &&
+            onResponse({
+              ...info,
+              result: res
+            })
           if (controller.signal.aborted) {
             throw createAbortError()
           }
           embeddings.value = res.embeddings
           result.value = res
           status.value = 'ready'
-          onSuccess?.(res)
+          onSuccess && onSuccess(res)
           return res
         } catch (err) {
           const e = err instanceof Error ? err : new Error(String(err))
@@ -150,7 +165,7 @@ export function useEmbedding(options: UseEmbeddingOptions): UseEmbeddingReturn {
           }
           status.value = 'error'
           error.value = e
-          onError?.(e)
+          onError && onError(e)
           throw e
         }
       }

@@ -19,20 +19,37 @@ const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
 ```
 
+For an app-owned backend, omit `provider` and use the default proxy transport:
+
+```ts
+const { embed } = useEmbedding({
+  api: '/api/embedding',
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 ## Options
 
-| Name             | Type                                                                   | Default  | Description                                      |
-| ---------------- | ---------------------------------------------------------------------- | -------- | ------------------------------------------------ |
-| `provider`       | `ChatProvider`                                                         | required | The provider to use.                             |
-| `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`     | Default options.                                 |
-| `maxRetries`     | `number`                                                               | `0`      | Retry attempts for transient failures.           |
-| `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`      | Delay before each retry.                         |
-| `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —        | Override the default retryable error decision.   |
-| `onRetry`        | `(error: Error, context: RetryContext) => void`                        | —        | Called before a retry attempt waits and re-runs. |
-| `onRequest`      | `(info: EmbeddingRequestInfo) => void`                                 | —        | Called with the final embedding request.         |
-| `onResponse`     | `(info: EmbeddingResponseInfo) => void`                                | —        | Called after the provider returns embeddings.    |
-| `onSuccess`      | `(result: EmbeddingResult) => void`                                    | —        | Called when embedding succeeds.                  |
-| `onError`        | `(e: Error) => void`                                                   | —        | Called on any error.                             |
+| Name             | Type                                                                   | Default          | Description                                         |
+| ---------------- | ---------------------------------------------------------------------- | ---------------- | --------------------------------------------------- |
+| `provider`       | `ChatProvider`                                                         | proxy            | The provider to use. Omit to use the default proxy. |
+| `transport`      | `ChatProvider`                                                         | —                | AI SDK-style alias for `provider`.                  |
+| `api`            | `string`                                                               | `/api/embedding` | Embedding URL for the default proxy transport.      |
+| `baseURL`        | `string`                                                               | —                | Base URL prepended to default proxy transport URLs. |
+| `headers`        | `Record<string, string> \| () => ...`                                  | —                | Static or dynamic headers for the default proxy.    |
+| `body`           | `Record<string, unknown> \| () => ...`                                 | —                | Extra JSON body fields for the default proxy.       |
+| `credentials`    | `RequestCredentials`                                                   | —                | Browser credentials mode for the default proxy.     |
+| `fetch`          | `typeof fetch`                                                         | global           | Custom fetch implementation for the default proxy.  |
+| `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`             | Default options.                                    |
+| `maxRetries`     | `number`                                                               | `0`              | Retry attempts for transient failures.              |
+| `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`              | Delay before each retry.                            |
+| `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —                | Override the default retryable error decision.      |
+| `onRetry`        | `(error: Error, context: RetryContext) => void`                        | —                | Called before a retry attempt waits and re-runs.    |
+| `onRequest`      | `(info: EmbeddingRequestInfo) => void`                                 | —                | Called with the final embedding request.            |
+| `onResponse`     | `(info: EmbeddingResponseInfo) => void`                                | —                | Called after the provider returns embeddings.       |
+| `onSuccess`      | `(result: EmbeddingResult) => void`                                    | —                | Called when embedding succeeds.                     |
+| `onError`        | `(e: Error) => void`                                                   | —                | Called on any error.                                |
 
 ## Return value
 
@@ -53,6 +70,9 @@ console.log(result.embeddings) // number[][]
 
 - Anthropic has no embeddings API. `useEmbedding` with the Anthropic provider
   throws an `AiHooksError` with `status: 501`.
+- When `provider` and `transport` are omitted, `useEmbedding` calls
+  `/api/embedding` through the built-in proxy transport. Pass `api`, `baseURL`,
+  `headers`, `body`, `credentials`, or `fetch` to configure that request.
 - Input can be a single string or an array of strings (batched into one request).
 - Use `defaultRequest.body` or `embed(input, { body })` for provider-specific
   JSON request fields. Typed fields such as `input`, `model`, and `user` win if

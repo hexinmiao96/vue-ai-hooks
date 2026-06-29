@@ -44,6 +44,51 @@ function fakeEmbeddingProvider(embedding: ChatProvider['embedding']): ChatProvid
 }
 
 describe('useEmbedding', () => {
+  it('uses a proxy transport when provider is omitted', async () => {
+    const response = {
+      embeddings: [[0.1, 0.2]],
+      model: 'proxy-embedding',
+      usage: { promptTokens: 2, totalTokens: 2 }
+    }
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { embed, embeddings, result } = useEmbedding({
+      api: '/api/embedding',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      credentials: 'include',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      embed('hello proxy', {
+        model: 'text-embedding-3-small',
+        body: { traceId: 'trace_1' },
+        headers: { 'X-Request': 'request_1' }
+      })
+    ).resolves.toEqual(response)
+
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/embedding')
+    expect(init.credentials).toBe('include')
+    expect(init.headers).toMatchObject({
+      'X-Session': 'session_1',
+      'X-Request': 'request_1'
+    })
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      tenantId: 'tenant_1',
+      traceId: 'trace_1',
+      input: 'hello proxy',
+      model: 'text-embedding-3-small'
+    })
+    expect(embeddings.value).toEqual(response.embeddings)
+    expect(result.value).toEqual(response)
+  })
+
   it('returns embeddings for the given input', async () => {
     const vec = [0.1, 0.2, 0.3]
     const { embed, embeddings, result } = useEmbedding({ provider: fakeProvider([vec]) })

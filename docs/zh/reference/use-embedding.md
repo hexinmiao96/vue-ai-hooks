@@ -18,20 +18,37 @@ const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
 ```
 
+如果走应用自己的后端，可以不传 `provider`，直接使用默认 proxy transport：
+
+```ts
+const { embed } = useEmbedding({
+  api: '/api/embedding',
+  headers: { 'X-Session': sessionId },
+  body: { tenantId }
+})
+```
+
 ## 选项
 
-| 名称             | 类型                                                                   | 默认值 | 说明                              |
-| ---------------- | ---------------------------------------------------------------------- | ------ | --------------------------------- |
-| `provider`       | `ChatProvider`                                                         | 必填   | 要使用的 Provider。               |
-| `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`   | 默认请求选项。                    |
-| `maxRetries`     | `number`                                                               | `0`    | 临时失败时最多重试几次。          |
-| `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`    | 每次重试前等待的毫秒数。          |
-| `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -      | 覆盖默认的错误是否可重试判断。    |
-| `onRetry`        | `(error: Error, context: RetryContext) => void`                        | -      | 等待并重新发起请求前调用。        |
-| `onRequest`      | `(info: EmbeddingRequestInfo) => void`                                 | -      | Provider 调用前，拿到最终请求。   |
-| `onResponse`     | `(info: EmbeddingResponseInfo) => void`                                | -      | Provider 返回 embeddings 后调用。 |
-| `onSuccess`      | `(result: EmbeddingResult) => void`                                    | -      | embedding 成功时调用。            |
-| `onError`        | `(e: Error) => void`                                                   | -      | 发生错误时调用。                  |
+| 名称             | 类型                                                                   | 默认值           | 说明                                           |
+| ---------------- | ---------------------------------------------------------------------- | ---------------- | ---------------------------------------------- |
+| `provider`       | `ChatProvider`                                                         | proxy            | 要使用的 Provider；省略时使用默认 proxy。      |
+| `transport`      | `ChatProvider`                                                         | -                | AI SDK 风格的 `provider` 别名。                |
+| `api`            | `string`                                                               | `/api/embedding` | 默认 proxy transport 的 embedding URL。        |
+| `baseURL`        | `string`                                                               | -                | 拼接到默认 proxy transport URL 前的 base URL。 |
+| `headers`        | `Record<string, string> \| () => ...`                                  | -                | 默认 proxy 的静态或动态 headers。              |
+| `body`           | `Record<string, unknown> \| () => ...`                                 | -                | 默认 proxy 附加到 JSON body 的字段。           |
+| `credentials`    | `RequestCredentials`                                                   | -                | 默认 proxy 的浏览器 credentials 模式。         |
+| `fetch`          | `typeof fetch`                                                         | global           | 默认 proxy 的自定义 fetch 实现。               |
+| `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`             | 默认请求选项。                                 |
+| `maxRetries`     | `number`                                                               | `0`              | 临时失败时最多重试几次。                       |
+| `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`              | 每次重试前等待的毫秒数。                       |
+| `shouldRetry`    | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -                | 覆盖默认的错误是否可重试判断。                 |
+| `onRetry`        | `(error: Error, context: RetryContext) => void`                        | -                | 等待并重新发起请求前调用。                     |
+| `onRequest`      | `(info: EmbeddingRequestInfo) => void`                                 | -                | Provider 调用前，拿到最终请求。                |
+| `onResponse`     | `(info: EmbeddingResponseInfo) => void`                                | -                | Provider 返回 embeddings 后调用。              |
+| `onSuccess`      | `(result: EmbeddingResult) => void`                                    | -                | embedding 成功时调用。                         |
+| `onError`        | `(e: Error) => void`                                                   | -                | 发生错误时调用。                               |
 
 ## 返回值
 
@@ -51,6 +68,9 @@ console.log(result.embeddings) // number[][]
 ## 说明
 
 - Anthropic 没有 embeddings API。使用 Anthropic Provider 调用 `useEmbedding` 时，会抛出 `status: 501` 的 `AiHooksError`。
+- 省略 `provider` 和 `transport` 时，`useEmbedding` 会通过内置 proxy transport 调用
+  `/api/embedding`。可以用 `api`、`baseURL`、`headers`、`body`、`credentials` 或
+  `fetch` 配置这次请求。
 - 输入可以是单个字符串，也可以是字符串数组；字符串数组会在一次请求中批量处理。
 - 可以通过 `defaultRequest.body` 或 `embed(input, { body })` 传入 Provider 专属 JSON
   请求字段。如果 key 冲突，`input`、`model`、`user` 这类 typed 字段优先。

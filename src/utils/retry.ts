@@ -57,8 +57,8 @@ function isDefaultRetryable(error: Error) {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500
 }
 
-function createAbortError() {
-  const error = new Error('Retry wait aborted')
+export function createAbortError() {
+  const error = new Error('Request aborted')
   error.name = 'AbortError'
   return error
 }

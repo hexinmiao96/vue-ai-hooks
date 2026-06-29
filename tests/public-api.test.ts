@@ -134,8 +134,6 @@ const provider: ChatProvider = openaiCompatible({
 })
 
 function assertInvalidPublicApiUsage() {
-  // @ts-expect-error provider is required by the public useEmbedding contract.
-  useEmbedding({})
   // @ts-expect-error schema is required by the public useObject contract.
   useObject({})
 }
@@ -207,6 +205,10 @@ describe('public API types', () => {
       api: '/api/completion'
     } satisfies UseCompletionOptions)
     const embedding = useEmbedding({ provider } satisfies UseEmbeddingOptions)
+    const defaultTransportEmbedding = useEmbedding({} satisfies UseEmbeddingOptions)
+    const embeddingApi = useEmbedding({
+      api: '/api/embedding'
+    } satisfies UseEmbeddingOptions)
     const generation = useGeneration<string, { url: string }, { percent: number }, string>({
       fetcher: async (input, context) => {
         expectTypeOf(input).toEqualTypeOf<string>()
@@ -326,6 +328,20 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseCompletionOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseEmbeddingOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseEmbeddingOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseEmbeddingOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseEmbeddingOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseEmbeddingOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
+    expectTypeOf<UseEmbeddingOptions['headers']>().toEqualTypeOf<
+      ProxyProviderConfig['headers'] | undefined
+    >()
+    expectTypeOf<UseEmbeddingOptions['body']>().toEqualTypeOf<
+      ProxyProviderConfig['body'] | undefined
+    >()
+    expectTypeOf<UseEmbeddingOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -505,6 +521,8 @@ describe('public API types', () => {
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()
+    expectTypeOf(defaultTransportEmbedding).toEqualTypeOf<UseEmbeddingReturn>()
+    expectTypeOf(embeddingApi).toEqualTypeOf<UseEmbeddingReturn>()
     expectTypeOf(embedding.embeddings).toEqualTypeOf<Ref<number[][]>>()
     expectTypeOf(embedding.status).toEqualTypeOf<Ref<AiRequestStatus>>()
     expectTypeOf(embedding.clearError).toEqualTypeOf<() => void>()
