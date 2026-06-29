@@ -41,6 +41,7 @@ export {
   type ResumeChatOptions,
   type SendAutomaticallyWhen,
   type SendAutomaticallyWhenOptions,
+  type SendChatMessageInput,
   type SendChatTrigger,
   type SerializedMessage,
   type SetMessagesInput,

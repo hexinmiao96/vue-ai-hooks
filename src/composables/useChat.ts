@@ -114,6 +114,15 @@ export interface AppendChatOptions<
   messageMetadata?: TMessageMetadata
 }
 
+export interface SendChatMessageInput<
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> {
+  text?: string
+  files?: ChatAttachmentsInput
+  metadata?: TMessageMetadata
+  messageId?: string
+}
+
 export type SendChatTrigger = 'submit-message' | 'regenerate-message'
 
 export interface PrepareSendMessagesRequestOptions {
@@ -276,7 +285,10 @@ export interface UseChatReturn<
   isLoading: Ref<boolean>
   error: Ref<Error | null>
   append: (c: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
-  sendMessage: (c?: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
+  sendMessage: (
+    c?: string | Message | SendChatMessageInput<TMessageMetadata>,
+    o?: AppendChatOptions<TMessageMetadata>
+  ) => Promise<void>
   addToolResult: (toolCallId: string, result: unknown, o?: Partial<ChatRequest>) => Promise<void>
   addToolOutput: (output: AddToolOutputOptions, o?: Partial<ChatRequest>) => Promise<void>
   addToolApprovalResponse: (
@@ -1716,6 +1728,19 @@ export function useChat<
       messageMetadata
     )
   }
+  function isSendChatMessageInput(
+    content: unknown
+  ): content is SendChatMessageInput<TMessageMetadata> {
+    if (
+      !isRecord(content) ||
+      (typeof content.content !== 'undefined' && isMessageRole(content.role))
+    ) {
+      return false
+    }
+    return (
+      'text' in content || 'files' in content || 'metadata' in content || 'messageId' in content
+    )
+  }
   async function append(
     content: string | Message,
     requestOptions: AppendChatOptions<TMessageMetadata> = {}
@@ -1782,11 +1807,25 @@ export function useChat<
     )
   }
   async function sendMessage(
-    content?: string | Message,
+    content?: string | Message | SendChatMessageInput<TMessageMetadata>,
     requestOptions: AppendChatOptions<TMessageMetadata> = {}
   ) {
     if (content === undefined) {
       await submitCurrentMessages(requestOptions)
+      return
+    }
+    if (isSendChatMessageInput(content)) {
+      const { text = '', files, metadata, messageId } = content
+      await append(
+        messageId && !requestOptions.messageId
+          ? { id: messageId, role: 'user', content: text }
+          : text,
+        {
+          ...requestOptions,
+          ...(files !== undefined ? { attachments: files } : {}),
+          ...(metadata !== undefined ? { messageMetadata: metadata } : {})
+        }
+      )
       return
     }
     await append(content, requestOptions)

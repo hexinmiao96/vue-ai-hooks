@@ -114,6 +114,13 @@ request-level `metadata` stays on `ChatRequest`. `useChat()` can validate messag
 metadata with a JSON Schema subset or a custom predicate:
 
 ```ts
+interface SendChatMessageInput<TMetadata extends Record<string, unknown>> {
+  text?: string
+  files?: ChatAttachmentsInput
+  metadata?: TMetadata
+  messageId?: string
+}
+
 type MessageMetadataValidator<TMetadata extends Record<string, unknown>> = (
   metadata: unknown
 ) => metadata is TMetadata

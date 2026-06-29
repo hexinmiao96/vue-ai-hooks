@@ -51,7 +51,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **工具循环停止条件**：用 `isStepCount()` 或 `hasToolCall()` 控制多步工具循环何时停止
 - **逐步骤工具循环请求**：用 `prepareStep` 在每个自动 assistant 步骤调整 body、metadata 或 active tools
 - **文件附件**：把浏览器文件或预加载文件对象传给 `append(..., { attachments })`
-- **AI SDK 风格别名**：提供 `sendMessage`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
+- **AI SDK 风格别名**：提供 `sendMessage({ text, files, metadata })`、`addToolOutput` 和 `addToolApprovalResponse`，方便迁移常见聊天集成
 - **可恢复流 hook**：用 `resumeStream()` 和 `resumeUrl` 重新连接代理后端的聊天流
 - **结构化消息 parts**：通过 `Message.parts` 渲染 assistant 文本、reasoning、source、file、自定义 data 和 `tool-*` 状态
 - **重试控制**：通过 `maxRetries`、`retryDelayMs`、`shouldRetry` 和 `onRetry` 处理临时 Provider 失败
@@ -370,7 +370,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 - 通过 `activeTools` 按请求筛选可用工具
 - 通过 `stopWhen` 控制工具循环停止条件
 - 通过 `prepareStep` 按步骤准备工具循环请求
-- AI SDK 风格的发送、工具输出和工具审批别名
+- AI SDK 风格的发送对象、工具输出和工具审批别名
 - 需要审批的本地工具 handler 流程
 - AI SDK 风格 `sendAutomaticallyWhen`
 - 自定义流数据和 assistant metadata

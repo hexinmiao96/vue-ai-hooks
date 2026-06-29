@@ -97,6 +97,7 @@ import type {
   ResponseFormat,
   SendAutomaticallyWhen,
   SendAutomaticallyWhenOptions,
+  SendChatMessageInput,
   SetMessagesInput,
   SendChatTrigger,
   SerializedMessage,
@@ -240,8 +241,15 @@ describe('public API types', () => {
     expectTypeOf(metadataChat.append)
       .parameter(1)
       .toEqualTypeOf<AppendChatOptions<{ source: string; intent?: string }> | undefined>()
-    expectTypeOf(chat.sendMessage).parameter(0).toEqualTypeOf<string | Message | undefined>()
+    expectTypeOf(chat.sendMessage)
+      .parameter(0)
+      .toEqualTypeOf<string | Message | SendChatMessageInput | undefined>()
     expectTypeOf(chat.sendMessage).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
+    expectTypeOf(metadataChat.sendMessage)
+      .parameter(0)
+      .toEqualTypeOf<
+        string | Message | SendChatMessageInput<{ source: string; intent?: string }> | undefined
+      >()
     expectTypeOf(chat.addToolResult).parameter(0).toEqualTypeOf<string>()
     expectTypeOf(chat.addToolResult).parameter(1).toEqualTypeOf<unknown>()
     expectTypeOf(chat.addToolResult).parameter(2).toEqualTypeOf<Partial<ChatRequest> | undefined>()
@@ -599,6 +607,12 @@ describe('public API types', () => {
       attachments: [attachment, fileAttachment],
       messageMetadata: { source: 'public-api-test' }
     }
+    const sendMessageInput: SendChatMessageInput<{ source: string }> = {
+      text: 'hello',
+      files: [fileAttachment],
+      metadata: { source: 'composer' },
+      messageId: 'msg_1'
+    }
     const status: ChatStatus = 'ready'
     const regenerateOptions: RegenerateChatOptions = { messageId: 'msg_1', temperature: 0.2 }
     const resumeOptions: ResumeChatOptions = { metadata: { reason: 'reload' } }
@@ -755,6 +769,9 @@ describe('public API types', () => {
     expectTypeOf(appendOptions).toEqualTypeOf<AppendChatOptions>()
     expectTypeOf(appendOptions.attachments).toEqualTypeOf<ChatAttachmentsInput | undefined>()
     expectTypeOf(appendOptions.messageMetadata).toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf(sendMessageInput).toEqualTypeOf<SendChatMessageInput<{ source: string }>>()
+    expectTypeOf(sendMessageInput.files).toEqualTypeOf<ChatAttachmentsInput | undefined>()
+    expectTypeOf(sendMessageInput.metadata).toEqualTypeOf<{ source: string } | undefined>()
     expectTypeOf(resumeRequest).toEqualTypeOf<ChatResumeRequest>()
     expectTypeOf(resumeOptions).toEqualTypeOf<ResumeChatOptions>()
     expectTypeOf(responseFormat).toMatchTypeOf<ResponseFormat>()

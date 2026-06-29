@@ -1680,6 +1680,49 @@ describe('useChat', () => {
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('accepts AI SDK-style sendMessage objects with files and metadata', async () => {
+    const requests: ChatRequest[] = []
+    const { sendMessage, messages } = useChat<unknown, { source: string }>({
+      provider: fakeTurnProvider([[{ content: 'ok' }]], requests),
+      messageMetadataSchema: {
+        type: 'object',
+        required: ['source'],
+        properties: {
+          source: { type: 'string' }
+        },
+        additionalProperties: false
+      }
+    })
+
+    await sendMessage(
+      {
+        text: 'Review this note.',
+        files: [{ type: 'text/plain', name: 'note.txt', text: 'Ship it.' }],
+        metadata: { source: 'composer' },
+        messageId: 'user_1'
+      },
+      {
+        metadata: { traceId: 'req_1' },
+        body: { tenantId: 'tenant_1' }
+      }
+    )
+
+    expect(messages.value[0]).toMatchObject({
+      id: 'user_1',
+      role: 'user',
+      metadata: { source: 'composer' }
+    })
+    expect(messages.value[0].content).toEqual([
+      { type: 'text', text: 'Review this note.' },
+      { type: 'text', text: 'File note.txt:\nShip it.' }
+    ])
+    expect(requests[0]).toMatchObject({
+      metadata: { traceId: 'req_1' },
+      body: { tenantId: 'tenant_1' }
+    })
+    expect(requests[0].messages[0].metadata).toEqual({ source: 'composer' })
+  })
+
   it('filters resolved tools with activeTools before provider requests', async () => {
     const requests: ChatRequest[] = []
     const weatherTool: Tool = {
