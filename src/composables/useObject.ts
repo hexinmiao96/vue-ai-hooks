@@ -18,6 +18,7 @@ import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../ut
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
   ? T
@@ -77,14 +78,17 @@ export interface UseObjectReturn<T = unknown> {
   status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
+  lastRequest: Ref<ObjectRequestInfo | null>
+  lastResponse: Ref<ObjectResponseInfo | null>
   submit: (prompt?: string | Message, options?: Partial<ChatRequest>) => Promise<T>
   stop: () => void
   clearError: () => void
+  clearTrace: () => void
   clear: () => void
   abortController: Ref<AbortController | null>
 }
 
-interface ObjectState<T> {
+interface ObjectState<T> extends RequestTrace<ObjectRequestInfo, ObjectResponseInfo> {
   initialObject: T | null
   initialPartialObject: DeepPartial<T> | null
   object: Ref<T | null>
@@ -117,6 +121,7 @@ function getObjectState<T>(
     status: ref<AiRequestStatus>('ready'),
     isLoading: ref(false),
     error: ref<Error | null>(null),
+    ...createRequestTrace<ObjectRequestInfo, ObjectResponseInfo>(),
     abortController: shallowRef<AbortController | null>(null)
   }
   objectStates.set(id, state as ObjectState<unknown>)
@@ -160,7 +165,19 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
   const initialPartialObject =
     initialValue === undefined ? (initialObject as DeepPartial<T> | null) : initialValue
   const state = getObjectState(id.value, initialObject, initialPartialObject)
-  const { object, partialObject, text, input, status, isLoading, error, abortController } = state
+  const {
+    object,
+    partialObject,
+    text,
+    input,
+    status,
+    isLoading,
+    error,
+    lastRequest,
+    lastResponse,
+    clearTrace,
+    abortController
+  } = state
 
   function stop() {
     if (abortController.value) abortController.value.abort()
@@ -176,6 +193,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     text.value = ''
     input.value = ''
     error.value = null
+    clearTrace()
     status.value = 'ready'
   }
 
@@ -250,6 +268,19 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     }
   }
 
+  function reportRequest(info: ObjectRequestInfo) {
+    state.recordRequest(info)
+    onRequest?.(info)
+  }
+
+  function reportResponse(info: ObjectRequestInfo, stream: AsyncIterable<ChatChunk>) {
+    const response = state.recordResponse({
+      ...info,
+      hasStream: Boolean(stream)
+    })
+    onResponse?.(response)
+  }
+
   function createAbortError(): Error {
     const e = new Error('Structured output request was aborted')
     e.name = 'AbortError'
@@ -311,12 +342,9 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
             stream: true
           }
           const info = requestInfo(request, retryAttempt + 1)
-          onRequest?.(info)
+          reportRequest(info)
           const stream = await provider.chat(request)
-          onResponse?.({
-            ...info,
-            hasStream: Boolean(stream)
-          })
+          reportResponse(info, stream)
 
           for await (const chunk of stream) {
             if (controller.signal.aborted) break
@@ -384,9 +412,12 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     status,
     isLoading,
     error,
+    lastRequest,
+    lastResponse,
     submit,
     stop,
     clearError,
+    clearTrace,
     clear,
     abortController
   }

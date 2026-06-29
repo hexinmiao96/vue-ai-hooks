@@ -270,6 +270,8 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                                              | Tool calls waiting for manual results                             |
 | `isLoading`                     | `Ref<boolean>`                                                                                 | True while a stream is in flight                                  |
 | `error`                         | `Ref<Error \| null>`                                                                           | Last error, cleared on next `append`                              |
+| `lastRequest`                   | `Ref<ChatRequestInfo \| null>`                                                                 | Last prepared provider request snapshot                           |
+| `lastResponse`                  | `Ref<ChatResponseInfo \| null>`                                                                | Last provider response snapshot                                   |
 | `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`                                      | Send or replace a message and stream the reply                    |
 | `sendMessage(content?, opts?)`  | `(string \| Message \| SendChatMessageInput \| undefined, AppendChatOptions) => Promise<void>` | AI SDK-style send helper; omit content to submit current messages |
 | `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`                                     | Submit a manual tool result and continue when ready               |
@@ -287,6 +289,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                                                | Wire a form submit; clears input after success                    |
 | `setMessages(messages)`         | `(SetMessagesInput) => void`                                                                   | Replace or functionally update history                            |
 | `clearError()`                  | `() => void`                                                                                   | Clear error state                                                 |
+| `clearTrace()`                  | `() => void`                                                                                   | Clear `lastRequest` and `lastResponse`                            |
 | `clear()`                       | `() => void`                                                                                   | Reset to empty state                                              |
 | `abortController`               | `Ref<AbortController \| null>`                                                                 | Exposed for advanced use cases                                    |
 
@@ -339,8 +342,9 @@ Same shape, scoped to single-shot completions, embedding vectors, custom
 generation jobs, and structured JSON object output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
-`stop()`, and `clear()` so UI state can follow one pattern across chat, text,
-vectors, custom generation jobs, and structured JSON.
+`lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
+state and trace panels can follow one pattern across chat, text, vectors, custom
+generation jobs, and structured JSON.
 
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object.

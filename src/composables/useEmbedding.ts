@@ -11,6 +11,7 @@ import {
   waitForRetry
 } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
+import { createRequestTrace } from '../utils/trace'
 
 export interface EmbeddingRequestInfo {
   providerId: string
@@ -47,9 +48,12 @@ export interface UseEmbeddingReturn {
   isLoading: Ref<boolean>
   error: Ref<Error | null>
   result: Ref<EmbeddingResult | null>
+  lastRequest: Ref<EmbeddingRequestInfo | null>
+  lastResponse: Ref<EmbeddingResponseInfo | null>
   embed: (input: string | string[], options?: Partial<EmbeddingRequest>) => Promise<EmbeddingResult>
   stop: () => void
   clearError: () => void
+  clearTrace: () => void
   clear: () => void
   abortController: Ref<AbortController | null>
 }
@@ -79,6 +83,8 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
   const result = shallowRef<EmbeddingResult | null>(null)
+  const trace = createRequestTrace<EmbeddingRequestInfo, EmbeddingResponseInfo>()
+  const { lastRequest, lastResponse, clearTrace } = trace
   const abortController = shallowRef<AbortController | null>(null)
 
   function stop() {
@@ -93,6 +99,7 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     embeddings.value = []
     result.value = null
     error.value = null
+    clearTrace()
   }
 
   function clearError() {
@@ -113,6 +120,19 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
       ...(request.body && { body: { ...request.body } }),
       ...(request.headers && { headers: { ...request.headers } })
     }
+  }
+
+  function reportRequest(info: EmbeddingRequestInfo) {
+    trace.recordRequest(info)
+    onRequest?.(info)
+  }
+
+  function reportResponse(info: EmbeddingRequestInfo, res: EmbeddingResult) {
+    const response = trace.recordResponse({
+      ...info,
+      result: res
+    })
+    onResponse?.(response)
   }
 
   async function embed(input: string | string[], requestOptions: Partial<EmbeddingRequest> = {}) {
@@ -136,13 +156,9 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
             signal: controller.signal
           }
           const info = requestInfo(input, request, retryAttempt + 1)
-          onRequest && onRequest(info)
+          reportRequest(info)
           const res = await provider.embedding(request)
-          onResponse &&
-            onResponse({
-              ...info,
-              result: res
-            })
+          reportResponse(info, res)
           if (controller.signal.aborted) {
             throw createAbortError()
           }
@@ -181,9 +197,12 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     isLoading,
     error,
     result,
+    lastRequest,
+    lastResponse,
     embed,
     stop,
     clearError,
+    clearTrace,
     clear,
     abortController
   }

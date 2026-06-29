@@ -13,6 +13,7 @@ import { cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export interface CompletionFinishInfo {
   prompt: string
@@ -62,6 +63,8 @@ export interface UseCompletionReturn {
   status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
+  lastRequest: Ref<CompletionRequestInfo | null>
+  lastResponse: Ref<CompletionResponseInfo | null>
   complete: (prompt?: string, options?: Partial<CompletionRequest>) => Promise<string>
   stop: () => void
   setInput: (value: string) => void
@@ -72,11 +75,12 @@ export interface UseCompletionReturn {
     options?: Partial<CompletionRequest>
   ) => Promise<string>
   clearError: () => void
+  clearTrace: () => void
   clear: () => void
   abortController: Ref<AbortController | null>
 }
 
-interface CompletionState {
+interface CompletionState extends RequestTrace<CompletionRequestInfo, CompletionResponseInfo> {
   completion: Ref<string>
   input: Ref<string>
   status: Ref<AiRequestStatus>
@@ -101,6 +105,7 @@ function getCompletionState(
     status: ref<AiRequestStatus>('ready'),
     isLoading: ref(false),
     error: ref<Error | null>(null),
+    ...createRequestTrace<CompletionRequestInfo, CompletionResponseInfo>(),
     abortController: shallowRef<AbortController | null>(null)
   }
   completionStates.set(id, state)
@@ -142,11 +147,18 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     })
 
   const id = ref(explicitId || generateId('completion'))
-  const { completion, input, status, isLoading, error, abortController } = getCompletionState(
-    id.value,
-    initialInput,
-    initialCompletion
-  )
+  const state = getCompletionState(id.value, initialInput, initialCompletion)
+  const {
+    completion,
+    input,
+    status,
+    isLoading,
+    error,
+    lastRequest,
+    lastResponse,
+    clearTrace,
+    abortController
+  } = state
 
   function stop() {
     if (abortController.value) abortController.value.abort()
@@ -178,6 +190,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     completion.value = ''
     input.value = ''
     error.value = null
+    clearTrace()
   }
 
   function clearError() {
@@ -204,6 +217,19 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
       ...(request.body ? { body: { ...request.body } } : {}),
       ...(request.headers ? { headers: { ...request.headers } } : {})
     }
+  }
+
+  function reportRequest(info: CompletionRequestInfo) {
+    state.recordRequest(info)
+    onRequest?.(info)
+  }
+
+  function reportResponse(info: CompletionRequestInfo, stream: AsyncIterable<string>) {
+    const response = state.recordResponse({
+      ...info,
+      hasStream: Boolean(stream)
+    })
+    onResponse?.(response)
   }
 
   async function complete(prompt?: string, requestOptions: Partial<CompletionRequest> = {}) {
@@ -244,12 +270,9 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
             stream: true
           }
           const info = requestInfo(finalPrompt, request, retryAttempt + 1)
-          onRequest?.(info)
+          reportRequest(info)
           const stream = await provider.completion(request)
-          onResponse?.({
-            ...info,
-            hasStream: Boolean(stream)
-          })
+          reportResponse(info, stream)
           for await (const delta of stream) {
             if (controller.signal.aborted) break
             if (status.value === 'submitted') status.value = 'streaming'
@@ -309,6 +332,8 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     status,
     isLoading,
     error,
+    lastRequest,
+    lastResponse,
     complete,
     stop,
     setInput,
@@ -316,6 +341,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     handleInputChange,
     handleSubmit,
     clearError,
+    clearTrace,
     clear,
     abortController
   }

@@ -258,6 +258,8 @@ const {
   handleSubmit,
   stop,
   error,
+  lastRequest,
+  lastResponse,
   pendingToolCalls,
   approveToolCall,
   rejectToolCall
@@ -298,6 +300,15 @@ const canStartDemo = computed(() => !isLoading.value && pendingApprovals.value.l
 const canSend = computed(
   () => !isLoading.value && (input.value.trim().length > 0 || selectedFiles.value.length > 0)
 )
+const traceRows = computed(() => [
+  { label: 'Provider', value: lastRequest.value?.providerId ?? provider.id },
+  { label: 'Attempt', value: lastRequest.value ? String(lastRequest.value.attempt) : 'idle' },
+  { label: 'Kind', value: lastRequest.value?.kind ?? 'chat' },
+  {
+    label: 'Response',
+    value: lastResponse.value ? (lastResponse.value.hasStream ? 'stream open' : 'no stream') : '-'
+  }
+])
 const renderedMessages = computed(() =>
   messages.value.map((message) => ({
     id: message.id,
@@ -432,6 +443,12 @@ async function rejectCheckout(callId: string) {
       {{ error.message }}
     </p>
     <p class="provider-badge">Provider: {{ providerType }} · chunks: {{ chunkCount }}</p>
+    <dl class="trace-panel" aria-label="last request trace">
+      <div v-for="row in traceRows" :key="row.label">
+        <dt>{{ row.label }}</dt>
+        <dd>{{ row.value }}</dd>
+      </div>
+    </dl>
     <button class="demo-trigger" :disabled="!canStartDemo" @click="startApprovalDemo">
       Run approval demo
     </button>
@@ -573,6 +590,33 @@ h1 {
 }
 .role-tool {
   background: #f2fbf6;
+}
+.trace-panel {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.trace-panel div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+.trace-panel dt {
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.trace-panel dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
 }
 .tool-call-list {
   display: flex;

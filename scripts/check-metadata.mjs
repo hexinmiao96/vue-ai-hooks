@@ -648,11 +648,11 @@ expect(
   'CONTRIBUTING.md must document how to check bundle size budgets'
 )
 expect(
-  contributing.includes('`dist/index.mjs`: 69,100 bytes raw, 18,300 bytes gzip.'),
+  contributing.includes('`dist/index.mjs`: 83,500 bytes raw, 21,800 bytes gzip.'),
   'CONTRIBUTING.md must document the ESM bundle size budget'
 )
 expect(
-  contributing.includes('`dist/index.cjs`: 48,800 bytes raw, 15,950 bytes gzip.'),
+  contributing.includes('`dist/index.cjs`: 58,500 bytes raw, 19,000 bytes gzip.'),
   'CONTRIBUTING.md must document the CJS bundle size budget'
 )
 expect(

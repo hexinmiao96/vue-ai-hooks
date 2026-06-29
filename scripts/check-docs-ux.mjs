@@ -259,6 +259,19 @@ expect(
   'English useChat docs must document disconnect-aware finish callbacks'
 )
 expect(
+  files.useChat.includes('lastRequest') &&
+    files.useChat.includes('lastResponse') &&
+    files.useChat.includes('clearTrace()') &&
+    files.zhUseChat.includes('lastRequest') &&
+    files.zhUseChat.includes('lastResponse') &&
+    files.zhUseChat.includes('clearTrace()') &&
+    files.readme.includes('lastRequest') &&
+    files.zhReadme.includes('lastRequest') &&
+    files.chatExample.includes('lastRequest') &&
+    files.chatExample.includes('trace-panel'),
+  'Docs and chat example must surface provider request trace refs'
+)
+expect(
   files.useChat.includes('## Message pruning') &&
     files.useChat.includes('pruneMessages({') &&
     files.useChat.includes('reasoning') &&
@@ -420,7 +433,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, shared chat state, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

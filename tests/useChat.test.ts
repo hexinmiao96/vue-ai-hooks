@@ -805,7 +805,7 @@ describe('useChat', () => {
         return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
       }
     }
-    const { append } = useChat({
+    const { append, lastRequest, lastResponse, clearTrace } = useChat({
       provider,
       maxRetries: 1,
       defaultRequest: {
@@ -861,6 +861,21 @@ describe('useChat', () => {
         messages: [expect.objectContaining({ role: 'user', content: 'observe lifecycle' })]
       })
     )
+    expect(lastRequest.value).toMatchObject({
+      kind: 'chat',
+      providerId: 'observable-chat',
+      attempt: 2,
+      body: { tenantId: 'tenant_default', route: '/tickets/1', prepared: true }
+    })
+    expect(lastResponse.value).toMatchObject({
+      kind: 'chat',
+      providerId: 'observable-chat',
+      attempt: 2,
+      hasStream: true
+    })
+    clearTrace()
+    expect(lastRequest.value).toBeNull()
+    expect(lastResponse.value).toBeNull()
   })
 
   it('does not retry chat streams after a chunk was received', async () => {

@@ -88,29 +88,34 @@ events.
 
 ## Return value
 
-| Property                  | Type                                              | Description                                                    |
-| ------------------------- | ------------------------------------------------- | -------------------------------------------------------------- |
-| `id`                      | `Ref<string>`                                     | Generation state id selected at composable creation.           |
-| `input`                   | `Ref<TInput \| undefined>`                        | Current input.                                                 |
-| `result`                  | `Ref<TResult \| null>`                            | Final generated value.                                         |
-| `progress`                | `Ref<TProgress \| null>`                          | Latest progress reported by the fetcher.                       |
-| `chunks`                  | `Ref<TChunk[]>`                                   | Chunks reported by the fetcher for the current run.            |
-| `status`                  | `Ref<AiRequestStatus>`                            | Request lifecycle: `ready`, `submitted`, `streaming`, `error`. |
-| `isLoading`               | `Ref<boolean>`                                    | True while a generation run is active.                         |
-| `error`                   | `Ref<Error \| null>`                              | Last non-abort error.                                          |
-| `generate(input?, opts?)` | `(TInput?, GenerateOptions?) => Promise<TResult>` | Run the fetcher. Resolves to the final result.                 |
-| `stop()`                  | `() => void`                                      | Abort the active generation.                                   |
-| `setInput(value)`         | `(TInput \| undefined) => void`                   | Replace the input value.                                       |
-| `setResult(value)`        | `(TResult \| null) => void`                       | Replace the result manually.                                   |
-| `clearError()`            | `() => void`                                      | Clear `error` and move `status` back to `ready`.               |
-| `clear()`                 | `() => void`                                      | Reset input, result, progress, chunks, error, and status.      |
-| `reset()`                 | `() => void`                                      | Alias for `clear()`.                                           |
-| `abortController`         | `Ref<AbortController \| null>`                    | Exposed for advanced integrations.                             |
+| Property                  | Type                                                   | Description                                                     |
+| ------------------------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| `id`                      | `Ref<string>`                                          | Generation state id selected at composable creation.            |
+| `input`                   | `Ref<TInput \| undefined>`                             | Current input.                                                  |
+| `result`                  | `Ref<TResult \| null>`                                 | Final generated value.                                          |
+| `progress`                | `Ref<TProgress \| null>`                               | Latest progress reported by the fetcher.                        |
+| `chunks`                  | `Ref<TChunk[]>`                                        | Chunks reported by the fetcher for the current run.             |
+| `status`                  | `Ref<AiRequestStatus>`                                 | Request lifecycle: `ready`, `submitted`, `streaming`, `error`.  |
+| `isLoading`               | `Ref<boolean>`                                         | True while a generation run is active.                          |
+| `error`                   | `Ref<Error \| null>`                                   | Last non-abort error.                                           |
+| `lastRequest`             | `Ref<GenerationRequestInfo<TInput> \| null>`           | Last prepared generation request snapshot.                      |
+| `lastResponse`            | `Ref<GenerationResponseInfo<TInput, TResult> \| null>` | Last resolved generation response snapshot.                     |
+| `generate(input?, opts?)` | `(TInput?, GenerateOptions?) => Promise<TResult>`      | Run the fetcher. Resolves to the final result.                  |
+| `stop()`                  | `() => void`                                           | Abort the active generation.                                    |
+| `setInput(value)`         | `(TInput \| undefined) => void`                        | Replace the input value.                                        |
+| `setResult(value)`        | `(TResult \| null) => void`                            | Replace the result manually.                                    |
+| `clearError()`            | `() => void`                                           | Clear `error` and move `status` back to `ready`.                |
+| `clearTrace()`            | `() => void`                                           | Clear `lastRequest` and `lastResponse` without changing result. |
+| `clear()`                 | `() => void`                                           | Reset input, result, progress, chunks, error, and status.       |
+| `reset()`                 | `() => void`                                           | Alias for `clear()`.                                            |
+| `abortController`         | `Ref<AbortController \| null>`                         | Exposed for advanced integrations.                              |
 
 ## Notes
 
 - `defaultBody` and `generate(input, { body })` are merged before `fetcher`
   runs. Per-call keys win when they overlap.
+- The latest `onRequest` and `onResponse` payloads are also exposed through
+  `lastRequest` and `lastResponse` for rendering diagnostics in the UI.
 - `generate()` uses `input.value` when no input argument is passed. It throws if
   both are `undefined`.
 - Passing the same `id` to multiple `useGeneration()` calls shares input,

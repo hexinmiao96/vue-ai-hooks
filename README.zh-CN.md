@@ -249,7 +249,7 @@ import type { ChatProvider } from 'vue-ai-hooks'
 
 ### `useChat(options)`
 
-用于管理流式聊天会话的响应式组合式函数，返回 `id`、`messages`、`input`、`status`、`usage`、`streamData`、`pendingToolCalls`、`append()`、`sendMessage()`、`handleSubmit()`、`setInput()`、`handleInputChange()`、`addToolResult()`、`addToolOutput()`、`addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`、`regenerate()`、`resumeStream()`、`reload()`、`stop()`、`setId()`、`clearError()`、`clear()` 等状态和操作。`append(..., { messageId })` 可用于编辑已有消息并重新生成后续回复；`sendMessage()` 不传 content 时会提交当前 messages，适合手动工具结果后的继续生成。
+用于管理流式聊天会话的响应式组合式函数，返回 `id`、`messages`、`input`、`status`、`usage`、`streamData`、`pendingToolCalls`、`lastRequest`、`lastResponse`、`append()`、`sendMessage()`、`handleSubmit()`、`setInput()`、`handleInputChange()`、`addToolResult()`、`addToolOutput()`、`addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`、`regenerate()`、`resumeStream()`、`reload()`、`stop()`、`setId()`、`clearError()`、`clearTrace()`、`clear()` 等状态和操作。`append(..., { messageId })` 可用于编辑已有消息并重新生成后续回复；`sendMessage()` 不传 content 时会提交当前 messages，适合手动工具结果后的继续生成。
 
 `useChat`、`useCompletion` 和 `useObject` 支持 `throttleMs`，可以把高频流式响应合并成较低频的响应式更新；最终状态会在请求 resolve 前强制刷新。`experimental_throttle` 也可作为 AI SDK 风格兼容别名，但新代码建议使用 `throttleMs`。
 
@@ -279,6 +279,8 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useObject(options)`
 
 分别用于单次流式补全、embedding 向量生成、自定义生成任务和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
+
+这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。
 
 `useChat` 和 `useCompletion` 还提供 `setInput()`、`handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空 `input`；失败时会保留输入内容。两者都支持 `initialInput`。
 

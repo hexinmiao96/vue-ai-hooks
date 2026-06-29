@@ -59,9 +59,12 @@ const { embed } = useEmbedding({
 | `isLoading`           | `Ref<boolean>`                                                                | 请求进行中时为 true。                                |
 | `error`               | `Ref<Error \| null>`                                                          | 最近一次错误。                                       |
 | `result`              | `Ref<EmbeddingResult \| null>`                                                | 最近一次完整结果，包括 usage 统计。                  |
+| `lastRequest`         | `Ref<EmbeddingRequestInfo \| null>`                                           | 最近一次准备完成的 embedding 请求快照。              |
+| `lastResponse`        | `Ref<EmbeddingResponseInfo \| null>`                                          | 最近一次 Provider 响应快照，包含完整结果。           |
 | `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | 生成 embeddings。                                    |
 | `stop()`              | `() => void`                                                                  | 中止当前请求。                                       |
 | `clearError()`        | `() => void`                                                                  | 清空 `error`，并把 `status` 恢复为 `ready`。         |
+| `clearTrace()`        | `() => void`                                                                  | 清空 `lastRequest` 和 `lastResponse`，不改变向量。   |
 | `clear()`             | `() => void`                                                                  | 重置 embeddings、result 和 error，也会中止当前请求。 |
 | `abortController`     | `Ref<AbortController \| null>`                                                | 暴露给高级用法。                                     |
 
@@ -77,4 +80,5 @@ const { embed } = useEmbedding({
 - `onRequest(info)` 会在 Provider 执行前收到最终 `EmbeddingRequest`。
   `onResponse(info)` 会在 Provider 返回最终结果后执行。两者都包含从 1 开始的
   `attempt`、Provider id、input、body、headers 和请求快照。
+  同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
 - `maxRetries` 会在提交任何 embedding 结果前重试失败请求。

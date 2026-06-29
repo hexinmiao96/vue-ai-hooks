@@ -67,6 +67,8 @@ const { complete } = useCompletion({
 | `status`                      | `Ref<AiRequestStatus>`                                                               | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.                       |
 | `isLoading`                   | `Ref<boolean>`                                                                       | True while a stream is in flight.                                                       |
 | `error`                       | `Ref<Error \| null>`                                                                 | Last error.                                                                             |
+| `lastRequest`                 | `Ref<CompletionRequestInfo \| null>`                                                 | Last prepared completion request snapshot.                                              |
+| `lastResponse`                | `Ref<CompletionResponseInfo \| null>`                                                | Last provider response snapshot, including whether a stream opened.                     |
 | `complete(prompt?, opts?)`    | `(string?, Partial<CompletionRequest>) => Promise<string>`                           | Run a completion. Resolves to the final string.                                         |
 | `stop()`                      | `() => void`                                                                         | Abort the in-flight stream.                                                             |
 | `setInput(value)`             | `(string) => void`                                                                   | Replace the input prompt.                                                               |
@@ -74,6 +76,7 @@ const { complete } = useCompletion({
 | `handleSubmit(event?, opts?)` | `({ preventDefault?: () => void }?, Partial<CompletionRequest>?) => Promise<string>` | Prevent default form submit, run `complete(input.value)`, and clear `input` on success. |
 | `setCompletion(value)`        | `(string) => void`                                                                   | Replace the completion (e.g. on reset).                                                 |
 | `clearError()`                | `() => void`                                                                         | Clear `error` and move `status` back to `ready`.                                        |
+| `clearTrace()`                | `() => void`                                                                         | Clear `lastRequest` and `lastResponse` without changing completion text.                |
 | `abortController`             | `Ref<AbortController \| null>`                                                       | Exposed for advanced use cases.                                                         |
 
 ## Notes
@@ -99,6 +102,8 @@ const { complete } = useCompletion({
 - `onRequest(info)` receives the final `CompletionRequest` before the provider
   runs. `onResponse(info)` runs once the provider returns a stream. Both include
   the 1-based `attempt`, provider id, prompt, body, headers, and request snapshot.
+  The same latest snapshots are available as `lastRequest` and `lastResponse`
+  for rendering diagnostics in the UI.
 - When `maxRetries` is enabled, streaming completions only retry before the
   first delta arrives.
 - Set `throttleMs` to batch reactive `completion` and `onUpdate` updates during

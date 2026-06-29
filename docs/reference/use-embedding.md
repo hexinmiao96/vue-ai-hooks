@@ -60,9 +60,12 @@ const { embed } = useEmbedding({
 | `isLoading`           | `Ref<boolean>`                                                                | True while a request is in flight.                                      |
 | `error`               | `Ref<Error \| null>`                                                          | Last error.                                                             |
 | `result`              | `Ref<EmbeddingResult \| null>`                                                | The most recent full result, including usage stats.                     |
+| `lastRequest`         | `Ref<EmbeddingRequestInfo \| null>`                                           | Last prepared embedding request snapshot.                               |
+| `lastResponse`        | `Ref<EmbeddingResponseInfo \| null>`                                          | Last provider response snapshot, including the full result.             |
 | `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | Generate embeddings.                                                    |
 | `stop()`              | `() => void`                                                                  | Abort the in-flight request.                                            |
 | `clearError()`        | `() => void`                                                                  | Clear `error` and move `status` back to `ready`.                        |
+| `clearTrace()`        | `() => void`                                                                  | Clear `lastRequest` and `lastResponse` without changing embeddings.     |
 | `clear()`             | `() => void`                                                                  | Reset embeddings, result, and error. Also aborts the in-flight request. |
 | `abortController`     | `Ref<AbortController \| null>`                                                | Exposed for advanced use cases.                                         |
 
@@ -81,4 +84,6 @@ const { embed } = useEmbedding({
   runs. `onResponse(info)` receives the final result after the provider returns.
   Both include the 1-based `attempt`, provider id, input, body, headers, and
   request snapshot.
+  The same latest snapshots are available as `lastRequest` and `lastResponse`
+  for rendering diagnostics in the UI.
 - `maxRetries` retries failed embedding requests before committing any result.

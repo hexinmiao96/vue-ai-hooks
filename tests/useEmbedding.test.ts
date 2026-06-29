@@ -234,7 +234,7 @@ describe('useEmbedding', () => {
         usage: { promptTokens: 3, totalTokens: 3 }
       }
     })
-    const { embed } = useEmbedding({
+    const { embed, lastRequest, lastResponse, clearTrace } = useEmbedding({
       provider,
       maxRetries: 1,
       defaultRequest: {
@@ -282,6 +282,23 @@ describe('useEmbedding', () => {
         }
       })
     )
+    expect(lastRequest.value).toMatchObject({
+      providerId: 'fake-embedding',
+      attempt: 2,
+      input: ['trace one', 'trace two'],
+      body: { tenantId: 'tenant_default', route: '/embed' }
+    })
+    expect(lastResponse.value).toMatchObject({
+      providerId: 'fake-embedding',
+      attempt: 2,
+      input: ['trace one', 'trace two'],
+      result: {
+        model: 'observable-embedding'
+      }
+    })
+    clearTrace()
+    expect(lastRequest.value).toBeNull()
+    expect(lastResponse.value).toBeNull()
   })
 
   it('does not retry non-retryable embedding status errors by default', async () => {

@@ -47,6 +47,22 @@ describe('useGeneration', () => {
     expect(generation.status.value).toBe('ready')
     expect(generation.isLoading.value).toBe(false)
     expect(generation.error.value).toBeNull()
+    expect(generation.lastRequest.value).toEqual({
+      id: 'generation_1',
+      attempt: 1,
+      input: { prompt: 'release note' },
+      body: { tenant: 'docs', mode: 'final' }
+    })
+    expect(generation.lastResponse.value).toEqual({
+      id: 'generation_1',
+      attempt: 1,
+      input: { prompt: 'release note' },
+      body: { tenant: 'docs', mode: 'final' },
+      result: { text: 'RELEASE NOTE' }
+    })
+    generation.clearTrace()
+    expect(generation.lastRequest.value).toBeNull()
+    expect(generation.lastResponse.value).toBeNull()
     expect(onRequest).toHaveBeenCalledWith({
       id: 'generation_1',
       attempt: 1,

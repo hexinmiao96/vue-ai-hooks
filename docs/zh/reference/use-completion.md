@@ -67,6 +67,8 @@ const { complete } = useCompletion({
 | `status`                      | `Ref<AiRequestStatus>`                                                               | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。         |
 | `isLoading`                   | `Ref<boolean>`                                                                       | 流式请求进行中时为 true。                                            |
 | `error`                       | `Ref<Error \| null>`                                                                 | 最近一次错误。                                                       |
+| `lastRequest`                 | `Ref<CompletionRequestInfo \| null>`                                                 | 最近一次准备完成的补全请求快照。                                     |
+| `lastResponse`                | `Ref<CompletionResponseInfo \| null>`                                                | 最近一次 Provider 响应快照，包含 stream 是否已打开。                 |
 | `complete(prompt?, opts?)`    | `(string?, Partial<CompletionRequest>) => Promise<string>`                           | 运行一次补全，并 resolve 最终字符串。                                |
 | `stop()`                      | `() => void`                                                                         | 中止当前流式请求。                                                   |
 | `setInput(value)`             | `(string) => void`                                                                   | 替换输入 prompt。                                                    |
@@ -74,6 +76,7 @@ const { complete } = useCompletion({
 | `handleSubmit(event?, opts?)` | `({ preventDefault?: () => void }?, Partial<CompletionRequest>?) => Promise<string>` | 阻止默认表单提交，运行 `complete(input.value)`，成功后清空 `input`。 |
 | `setCompletion(value)`        | `(string) => void`                                                                   | 替换补全文本，例如重置时使用。                                       |
 | `clearError()`                | `() => void`                                                                         | 清空 `error`，并把 `status` 恢复为 `ready`。                         |
+| `clearTrace()`                | `() => void`                                                                         | 清空 `lastRequest` 和 `lastResponse`，不改变补全文本。               |
 | `abortController`             | `Ref<AbortController \| null>`                                                       | 暴露给高级用法。                                                     |
 
 ## 说明
@@ -93,6 +96,7 @@ const { complete } = useCompletion({
 - `onRequest(info)` 会在 Provider 执行前收到最终 `CompletionRequest`。
   `onResponse(info)` 会在 Provider 返回 stream 后执行。两者都包含从 1 开始的
   `attempt`、Provider id、prompt、body、headers 和请求快照。
+  同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
 - 开启 `maxRetries` 后，流式补全只会在首个 delta 到达前失败时重试。
 - 设置 `throttleMs` 后，快速流式响应中的 `completion` 和 `onUpdate` 会批量刷新。
   `complete()` resolve 前一定会刷新最终补全文本。

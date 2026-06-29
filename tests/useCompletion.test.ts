@@ -432,7 +432,7 @@ describe('useCompletion', () => {
         })()
       }
     } as unknown as CompletionProvider
-    const { complete } = useCompletion({
+    const { complete, lastRequest, lastResponse, clearTrace } = useCompletion({
       provider,
       maxRetries: 1,
       defaultRequest: {
@@ -478,6 +478,21 @@ describe('useCompletion', () => {
         hasStream: true
       })
     )
+    expect(lastRequest.value).toMatchObject({
+      providerId: 'observable-completion',
+      attempt: 2,
+      prompt: 'trace completion',
+      body: { tenantId: 'tenant_default', route: '/complete' }
+    })
+    expect(lastResponse.value).toMatchObject({
+      providerId: 'observable-completion',
+      attempt: 2,
+      prompt: 'trace completion',
+      hasStream: true
+    })
+    clearTrace()
+    expect(lastRequest.value).toBeNull()
+    expect(lastResponse.value).toBeNull()
   })
 
   it('does not retry completion streams after a delta was received', async () => {

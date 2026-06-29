@@ -32,6 +32,7 @@ import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../ut
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export interface ToolCallHandlerContext {
   toolCall: ToolCall
@@ -292,6 +293,8 @@ export interface UseChatReturn<
   pendingToolCalls: Ref<ToolCall[]>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
+  lastRequest: Ref<ChatRequestInfo | null>
+  lastResponse: Ref<ChatResponseInfo | null>
   append: (c: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
   sendMessage: (
     c?: string | Message | SendChatMessageInput<TMessageMetadata>,
@@ -318,6 +321,7 @@ export interface UseChatReturn<
   ) => Promise<void>
   setMessages: (m: SetMessagesInput) => void
   clearError: () => void
+  clearTrace: () => void
   clear: () => void
   abortController: Ref<AbortController | null>
 }
@@ -782,7 +786,7 @@ interface SendChatContext {
   stepNumber: number
 }
 
-interface ChatState<TData = unknown> {
+interface ChatState<TData = unknown> extends RequestTrace<ChatRequestInfo, ChatResponseInfo> {
   messages: Ref<Message[]>
   input: Ref<string>
   status: Ref<ChatStatus>
@@ -819,6 +823,7 @@ function getChatState<TData = unknown>(
     pendingToolSendContext: null,
     isLoading: ref(false),
     error: ref<Error | null>(null),
+    ...createRequestTrace<ChatRequestInfo, ChatResponseInfo>(),
     abortController: shallowRef<AbortController | null>(null)
   }
   chatStates.set(id, state as ChatState<unknown>)
@@ -894,6 +899,9 @@ export function useChat<
     pendingToolRequest,
     isLoading,
     error,
+    lastRequest,
+    lastResponse,
+    clearTrace,
     abortController
   } = state
   const persistence = persist
@@ -957,6 +965,7 @@ export function useChat<
     messages.value = []
     resetTurnState()
     error.value = null
+    clearTrace()
     status.value = 'ready'
     clearPendingToolCalls()
     isLoading.value = false
@@ -1131,14 +1140,19 @@ export function useChat<
       ...(context?.stepNumber !== undefined ? { stepNumber: context.stepNumber } : {})
     }
   }
+  function reportRequest(info: ChatRequestInfo) {
+    state.recordRequest(info)
+    onRequest?.(info)
+  }
   function reportResponse(
     info: ChatRequestInfo,
     stream: AsyncIterable<ChatChunk> | null | undefined
   ) {
-    onResponse?.({
+    const response = state.recordResponse({
       ...info,
       hasStream: Boolean(stream)
     })
+    onResponse?.(response)
   }
   function finishAssistant(
     assistant: Message,
@@ -1653,7 +1667,7 @@ export function useChat<
       async (signal, attempt) => {
         const prepared = await prepareChatRequest(request, signal, context)
         const info = requestInfo('chat', prepared, attempt, context)
-        onRequest?.(info)
+        reportRequest(info)
         const stream = await provider.chat(prepared)
         reportResponse(info, stream)
         return stream
@@ -1670,7 +1684,7 @@ export function useChat<
     await runAssistantStream(resumeAssistant, async (signal, attempt) => {
       const prepared = await prepareResumeRequest(options, signal)
       const info = requestInfo('resume', prepared, attempt)
-      onRequest?.(info)
+      reportRequest(info)
       const stream = await resumeChat(prepared)
       reportResponse(info, stream)
       return stream
@@ -2008,6 +2022,8 @@ export function useChat<
     pendingToolCalls,
     isLoading,
     error,
+    lastRequest,
+    lastResponse,
     append,
     sendMessage,
     addToolResult,
@@ -2025,6 +2041,7 @@ export function useChat<
     handleSubmit,
     setMessages,
     clearError,
+    clearTrace,
     clear,
     abortController
   }

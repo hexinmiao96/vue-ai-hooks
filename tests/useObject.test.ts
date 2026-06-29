@@ -384,7 +384,7 @@ describe('useObject', () => {
         return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
       }
     }
-    const { submit } = useObject<TaskSummary>({
+    const { submit, lastRequest, lastResponse, clearTrace } = useObject<TaskSummary>({
       provider,
       schema,
       schemaName: 'task_summary',
@@ -435,6 +435,21 @@ describe('useObject', () => {
         messages: [expect.objectContaining({ role: 'user', content: 'Trace structured output.' })]
       })
     )
+    expect(lastRequest.value).toMatchObject({
+      providerId: 'observable-object',
+      attempt: 2,
+      requestMetadata: { traceId: 'trace_1' },
+      body: { tenantId: 'tenant_default', route: '/objects' }
+    })
+    expect(lastResponse.value).toMatchObject({
+      providerId: 'observable-object',
+      attempt: 2,
+      hasStream: true,
+      messages: [expect.objectContaining({ role: 'user', content: 'Trace structured output.' })]
+    })
+    clearTrace()
+    expect(lastRequest.value).toBeNull()
+    expect(lastResponse.value).toBeNull()
   })
 
   it('supports input.value and clear()', async () => {

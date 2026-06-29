@@ -82,28 +82,33 @@ interface GenerationRunContext<TInput, TProgress, TChunk> {
 
 ## 返回值
 
-| 属性                      | 类型                                              | 说明                                                         |
-| ------------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| `id`                      | `Ref<string>`                                     | 组合式函数创建时选定的 Generation 状态 id。                  |
-| `input`                   | `Ref<TInput \| undefined>`                        | 当前输入。                                                   |
-| `result`                  | `Ref<TResult \| null>`                            | 最终生成结果。                                               |
-| `progress`                | `Ref<TProgress \| null>`                          | fetcher 最近一次上报的进度。                                 |
-| `chunks`                  | `Ref<TChunk[]>`                                   | 当前运行中 fetcher 上报的 chunk。                            |
-| `status`                  | `Ref<AiRequestStatus>`                            | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
-| `isLoading`               | `Ref<boolean>`                                    | 生成任务进行中时为 true。                                    |
-| `error`                   | `Ref<Error \| null>`                              | 最近一次非取消错误。                                         |
-| `generate(input?, opts?)` | `(TInput?, GenerateOptions?) => Promise<TResult>` | 运行 fetcher，并 resolve 最终结果。                          |
-| `stop()`                  | `() => void`                                      | 中止当前生成任务。                                           |
-| `setInput(value)`         | `(TInput \| undefined) => void`                   | 替换输入值。                                                 |
-| `setResult(value)`        | `(TResult \| null) => void`                       | 手动替换结果。                                               |
-| `clearError()`            | `() => void`                                      | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
-| `clear()`                 | `() => void`                                      | 重置 input、result、progress、chunks、error 和 status。      |
-| `reset()`                 | `() => void`                                      | `clear()` 的别名。                                           |
-| `abortController`         | `Ref<AbortController \| null>`                    | 暴露给高级集成。                                             |
+| 属性                      | 类型                                                   | 说明                                                         |
+| ------------------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| `id`                      | `Ref<string>`                                          | 组合式函数创建时选定的 Generation 状态 id。                  |
+| `input`                   | `Ref<TInput \| undefined>`                             | 当前输入。                                                   |
+| `result`                  | `Ref<TResult \| null>`                                 | 最终生成结果。                                               |
+| `progress`                | `Ref<TProgress \| null>`                               | fetcher 最近一次上报的进度。                                 |
+| `chunks`                  | `Ref<TChunk[]>`                                        | 当前运行中 fetcher 上报的 chunk。                            |
+| `status`                  | `Ref<AiRequestStatus>`                                 | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
+| `isLoading`               | `Ref<boolean>`                                         | 生成任务进行中时为 true。                                    |
+| `error`                   | `Ref<Error \| null>`                                   | 最近一次非取消错误。                                         |
+| `lastRequest`             | `Ref<GenerationRequestInfo<TInput> \| null>`           | 最近一次准备完成的生成请求快照。                             |
+| `lastResponse`            | `Ref<GenerationResponseInfo<TInput, TResult> \| null>` | 最近一次生成任务 resolve 后的响应快照。                      |
+| `generate(input?, opts?)` | `(TInput?, GenerateOptions?) => Promise<TResult>`      | 运行 fetcher，并 resolve 最终结果。                          |
+| `stop()`                  | `() => void`                                           | 中止当前生成任务。                                           |
+| `setInput(value)`         | `(TInput \| undefined) => void`                        | 替换输入值。                                                 |
+| `setResult(value)`        | `(TResult \| null) => void`                            | 手动替换结果。                                               |
+| `clearError()`            | `() => void`                                           | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
+| `clearTrace()`            | `() => void`                                           | 清空 `lastRequest` 和 `lastResponse`，不改变结果。           |
+| `clear()`                 | `() => void`                                           | 重置 input、result、progress、chunks、error 和 status。      |
+| `reset()`                 | `() => void`                                           | `clear()` 的别名。                                           |
+| `abortController`         | `Ref<AbortController \| null>`                         | 暴露给高级集成。                                             |
 
 ## 说明
 
 - `defaultBody` 和 `generate(input, { body })` 会在 `fetcher` 运行前合并；key 冲突时单次调用优先。
+- 最新的 `onRequest` 和 `onResponse` payload 也会暴露为 `lastRequest` 和
+  `lastResponse`，方便界面渲染诊断信息。
 - `generate()` 不传 input 时会使用 `input.value`。两者都是 `undefined` 时会抛错。
 - 多个 `useGeneration()` 传入同一个 `id` 时，会共享 input、result、progress、chunks、status、error、loading 和 abort 状态。
 - 每次运行开始时，`result`、`progress` 和 `chunks` 都会重置。

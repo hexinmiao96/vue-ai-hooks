@@ -252,6 +252,8 @@ state.
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                                              | Tool calls waiting for manual results.                                 |
 | `isLoading`                     | `Ref<boolean>`                                                                                 | True while a stream is in flight.                                      |
 | `error`                         | `Ref<Error \| null>`                                                                           | Last error, cleared on next `append`.                                  |
+| `lastRequest`                   | `Ref<ChatRequestInfo \| null>`                                                                 | Last prepared chat or resume request snapshot.                         |
+| `lastResponse`                  | `Ref<ChatResponseInfo \| null>`                                                                | Last provider response snapshot, including whether a stream opened.    |
 | `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`                                      | Send or replace a message and stream the reply.                        |
 | `sendMessage(content?, opts?)`  | `(string \| Message \| SendChatMessageInput \| undefined, AppendChatOptions) => Promise<void>` | AI SDK-style send helper; omit content to submit the current messages. |
 | `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`                                     | Append a manual tool result and continue after all results are ready.  |
@@ -269,6 +271,7 @@ state.
 | `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                                                | Wire form submits; ignores empty text without attachments.             |
 | `setMessages(messages)`         | `(SetMessagesInput) => void`                                                                   | Replace history or update it with a function.                          |
 | `clearError()`                  | `() => void`                                                                                   | Clear `error` and move `status` back to `ready`.                       |
+| `clearTrace()`                  | `() => void`                                                                                   | Clear `lastRequest` and `lastResponse` without changing messages.      |
 | `clear()`                       | `() => void`                                                                                   | Reset to empty state. With `persist`, also removes the storage entry.  |
 | `abortController`               | `Ref<AbortController \| null>`                                                                 | Exposed for advanced use cases.                                        |
 
@@ -313,6 +316,9 @@ is 1-based so retries can be correlated with `onRetry`.
 `vue-ai-hooks` providers abstract over fetch clients, `info.hasStream` tells you
 whether a stream was returned instead of exposing a raw `Response` object. Use
 these callbacks for tracing, analytics, request logging, and resume diagnostics.
+The same snapshots are also stored in `lastRequest` and `lastResponse`, so a
+debug panel can render the latest provider attempt without duplicating callback
+state.
 
 `onFinish(message, info)` receives the final assistant message and a snapshot
 with `info.message`, `info.messages`, `info.isAbort`, `info.isError`,

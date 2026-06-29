@@ -4,6 +4,7 @@ import { createId } from '../utils/id'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export interface GenerateOptions {
   body?: Record<string, unknown>
@@ -79,17 +80,23 @@ export interface UseGenerationReturn<
   status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
+  lastRequest: Ref<GenerationRequestInfo<TInput> | null>
+  lastResponse: Ref<GenerationResponseInfo<TInput, TResult> | null>
   generate: (input?: TInput, options?: GenerateOptions) => Promise<TResult>
   stop: () => void
   setInput: (value: TInput | undefined) => void
   setResult: (value: TResult | null) => void
   clearError: () => void
+  clearTrace: () => void
   clear: () => void
   reset: () => void
   abortController: Ref<AbortController | null>
 }
 
-interface GenerationState<TInput, TResult, TProgress, TChunk> {
+interface GenerationState<TInput, TResult, TProgress, TChunk> extends RequestTrace<
+  GenerationRequestInfo<TInput>,
+  GenerationResponseInfo<TInput, TResult>
+> {
   initialInput: TInput | undefined
   initialResult: TResult | null
   initialProgress: TProgress | null
@@ -125,6 +132,7 @@ function getGenerationState<TInput, TResult, TProgress, TChunk>(
     status: shallowRef<AiRequestStatus>('ready') as Ref<AiRequestStatus>,
     isLoading: shallowRef(false),
     error: shallowRef<Error | null>(null),
+    ...createRequestTrace<GenerationRequestInfo<TInput>, GenerationResponseInfo<TInput, TResult>>(),
     abortController: shallowRef<AbortController | null>(null)
   }
   generationStates.set(id, state as GenerationState<unknown, unknown, unknown, unknown>)
@@ -164,7 +172,19 @@ export function useGeneration<
     initialResult,
     initialProgress
   )
-  const { input, result, progress, chunks, status, isLoading, error, abortController } = state
+  const {
+    input,
+    result,
+    progress,
+    chunks,
+    status,
+    isLoading,
+    error,
+    lastRequest,
+    lastResponse,
+    clearTrace,
+    abortController
+  } = state
 
   function stop() {
     abortController.value?.abort()
@@ -193,6 +213,7 @@ export function useGeneration<
     progress.value = state.initialProgress
     chunks.value = []
     error.value = null
+    clearTrace()
     status.value = 'ready'
   }
 
@@ -207,6 +228,16 @@ export function useGeneration<
       input: runInput,
       ...(body ? { body: { ...body } } : {})
     }
+  }
+
+  function reportRequest(info: GenerationRequestInfo<TInput>) {
+    state.recordRequest(info)
+    onRequest?.(info)
+  }
+
+  function reportResponse(info: GenerationRequestInfo<TInput>, finalResult: TResult) {
+    const response = state.recordResponse({ ...info, result: finalResult })
+    onResponse?.(response)
   }
 
   async function generate(runInput?: TInput, runOptions: GenerateOptions = {}) {
@@ -271,14 +302,14 @@ export function useGeneration<
             }
           }
 
-          onRequest?.(info)
+          reportRequest(info)
           const finalResult = await fetcher(finalInput, context)
           if (controller.signal.aborted) throw createAbortError()
 
           throttler.flush()
           result.value = finalResult
           status.value = 'ready'
-          onResponse?.({ ...info, result: finalResult })
+          reportResponse(info, finalResult)
           onFinish?.(finalResult)
           return finalResult
         } catch (err) {
@@ -319,11 +350,14 @@ export function useGeneration<
     status,
     isLoading,
     error,
+    lastRequest,
+    lastResponse,
     generate,
     stop,
     setInput,
     setResult,
     clearError,
+    clearTrace,
     clear,
     reset: clear,
     abortController
