@@ -4,7 +4,7 @@
 
 公开 TypeScript 类型：`UseCompletionOptions`、`UseCompletionReturn`、
 `CompletionRequestInfo`、`CompletionResponseInfo`、`CompletionFinishInfo`、
-`RetryOptions` 和 `RetryContext`。
+`CompletionStreamProtocol`、`RetryOptions` 和 `RetryContext`。
 
 ## 用法
 
@@ -45,6 +45,7 @@ const { complete } = useCompletion({
 | `initialInput`          | `string`                                                               | `''`              | 初始表单 prompt。                              |
 | `initialCompletion`     | `string`                                                               | `''`              | 初始补全文本。                                 |
 | `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | 默认请求选项。                                 |
+| `streamProtocol`        | `'text' \| 'data'`                                                     | -                 | AI SDK 兼容的 proxy stream protocol 提示。     |
 | `maxRetries`            | `number`                                                               | `0`               | 首个 delta 到达前失败时最多重试几次。          |
 | `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | 每次重试前等待的毫秒数。                       |
 | `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -                 | 覆盖默认的错误是否可重试判断。                 |
@@ -90,6 +91,9 @@ const { complete } = useCompletion({
 - 每次调用 `complete()` 开始时，`completion` 都会重置为 `''`。
 - 可以通过 `defaultRequest.body` 或 `complete(prompt, { body })` 传入 Provider 专属
   JSON 请求字段。如果 key 冲突，`prompt`、`model`、`stream` 这类 typed 字段优先。
+- 应用自己的 completion endpoint 返回纯文本流时，可以设置 `streamProtocol: 'text'`。
+  默认 proxy 会把协议提示写入请求 JSON，并把 `text/plain` 响应作为流式文本读取。
+  默认 `data` 路径继续支持既有 SSE/JSON 响应。
 - `handleSubmit()` 只会在补全成功后清空 `input`；Provider 错误会保留 prompt 供重试。
 - `onFinish(completion, info)` 保持最终补全文本作为第一个参数，同时通过
   `info.prompt`、`info.completion` 和 `info.isAbort` 传递完成元信息。

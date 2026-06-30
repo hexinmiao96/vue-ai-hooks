@@ -273,6 +273,8 @@ Protocol:
   stream exists, or return the same SSE/JSON chunk shapes as `chat()`.
 - `completion()` posts `CompletionRequest` JSON to `completionUrl`. SSE payloads
   may be JSON strings or objects with `text`, `completion`, or `content`.
+  `streamProtocol: 'text'` and `text/plain` responses are read as plain streamed
+  text for AI SDK-compatible completion routes.
   Non-SSE JSON may be a string, string array, or `{ chunks: string[] }`.
 - `embedding()` posts `EmbeddingRequest` JSON to `embeddingUrl` and expects an
   `EmbeddingResult` JSON response.

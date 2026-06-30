@@ -262,6 +262,7 @@ const provider = proxyProvider({
 - `resumeChat()` 会对 `resumeUrl` 发起 GET 请求，并把其中的 `:id` 或 `{id}` 占位符替换为编码后的 chat id。没有活动流时返回 `204 No Content`；存在活动流时返回和 `chat()` 相同的 SSE/JSON chunk 结构。
 - `completion()` 会把 `CompletionRequest` JSON POST 到 `completionUrl`。SSE
   payload 可以是 JSON 字符串，也可以是包含 `text`、`completion` 或 `content` 的对象。
+  `streamProtocol: 'text'` 和 `text/plain` 响应会按纯文本流读取，以兼容 AI SDK completion 路由。
   非 SSE JSON 可以是字符串、字符串数组或 `{ chunks: string[] }`。
 - `embedding()` 会把 `EmbeddingRequest` JSON POST 到 `embeddingUrl`，并期望返回
   `EmbeddingResult` JSON。

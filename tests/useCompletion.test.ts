@@ -26,12 +26,13 @@ describe('useCompletion', () => {
     const onRequest = vi.fn()
     const fetcher = vi.fn(
       async () =>
-        new Response(JSON.stringify({ completion: 'ok' }), {
-          headers: { 'Content-Type': 'application/json' }
+        new Response('ok', {
+          headers: { 'Content-Type': 'text/plain' }
         })
     )
     const { complete, completion, lastRequest } = useCompletion({
       api: '/api/completion',
+      streamProtocol: 'text',
       headers: { 'X-Session': 'session_1' },
       body: { tenantId: 'tenant_1' },
       credentials: 'include',
@@ -48,6 +49,7 @@ describe('useCompletion', () => {
     expect(JSON.parse(init.body as string)).toMatchObject({
       tenantId: 'tenant_1',
       prompt: 'finish this',
+      streamProtocol: 'text',
       stream: true
     })
     expect(completion.value).toBe('ok')
@@ -56,6 +58,7 @@ describe('useCompletion', () => {
         providerId: 'proxy',
         api: '/api/completion',
         credentials: 'include',
+        request: expect.objectContaining({ streamProtocol: 'text' }),
         prompt: 'finish this'
       })
     )
@@ -63,6 +66,7 @@ describe('useCompletion', () => {
       providerId: 'proxy',
       api: '/api/completion',
       credentials: 'include',
+      request: expect.objectContaining({ streamProtocol: 'text' }),
       prompt: 'finish this'
     })
   })

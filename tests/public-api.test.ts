@@ -45,6 +45,7 @@ import type {
   CompletionRequest,
   CompletionRequestInfo,
   CompletionResponseInfo,
+  CompletionStreamProtocol,
   ContentPart,
   DataPartSchema,
   DataPartSchemas,
@@ -391,6 +392,9 @@ describe('public API types', () => {
       ProxyProviderConfig['body'] | undefined
     >()
     expectTypeOf<UseCompletionOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseCompletionOptions['streamProtocol']>().toEqualTypeOf<
+      CompletionStreamProtocol | undefined
+    >()
     expectTypeOf<UseEmbeddingOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseEmbeddingOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseEmbeddingOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -561,6 +565,7 @@ describe('public API types', () => {
     expectTypeOf<CompletionResponseInfo>().toMatchTypeOf<
       CompletionRequestInfo & { hasStream: boolean }
     >()
+    expectTypeOf<CompletionStreamProtocol>().toEqualTypeOf<'text' | 'data'>()
     expectTypeOf<UseCompletionOptions['onRequest']>().toEqualTypeOf<
       ((info: CompletionRequestInfo) => void) | undefined
     >()
@@ -933,6 +938,9 @@ describe('public API types', () => {
       void | Partial<ChatResumeRequest> | Promise<void | Partial<ChatResumeRequest>>
     >()
     expectTypeOf<CompletionRequest['body']>().toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf<CompletionRequest['streamProtocol']>().toEqualTypeOf<
+      CompletionStreamProtocol | undefined
+    >()
     expectTypeOf<EmbeddingRequest['body']>().toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(appendOptions).toEqualTypeOf<AppendChatOptions>()
     expectTypeOf(appendOptions.attachments).toEqualTypeOf<ChatAttachmentsInput | undefined>()

@@ -184,11 +184,12 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 1. 把 AI SDK UI 的 import 替换为 `vue-ai-hooks`。
 2. 将 `DefaultChatTransport` 选项映射到 `api`、`baseURL`、`headers`、`body`、
    `credentials` 和 `fetch`。
-3. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-4. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+3. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
+4. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+5. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-5. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-6. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+6. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+7. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
    `addToolApprovalResponse()`。
-7. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-8. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+8. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+9. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

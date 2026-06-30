@@ -15,6 +15,8 @@ import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
+export type CompletionStreamProtocol = NonNullable<CompletionRequest['streamProtocol']>
+
 export interface CompletionFinishInfo {
   prompt: string
   completion: string
@@ -51,6 +53,7 @@ export interface UseCompletionOptions extends RetryOptions, StreamThrottleOption
   initialInput?: string
   initialCompletion?: string
   defaultRequest?: Partial<CompletionRequest>
+  streamProtocol?: CompletionStreamProtocol
   onUpdate?: (completion: string, delta: string) => void
   onRequest?: (info: CompletionRequestInfo) => void
   onResponse?: (info: CompletionResponseInfo) => void
@@ -134,6 +137,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     initialInput = '',
     initialCompletion = '',
     defaultRequest = {},
+    streamProtocol,
     onUpdate,
     onRequest,
     onResponse,
@@ -270,6 +274,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
           const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
           const request: CompletionRequest = {
             ...defaultRequest,
+            ...(streamProtocol ? { streamProtocol } : {}),
             ...requestOptions,
             ...(body ? { body } : {}),
             prompt: finalPrompt,

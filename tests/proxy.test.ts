@@ -24,6 +24,22 @@ function sseResponse(events: unknown[]): Response {
   })
 }
 
+function textResponse(chunks: string[]): Response {
+  const encoder = new TextEncoder()
+  const body = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk))
+      }
+      controller.close()
+    }
+  })
+  return new Response(body, {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  })
+}
+
 describe('proxyProvider', () => {
   it('posts chat requests to the app backend and streams ChatChunk SSE payloads', async () => {
     const fetcher = vi.fn(async () =>
@@ -534,6 +550,29 @@ describe('proxyProvider', () => {
     expect(text).toBe('Hello')
     expect(jsonText).toBe('Bye')
     expect(objectText).toBe('Done')
+  })
+
+  it('supports AI SDK text completion proxy responses', async () => {
+    const fetcher = vi.fn(async () => textResponse(['Hel', 'lo']))
+    const provider = proxyProvider({
+      completionUrl: '/internal/completion',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    let text = ''
+    for await (const chunk of await provider.completion({
+      prompt: 'Say hello',
+      streamProtocol: 'text'
+    })) {
+      text += chunk
+    }
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      prompt: 'Say hello',
+      streamProtocol: 'text'
+    })
+    expect(text).toBe('Hello')
   })
 
   it('returns embedding JSON from the proxy endpoint', async () => {

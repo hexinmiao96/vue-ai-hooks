@@ -336,20 +336,21 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 ### `CompletionRequest`
 
-| 字段               | 类型                      | 说明                                          |
-| ------------------ | ------------------------- | --------------------------------------------- |
-| `prompt`           | `string`                  | Prompt 文本。                                 |
-| `body`             | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。 |
-| `model`            | `string`                  | Provider 模型 ID。                            |
-| `temperature`      | `number`                  | 采样温度。                                    |
-| `maxTokens`        | `number`                  | 最大生成 token 数。                           |
-| `topP`             | `number`                  | nucleus sampling 参数。                       |
-| `frequencyPenalty` | `number`                  | frequency penalty。                           |
-| `presencePenalty`  | `number`                  | presence penalty。                            |
-| `stop`             | `string \| string[]`      | 停止序列。                                    |
-| `stream`           | `boolean`                 | 是否要求 Provider 流式返回。                  |
-| `signal`           | `AbortSignal`             | 中止信号。                                    |
-| `headers`          | `Record<string, string>`  | Provider 合并的单次请求 headers。             |
+| 字段               | 类型                      | 说明                                               |
+| ------------------ | ------------------------- | -------------------------------------------------- |
+| `prompt`           | `string`                  | Prompt 文本。                                      |
+| `body`             | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。      |
+| `streamProtocol`   | `'text' \| 'data'`        | proxy 路由使用的 completion stream protocol 提示。 |
+| `model`            | `string`                  | Provider 模型 ID。                                 |
+| `temperature`      | `number`                  | 采样温度。                                         |
+| `maxTokens`        | `number`                  | 最大生成 token 数。                                |
+| `topP`             | `number`                  | nucleus sampling 参数。                            |
+| `frequencyPenalty` | `number`                  | frequency penalty。                                |
+| `presencePenalty`  | `number`                  | presence penalty。                                 |
+| `stop`             | `string \| string[]`      | 停止序列。                                         |
+| `stream`           | `boolean`                 | 是否要求 Provider 流式返回。                       |
+| `signal`           | `AbortSignal`             | 中止信号。                                         |
+| `headers`          | `Record<string, string>`  | Provider 合并的单次请求 headers。                  |
 
 ### `EmbeddingRequest`
 

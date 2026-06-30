@@ -352,6 +352,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | ------------------ | ------------------------- | -------------------------------------------------- |
 | `prompt`           | `string`                  | Prompt text.                                       |
 | `body`             | `Record<string, unknown>` | Extra JSON body fields for provider/proxy options. |
+| `streamProtocol`   | `'text' \| 'data'`        | Completion stream protocol hint for proxy routes.  |
 | `model`            | `string`                  | Provider model id.                                 |
 | `temperature`      | `number`                  | Sampling temperature.                              |
 | `maxTokens`        | `number`                  | Maximum generated tokens.                          |

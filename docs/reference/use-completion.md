@@ -4,7 +4,7 @@ Vue 3 composable for single-shot streaming completions.
 
 Public TypeScript types: `UseCompletionOptions`, `UseCompletionReturn`,
 `CompletionRequestInfo`, `CompletionResponseInfo`, `CompletionFinishInfo`,
-`RetryOptions`, and `RetryContext`.
+`CompletionStreamProtocol`, `RetryOptions`, and `RetryContext`.
 
 ## Usage
 
@@ -45,6 +45,7 @@ const { complete } = useCompletion({
 | `initialInput`          | `string`                                                               | `''`              | Seed the form input prompt.                             |
 | `initialCompletion`     | `string`                                                               | `''`              | Seed the completion.                                    |
 | `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | Default options.                                        |
+| `streamProtocol`        | `'text' \| 'data'`                                                     | —                 | AI SDK-compatible proxy stream protocol hint.           |
 | `maxRetries`            | `number`                                                               | `0`               | Retry attempts for failures before the first delta.     |
 | `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | Delay before each retry.                                |
 | `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —                 | Override the default retryable error decision.          |
@@ -94,6 +95,10 @@ const { complete } = useCompletion({
 - Use `defaultRequest.body` or `complete(prompt, { body })` for
   provider-specific JSON request fields. Typed fields such as `prompt`, `model`,
   and `stream` win if keys conflict.
+- Set `streamProtocol: 'text'` when your app-owned completion endpoint returns a
+  plain text stream. The default proxy sends the protocol hint in the request
+  JSON and reads `text/plain` responses as streamed text. The default `data`
+  path keeps the existing SSE/JSON response support.
 - `handleSubmit()` clears `input` only after a successful completion. Provider
   errors leave the prompt available for retry.
 - `onFinish(completion, info)` keeps the final completion as the first argument

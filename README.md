@@ -320,6 +320,8 @@ Set `throttleMs` on `useChat`, `useCompletion`, or `useObject` to batch reactive
 stream updates for busy UIs. The final stream state is always flushed before the
 request resolves. `experimental_throttle` is accepted as an AI SDK-compatible
 alias, but new code should prefer `throttleMs`.
+`useCompletion({ streamProtocol: 'text' })` is available for app-owned proxy
+routes that return plain text streams.
 
 `useChat` keeps the final assistant message as the first `onFinish` argument and
 also passes `ChatFinishInfo` with the message snapshot, abort/error/disconnect

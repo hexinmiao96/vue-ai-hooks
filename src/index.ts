@@ -62,6 +62,7 @@ export {
   type CompletionFinishInfo,
   type CompletionRequestInfo,
   type CompletionResponseInfo,
+  type CompletionStreamProtocol,
   type UseCompletionOptions,
   type UseCompletionReturn
 } from './composables/useCompletion'

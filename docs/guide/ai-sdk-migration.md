@@ -197,12 +197,14 @@ fields for default chat proxy transports.
 1. Replace imports from AI SDK UI with `vue-ai-hooks`.
 2. Map `DefaultChatTransport` options to `api`, `baseURL`, `headers`, `body`,
    `credentials`, and `fetch`.
-3. Keep existing initial messages by passing `messages` or `initialMessages`.
-4. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+3. Map completion `streamProtocol: 'text'` when your existing route returns a
+   plain text stream.
+4. Keep existing initial messages by passing `messages` or `initialMessages`.
+5. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
    `gemini`, `anthropic`, or `openaiCompatible`.
-5. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-6. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+6. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+7. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
    `addToolApprovalResponse()`.
-7. Add `lastRequest` and `lastResponse` to your debug view before swapping
+8. Add `lastRequest` and `lastResponse` to your debug view before swapping
    production traffic.
-8. Run `pnpm release:check` or your app's equivalent gate before shipping.
+9. Run `pnpm release:check` or your app's equivalent gate before shipping.

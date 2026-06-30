@@ -213,6 +213,10 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
     async completion(request: CompletionRequest): Promise<AsyncIterable<string>> {
       const response = await post('completion', completionUrl, request)
 
+      if (request.streamProtocol === 'text' || isTextResponse(response)) {
+        return readTextChunks(response, request.signal)
+      }
+
       if (isEventStream(response)) {
         return (async function* () {
           for await (const raw of parseSSE(response, request.signal)) {
@@ -251,6 +255,36 @@ function resolveResumeUrl(source: string | ((id: string) => string), id: string)
 
 function isEventStream(response: Response) {
   return response.headers.get('content-type')?.includes('text/event-stream') ?? false
+}
+
+function isTextResponse(response: Response) {
+  return response.headers.get('content-type')?.includes('text/plain') ?? false
+}
+
+async function readTextChunks(response: Response, signal?: AbortSignal) {
+  if (!response.body) {
+    const text = await response.text()
+    return (async function* () {
+      if (!signal?.aborted && text) yield text
+    })()
+  }
+
+  return (async function* () {
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+    try {
+      while (!signal?.aborted) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const text = decoder.decode(value, { stream: true })
+        if (text) yield text
+      }
+      const tail = decoder.decode()
+      if (!signal?.aborted && tail) yield tail
+    } finally {
+      reader.releaseLock()
+    }
+  })()
 }
 
 async function readChatChunks(response: Response, signal?: AbortSignal) {

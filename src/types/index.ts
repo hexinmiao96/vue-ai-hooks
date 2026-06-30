@@ -252,6 +252,8 @@ export interface CompletionRequest {
   prompt: string
   /** Extra JSON body fields for provider/proxy-specific request options. */
   body?: Record<string, unknown>
+  /** AI SDK-compatible completion stream protocol hint for app-owned proxy endpoints. */
+  streamProtocol?: 'text' | 'data'
   model?: string
   temperature?: number
   maxTokens?: number

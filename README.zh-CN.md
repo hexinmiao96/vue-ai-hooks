@@ -253,6 +253,8 @@ import type { ChatProvider } from 'vue-ai-hooks'
 用于管理流式聊天会话的响应式组合式函数，返回 `id`、`messages`、`input`、`status`、`usage`、`data`、`streamData`、`pendingToolCalls`、`lastRequest`、`lastResponse`、`append()`、`sendMessage()`、`handleSubmit()`、`setInput()`、`handleInputChange()`、`setData()`、`addToolResult()`、`addToolOutput()`、`addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`、`regenerate()`、`resumeStream()`、`reload()`、`stop()`、`setId()`、`clearError()`、`clearTrace()`、`clear()` 等状态和操作。`data` 是 `streamData` 的 AI SDK 风格别名；`append(..., { messageId })` 可用于编辑已有消息并重新生成后续回复；`sendMessage()` 不传 content 时会提交当前 messages，适合手动工具结果后的继续生成；`addToolResult()` 同时支持 `(toolCallId, result)` 和 AI SDK 风格的 `{ toolCallId, output }` 对象签名。
 
 `useChat`、`useCompletion` 和 `useObject` 支持 `throttleMs`，可以把高频流式响应合并成较低频的响应式更新；最终状态会在请求 resolve 前强制刷新。`experimental_throttle` 也可作为 AI SDK 风格兼容别名，但新代码建议使用 `throttleMs`。
+应用自己的 proxy 路由返回纯文本补全流时，可以使用
+`useCompletion({ streamProtocol: 'text' })`。
 
 `useChat` 的 `onFinish` 保持最终助手消息作为第一个参数，同时会传入
 `ChatFinishInfo`，包含消息快照、中止/错误/断连标记和 finish reason。
