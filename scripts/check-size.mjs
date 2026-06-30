@@ -5,12 +5,12 @@ const budgets = [
   {
     file: 'dist/index.mjs',
     maxBytes: 86_200,
-    maxGzipBytes: 22_200
+    maxGzipBytes: 22_250
   },
   {
     file: 'dist/index.cjs',
     maxBytes: 60_400,
-    maxGzipBytes: 19_400
+    maxGzipBytes: 19_450
   }
 ]
 const failures = []

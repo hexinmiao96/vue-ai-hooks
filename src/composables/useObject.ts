@@ -45,6 +45,13 @@ export interface ObjectResponseInfo extends ObjectRequestInfo {
   hasStream: boolean
 }
 
+export interface ObjectFinishInfo<T = unknown> {
+  object: T
+  text: string
+  isAbort: boolean
+  error: Error | undefined
+}
+
 export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -67,7 +74,7 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   onPartial?: (partialObject: DeepPartial<T>, text: string) => void
   onRequest?: (info: ObjectRequestInfo) => void
   onResponse?: (info: ObjectResponseInfo) => void
-  onFinish?: (object: T) => void
+  onFinish?: (object: T, info: ObjectFinishInfo<T>) => void
   onError?: (err: Error) => void
 }
 
@@ -375,12 +382,18 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
             throw createAbortError()
           }
 
-          object.value = parseObject(nextText)
-          partialObject.value = object.value as DeepPartial<T>
+          const finalObject = parseObject(nextText)
+          object.value = finalObject
+          partialObject.value = finalObject as DeepPartial<T>
           text.value = nextText
           status.value = 'ready'
-          onFinish?.(object.value)
-          return object.value
+          onFinish?.(finalObject, {
+            object: finalObject,
+            text: nextText,
+            isAbort: false,
+            error: undefined
+          })
+          return finalObject
         } catch (err) {
           const e = normalizeError(err)
           if ((e as { name?: string }).name === 'AbortError' || controller.signal.aborted) {

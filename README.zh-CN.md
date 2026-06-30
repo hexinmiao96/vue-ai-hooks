@@ -293,8 +293,10 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `useObject` 支持通过 `id` 在多个组件间共享结构化输出状态，也支持用
 `initialValue` 初始化第一份部分对象。默认 proxy object 路由既可以返回 chat chunks，
 也可以直接返回 `text/plain` JSON 文本流。
+它的 `onFinish` 会保持最终解析对象作为第一个参数，并通过 `ObjectFinishInfo`
+传递最终对象、原始 JSON 文本、中止状态和错误字段。
 
-它的 `onFinish` 会保持最终文本作为第一个参数，并通过 `CompletionFinishInfo`
+`useCompletion` 的 `onFinish` 会保持最终文本作为第一个参数，并通过 `CompletionFinishInfo`
 传递原始 prompt 和中止状态。
 
 多个 `useCompletion()` 传入同一个 `id` 时，会在组件之间共享补全状态；不传 `id` 时会创建独立的自动生成状态。

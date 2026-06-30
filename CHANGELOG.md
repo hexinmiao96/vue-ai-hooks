@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added AI SDK-compatible `streamProtocol` support for default proxy
   completions that return plain text streams.
 - Added plain text stream support for default proxy chat/object responses.
+- Added `ObjectFinishInfo` to `useObject.onFinish` for AI SDK-style final
+  object diagnostics without changing the first callback argument.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.

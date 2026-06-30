@@ -181,7 +181,12 @@ describe('useObject', () => {
     )
     expect(onPartial).toHaveBeenCalledWith({ title: 'Ship' }, '{"title":"Ship"')
     expect(onPartial).toHaveBeenLastCalledWith(result, '{"title":"Ship","priority":"high"}')
-    expect(onFinish).toHaveBeenCalledWith(result)
+    expect(onFinish).toHaveBeenCalledWith(result, {
+      object: result,
+      text: '{"title":"Ship","priority":"high"}',
+      isAbort: false,
+      error: undefined
+    })
     expect(requests[0].messages.map((message) => message.content)).toEqual([
       'Return JSON only.',
       'Summarize this task.'

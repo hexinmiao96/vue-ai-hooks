@@ -80,7 +80,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | 当前 JSON 流可以解析为部分对象时调用。                      |
 | `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Provider 调用前，拿到最终结构化 chat 请求。                 |
 | `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Provider 返回结构化 chat stream 后调用。                    |
-| `onFinish`              | `(object: T) => void`                                                  | -             | 最终 JSON 成功解析后调用。                                  |
+| `onFinish`              | `(object: T, info: ObjectFinishInfo<T>) => void`                       | -             | 最终 JSON 成功解析后调用。                                  |
 | `onError`               | `(err: Error) => void`                                                 | -             | Provider 错误或 JSON 解析失败时调用。                       |
 
 ## 返回值
@@ -113,6 +113,9 @@ format。`openai`、`openaiCompatible`、`openrouter`、`gemini` 和 `deepseek`
 `api` 或 `/api/object`。
 这个 proxy 端点可以返回 SSE/JSON chat chunks，也可以返回 `text/plain` JSON 文本流；
 纯文本 chunk 会作为结构化对象内容累积和解析。
+
+`onFinish` 会保持最终解析对象作为第一个参数，同时传入 `ObjectFinishInfo<T>`，
+包含 `object`、原始 JSON `text`、`isAbort` 和 `error` 字段。
 
 不强制结构化输出的 Provider 仍然可能在提示词约束下返回合法 JSON。客户端会对最终解析后的 JSON 校验常见 schema 关键字：`type`、`required`、`enum`、`properties`、`items` 和 `additionalProperties`。如果返回内容不是合法 JSON，或最终对象不符合 schema，`submit()` 会以 `AiHooksError` reject。
 

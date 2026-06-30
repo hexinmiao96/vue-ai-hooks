@@ -356,6 +356,9 @@ proxy `api` and browser credentials mode.
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object. Default proxy object
 routes may return either chat chunks or `text/plain` JSON streams.
+Its `onFinish` callback keeps the parsed object as the first argument and passes
+`ObjectFinishInfo` with the final object, raw JSON text, abort status, and error
+field.
 
 `useGeneration` accepts a custom `fetcher` and provides typed `result`,
 `progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before
@@ -365,8 +368,8 @@ visible output.
 and `handleSubmit()` for simple form wiring. Successful form submissions clear
 `input`; failed submissions leave it intact. Both accept `initialInput`.
 
-Its `onFinish` callback keeps the final text as the first argument and passes
-the original prompt plus abort status through `CompletionFinishInfo`.
+`useCompletion`'s `onFinish` callback keeps the final text as the first argument
+and passes the original prompt plus abort status through `CompletionFinishInfo`.
 
 Passing the same `id` to multiple `useCompletion()` calls shares completion
 state across components. Omit `id` for independent generated state.

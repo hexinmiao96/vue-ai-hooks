@@ -83,7 +83,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | Called whenever the current JSON stream can be parsed as a partial object. |
 | `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Called with the final structured chat request before send.                 |
 | `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Called after the provider returns a structured chat stream.                |
-| `onFinish`              | `(object: T) => void`                                                  | -             | Called after the final JSON parses successfully.                           |
+| `onFinish`              | `(object: T, info: ObjectFinishInfo<T>) => void`                       | -             | Called after the final JSON parses successfully.                           |
 | `onError`               | `(err: Error) => void`                                                 | -             | Called on provider errors or invalid JSON parse failures.                  |
 
 ## Return value
@@ -116,6 +116,10 @@ unchanged. When `provider` and `transport` are omitted, `useObject` uses the
 built-in proxy transport and calls `api` or `/api/object`.
 That proxy endpoint may return SSE/JSON chat chunks or a `text/plain` stream of
 JSON text; plain text chunks are treated as streamed object content.
+
+`onFinish` keeps the parsed object as the first argument and also receives
+`ObjectFinishInfo<T>` with `object`, raw JSON `text`, `isAbort`, and `error`
+fields.
 
 Providers that do not enforce structured output may still return valid JSON if
 prompted carefully. The client validates the final parsed JSON against common

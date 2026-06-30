@@ -81,6 +81,7 @@ import type {
   MessageToolPart,
   OpenAiLikeConfig,
   OpenRouterConfig,
+  ObjectFinishInfo,
   ObjectRequestInfo,
   ObjectResponseInfo,
   PrepareReconnectToStreamRequest,
@@ -669,11 +670,20 @@ describe('public API types', () => {
       messages: Message[]
     }>()
     expectTypeOf<ObjectResponseInfo>().toMatchTypeOf<ObjectRequestInfo & { hasStream: boolean }>()
+    expectTypeOf<ObjectFinishInfo<{ answer: string }>>().toEqualTypeOf<{
+      object: { answer: string }
+      text: string
+      isAbort: boolean
+      error: Error | undefined
+    }>()
     expectTypeOf<UseObjectOptions['onRequest']>().toEqualTypeOf<
       ((info: ObjectRequestInfo) => void) | undefined
     >()
     expectTypeOf<UseObjectOptions['onResponse']>().toEqualTypeOf<
       ((info: ObjectResponseInfo) => void) | undefined
+    >()
+    expectTypeOf<UseObjectOptions<{ answer: string }>['onFinish']>().toEqualTypeOf<
+      ((object: { answer: string }, info: ObjectFinishInfo<{ answer: string }>) => void) | undefined
     >()
 
     expectTypeOf(assertInvalidPublicApiUsage).returns.toEqualTypeOf<void>()

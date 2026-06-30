@@ -86,6 +86,7 @@ export {
 export {
   useObject,
   type DeepPartial,
+  type ObjectFinishInfo,
   type ObjectRequestInfo,
   type ObjectResponseInfo,
   type UseObjectOptions,
