@@ -187,6 +187,11 @@ can keep that import while new Vue code can use the shorter `useObject()` name:
 import { experimental_useObject as useObject } from 'vue-ai-hooks'
 ```
 
+For Vue object forms, `useObject()` also exposes `input`, `setInput()`,
+`handleInputChange()`, and `handleSubmit()`. `handleSubmit()` clears `input`
+after a successful structured response and keeps it when the provider or parser
+fails.
+
 ## Request inspection
 
 AI SDK migrations often need request visibility while changing transports. Use

@@ -534,6 +534,7 @@ describe('public API types', () => {
     expectTypeOf<UseCompletionOptions['generateId']>().toEqualTypeOf<IdGenerator | undefined>()
     expectTypeOf<UseObjectOptions['id']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseObjectOptions['generateId']>().toEqualTypeOf<IdGenerator | undefined>()
+    expectTypeOf<UseObjectOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseObjectOptions<{ answer: string }>['initialValue']>().toEqualTypeOf<
       DeepPartial<{ answer: string }> | null | undefined
     >()
@@ -675,6 +676,17 @@ describe('public API types', () => {
     expectTypeOf(structured.partialObject).toEqualTypeOf<
       Ref<DeepPartial<{ answer: string }> | null>
     >()
+    expectTypeOf(structured.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(structured.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(structured.handleSubmit).returns.toEqualTypeOf<Promise<{ answer: string }>>()
+    expectTypeOf(structured.handleSubmit)
+      .parameter(0)
+      .toEqualTypeOf<{ preventDefault?: () => void } | undefined>()
+    expectTypeOf(structured.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<ChatRequest> | undefined>()
     expectTypeOf(structured.submit).returns.toEqualTypeOf<Promise<{ answer: string }>>()
     expectTypeOf(structured.submit).parameter(1).toEqualTypeOf<Partial<ChatRequest> | undefined>()
     expectTypeOf<ObjectRequestInfo>().toMatchTypeOf<{

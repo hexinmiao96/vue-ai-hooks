@@ -70,6 +70,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `strict`                | `boolean`                                                              | `true`        | 支持该能力的 Provider 会使用 strict 模式。                  |
 | `initialObject`         | `T \| null`                                                            | `null`        | submit 前和 `clear()` 后使用的对象值。                      |
 | `initialValue`          | `DeepPartial<T> \| null`                                               | -             | AI SDK 风格的初始部分对象值。                               |
+| `initialInput`          | `string`                                                               | `''`          | 结构化输出表单的初始提示词文本。                            |
 | `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | 每次 submit 都会合并的默认请求参数。                        |
 | `generateId`            | `IdGenerator`                                                          | `createId`    | 覆盖自动生成 object 和 prompt message id 的逻辑。           |
 | `maxRetries`            | `number`                                                               | `0`           | 首个 stream chunk 到达前失败时最多重试几次。                |
@@ -87,24 +88,27 @@ const { object, partialObject, submit } = useObject<Ticket>({
 
 ## 返回值
 
-| 属性              | 类型                                                      | 说明                                                         |
-| ----------------- | --------------------------------------------------------- | ------------------------------------------------------------ |
-| `id`              | `Ref<string>`                                             | 组合式函数创建时选定的 Object 状态 id。                      |
-| `object`          | `Ref<T \| null>`                                          | 最近一次成功 submit 得到的最终解析对象。                     |
-| `partialObject`   | `Ref<DeepPartial<T> \| null>`                             | JSON 流式返回过程中的最佳努力部分对象。                      |
-| `text`            | `Ref<string>`                                             | 原始流式 JSON 文本。                                         |
-| `input`           | `Ref<string>`                                             | 可绑定到表单的提示词输入。                                   |
-| `status`          | `Ref<AiRequestStatus>`                                    | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
-| `isLoading`       | `Ref<boolean>`                                            | 请求进行中时为 true。                                        |
-| `error`           | `Ref<Error \| null>`                                      | 最近一次 Provider 或解析错误。                               |
-| `lastRequest`     | `Ref<ObjectRequestInfo \| null>`                          | 最近一次准备完成的结构化 chat 请求快照。                     |
-| `lastResponse`    | `Ref<ObjectResponseInfo \| null>`                         | 最近一次 Provider 响应快照，包含 stream 是否已打开。         |
-| `submit(prompt?)` | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | 发送提示词并解析最终 JSON 对象。                             |
-| `stop()`          | `() => void`                                              | 中止当前请求。                                               |
-| `clearError()`    | `() => void`                                              | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
-| `clearTrace()`    | `() => void`                                              | 清空 `lastRequest` 和 `lastResponse`，不改变对象状态。       |
-| `clear()`         | `() => void`                                              | 重置对象状态、`text`、`input` 和 `error`。                   |
-| `abortController` | `Ref<AbortController \| null>`                            | 暴露给高级用法。                                             |
+| 属性                     | 类型                                                      | 说明                                                         |
+| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------ |
+| `id`                     | `Ref<string>`                                             | 组合式函数创建时选定的 Object 状态 id。                      |
+| `object`                 | `Ref<T \| null>`                                          | 最近一次成功 submit 得到的最终解析对象。                     |
+| `partialObject`          | `Ref<DeepPartial<T> \| null>`                             | JSON 流式返回过程中的最佳努力部分对象。                      |
+| `text`                   | `Ref<string>`                                             | 原始流式 JSON 文本。                                         |
+| `input`                  | `Ref<string>`                                             | 可绑定到表单的提示词输入。                                   |
+| `status`                 | `Ref<AiRequestStatus>`                                    | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
+| `isLoading`              | `Ref<boolean>`                                            | 请求进行中时为 true。                                        |
+| `error`                  | `Ref<Error \| null>`                                      | 最近一次 Provider 或解析错误。                               |
+| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                          | 最近一次准备完成的结构化 chat 请求快照。                     |
+| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                         | 最近一次 Provider 响应快照，包含 stream 是否已打开。         |
+| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | 发送提示词并解析最终 JSON 对象。                             |
+| `setInput(value)`        | `(string) => void`                                        | 手动替换提示词输入。                                         |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                 | 不使用 `v-model` 时接入自定义输入组件。                      |
+| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`           | 接入结构化输出表单；成功后清空 input。                       |
+| `stop()`                 | `() => void`                                              | 中止当前请求。                                               |
+| `clearError()`           | `() => void`                                              | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
+| `clearTrace()`           | `() => void`                                              | 清空 `lastRequest` 和 `lastResponse`，不改变对象状态。       |
+| `clear()`                | `() => void`                                              | 重置对象状态、`text`、`input` 和 `error`。                   |
+| `abortController`        | `Ref<AbortController \| null>`                            | 暴露给高级用法。                                             |
 
 ## Provider 支持
 
@@ -144,4 +148,7 @@ format。`openai`、`openaiCompatible`、`openrouter`、`gemini` 和 `deepseek`
 
 多个 `useObject()` 传入同一个 `id` 时，会共享 `object`、`partialObject`、`text`、
 `input`、`status`、`error`、loading 和 abort 状态。某个 id 的第一次实例化会写入
-`initialObject` 和 `initialValue`。
+`initialObject`、`initialValue` 和 `initialInput`。
+
+`handleSubmit()` 会读取 `input.value`，传入事件时阻止原生表单提交，并且只在结构化请求成功后清空
+`input`。Provider 或解析失败时会保留输入，方便用户修改后重试。

@@ -74,6 +74,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `strict`                | `boolean`                                                              | `true`        | Strict JSON Schema mode for providers that support it.                     |
 | `initialObject`         | `T \| null`                                                            | `null`        | Object value used before submit and after `clear()`.                       |
 | `initialValue`          | `DeepPartial<T> \| null`                                               | —             | AI SDK-style initial partial object value.                                 |
+| `initialInput`          | `string`                                                               | `''`          | Initial prompt text for object forms.                                      |
 | `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | Default request payload merged into every submit.                          |
 | `generateId`            | `IdGenerator`                                                          | `createId`    | Override automatic object and prompt message id generation.                |
 | `maxRetries`            | `number`                                                               | `0`           | Retry attempts for failures before the first stream chunk.                 |
@@ -91,24 +92,27 @@ const { object, partialObject, submit } = useObject<Ticket>({
 
 ## Return value
 
-| Property          | Type                                                      | Description                                                           |
-| ----------------- | --------------------------------------------------------- | --------------------------------------------------------------------- |
-| `id`              | `Ref<string>`                                             | Object state id selected at composable creation.                      |
-| `object`          | `Ref<T \| null>`                                          | Final parsed object from the latest successful submit.                |
-| `partialObject`   | `Ref<DeepPartial<T> \| null>`                             | Best-effort partial object while JSON is streaming.                   |
-| `text`            | `Ref<string>`                                             | Raw streamed JSON text.                                               |
-| `input`           | `Ref<string>`                                             | Prompt binding for forms.                                             |
-| `status`          | `Ref<AiRequestStatus>`                                    | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.     |
-| `isLoading`       | `Ref<boolean>`                                            | True while a request is in flight.                                    |
-| `error`           | `Ref<Error \| null>`                                      | Last provider or parse error.                                         |
-| `lastRequest`     | `Ref<ObjectRequestInfo \| null>`                          | Last prepared structured chat request snapshot.                       |
-| `lastResponse`    | `Ref<ObjectResponseInfo \| null>`                         | Last provider response snapshot, including whether a stream opened.   |
-| `submit(prompt?)` | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | Send a prompt and parse the final JSON object.                        |
-| `stop()`          | `() => void`                                              | Abort the in-flight request.                                          |
-| `clearError()`    | `() => void`                                              | Clear `error` and move `status` back to `ready`.                      |
-| `clearTrace()`    | `() => void`                                              | Clear `lastRequest` and `lastResponse` without changing object state. |
-| `clear()`         | `() => void`                                              | Reset object state, `text`, `input`, and `error`.                     |
-| `abortController` | `Ref<AbortController \| null>`                            | Exposed for advanced use cases.                                       |
+| Property                 | Type                                                      | Description                                                           |
+| ------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------- |
+| `id`                     | `Ref<string>`                                             | Object state id selected at composable creation.                      |
+| `object`                 | `Ref<T \| null>`                                          | Final parsed object from the latest successful submit.                |
+| `partialObject`          | `Ref<DeepPartial<T> \| null>`                             | Best-effort partial object while JSON is streaming.                   |
+| `text`                   | `Ref<string>`                                             | Raw streamed JSON text.                                               |
+| `input`                  | `Ref<string>`                                             | Prompt binding for forms.                                             |
+| `status`                 | `Ref<AiRequestStatus>`                                    | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.     |
+| `isLoading`              | `Ref<boolean>`                                            | True while a request is in flight.                                    |
+| `error`                  | `Ref<Error \| null>`                                      | Last provider or parse error.                                         |
+| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                          | Last prepared structured chat request snapshot.                       |
+| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                         | Last provider response snapshot, including whether a stream opened.   |
+| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | Send a prompt and parse the final JSON object.                        |
+| `setInput(value)`        | `(string) => void`                                        | Replace prompt input manually.                                        |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                 | Wire custom inputs without `v-model`.                                 |
+| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`           | Wire an object form submit; clears input after success.               |
+| `stop()`                 | `() => void`                                              | Abort the in-flight request.                                          |
+| `clearError()`           | `() => void`                                              | Clear `error` and move `status` back to `ready`.                      |
+| `clearTrace()`           | `() => void`                                              | Clear `lastRequest` and `lastResponse` without changing object state. |
+| `clear()`                | `() => void`                                              | Reset object state, `text`, `input`, and `error`.                     |
+| `abortController`        | `Ref<AbortController \| null>`                            | Exposed for advanced use cases.                                       |
 
 ## Provider support
 
@@ -156,5 +160,9 @@ Explicit `Message.id` values passed to `submit(message)` are preserved.
 
 Passing the same `id` to multiple `useObject()` calls shares `object`,
 `partialObject`, `text`, `input`, `status`, `error`, loading, and abort state
-across instances. The first instance for an id seeds `initialObject` and
-`initialValue`.
+across instances. The first instance for an id seeds `initialObject`,
+`initialValue`, and `initialInput`.
+
+`handleSubmit()` reads `input.value`, prevents the native form submit when an
+event is provided, and clears `input` only after the object request succeeds.
+Provider or parse failures leave the input intact so users can edit and retry.

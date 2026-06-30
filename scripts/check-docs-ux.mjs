@@ -14,6 +14,8 @@ const files = {
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
+  useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
+  zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
   zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
   providers: readFileSync('docs/reference/providers.md', 'utf8'),
@@ -395,6 +397,21 @@ expect(
     files.chatExample.includes('lastRequest') &&
     files.chatExample.includes('trace-panel'),
   'Docs and chat example must surface provider request trace refs'
+)
+expect(
+  files.useObject.includes('initialInput') &&
+    files.useObject.includes('setInput(value)') &&
+    files.useObject.includes('handleInputChange(e)') &&
+    files.useObject.includes('handleSubmit(e, opts?)') &&
+    files.useObject.includes('Provider or parse failures leave the input intact') &&
+    files.zhUseObject.includes('initialInput') &&
+    files.zhUseObject.includes('setInput(value)') &&
+    files.zhUseObject.includes('handleInputChange(e)') &&
+    files.zhUseObject.includes('handleSubmit(e, opts?)') &&
+    files.zhUseObject.includes('Provider 或解析失败时会保留输入') &&
+    files.readme.includes('`useChat`, `useCompletion`, and `useObject` also expose') &&
+    files.zhReadme.includes('`useChat`、`useCompletion` 和 `useObject` 还提供'),
+  'Object docs and READMEs must document structured-output form helpers'
 )
 expect(
   files.useChat.includes('## Message pruning') &&

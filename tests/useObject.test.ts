@@ -246,18 +246,21 @@ describe('useObject', () => {
       id: 'shared-task-summary',
       provider: fakeProvider([{ content: '{"title":"Shared","priority":"high"}' }], requests),
       schema,
-      initialValue: { title: 'Draft' }
+      initialValue: { title: 'Draft' },
+      initialInput: 'first prompt'
     })
     const second = useObject<TaskSummary>({
       id: 'shared-task-summary',
       provider: fakeProvider([{ content: '{"title":"Ignored","priority":"low"}' }]),
       schema,
+      initialInput: 'ignored prompt',
       initialValue: { title: 'Ignored' }
     })
 
     expect(first.id.value).toBe('shared-task-summary')
     expect(second.partialObject.value).toEqual({ title: 'Draft' })
     expect(second.object.value).toBeNull()
+    expect(second.input.value).toBe('first prompt')
 
     second.input.value = 'Summarize shared state.'
     await first.submit()
@@ -516,14 +519,44 @@ describe('useObject', () => {
     expect(lastResponse.value).toBeNull()
   })
 
-  it('supports input.value and clear()', async () => {
-    const { input, object, partialObject, text, submit, clear } = useObject<TaskSummary>({
-      provider: fakeProvider([{ content: '{"title":"Clean","priority":"low"}' }]),
+  it('supports form input helpers and clear()', async () => {
+    const preventDefault = vi.fn()
+    const requests: ChatRequest[] = []
+    const {
+      input,
+      object,
+      partialObject,
+      text,
+      submit,
+      setInput,
+      handleInputChange,
+      handleSubmit,
+      clear
+    } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Clean","priority":"low"}' }], requests),
       schema,
-      initialObject: { title: 'Initial', priority: 'low' }
+      initialObject: { title: 'Initial', priority: 'low' },
+      initialInput: 'Initial prompt.'
     })
 
-    input.value = 'Summarize from input.'
+    expect(input.value).toBe('Initial prompt.')
+
+    setInput('Manual prompt.')
+    expect(input.value).toBe('Manual prompt.')
+
+    handleInputChange({ target: { value: 'Event prompt.' } })
+    await expect(handleSubmit({ preventDefault }, { temperature: 0.2 })).resolves.toEqual({
+      title: 'Clean',
+      priority: 'low'
+    })
+    expect(preventDefault).toHaveBeenCalledOnce()
+    expect(input.value).toBe('')
+    expect(requests[0]).toMatchObject({
+      temperature: 0.2,
+      messages: [expect.objectContaining({ content: 'Event prompt.' })]
+    })
+
+    handleInputChange('Summarize from input.')
     await submit()
     expect(object.value?.title).toBe('Clean')
     expect(partialObject.value?.title).toBe('Clean')
@@ -534,6 +567,32 @@ describe('useObject', () => {
     expect(partialObject.value).toEqual({ title: 'Initial', priority: 'low' })
     expect(text.value).toBe('')
     expect(input.value).toBe('')
+  })
+
+  it('keeps object input when form submission fails', async () => {
+    const provider: ChatProvider = {
+      id: 'failing-object',
+      async chat() {
+        throw new Error('object submission failed')
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { error, handleSubmit, input } = useObject<TaskSummary>({
+      provider,
+      schema,
+      initialInput: 'Keep object prompt.'
+    })
+
+    await expect(handleSubmit()).rejects.toThrow('object submission failed')
+    expect(input.value).toBe('Keep object prompt.')
+    expect(error.value?.message).toBe('object submission failed')
   })
 
   it('accepts message prompts and explicit request messages', async () => {

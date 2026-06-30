@@ -69,6 +69,7 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   strict?: boolean
   initialObject?: T | null
   initialValue?: DeepPartial<T> | null
+  initialInput?: string
   defaultRequest?: Partial<ChatRequest>
   generateId?: IdGenerator
   onChunk?: (chunk: ChatChunk, text: string) => void
@@ -92,6 +93,12 @@ export interface UseObjectReturn<T = unknown> {
   lastResponse: Ref<ObjectResponseInfo | null>
   submit: (prompt?: string | Message, options?: Partial<ChatRequest>) => Promise<T>
   stop: () => void
+  setInput: (value: string) => void
+  handleInputChange: (event: Event | { target?: { value?: unknown } } | string) => void
+  handleSubmit: (
+    event?: { preventDefault?: () => void },
+    options?: Partial<ChatRequest>
+  ) => Promise<T>
   clearError: () => void
   clearTrace: () => void
   clear: () => void
@@ -116,7 +123,8 @@ const objectStates = new Map<string, ObjectState<unknown>>()
 function getObjectState<T>(
   id: string,
   initialObject: T | null,
-  initialPartialObject: DeepPartial<T> | null
+  initialPartialObject: DeepPartial<T> | null,
+  initialInput: string
 ): ObjectState<T> {
   const existing = objectStates.get(id)
   if (existing) return existing as ObjectState<T>
@@ -127,7 +135,7 @@ function getObjectState<T>(
     object: ref(initialObject) as Ref<T | null>,
     partialObject: ref(initialPartialObject) as Ref<DeepPartial<T> | null>,
     text: ref(''),
-    input: ref(''),
+    input: ref(initialInput),
     status: ref<AiRequestStatus>('ready'),
     isLoading: ref(false),
     error: ref<Error | null>(null),
@@ -154,6 +162,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     strict = true,
     initialObject = null,
     initialValue,
+    initialInput = '',
     defaultRequest = {},
     generateId = createId,
     onChunk,
@@ -178,7 +187,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
   const id = ref(explicitId || generateId('object'))
   const initialPartialObject =
     initialValue === undefined ? (initialObject as DeepPartial<T> | null) : initialValue
-  const state = getObjectState(id.value, initialObject, initialPartialObject)
+  const state = getObjectState(id.value, initialObject, initialPartialObject, initialInput)
   const {
     object,
     partialObject,
@@ -214,6 +223,20 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
   function clearError() {
     error.value = null
     status.value = 'ready'
+  }
+
+  function setInput(value: string) {
+    input.value = value
+  }
+
+  function handleInputChange(event: Event | { target?: { value?: unknown } } | string) {
+    if (typeof event === 'string') {
+      setInput(event)
+      return
+    }
+
+    const value = (event.target as { value?: unknown } | null | undefined)?.value
+    setInput(value == null ? '' : String(value))
   }
 
   function responseFormat(): ResponseFormat {
@@ -424,6 +447,16 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     }
   }
 
+  async function handleSubmit(
+    event?: { preventDefault?: () => void },
+    requestOptions: Partial<ChatRequest> = {}
+  ) {
+    event?.preventDefault?.()
+    const result = await submit(input.value, requestOptions)
+    input.value = ''
+    return result
+  }
+
   return {
     id,
     object,
@@ -437,6 +470,9 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     lastResponse,
     submit,
     stop,
+    setInput,
+    handleInputChange,
+    handleSubmit,
     clearError,
     clearTrace,
     clear,
