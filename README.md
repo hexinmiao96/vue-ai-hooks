@@ -423,8 +423,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 The same proxy template also accepts `useChat({ baseURL })`,
 `useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
 `useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
-`/api/embedding`, and `/api/object`. Proxy headers accept `HeadersInit`, so
-records, `Headers` instances, and `[key, value][]` entries all work.
+`/api/embedding`, and `/api/object`. Provider, proxy, and per-request headers
+accept `HeadersInit`, so records, `Headers` instances, and `[key, value][]`
+entries all work.
 
 For deterministic component and composable tests without live provider calls, see
 the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/testing.md).

@@ -10,6 +10,7 @@ import type {
 } from '../types'
 import { parseSSE } from '../utils/stream'
 import { requestJson } from '../utils/fetch'
+import { mergeHeaders } from '../utils/headers'
 
 type OpenAiUsage =
   | TokenUsage
@@ -51,7 +52,7 @@ export interface OpenAiLikeConfig {
    * Additional headers to send on every request. Use for org-id, project-id,
    * or self-hosted gateways that require custom auth.
    */
-  headers?: Record<string, string>
+  headers?: HeadersInit
   /** Default model when a request omits one. */
   defaultModel?: string
   /** Path for chat completions endpoint, defaults to '/chat/completions'. */
@@ -88,11 +89,13 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     timeoutMs
   } = config
 
-  const baseHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`,
-    ...extraHeaders
-  }
+  const baseHeaders = mergeHeaders(
+    {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    extraHeaders
+  )
 
   const joinUrl = (base: string, path: string): string => {
     const b = base.replace(/\/+$/, '')
@@ -153,7 +156,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
       const response = await requestJson(joinUrl(baseURL, chatPath), {
         method: 'POST',
-        headers: { ...baseHeaders, ...headers },
+        headers: mergeHeaders(baseHeaders, headers),
         body: JSON.stringify(body),
         signal,
         timeoutMs,
@@ -234,7 +237,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
       const response = await requestJson(joinUrl(baseURL, completionPath), {
         method: 'POST',
-        headers: { ...baseHeaders, ...headers },
+        headers: mergeHeaders(baseHeaders, headers),
         body: JSON.stringify(body),
         signal,
         timeoutMs,
@@ -267,7 +270,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
       const response = await requestJson(joinUrl(baseURL, embeddingPath), {
         method: 'POST',
-        headers: { ...baseHeaders, ...headers },
+        headers: mergeHeaders(baseHeaders, headers),
         body: JSON.stringify(body),
         signal,
         timeoutMs,

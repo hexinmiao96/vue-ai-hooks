@@ -336,8 +336,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 同一个代理模板也支持 `useChat({ baseURL })`、`useCompletion({ baseURL })`、
 `useEmbedding({ baseURL })` 和 `useObject({ baseURL, schema })` 默认路径：
-`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`。Proxy headers
-接受 `HeadersInit`，普通对象、`Headers` 实例和 `[key, value][]` entries 都能使用。
+`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`。Provider、proxy
+和单次请求 headers 都接受 `HeadersInit`，普通对象、`Headers` 实例和
+`[key, value][]` entries 都能使用。
 
 如果要在不调用真实 Provider 的情况下稳定测试组件和组合式函数，请查看
 [测试指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/testing.md)。

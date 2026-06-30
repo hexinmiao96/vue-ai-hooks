@@ -320,7 +320,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `user`             | `string`                                                                             | 用于 Provider 策略或风控的终端用户标识。         |
 | `stream`           | `boolean`                                                                            | 是否要求 Provider 流式返回。                     |
 | `signal`           | `AbortSignal`                                                                        | 中止信号。                                       |
-| `headers`          | `Record<string, string>`                                                             | Provider 合并的单次请求 headers。                |
+| `headers`          | `HeadersInit`                                                                        | Provider 合并的单次请求 headers。                |
 
 ### `ChatResumeRequest`
 
@@ -332,7 +332,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `body`           | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。    |
 | `metadata`       | `unknown`                 | 应用自定义的请求 metadata，通常给代理/后端使用。 |
 | `signal`         | `AbortSignal`             | 中止信号。                                       |
-| `headers`        | `Record<string, string>`  | Provider 合并的单次请求 headers。                |
+| `headers`        | `HeadersInit`             | Provider 合并的单次请求 headers。                |
 
 ### `CompletionRequest`
 
@@ -350,7 +350,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `stop`             | `string \| string[]`      | 停止序列。                                         |
 | `stream`           | `boolean`                 | 是否要求 Provider 流式返回。                       |
 | `signal`           | `AbortSignal`             | 中止信号。                                         |
-| `headers`          | `Record<string, string>`  | Provider 合并的单次请求 headers。                  |
+| `headers`          | `HeadersInit`             | Provider 合并的单次请求 headers。                  |
 
 ### `EmbeddingRequest`
 
@@ -361,7 +361,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `model`   | `string`                  | Provider 模型 ID。                            |
 | `user`    | `string`                  | 用于 Provider 策略或风控的终端用户标识。      |
 | `signal`  | `AbortSignal`             | 中止信号。                                    |
-| `headers` | `Record<string, string>`  | Provider 合并的单次请求 headers。             |
+| `headers` | `HeadersInit`             | Provider 合并的单次请求 headers。             |
 
 `body` 会先合并进 Provider/代理的 JSON 请求体，然后再写入 typed request 字段。
 如果 key 冲突，`messages`、`prompt`、`input`、`model`、`stream` 这类显式字段优先。

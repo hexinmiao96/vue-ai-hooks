@@ -63,6 +63,10 @@ describe('openrouter provider', () => {
     const p = openrouter({
       apiKey: 'k',
       defaultModel: 'openai/gpt-4o-mini',
+      headers: new Headers([
+        ['X-Custom', 'custom'],
+        ['X-Title', 'overridden']
+      ]),
       siteUrl: 'https://app.example.com',
       appName: 'My App'
     })
@@ -91,6 +95,8 @@ describe('openrouter provider', () => {
     expect(body.stream).toBe(false)
     expect(headers['HTTP-Referer']).toBe('https://app.example.com')
     expect(headers['X-Title']).toBe('My App')
+    expect(headers['x-custom']).toBe('custom')
+    expect(headers['x-title']).toBeUndefined()
     expect(chunks).toEqual(['ok'])
     expect(reason).toBe('stop')
   })

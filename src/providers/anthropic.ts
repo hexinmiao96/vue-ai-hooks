@@ -15,6 +15,7 @@ import type {
 import { parseSSE } from '../utils/stream'
 import { requestJson } from '../utils/fetch'
 import { AiHooksError } from '../types'
+import { mergeHeaders } from '../utils/headers'
 
 /** Configuration for the Anthropic provider. */
 export interface AnthropicConfig {
@@ -29,7 +30,7 @@ export interface AnthropicConfig {
   /** Anthropic API version header. Defaults to 2023-06-01. */
   anthropicVersion?: string
   /** Additional headers. */
-  headers?: Record<string, string>
+  headers?: HeadersInit
   /** Custom fetch implementation. */
   fetch?: typeof fetch
   /** Request timeout in milliseconds. */
@@ -97,12 +98,14 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     timeoutMs
   } = config
 
-  const baseHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-    'x-api-key': apiKey,
-    'anthropic-version': anthropicVersion,
-    ...extraHeaders
-  }
+  const baseHeaders = mergeHeaders(
+    {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': anthropicVersion
+    },
+    extraHeaders
+  )
 
   const joinUrl = (path: string): string => {
     const b = baseURL.replace(/\/+$/, '')
@@ -247,7 +250,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     const body = buildBody({ ...request, stream: request.stream ?? true })
     const response = await requestJson(joinUrl('/v1/messages'), {
       method: 'POST',
-      headers: { ...baseHeaders, ...request.headers },
+      headers: mergeHeaders(baseHeaders, request.headers),
       body: JSON.stringify(body),
       signal: request.signal,
       timeoutMs,

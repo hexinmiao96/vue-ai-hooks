@@ -162,6 +162,7 @@ describe('public API types', () => {
       baseURL: string
       timeoutMs?: number
     }>()
+    expectTypeOf<OpenAiLikeConfig['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf<OpenRouterConfig>().toMatchTypeOf<{
       apiKey: string
       siteUrl?: string
@@ -208,6 +209,7 @@ describe('public API types', () => {
       maxTokens?: number
       timeoutMs?: number
     }>()
+    expectTypeOf<AnthropicConfig['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     const fallbackConfig: FallbackProviderConfig = {
       providers: [provider],
       shouldFallback(context) {
@@ -768,6 +770,7 @@ describe('public API types', () => {
       messages: [message],
       forwardedProps: { locale: 'en-US' },
       body: { providerOption: true },
+      headers: new Headers({ 'X-Trace': 'trace_1' }),
       metadata: { traceId: 'trace_1' },
       tools: [tool],
       toolChoice: { type: 'function', function: { name: 'lookup' } },
@@ -786,7 +789,7 @@ describe('public API types', () => {
       forwardedProps: { locale: 'en-US' },
       body: { resumeReason: 'manual' },
       metadata: { traceId: 'resume_1' },
-      headers: { 'X-Trace': 'resume_1' }
+      headers: [['X-Trace', 'resume_1']] as [string, string][]
     }
     const responseFormat: ResponseFormat = { type: 'json_object' }
     const appendOptions: AppendChatOptions = {
@@ -935,10 +938,12 @@ describe('public API types', () => {
     expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.body).toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf(request.headers).toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf(request.metadata).toEqualTypeOf<unknown>()
     expectTypeOf(resumeRequest.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(resumeRequest.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(resumeRequest.body).toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf(resumeRequest.headers).toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf(prepareSendOptions.trigger).toEqualTypeOf<SendChatTrigger>()
     expectTypeOf(prepareStepOptions.stepNumber).toEqualTypeOf<number>()
     expectTypeOf(prepareStepOptions.toolCalls).toEqualTypeOf<ToolCall[]>()
@@ -953,10 +958,12 @@ describe('public API types', () => {
       void | Partial<ChatResumeRequest> | Promise<void | Partial<ChatResumeRequest>>
     >()
     expectTypeOf<CompletionRequest['body']>().toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf<CompletionRequest['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf<CompletionRequest['streamProtocol']>().toEqualTypeOf<
       CompletionStreamProtocol | undefined
     >()
     expectTypeOf<EmbeddingRequest['body']>().toEqualTypeOf<Record<string, unknown> | undefined>()
+    expectTypeOf<EmbeddingRequest['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf(appendOptions).toEqualTypeOf<AppendChatOptions>()
     expectTypeOf(appendOptions.attachments).toEqualTypeOf<ChatAttachmentsInput | undefined>()
     expectTypeOf(appendOptions.messageMetadata).toEqualTypeOf<Record<string, unknown> | undefined>()

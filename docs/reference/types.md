@@ -332,7 +332,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `user`             | `string`                                                                             | End-user identifier for provider policy/abuse tracking.  |
 | `stream`           | `boolean`                                                                            | Whether the provider should stream.                      |
 | `signal`           | `AbortSignal`                                                                        | Abort signal.                                            |
-| `headers`          | `Record<string, string>`                                                             | Per-request headers merged by the provider.              |
+| `headers`          | `HeadersInit`                                                                        | Per-request headers merged by the provider.              |
 
 ### `ChatResumeRequest`
 
@@ -344,7 +344,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `body`           | `Record<string, unknown>` | Extra JSON body fields for provider/proxy options.       |
 | `metadata`       | `unknown`                 | App-defined request metadata for proxy/backend layers.   |
 | `signal`         | `AbortSignal`             | Abort signal.                                            |
-| `headers`        | `Record<string, string>`  | Per-request headers merged by the provider.              |
+| `headers`        | `HeadersInit`             | Per-request headers merged by the provider.              |
 
 ### `CompletionRequest`
 
@@ -362,7 +362,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `stop`             | `string \| string[]`      | Stop sequence or sequences.                        |
 | `stream`           | `boolean`                 | Whether the provider should stream.                |
 | `signal`           | `AbortSignal`             | Abort signal.                                      |
-| `headers`          | `Record<string, string>`  | Per-request headers merged by the provider.        |
+| `headers`          | `HeadersInit`             | Per-request headers merged by the provider.        |
 
 ### `EmbeddingRequest`
 
@@ -373,7 +373,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `model`   | `string`                  | Provider model id.                                      |
 | `user`    | `string`                  | End-user identifier for provider policy/abuse tracking. |
 | `signal`  | `AbortSignal`             | Abort signal.                                           |
-| `headers` | `Record<string, string>`  | Per-request headers merged by the provider.             |
+| `headers` | `HeadersInit`             | Per-request headers merged by the provider.             |
 
 `body` is merged into provider/proxy JSON request bodies before the typed
 request fields. If keys conflict, explicit typed fields such as `messages`,

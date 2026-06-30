@@ -15,6 +15,7 @@ import { AiHooksError } from '../types'
 import { createId } from '../utils/id'
 import { cloneMessageSnapshot, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
@@ -278,7 +279,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
       messages: request.messages.map(cloneMessageSnapshot),
       requestMetadata: request.metadata,
       ...(request.body ? { body: { ...request.body } } : {}),
-      ...(request.headers ? { headers: { ...request.headers } } : {})
+      ...(request.headers ? { headers: headersToRecord(request.headers) } : {})
     }
   }
 

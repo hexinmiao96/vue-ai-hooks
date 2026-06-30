@@ -62,7 +62,7 @@ describe('openaiCompatible provider', () => {
       baseURL: 'https://gateway.example.test/v1/',
       chatPath: 'chat/custom',
       defaultModel: 'default-chat',
-      headers: { 'X-Provider': 'provider' },
+      headers: new Headers({ 'X-Provider': 'provider' }),
       fetch: fetcher as unknown as typeof fetch
     })
 
@@ -114,7 +114,7 @@ describe('openaiCompatible provider', () => {
       },
       user: 'user-1',
       stream: false,
-      headers: { 'X-Request': 'request' }
+      headers: [['X-Request', 'request']] as [string, string][]
     })
 
     const chunks = []
@@ -128,7 +128,7 @@ describe('openaiCompatible provider', () => {
 
     expect(url).toBe('https://gateway.example.test/v1/chat/custom')
     expect(headers.Authorization).toBe('Bearer provider-key')
-    expect(headers['X-Provider']).toBe('provider')
+    expect(headers['x-provider']).toBe('provider')
     expect(headers['X-Request']).toBe('request')
     expect(body).toMatchObject({
       model: 'default-chat',

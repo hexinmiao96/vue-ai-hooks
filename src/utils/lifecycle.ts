@@ -1,9 +1,10 @@
 import type { Message } from '../types'
+import { headersToRecord } from './headers'
 
 interface RequestSnapshot {
   body?: Record<string, unknown>
   forwardedProps?: Record<string, unknown>
-  headers?: Record<string, string>
+  headers?: HeadersInit
   input?: string | string[]
   messages?: Message[]
 }
@@ -36,6 +37,6 @@ export function cloneRequestSnapshot<T extends RequestSnapshot>(request: T): T {
     ...(request.messages ? { messages: request.messages.map(cloneMessageSnapshot) } : {}),
     ...(request.body ? { body: { ...request.body } } : {}),
     ...(request.forwardedProps ? { forwardedProps: { ...request.forwardedProps } } : {}),
-    ...(request.headers ? { headers: { ...request.headers } } : {})
+    ...(request.headers ? { headers: headersToRecord(request.headers) } : {})
   } as T
 }

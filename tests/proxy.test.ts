@@ -128,7 +128,7 @@ describe('proxyProvider', () => {
         expect(context.headers).toMatchObject({
           'content-type': 'application/vnd.test+json',
           'x-session': 'session_1',
-          'X-Trace': 'trace_1'
+          'x-trace': 'trace_1'
         })
         return {
           headers: [
@@ -143,7 +143,7 @@ describe('proxyProvider', () => {
     const stream = await provider.completion({
       prompt: 'Complete this.',
       stream: true,
-      headers: { 'X-Trace': 'trace_1' }
+      headers: new Headers({ 'X-Trace': 'trace_1' })
     })
     const chunks = []
     for await (const chunk of stream) chunks.push(chunk)
@@ -153,7 +153,7 @@ describe('proxyProvider', () => {
 
     expect(headers['content-type']).toBe('application/vnd.test+json')
     expect(headers['x-session']).toBe('prepared')
-    expect(headers['X-Trace']).toBe('trace_1')
+    expect(headers['x-trace']).toBe('trace_1')
     expect(headers['X-Prepared']).toBe('yes')
     expect(headers['Content-Type']).toBeUndefined()
     expect(chunks).toEqual(['done'])

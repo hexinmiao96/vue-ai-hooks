@@ -87,17 +87,17 @@ const provider = openai({
 })
 ```
 
-| Option           | Type                     | Default                     | Description                                          |
-| ---------------- | ------------------------ | --------------------------- | ---------------------------------------------------- |
-| `apiKey`         | `string`                 | required                    | Provider API key. Keep it server-side in production. |
-| `baseURL`        | `string`                 | `https://api.openai.com/v1` | Override for proxies or gateways.                    |
-| `headers`        | `Record<string, string>` | `{}`                        | Extra headers sent on every request.                 |
-| `defaultModel`   | `string`                 | `gpt-4o-mini`               | Model used when a request omits `model`.             |
-| `chatPath`       | `string`                 | `/chat/completions`         | Chat endpoint path.                                  |
-| `completionPath` | `string`                 | `/completions`              | Completion endpoint path.                            |
-| `embeddingPath`  | `string`                 | `/embeddings`               | Embeddings endpoint path.                            |
-| `timeoutMs`      | `number`                 | -                           | Request timeout in milliseconds.                     |
-| `fetch`          | `typeof fetch`           | global `fetch`              | Custom fetch implementation.                         |
+| Option           | Type           | Default                     | Description                                          |
+| ---------------- | -------------- | --------------------------- | ---------------------------------------------------- |
+| `apiKey`         | `string`       | required                    | Provider API key. Keep it server-side in production. |
+| `baseURL`        | `string`       | `https://api.openai.com/v1` | Override for proxies or gateways.                    |
+| `headers`        | `HeadersInit`  | `{}`                        | Extra headers sent on every request.                 |
+| `defaultModel`   | `string`       | `gpt-4o-mini`               | Model used when a request omits `model`.             |
+| `chatPath`       | `string`       | `/chat/completions`         | Chat endpoint path.                                  |
+| `completionPath` | `string`       | `/completions`              | Completion endpoint path.                            |
+| `embeddingPath`  | `string`       | `/embeddings`               | Embeddings endpoint path.                            |
+| `timeoutMs`      | `number`       | -                           | Request timeout in milliseconds.                     |
+| `fetch`          | `typeof fetch` | global `fetch`              | Custom fetch implementation.                         |
 
 ## `openaiCompatible(config)`
 
@@ -136,17 +136,17 @@ const provider = deepseek({
 })
 ```
 
-| Option           | Type                     | Default                    | Description                                          |
-| ---------------- | ------------------------ | -------------------------- | ---------------------------------------------------- |
-| `apiKey`         | `string`                 | required                   | DeepSeek API key. Keep it server-side in production. |
-| `baseURL`        | `string`                 | `https://api.deepseek.com` | Override for proxies or compatible gateways.         |
-| `headers`        | `Record<string, string>` | `{}`                       | Extra headers sent on every request.                 |
-| `defaultModel`   | `string`                 | `deepseek-v4-flash`        | Model used when a request omits `model`.             |
-| `chatPath`       | `string`                 | `/chat/completions`        | Chat endpoint path.                                  |
-| `completionPath` | `string`                 | `/completions`             | Completion endpoint path.                            |
-| `embeddingPath`  | `string`                 | `/embeddings`              | Embeddings endpoint path.                            |
-| `timeoutMs`      | `number`                 | -                          | Request timeout in milliseconds.                     |
-| `fetch`          | `typeof fetch`           | global `fetch`             | Custom fetch implementation.                         |
+| Option           | Type           | Default                    | Description                                          |
+| ---------------- | -------------- | -------------------------- | ---------------------------------------------------- |
+| `apiKey`         | `string`       | required                   | DeepSeek API key. Keep it server-side in production. |
+| `baseURL`        | `string`       | `https://api.deepseek.com` | Override for proxies or compatible gateways.         |
+| `headers`        | `HeadersInit`  | `{}`                       | Extra headers sent on every request.                 |
+| `defaultModel`   | `string`       | `deepseek-v4-flash`        | Model used when a request omits `model`.             |
+| `chatPath`       | `string`       | `/chat/completions`        | Chat endpoint path.                                  |
+| `completionPath` | `string`       | `/completions`             | Completion endpoint path.                            |
+| `embeddingPath`  | `string`       | `/embeddings`              | Embeddings endpoint path.                            |
+| `timeoutMs`      | `number`       | -                          | Request timeout in milliseconds.                     |
+| `fetch`          | `typeof fetch` | global `fetch`             | Custom fetch implementation.                         |
 
 The returned provider has `id: 'deepseek'` and reuses the same
 OpenAI-compatible request, streaming, tool-call, and `response_format` handling.
@@ -166,19 +166,19 @@ const provider = openrouter({
 })
 ```
 
-| Option           | Type                     | Default                        | Description                                                                       |
-| ---------------- | ------------------------ | ------------------------------ | --------------------------------------------------------------------------------- |
-| `apiKey`         | `string`                 | required                       | OpenRouter API key.                                                               |
-| `baseURL`        | `string`                 | `https://openrouter.ai/api/v1` | Override for proxies or compatible gateways.                                      |
-| `siteUrl`        | `string`                 | -                              | Sent as `HTTP-Referer`.                                                           |
-| `appName`        | `string`                 | -                              | Sent as `X-Title`.                                                                |
-| `headers`        | `Record<string, string>` | `{}`                           | Extra headers. `siteUrl` and `appName` override matching OpenRouter header names. |
-| `defaultModel`   | `string`                 | -                              | Model used when a request omits `model`.                                          |
-| `chatPath`       | `string`                 | `/chat/completions`            | Chat endpoint path.                                                               |
-| `completionPath` | `string`                 | `/completions`                 | Completion endpoint path.                                                         |
-| `embeddingPath`  | `string`                 | `/embeddings`                  | Embeddings endpoint path.                                                         |
-| `timeoutMs`      | `number`                 | -                              | Request timeout in milliseconds.                                                  |
-| `fetch`          | `typeof fetch`           | global `fetch`                 | Custom fetch implementation.                                                      |
+| Option           | Type           | Default                        | Description                                                                       |
+| ---------------- | -------------- | ------------------------------ | --------------------------------------------------------------------------------- |
+| `apiKey`         | `string`       | required                       | OpenRouter API key.                                                               |
+| `baseURL`        | `string`       | `https://openrouter.ai/api/v1` | Override for proxies or compatible gateways.                                      |
+| `siteUrl`        | `string`       | -                              | Sent as `HTTP-Referer`.                                                           |
+| `appName`        | `string`       | -                              | Sent as `X-Title`.                                                                |
+| `headers`        | `HeadersInit`  | `{}`                           | Extra headers. `siteUrl` and `appName` override matching OpenRouter header names. |
+| `defaultModel`   | `string`       | -                              | Model used when a request omits `model`.                                          |
+| `chatPath`       | `string`       | `/chat/completions`            | Chat endpoint path.                                                               |
+| `completionPath` | `string`       | `/completions`                 | Completion endpoint path.                                                         |
+| `embeddingPath`  | `string`       | `/embeddings`                  | Embeddings endpoint path.                                                         |
+| `timeoutMs`      | `number`       | -                              | Request timeout in milliseconds.                                                  |
+| `fetch`          | `typeof fetch` | global `fetch`                 | Custom fetch implementation.                                                      |
 
 The returned provider has `id: 'openrouter'`.
 
@@ -195,17 +195,17 @@ const provider = gemini({
 })
 ```
 
-| Option           | Type                     | Default                                                   | Description                                        |
-| ---------------- | ------------------------ | --------------------------------------------------------- | -------------------------------------------------- |
-| `apiKey`         | `string`                 | required                                                  | Gemini API key. Keep it server-side in production. |
-| `baseURL`        | `string`                 | `https://generativelanguage.googleapis.com/v1beta/openai` | Override for proxies or compatible gateways.       |
-| `headers`        | `Record<string, string>` | `{}`                                                      | Extra headers sent on every request.               |
-| `defaultModel`   | `string`                 | `gemini-3.5-flash`                                        | Model used when a request omits `model`.           |
-| `chatPath`       | `string`                 | `/chat/completions`                                       | Chat endpoint path.                                |
-| `completionPath` | `string`                 | `/completions`                                            | Completion endpoint path.                          |
-| `embeddingPath`  | `string`                 | `/embeddings`                                             | Embeddings endpoint path.                          |
-| `timeoutMs`      | `number`                 | -                                                         | Request timeout in milliseconds.                   |
-| `fetch`          | `typeof fetch`           | global `fetch`                                            | Custom fetch implementation.                       |
+| Option           | Type           | Default                                                   | Description                                        |
+| ---------------- | -------------- | --------------------------------------------------------- | -------------------------------------------------- |
+| `apiKey`         | `string`       | required                                                  | Gemini API key. Keep it server-side in production. |
+| `baseURL`        | `string`       | `https://generativelanguage.googleapis.com/v1beta/openai` | Override for proxies or compatible gateways.       |
+| `headers`        | `HeadersInit`  | `{}`                                                      | Extra headers sent on every request.               |
+| `defaultModel`   | `string`       | `gemini-3.5-flash`                                        | Model used when a request omits `model`.           |
+| `chatPath`       | `string`       | `/chat/completions`                                       | Chat endpoint path.                                |
+| `completionPath` | `string`       | `/completions`                                            | Completion endpoint path.                          |
+| `embeddingPath`  | `string`       | `/embeddings`                                             | Embeddings endpoint path.                          |
+| `timeoutMs`      | `number`       | -                                                         | Request timeout in milliseconds.                   |
+| `fetch`          | `typeof fetch` | global `fetch`                                            | Custom fetch implementation.                       |
 
 The returned provider has `id: 'gemini'` and supports the same
 OpenAI-compatible `response_format` path used by `useObject`.
@@ -308,16 +308,16 @@ const provider = anthropic({
 })
 ```
 
-| Option             | Type                     | Default                      | Description                                       |
-| ------------------ | ------------------------ | ---------------------------- | ------------------------------------------------- |
-| `apiKey`           | `string`                 | required                     | Anthropic API key.                                |
-| `baseURL`          | `string`                 | `https://api.anthropic.com`  | Override for proxies.                             |
-| `defaultModel`     | `string`                 | `claude-3-5-sonnet-20241022` | Model used when a request omits `model`.          |
-| `maxTokens`        | `number`                 | `1024`                       | Default `max_tokens`; Anthropic requires a value. |
-| `anthropicVersion` | `string`                 | `2023-06-01`                 | Anthropic API version header.                     |
-| `headers`          | `Record<string, string>` | `{}`                         | Extra headers sent on every request.              |
-| `timeoutMs`        | `number`                 | -                            | Request timeout in milliseconds.                  |
-| `fetch`            | `typeof fetch`           | global `fetch`               | Custom fetch implementation.                      |
+| Option             | Type           | Default                      | Description                                       |
+| ------------------ | -------------- | ---------------------------- | ------------------------------------------------- |
+| `apiKey`           | `string`       | required                     | Anthropic API key.                                |
+| `baseURL`          | `string`       | `https://api.anthropic.com`  | Override for proxies.                             |
+| `defaultModel`     | `string`       | `claude-3-5-sonnet-20241022` | Model used when a request omits `model`.          |
+| `maxTokens`        | `number`       | `1024`                       | Default `max_tokens`; Anthropic requires a value. |
+| `anthropicVersion` | `string`       | `2023-06-01`                 | Anthropic API version header.                     |
+| `headers`          | `HeadersInit`  | `{}`                         | Extra headers sent on every request.              |
+| `timeoutMs`        | `number`       | -                            | Request timeout in milliseconds.                  |
+| `fetch`            | `typeof fetch` | global `fetch`               | Custom fetch implementation.                      |
 
 Provider behavior:
 

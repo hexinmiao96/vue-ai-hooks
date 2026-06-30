@@ -152,7 +152,7 @@ describe('anthropic provider', () => {
       defaultModel: 'claude-custom',
       maxTokens: 777,
       anthropicVersion: '2024-01-01',
-      headers: { 'X-Provider': 'provider' }
+      headers: new Headers({ 'X-Provider': 'provider' })
     })
     const stream = await p.chat({
       messages: [
@@ -166,7 +166,7 @@ describe('anthropic provider', () => {
       stop: 'END',
       user: 'user-123',
       stream: false,
-      headers: { 'X-Request': 'request' }
+      headers: [['X-Request', 'request']] as [string, string][]
     })
 
     const chunks = []
@@ -181,7 +181,7 @@ describe('anthropic provider', () => {
     expect(url).toBe('https://proxy.example.test/api/v1/messages')
     expect(headers['x-api-key']).toBe('sk-ant-test')
     expect(headers['anthropic-version']).toBe('2024-01-01')
-    expect(headers['X-Provider']).toBe('provider')
+    expect(headers['x-provider']).toBe('provider')
     expect(headers['X-Request']).toBe('request')
     expect(body).toMatchObject({
       model: 'claude-custom',

@@ -8,6 +8,7 @@ import type {
 } from '../types'
 import { AiHooksError } from '../types'
 import { requestJson } from '../utils/fetch'
+import { mergeHeaders } from '../utils/headers'
 import { parseSSE } from '../utils/stream'
 import type { ChatProvider } from './types'
 
@@ -146,7 +147,7 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
   async function post(
     kind: 'chat' | 'completion' | 'embedding',
     url: string,
-    request: { signal?: AbortSignal; headers?: Record<string, string> }
+    request: { signal?: AbortSignal; headers?: HeadersInit }
   ) {
     const { signal, headers } = request
     const prepared = await prepare({
@@ -170,7 +171,7 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
   async function get(
     kind: 'resume',
     url: string,
-    request: { signal?: AbortSignal; headers?: Record<string, string> }
+    request: { signal?: AbortSignal; headers?: HeadersInit }
   ) {
     const { signal, headers } = request
     const prepared = await prepare({
@@ -245,34 +246,6 @@ function resolveUrl(baseURL: string, url: string) {
 function resolveResumeUrl(source: string | ((id: string) => string), id: string) {
   const url = typeof source === 'function' ? source(id) : source
   return url.replace(/:id\b/g, encodeURIComponent(id)).replace(/\{id\}/g, encodeURIComponent(id))
-}
-
-function mergeHeaders(...sources: Array<HeadersInit | undefined>): Record<string, string> {
-  const merged: Record<string, string> = {}
-  const names: Record<string, string> = {}
-
-  for (const source of sources) {
-    for (const [key, value] of headerEntries(source)) {
-      const lowerKey = key.toLowerCase()
-      const existingKey = names[lowerKey]
-      if (existingKey) delete merged[existingKey]
-      names[lowerKey] = key
-      merged[key] = value
-    }
-  }
-
-  return merged
-}
-
-function headerEntries(source: HeadersInit | undefined): Array<[string, string]> {
-  if (!source) return []
-  if (typeof Headers !== 'undefined' && source instanceof Headers) {
-    const entries: Array<[string, string]> = []
-    source.forEach((value, key) => entries.push([key, value]))
-    return entries
-  }
-  if (Array.isArray(source)) return source.map(([key, value]) => [key, value])
-  return Object.entries(source)
 }
 
 function isEventStream(response: Response) {

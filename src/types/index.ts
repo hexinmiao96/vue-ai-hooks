@@ -196,7 +196,7 @@ export interface ChatRequest {
   user?: string
   stream?: boolean
   signal?: AbortSignal
-  headers?: Record<string, string>
+  headers?: HeadersInit
 }
 
 /** Request payload for resuming an active chat stream. */
@@ -210,7 +210,7 @@ export interface ChatResumeRequest {
   body?: Record<string, unknown>
   metadata?: unknown
   signal?: AbortSignal
-  headers?: Record<string, string>
+  headers?: HeadersInit
 }
 
 /** A single delta in a streaming chat response. */
@@ -263,7 +263,7 @@ export interface CompletionRequest {
   stop?: string | string[]
   stream?: boolean
   signal?: AbortSignal
-  headers?: Record<string, string>
+  headers?: HeadersInit
 }
 
 /** Request payload for embedding. */
@@ -274,7 +274,7 @@ export interface EmbeddingRequest {
   model?: string
   user?: string
   signal?: AbortSignal
-  headers?: Record<string, string>
+  headers?: HeadersInit
 }
 
 export interface EmbeddingResult {

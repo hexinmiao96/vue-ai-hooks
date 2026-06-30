@@ -10,6 +10,7 @@ import {
   getMaxRetries,
   waitForRetry
 } from '../utils/retry'
+import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createRequestTrace } from '../utils/trace'
 
@@ -118,7 +119,7 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
       input: Array.isArray(input) ? [...input] : input,
       request: cloneRequestSnapshot(request),
       ...(request.body && { body: { ...request.body } }),
-      ...(request.headers && { headers: { ...request.headers } })
+      ...(request.headers && { headers: headersToRecord(request.headers) })
     }
   }
 

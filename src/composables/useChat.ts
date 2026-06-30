@@ -29,6 +29,7 @@ import { createId } from '../utils/id'
 import { AiHooksError } from '../types'
 import { cloneMessageSnapshot as cloneMessage, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
@@ -1160,7 +1161,7 @@ export function useChat<
           : messages.value.map(cloneMessage),
       requestMetadata: request.metadata,
       ...(request.body ? { body: { ...request.body } } : {}),
-      ...(request.headers ? { headers: { ...request.headers } } : {}),
+      ...(request.headers ? { headers: headersToRecord(request.headers) } : {}),
       ...(context?.trigger ? { trigger: context.trigger } : {}),
       ...(context?.messageId ? { messageId: context.messageId } : {}),
       ...(context?.stepNumber !== undefined ? { stepNumber: context.stepNumber } : {})
@@ -1547,14 +1548,11 @@ export function useChat<
     }
   }
   function mergeRequestHeaders(
-    defaultHeaders?: Record<string, string>,
-    requestHeaders?: Record<string, string>
+    defaultHeaders?: HeadersInit,
+    requestHeaders?: HeadersInit
   ): Record<string, string> | undefined {
     if (!defaultHeaders && !requestHeaders) return undefined
-    return {
-      ...(defaultHeaders ?? {}),
-      ...(requestHeaders ?? {})
-    }
+    return mergeHeaders(defaultHeaders, requestHeaders)
   }
   function applyActiveTools(request: ChatRequest): ChatRequest {
     const { activeTools: activeToolNames, ...rest } = request
@@ -1628,7 +1626,7 @@ export function useChat<
       messages: base.messages.map((message) => ({ ...message })),
       requestMetadata: base.metadata,
       body: base.body,
-      headers: base.headers,
+      headers: headersToRecord(base.headers),
       request: { ...base, messages: base.messages.map((message) => ({ ...message })) },
       trigger: context.trigger,
       messageId: context.messageId,
@@ -1645,7 +1643,7 @@ export function useChat<
       messages: stepRequest.messages.map((message) => ({ ...message })),
       requestMetadata: stepRequest.metadata,
       body: stepRequest.body,
-      headers: stepRequest.headers,
+      headers: headersToRecord(stepRequest.headers),
       request: {
         ...stepRequest,
         messages: stepRequest.messages.map((message) => ({ ...message }))
@@ -1681,7 +1679,7 @@ export function useChat<
       ...proxyRequestInfo,
       requestMetadata: base.metadata,
       body: base.body,
-      headers: base.headers,
+      headers: headersToRecord(base.headers),
       request: { ...base }
     })
     return mergePreparedResumeRequest(base, prepared)

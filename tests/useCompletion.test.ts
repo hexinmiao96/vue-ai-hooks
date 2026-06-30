@@ -466,7 +466,7 @@ describe('useCompletion', () => {
     await expect(
       complete('trace completion', {
         body: { route: '/complete' },
-        headers: { 'X-Trace': 'trace_1' },
+        headers: new Headers({ 'X-Trace': 'trace_1' }),
         temperature: 0.3
       })
     ).resolves.toBe('traced')
@@ -480,7 +480,7 @@ describe('useCompletion', () => {
         attempt: 1,
         prompt: 'trace completion',
         body: { tenantId: 'tenant_default', route: '/complete' },
-        headers: { 'X-Trace': 'trace_1' },
+        headers: { 'x-trace': 'trace_1' },
         request: expect.objectContaining({
           prompt: 'trace completion',
           temperature: 0.3,

@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   object diagnostics without changing the first callback argument.
 - Added `HeadersInit` support for default proxy headers and prepared proxy
   request overrides.
+- Added `HeadersInit` support for provider config headers and per-request
+  headers across chat, completion, embedding, object, and resume requests.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.

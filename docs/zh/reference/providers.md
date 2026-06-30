@@ -83,17 +83,17 @@ const provider = openai({
 })
 ```
 
-| 选项             | 类型                     | 默认值                      | 说明                                     |
-| ---------------- | ------------------------ | --------------------------- | ---------------------------------------- |
-| `apiKey`         | `string`                 | 必填                        | Provider API key。生产环境请放在服务端。 |
-| `baseURL`        | `string`                 | `https://api.openai.com/v1` | 代理或网关地址。                         |
-| `headers`        | `Record<string, string>` | `{}`                        | 每个请求都会带上的额外 headers。         |
-| `defaultModel`   | `string`                 | `gpt-4o-mini`               | 请求未指定 `model` 时使用的模型。        |
-| `chatPath`       | `string`                 | `/chat/completions`         | Chat 端点路径。                          |
-| `completionPath` | `string`                 | `/completions`              | Completion 端点路径。                    |
-| `embeddingPath`  | `string`                 | `/embeddings`               | Embeddings 端点路径。                    |
-| `timeoutMs`      | `number`                 | -                           | 请求超时时间，单位毫秒。                 |
-| `fetch`          | `typeof fetch`           | 全局 `fetch`                | 自定义 fetch 实现。                      |
+| 选项             | 类型           | 默认值                      | 说明                                     |
+| ---------------- | -------------- | --------------------------- | ---------------------------------------- |
+| `apiKey`         | `string`       | 必填                        | Provider API key。生产环境请放在服务端。 |
+| `baseURL`        | `string`       | `https://api.openai.com/v1` | 代理或网关地址。                         |
+| `headers`        | `HeadersInit`  | `{}`                        | 每个请求都会带上的额外 headers。         |
+| `defaultModel`   | `string`       | `gpt-4o-mini`               | 请求未指定 `model` 时使用的模型。        |
+| `chatPath`       | `string`       | `/chat/completions`         | Chat 端点路径。                          |
+| `completionPath` | `string`       | `/completions`              | Completion 端点路径。                    |
+| `embeddingPath`  | `string`       | `/embeddings`               | Embeddings 端点路径。                    |
+| `timeoutMs`      | `number`       | -                           | 请求超时时间，单位毫秒。                 |
+| `fetch`          | `typeof fetch` | 全局 `fetch`                | 自定义 fetch 实现。                      |
 
 ## `openaiCompatible(config)`
 
@@ -129,17 +129,17 @@ const provider = deepseek({
 })
 ```
 
-| 选项             | 类型                     | 默认值                     | 说明                                     |
-| ---------------- | ------------------------ | -------------------------- | ---------------------------------------- |
-| `apiKey`         | `string`                 | 必填                       | DeepSeek API key。生产环境请放在服务端。 |
-| `baseURL`        | `string`                 | `https://api.deepseek.com` | 代理或兼容网关地址。                     |
-| `headers`        | `Record<string, string>` | `{}`                       | 每个请求都会带上的额外 headers。         |
-| `defaultModel`   | `string`                 | `deepseek-v4-flash`        | 请求未指定 `model` 时使用的模型。        |
-| `chatPath`       | `string`                 | `/chat/completions`        | Chat 端点路径。                          |
-| `completionPath` | `string`                 | `/completions`             | Completion 端点路径。                    |
-| `embeddingPath`  | `string`                 | `/embeddings`              | Embeddings 端点路径。                    |
-| `timeoutMs`      | `number`                 | -                          | 请求超时时间，单位毫秒。                 |
-| `fetch`          | `typeof fetch`           | 全局 `fetch`               | 自定义 fetch 实现。                      |
+| 选项             | 类型           | 默认值                     | 说明                                     |
+| ---------------- | -------------- | -------------------------- | ---------------------------------------- |
+| `apiKey`         | `string`       | 必填                       | DeepSeek API key。生产环境请放在服务端。 |
+| `baseURL`        | `string`       | `https://api.deepseek.com` | 代理或兼容网关地址。                     |
+| `headers`        | `HeadersInit`  | `{}`                       | 每个请求都会带上的额外 headers。         |
+| `defaultModel`   | `string`       | `deepseek-v4-flash`        | 请求未指定 `model` 时使用的模型。        |
+| `chatPath`       | `string`       | `/chat/completions`        | Chat 端点路径。                          |
+| `completionPath` | `string`       | `/completions`             | Completion 端点路径。                    |
+| `embeddingPath`  | `string`       | `/embeddings`              | Embeddings 端点路径。                    |
+| `timeoutMs`      | `number`       | -                          | 请求超时时间，单位毫秒。                 |
+| `fetch`          | `typeof fetch` | 全局 `fetch`               | 自定义 fetch 实现。                      |
 
 返回的 Provider 使用 `id: 'deepseek'`，并复用同一套 OpenAI-compatible 请求、
 流式输出、工具调用和 `response_format` 处理。
@@ -159,19 +159,19 @@ const provider = openrouter({
 })
 ```
 
-| 选项             | 类型                     | 默认值                         | 说明                                                                |
-| ---------------- | ------------------------ | ------------------------------ | ------------------------------------------------------------------- |
-| `apiKey`         | `string`                 | 必填                           | OpenRouter API key。                                                |
-| `baseURL`        | `string`                 | `https://openrouter.ai/api/v1` | 代理或兼容网关地址。                                                |
-| `siteUrl`        | `string`                 | -                              | 作为 `HTTP-Referer` 发送。                                          |
-| `appName`        | `string`                 | -                              | 作为 `X-Title` 发送。                                               |
-| `headers`        | `Record<string, string>` | `{}`                           | 额外 headers。`siteUrl` 和 `appName` 会覆盖同名 OpenRouter header。 |
-| `defaultModel`   | `string`                 | -                              | 请求未指定 `model` 时使用的模型。                                   |
-| `chatPath`       | `string`                 | `/chat/completions`            | Chat 端点路径。                                                     |
-| `completionPath` | `string`                 | `/completions`                 | Completion 端点路径。                                               |
-| `embeddingPath`  | `string`                 | `/embeddings`                  | Embeddings 端点路径。                                               |
-| `timeoutMs`      | `number`                 | -                              | 请求超时时间，单位毫秒。                                            |
-| `fetch`          | `typeof fetch`           | 全局 `fetch`                   | 自定义 fetch 实现。                                                 |
+| 选项             | 类型           | 默认值                         | 说明                                                                |
+| ---------------- | -------------- | ------------------------------ | ------------------------------------------------------------------- |
+| `apiKey`         | `string`       | 必填                           | OpenRouter API key。                                                |
+| `baseURL`        | `string`       | `https://openrouter.ai/api/v1` | 代理或兼容网关地址。                                                |
+| `siteUrl`        | `string`       | -                              | 作为 `HTTP-Referer` 发送。                                          |
+| `appName`        | `string`       | -                              | 作为 `X-Title` 发送。                                               |
+| `headers`        | `HeadersInit`  | `{}`                           | 额外 headers。`siteUrl` 和 `appName` 会覆盖同名 OpenRouter header。 |
+| `defaultModel`   | `string`       | -                              | 请求未指定 `model` 时使用的模型。                                   |
+| `chatPath`       | `string`       | `/chat/completions`            | Chat 端点路径。                                                     |
+| `completionPath` | `string`       | `/completions`                 | Completion 端点路径。                                               |
+| `embeddingPath`  | `string`       | `/embeddings`                  | Embeddings 端点路径。                                               |
+| `timeoutMs`      | `number`       | -                              | 请求超时时间，单位毫秒。                                            |
+| `fetch`          | `typeof fetch` | 全局 `fetch`                   | 自定义 fetch 实现。                                                 |
 
 返回的 Provider 使用 `id: 'openrouter'`。
 
@@ -188,17 +188,17 @@ const provider = gemini({
 })
 ```
 
-| 选项             | 类型                     | 默认值                                                    | 说明                                   |
-| ---------------- | ------------------------ | --------------------------------------------------------- | -------------------------------------- |
-| `apiKey`         | `string`                 | 必填                                                      | Gemini API key。生产环境请放在服务端。 |
-| `baseURL`        | `string`                 | `https://generativelanguage.googleapis.com/v1beta/openai` | 代理或兼容网关地址。                   |
-| `headers`        | `Record<string, string>` | `{}`                                                      | 每个请求都会带上的额外 headers。       |
-| `defaultModel`   | `string`                 | `gemini-3.5-flash`                                        | 请求未指定 `model` 时使用的模型。      |
-| `chatPath`       | `string`                 | `/chat/completions`                                       | Chat 端点路径。                        |
-| `completionPath` | `string`                 | `/completions`                                            | Completion 端点路径。                  |
-| `embeddingPath`  | `string`                 | `/embeddings`                                             | Embeddings 端点路径。                  |
-| `timeoutMs`      | `number`                 | -                                                         | 请求超时时间，单位毫秒。               |
-| `fetch`          | `typeof fetch`           | 全局 `fetch`                                              | 自定义 fetch 实现。                    |
+| 选项             | 类型           | 默认值                                                    | 说明                                   |
+| ---------------- | -------------- | --------------------------------------------------------- | -------------------------------------- |
+| `apiKey`         | `string`       | 必填                                                      | Gemini API key。生产环境请放在服务端。 |
+| `baseURL`        | `string`       | `https://generativelanguage.googleapis.com/v1beta/openai` | 代理或兼容网关地址。                   |
+| `headers`        | `HeadersInit`  | `{}`                                                      | 每个请求都会带上的额外 headers。       |
+| `defaultModel`   | `string`       | `gemini-3.5-flash`                                        | 请求未指定 `model` 时使用的模型。      |
+| `chatPath`       | `string`       | `/chat/completions`                                       | Chat 端点路径。                        |
+| `completionPath` | `string`       | `/completions`                                            | Completion 端点路径。                  |
+| `embeddingPath`  | `string`       | `/embeddings`                                             | Embeddings 端点路径。                  |
+| `timeoutMs`      | `number`       | -                                                         | 请求超时时间，单位毫秒。               |
+| `fetch`          | `typeof fetch` | 全局 `fetch`                                              | 自定义 fetch 实现。                    |
 
 返回的 Provider 使用 `id: 'gemini'`，并支持 `useObject` 使用的
 OpenAI-compatible `response_format` 路径。
@@ -291,16 +291,16 @@ const provider = anthropic({
 })
 ```
 
-| 选项               | 类型                     | 默认值                       | 说明                                    |
-| ------------------ | ------------------------ | ---------------------------- | --------------------------------------- |
-| `apiKey`           | `string`                 | 必填                         | Anthropic API key。                     |
-| `baseURL`          | `string`                 | `https://api.anthropic.com`  | 代理地址。                              |
-| `defaultModel`     | `string`                 | `claude-3-5-sonnet-20241022` | 请求未指定 `model` 时使用的模型。       |
-| `maxTokens`        | `number`                 | `1024`                       | 默认 `max_tokens`；Anthropic 要求该值。 |
-| `anthropicVersion` | `string`                 | `2023-06-01`                 | Anthropic API version header。          |
-| `headers`          | `Record<string, string>` | `{}`                         | 每个请求都会带上的额外 headers。        |
-| `timeoutMs`        | `number`                 | -                            | 请求超时时间，单位毫秒。                |
-| `fetch`            | `typeof fetch`           | 全局 `fetch`                 | 自定义 fetch 实现。                     |
+| 选项               | 类型           | 默认值                       | 说明                                    |
+| ------------------ | -------------- | ---------------------------- | --------------------------------------- |
+| `apiKey`           | `string`       | 必填                         | Anthropic API key。                     |
+| `baseURL`          | `string`       | `https://api.anthropic.com`  | 代理地址。                              |
+| `defaultModel`     | `string`       | `claude-3-5-sonnet-20241022` | 请求未指定 `model` 时使用的模型。       |
+| `maxTokens`        | `number`       | `1024`                       | 默认 `max_tokens`；Anthropic 要求该值。 |
+| `anthropicVersion` | `string`       | `2023-06-01`                 | Anthropic API version header。          |
+| `headers`          | `HeadersInit`  | `{}`                         | 每个请求都会带上的额外 headers。        |
+| `timeoutMs`        | `number`       | -                            | 请求超时时间，单位毫秒。                |
+| `fetch`            | `typeof fetch` | 全局 `fetch`                 | 自定义 fetch 实现。                     |
 
 Provider 行为：
 

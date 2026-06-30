@@ -11,6 +11,7 @@ import type {
 import { createId } from '../utils/id'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
@@ -226,7 +227,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
       prompt,
       request: cloneRequestSnapshot(request),
       ...(request.body ? { body: { ...request.body } } : {}),
-      ...(request.headers ? { headers: { ...request.headers } } : {})
+      ...(request.headers ? { headers: headersToRecord(request.headers) } : {})
     }
   }
 
