@@ -246,12 +246,15 @@ const provider = proxyProvider({
 | `resumeUrl`      | `string \| (id: string) => string`                               | `/api/ai/chat/:id/stream` | Backend endpoint for resumable chat streams.                 |
 | `completionUrl`  | `string`                                                         | `/api/ai/completion`      | Backend endpoint for `CompletionRequest`.                    |
 | `embeddingUrl`   | `string`                                                         | `/api/ai/embedding`       | Backend endpoint for `EmbeddingRequest`.                     |
-| `headers`        | `Record<string, string> \| () => Record<string, string>`         | `{}`                      | Static or dynamic headers sent to your backend.              |
+| `headers`        | `HeadersInit \| () => HeadersInit`                               | `{}`                      | Static or dynamic headers sent to your backend.              |
 | `body`           | `Record<string, unknown> \| (ctx) => Record<string, unknown>`    | `{}`                      | Extra app-defined JSON fields merged into POST bodies.       |
 | `prepareRequest` | `(context: ProxyRequestContext) => ProxyRequestOverride \| void` | -                         | Last-mile hook to adjust URL, headers, body, or credentials. |
 | `credentials`    | `RequestCredentials`                                             | -                         | Browser credentials mode, for example `'include'`.           |
 | `timeoutMs`      | `number`                                                         | -                         | Request timeout in milliseconds.                             |
 | `fetch`          | `typeof fetch`                                                   | global `fetch`            | Custom fetch implementation.                                 |
+
+Proxy `headers` and `prepareRequest().headers` accept any `HeadersInit` value,
+including plain records, `Headers` instances, and `[key, value][]` entries.
 
 Protocol:
 

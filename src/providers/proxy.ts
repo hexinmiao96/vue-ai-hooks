@@ -17,9 +17,7 @@ interface UiStreamState {
   reasoningDeltas: Map<string, string>
 }
 
-type HeaderSource =
-  | Record<string, string>
-  | (() => Record<string, string> | Promise<Record<string, string>>)
+type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
 
 type ProxyRequest = ChatRequest | ChatResumeRequest | CompletionRequest | EmbeddingRequest
 
@@ -62,7 +60,7 @@ export type ProxyRequestContext =
 
 export interface ProxyRequestOverride {
   url?: string
-  headers?: Record<string, string>
+  headers?: HeadersInit
   body?: Record<string, unknown>
   credentials?: RequestCredentials
 }
@@ -115,14 +113,10 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
     fetch: fetcher
   } = config
 
-  async function resolveHeaders(requestHeaders?: Record<string, string>) {
+  async function resolveHeaders(requestHeaders?: HeadersInit) {
     const configured =
       typeof config.headers === 'function' ? await config.headers() : (config.headers ?? {})
-    return {
-      'Content-Type': 'application/json',
-      ...configured,
-      ...requestHeaders
-    }
+    return mergeHeaders({ 'Content-Type': 'application/json' }, configured, requestHeaders)
   }
 
   async function resolveBody(kind: ProxyRequestKind, request: ProxyRequest) {
@@ -146,7 +140,7 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
     return {
       ...context,
       ...override,
-      headers: override?.headers ? { ...context.headers, ...override.headers } : context.headers
+      headers: override?.headers ? mergeHeaders(context.headers, override.headers) : context.headers
     }
   }
   async function post(
@@ -251,6 +245,34 @@ function resolveUrl(baseURL: string, url: string) {
 function resolveResumeUrl(source: string | ((id: string) => string), id: string) {
   const url = typeof source === 'function' ? source(id) : source
   return url.replace(/:id\b/g, encodeURIComponent(id)).replace(/\{id\}/g, encodeURIComponent(id))
+}
+
+function mergeHeaders(...sources: Array<HeadersInit | undefined>): Record<string, string> {
+  const merged: Record<string, string> = {}
+  const names: Record<string, string> = {}
+
+  for (const source of sources) {
+    for (const [key, value] of headerEntries(source)) {
+      const lowerKey = key.toLowerCase()
+      const existingKey = names[lowerKey]
+      if (existingKey) delete merged[existingKey]
+      names[lowerKey] = key
+      merged[key] = value
+    }
+  }
+
+  return merged
+}
+
+function headerEntries(source: HeadersInit | undefined): Array<[string, string]> {
+  if (!source) return []
+  if (typeof Headers !== 'undefined' && source instanceof Headers) {
+    const entries: Array<[string, string]> = []
+    source.forEach((value, key) => entries.push([key, value]))
+    return entries
+  }
+  if (Array.isArray(source)) return source.map(([key, value]) => [key, value])
+  return Object.entries(source)
 }
 
 function isEventStream(response: Response) {

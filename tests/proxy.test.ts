@@ -117,6 +117,48 @@ describe('proxyProvider', () => {
     expect(chunks).toEqual([{ content: 'Hel' }, { content: 'lo' }])
   })
 
+  it('accepts HeadersInit values for proxy headers and prepared overrides', async () => {
+    const fetcher = vi.fn(async () => jsonResponse({ text: 'done' }))
+    const provider = proxyProvider({
+      headers: new Headers([
+        ['Content-Type', 'application/vnd.test+json'],
+        ['X-Session', 'session_1']
+      ]),
+      prepareRequest(context) {
+        expect(context.headers).toMatchObject({
+          'content-type': 'application/vnd.test+json',
+          'x-session': 'session_1',
+          'X-Trace': 'trace_1'
+        })
+        return {
+          headers: [
+            ['X-Prepared', 'yes'],
+            ['x-session', 'prepared']
+          ]
+        }
+      },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    const stream = await provider.completion({
+      prompt: 'Complete this.',
+      stream: true,
+      headers: { 'X-Trace': 'trace_1' }
+    })
+    const chunks = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    const headers = init.headers as Record<string, string>
+
+    expect(headers['content-type']).toBe('application/vnd.test+json')
+    expect(headers['x-session']).toBe('prepared')
+    expect(headers['X-Trace']).toBe('trace_1')
+    expect(headers['X-Prepared']).toBe('yes')
+    expect(headers['Content-Type']).toBeUndefined()
+    expect(chunks).toEqual(['done'])
+  })
+
   it('maps AI SDK UI message stream parts to ChatChunk values', async () => {
     const fetcher = vi.fn(async () =>
       sseResponse([

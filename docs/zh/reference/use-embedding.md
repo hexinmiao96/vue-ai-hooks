@@ -36,7 +36,7 @@ const { embed } = useEmbedding({
 | `transport`      | `ChatProvider`                                                         | -                | AI SDK 风格的 `provider` 别名。                |
 | `api`            | `string`                                                               | `/api/embedding` | 默认 proxy transport 的 embedding URL。        |
 | `baseURL`        | `string`                                                               | -                | 拼接到默认 proxy transport URL 前的 base URL。 |
-| `headers`        | `Record<string, string> \| () => ...`                                  | -                | 默认 proxy 的静态或动态 headers。              |
+| `headers`        | `HeadersInit \| () => HeadersInit`                                     | -                | 默认 proxy 的静态或动态 headers。              |
 | `body`           | `Record<string, unknown> \| () => ...`                                 | -                | 默认 proxy 附加到 JSON body 的字段。           |
 | `credentials`    | `RequestCredentials`                                                   | -                | 默认 proxy 的浏览器 credentials 模式。         |
 | `fetch`          | `typeof fetch`                                                         | global           | 默认 proxy 的自定义 fetch 实现。               |

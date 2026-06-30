@@ -60,7 +60,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `transport`             | `ChatProvider`                                                         | -             | AI SDK-style alias for `provider`.                                         |
 | `api`                   | `string`                                                               | `/api/object` | Chat URL for the default proxy transport.                                  |
 | `baseURL`               | `string`                                                               | -             | Base URL prepended to default proxy transport URLs.                        |
-| `headers`               | `Record<string, string> \| () => ...`                                  | -             | Static or dynamic headers for the default proxy transport.                 |
+| `headers`               | `HeadersInit \| () => HeadersInit`                                     | -             | Static or dynamic headers for the default proxy transport.                 |
 | `body`                  | `Record<string, unknown> \| () => ...`                                 | -             | Extra JSON body fields for the default proxy transport.                    |
 | `credentials`           | `RequestCredentials`                                                   | -             | Browser credentials mode for the default proxy transport.                  |
 | `fetch`                 | `typeof fetch`                                                         | global        | Custom fetch implementation for the default proxy transport.               |

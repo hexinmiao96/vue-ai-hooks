@@ -181,13 +181,17 @@ describe('public API types', () => {
     expectTypeOf<ProxyProviderConfig['credentials']>().toEqualTypeOf<
       RequestCredentials | undefined
     >()
+    expectTypeOf<ProxyProviderConfig['headers']>().toEqualTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
     const proxyConfig: ProxyProviderConfig = {
+      headers: new Headers({ 'X-Client': 'browser' }),
       body: ({ kind }) => ({ kind }),
       prepareRequest(context) {
         if (context.kind === 'resume') {
           expectTypeOf(context.request.id).toEqualTypeOf<string>()
         }
-        return { headers: { 'X-Test': context.kind } }
+        return { headers: [['X-Test', context.kind]] }
       }
     }
     expectTypeOf<ProxyProviderConfig['prepareRequest']>().toMatchTypeOf<
@@ -196,6 +200,7 @@ describe('public API types', () => {
         ) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>)
       | undefined
     >()
+    expectTypeOf<ProxyRequestOverride['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf<ProxyRequestKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding' | 'resume'>()
     expectTypeOf(proxyConfig).toEqualTypeOf<ProxyProviderConfig>()
     expectTypeOf<AnthropicConfig>().toMatchTypeOf<{

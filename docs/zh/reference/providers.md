@@ -238,12 +238,15 @@ const provider = proxyProvider({
 | `resumeUrl`      | `string \| (id: string) => string`                               | `/api/ai/chat/:id/stream` | 接收恢复聊天流请求的后端端点。                   |
 | `completionUrl`  | `string`                                                         | `/api/ai/completion`      | 接收 `CompletionRequest` 的后端端点。            |
 | `embeddingUrl`   | `string`                                                         | `/api/ai/embedding`       | 接收 `EmbeddingRequest` 的后端端点。             |
-| `headers`        | `Record<string, string> \| () => Record<string, string>`         | `{}`                      | 发给自有后端的静态或动态 headers。               |
+| `headers`        | `HeadersInit \| () => HeadersInit`                               | `{}`                      | 发给自有后端的静态或动态 headers。               |
 | `body`           | `Record<string, unknown> \| (ctx) => Record<string, unknown>`    | `{}`                      | 合并到 POST JSON body 的应用自定义字段。         |
 | `prepareRequest` | `(context: ProxyRequestContext) => ProxyRequestOverride \| void` | -                         | 最后一步调整 URL、headers、body 或 credentials。 |
 | `credentials`    | `RequestCredentials`                                             | -                         | 浏览器 credentials 模式，例如 `'include'`。      |
 | `timeoutMs`      | `number`                                                         | -                         | 请求超时时间，单位毫秒。                         |
 | `fetch`          | `typeof fetch`                                                   | 全局 `fetch`              | 自定义 fetch 实现。                              |
+
+Proxy 的 `headers` 和 `prepareRequest().headers` 接受任意 `HeadersInit`，
+包括普通对象、`Headers` 实例和 `[key, value][]` entries。
 
 协议：
 

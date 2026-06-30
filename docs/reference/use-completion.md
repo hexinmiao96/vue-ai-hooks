@@ -36,7 +36,7 @@ const { complete } = useCompletion({
 | `transport`             | `ChatProvider`                                                         | —                 | AI SDK-style alias for `provider`.                      |
 | `api`                   | `string`                                                               | `/api/completion` | Completion URL for the default proxy transport.         |
 | `baseURL`               | `string`                                                               | —                 | Base URL prepended to default proxy transport URLs.     |
-| `headers`               | `Record<string, string> \| () => ...`                                  | —                 | Static or dynamic headers for the default proxy.        |
+| `headers`               | `HeadersInit \| () => HeadersInit`                                     | —                 | Static or dynamic headers for the default proxy.        |
 | `body`                  | `Record<string, unknown> \| () => ...`                                 | —                 | Extra JSON body fields for the default proxy.           |
 | `credentials`           | `RequestCredentials`                                                   | —                 | Browser credentials mode for the default proxy.         |
 | `fetch`                 | `typeof fetch`                                                         | global            | Custom fetch implementation for the default proxy.      |
