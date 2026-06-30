@@ -377,6 +377,8 @@ and [public types](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/re
 For upgrade guarantees, see the [API stability guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/api-stability.md).
 If you are coming from `0.2.1`, use the
 [v0.3.0 upgrade guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/upgrade-0.3.md).
+If you are porting an AI SDK UI surface, use the
+[AI SDK migration guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/ai-sdk-migration.md).
 
 ## Examples
 

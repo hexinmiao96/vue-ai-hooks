@@ -8,6 +8,8 @@ const files = {
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
   zhUpgrade03: readFileSync('docs/zh/guide/upgrade-0.3.md', 'utf8'),
+  aiSdkMigration: readFileSync('docs/guide/ai-sdk-migration.md', 'utf8'),
+  zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -51,6 +53,7 @@ expect(
 for (const snippet of [
   '## Pick a path',
   '[v0.3.0 upgrade guide](/guide/upgrade-0.3)',
+  '[AI SDK migration guide](/guide/ai-sdk-migration)',
   '## Run a demo without API keys',
   'pnpm example:chat',
   'falls back to `local-tools`',
@@ -65,6 +68,7 @@ for (const snippet of [
 for (const snippet of [
   '## 先选一条路径',
   '[v0.3.0 升级指南](/zh/guide/upgrade-0.3)',
+  '[AI SDK 迁移指南](/zh/guide/ai-sdk-migration)',
   '## 不需要 API key 的 Demo',
   'pnpm example:chat',
   '自动回退到 `local-tools`',
@@ -105,8 +109,10 @@ expect(
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/upgrade-0.3.md') &&
-    files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md'),
-  'Readmes must explain no-key chat defaults, list the object example, and link upgrade guidance'
+    files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
+    files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
+    files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md'),
+  'Readmes must explain no-key chat defaults, list the object example, and link upgrade/migration guidance'
 )
 
 for (const snippet of [
@@ -141,6 +147,42 @@ for (const snippet of [
   expect(
     files.zhUpgrade03.includes(snippet),
     `Chinese v0.3.0 upgrade guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# AI SDK migration',
+  'AI SDK `useChat` reference',
+  'Quick mapping',
+  'DefaultChatTransport',
+  'transport` or `provider`',
+  'input`, `setInput()`, `handleInputChange()`',
+  'addToolApprovalResponse()',
+  'stopWhen',
+  'UI message stream protocol',
+  'Migration checklist'
+]) {
+  expect(
+    files.aiSdkMigration.includes(snippet),
+    `English AI SDK migration guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# AI SDK 迁移',
+  'AI SDK `useChat` 参考',
+  '快速映射',
+  'DefaultChatTransport',
+  'transport` 或 `provider`',
+  'input`、`setInput()`、`handleInputChange()`',
+  'addToolApprovalResponse()',
+  'stopWhen',
+  'UI message stream 协议',
+  '迁移清单'
+]) {
+  expect(
+    files.zhAiSdkMigration.includes(snippet),
+    `Chinese AI SDK migration guide must include: ${snippet}`
   )
 }
 expect(
