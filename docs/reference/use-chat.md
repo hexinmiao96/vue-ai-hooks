@@ -312,7 +312,9 @@ resolves.
 `prepareReconnectToStreamRequest` have produced the final request, and before
 the provider adapter is called. `info.kind` is `'chat'` or `'resume'`,
 `info.request` is a shallow snapshot of the outgoing request, and `info.attempt`
-is 1-based so retries can be correlated with `onRetry`.
+is 1-based so retries can be correlated with `onRetry`. For the default proxy
+transport, `info.api` and `info.credentials` mirror the configured chat URL and
+browser credentials mode.
 
 `onResponse(info)` runs after the provider adapter returns. Because
 `vue-ai-hooks` providers abstract over fetch clients, `info.hasStream` tells you
@@ -407,8 +409,8 @@ Omitting `tools` applies that rule to every tool call.
 ## Request preparation hooks
 
 Use `prepareSendMessagesRequest` when your backend needs last-mile request
-customization that depends on the current chat id, trigger, metadata, headers,
-or resolved message list:
+customization that depends on the current chat id, proxy `api`, credentials,
+trigger, metadata, headers, or resolved message list:
 
 ```ts
 const { append, regenerate } = useChat({
@@ -418,10 +420,10 @@ const { append, regenerate } = useChat({
     body: { tenantId: 'acme' },
     headers: { 'X-App': 'support-console' }
   },
-  prepareSendMessagesRequest({ id, trigger, body, headers }) {
+  prepareSendMessagesRequest({ id, api, credentials, trigger, body, headers }) {
     return {
-      headers: { ...headers, 'X-Chat-Id': id },
-      body: { ...body, trigger }
+      headers: { ...headers, 'X-Chat-Id': id, 'X-Chat-Api': api ?? 'direct' },
+      body: { ...body, credentials, trigger }
     }
   }
 })
@@ -443,9 +445,9 @@ Use `prepareReconnectToStreamRequest` for resumable proxy streams:
 const { resumeStream } = useChat({
   provider,
   id: 'thread_1',
-  prepareReconnectToStreamRequest({ id, headers }) {
+  prepareReconnectToStreamRequest({ id, api, headers }) {
     return {
-      headers: { ...headers, 'X-Resume-Thread': id }
+      headers: { ...headers, 'X-Resume-Thread': id, 'X-Chat-Api': api ?? 'direct' }
     }
   }
 })

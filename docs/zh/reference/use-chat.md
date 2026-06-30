@@ -304,7 +304,8 @@ flush。`append()`、`regenerate()` 或 `resumeStream()` resolve 前一定会刷
 `onRequest(info)` 会在 `prepareStep`、`prepareSendMessagesRequest` 或
 `prepareReconnectToStreamRequest` 产出最终请求之后、调用 Provider adapter 之前执行。
 `info.kind` 为 `'chat'` 或 `'resume'`，`info.request` 是即将发送请求的浅拷贝快照，
-`info.attempt` 从 1 开始，便于和 `onRetry` 串联分析。
+`info.attempt` 从 1 开始，便于和 `onRetry` 串联分析。使用默认 proxy transport 时，
+`info.api` 和 `info.credentials` 会反映配置的 chat URL 与浏览器 credentials 模式。
 
 `onResponse(info)` 会在 Provider adapter 返回后执行。由于 `vue-ai-hooks` 的
 Provider 层抽象了不同 fetch 客户端，回调里不会暴露原始 `Response` 对象，而是通过
@@ -393,7 +394,7 @@ before-last-N-messages`，以及可选的 `tools: string[]`。省略 `tools` 时
 ## 请求准备钩子
 
 当后端需要根据当前 chat id、触发来源、metadata、headers 或最终消息列表做最后一层
-请求改写时，可以使用 `prepareSendMessagesRequest`：
+请求改写依赖当前 chat id、proxy `api`、credentials、trigger、metadata、headers 或最终消息列表时，可以使用 `prepareSendMessagesRequest`：
 
 ```ts
 const { append, regenerate } = useChat({
@@ -403,10 +404,10 @@ const { append, regenerate } = useChat({
     body: { tenantId: 'acme' },
     headers: { 'X-App': 'support-console' }
   },
-  prepareSendMessagesRequest({ id, trigger, body, headers }) {
+  prepareSendMessagesRequest({ id, api, credentials, trigger, body, headers }) {
     return {
-      headers: { ...headers, 'X-Chat-Id': id },
-      body: { ...body, trigger }
+      headers: { ...headers, 'X-Chat-Id': id, 'X-Chat-Api': api ?? 'direct' },
+      body: { ...body, credentials, trigger }
     }
   }
 })
@@ -427,9 +428,9 @@ await regenerate({ messageId: 'msg_assistant_1' })
 const { resumeStream } = useChat({
   provider,
   id: 'thread_1',
-  prepareReconnectToStreamRequest({ id, headers }) {
+  prepareReconnectToStreamRequest({ id, api, headers }) {
     return {
-      headers: { ...headers, 'X-Resume-Thread': id }
+      headers: { ...headers, 'X-Resume-Thread': id, 'X-Chat-Api': api ?? 'direct' }
     }
   }
 })

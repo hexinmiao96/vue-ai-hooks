@@ -450,8 +450,24 @@ describe('public API types', () => {
       request: ChatRequest | ChatResumeRequest
       attempt: number
       providerId: string
+      api?: string
+      credentials?: RequestCredentials
     }>()
     expectTypeOf<ChatResponseInfo>().toMatchTypeOf<ChatRequestInfo & { hasStream: boolean }>()
+    expectTypeOf<PrepareSendMessagesRequestOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<PrepareSendMessagesRequestOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
+    expectTypeOf<PrepareStepOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<PrepareStepOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
+    expectTypeOf<PrepareReconnectToStreamRequestOptions['api']>().toEqualTypeOf<
+      string | undefined
+    >()
+    expectTypeOf<PrepareReconnectToStreamRequestOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
     expectTypeOf<UseChatOptions['onRequest']>().toEqualTypeOf<
       ((info: ChatRequestInfo) => void) | undefined
     >()

@@ -86,6 +86,8 @@ export interface ChatRequestInfo {
   id: string
   providerId: string
   attempt: number
+  api?: string
+  credentials?: RequestCredentials
   request: ChatRequest | ChatResumeRequest
   messages: Message[]
   requestMetadata: unknown
@@ -129,6 +131,8 @@ export type SendChatTrigger = 'submit-message' | 'regenerate-message'
 
 export interface PrepareSendMessagesRequestOptions {
   id: string
+  api?: string
+  credentials?: RequestCredentials
   messages: Message[]
   requestMetadata: unknown
   body?: Record<string, unknown>
@@ -153,6 +157,8 @@ export type PrepareStep = (
 
 export interface PrepareReconnectToStreamRequestOptions {
   id: string
+  api?: string
+  credentials?: RequestCredentials
   requestMetadata: unknown
   body?: Record<string, unknown>
   headers?: Record<string, string>
@@ -892,6 +898,9 @@ export function useChat<
       body: transportBody,
       fetch: transportFetch
     })
+  const requestApi = providedProvider || transport ? undefined : (api ?? '/api/chat')
+  const requestCredentials = providedProvider || transport ? undefined : credentials
+  const proxyRequestInfo = requestApi ? { api: requestApi, credentials: requestCredentials } : {}
   const nextId = options.generateId ?? createId
   const id = ref(options.id || nextId('chat'))
   const state = getChatState<TData>(
@@ -1143,6 +1152,7 @@ export function useChat<
       id: request.id ?? id.value,
       providerId: provider.id,
       attempt,
+      ...proxyRequestInfo,
       request: cloneRequestSnapshot(request),
       messages:
         kind === 'chat'
@@ -1614,6 +1624,7 @@ export function useChat<
     }
     const stepPrepared = await options.prepareStep?.({
       id: id.value,
+      ...proxyRequestInfo,
       messages: base.messages.map((message) => ({ ...message })),
       requestMetadata: base.metadata,
       body: base.body,
@@ -1630,6 +1641,7 @@ export function useChat<
     const stepRequest = mergePreparedChatRequest(base, stepPrepared)
     const prepared = await options.prepareSendMessagesRequest?.({
       id: id.value,
+      ...proxyRequestInfo,
       messages: stepRequest.messages.map((message) => ({ ...message })),
       requestMetadata: stepRequest.metadata,
       body: stepRequest.body,
@@ -1666,6 +1678,7 @@ export function useChat<
     }
     const prepared = await options.prepareReconnectToStreamRequest?.({
       id: base.id,
+      ...proxyRequestInfo,
       requestMetadata: base.metadata,
       body: base.body,
       headers: base.headers,

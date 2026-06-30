@@ -186,7 +186,10 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 ```
 
 These refs show the final provider/proxy request after defaults, per-call
-options, body, headers, and retry attempt values are resolved.
+options, proxy `api`, credentials, body, headers, and retry attempt values are
+resolved. `prepareSendMessagesRequest`, `prepareStep`, and
+`prepareReconnectToStreamRequest` receive the same `api` and `credentials`
+fields for default proxy transports.
 
 ## Migration checklist
 

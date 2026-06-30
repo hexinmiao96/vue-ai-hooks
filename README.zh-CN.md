@@ -260,8 +260,8 @@ import type { ChatProvider } from 'vue-ai-hooks'
 可以在 `defaultRequest` 或单次调用选项中传入 `body`，用于向 OpenAI-compatible、Anthropic
 或 proxy 请求透传 Provider 专属 JSON 字段；如果 key 冲突，显式 typed 字段仍然优先。
 
-代理后端需要在最终 chat id、消息列表和 metadata 确定后再补 tenant headers、trace
-metadata 或后端专属 body 字段时，可以使用 `prepareSendMessagesRequest` 和
+代理后端需要在最终 chat id、消息列表、proxy `api`、credentials 和 metadata 确定后再补
+tenant headers、trace metadata 或后端专属 body 字段时，可以使用 `prepareSendMessagesRequest` 和
 `prepareReconnectToStreamRequest`。
 自动工具循环需要按 assistant 步骤调整请求时，可以使用 `prepareStep`，例如工具结果回来后收窄
 `activeTools`。

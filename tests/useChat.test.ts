@@ -105,29 +105,47 @@ describe('useChat', () => {
   })
 
   it('uses a proxy transport when provider is omitted', async () => {
+    const prepareSendMessagesRequest = vi.fn(({ api, credentials, body, headers }) => ({
+      body: { ...body, prepared: true },
+      headers: { ...headers, 'X-Prepared': 'yes' },
+      metadata: { api, credentials }
+    }))
     const fetcher = vi.fn(
       async () =>
         new Response(JSON.stringify([{ content: 'ok' }]), {
           headers: { 'Content-Type': 'application/json' }
         })
     )
-    const { append, messages } = useChat({
+    const { append, lastRequest, messages } = useChat({
       api: '/api/chat',
       headers: { 'X-Session': 'session_1' },
       body: { tenantId: 'tenant_1' },
       credentials: 'include',
-      fetch: fetcher as unknown as typeof fetch
+      fetch: fetcher as unknown as typeof fetch,
+      prepareSendMessagesRequest
     })
 
     await append('hi')
 
+    expect(prepareSendMessagesRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        api: '/api/chat',
+        credentials: 'include'
+      })
+    )
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('/api/chat')
     expect(init.credentials).toBe('include')
-    expect(init.headers).toMatchObject({ 'X-Session': 'session_1' })
+    expect(init.headers).toMatchObject({ 'X-Session': 'session_1', 'X-Prepared': 'yes' })
     expect(JSON.parse(init.body as string)).toMatchObject({
       tenantId: 'tenant_1',
+      prepared: true,
+      metadata: { api: '/api/chat', credentials: 'include' },
       messages: [{ role: 'user', content: 'hi' }]
+    })
+    expect(lastRequest.value).toMatchObject({
+      api: '/api/chat',
+      credentials: 'include'
     })
     expect(messages.value[1]).toMatchObject({ role: 'assistant', content: 'ok' })
   })
@@ -2199,6 +2217,54 @@ describe('useChat', () => {
         finishReason: 'stop'
       })
     )
+  })
+
+  it('passes proxy api and credentials to reconnect request preparers', async () => {
+    const prepareReconnectToStreamRequest = vi.fn(({ api, credentials, headers }) => ({
+      headers: { ...headers, 'X-Prepared-Resume': 'yes' },
+      metadata: { api, credentials }
+    }))
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify([{ content: 'resumed through proxy' }]), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { lastRequest, messages, resumeStream } = useChat({
+      api: '/api/chat',
+      credentials: 'include',
+      fetch: fetcher as unknown as typeof fetch,
+      headers: { 'X-Session': 'session_1' },
+      id: 'chat_proxy_resume',
+      prepareReconnectToStreamRequest
+    })
+
+    await resumeStream()
+
+    expect(prepareReconnectToStreamRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        api: '/api/chat',
+        credentials: 'include'
+      })
+    )
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/ai/chat/chat_proxy_resume/stream')
+    expect(init.method).toBe('GET')
+    expect(init.credentials).toBe('include')
+    expect(init.headers).toMatchObject({
+      'X-Session': 'session_1',
+      'X-Prepared-Resume': 'yes'
+    })
+    expect(lastRequest.value).toMatchObject({
+      kind: 'resume',
+      api: '/api/chat',
+      credentials: 'include',
+      requestMetadata: { api: '/api/chat', credentials: 'include' }
+    })
+    expect(messages.value[0]).toMatchObject({
+      role: 'assistant',
+      content: 'resumed through proxy'
+    })
   })
 
   it('prepares reconnect requests before resuming a stream', async () => {

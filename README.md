@@ -307,7 +307,8 @@ requests. Explicit typed fields still win on conflicts.
 
 Use `prepareSendMessagesRequest` or `prepareReconnectToStreamRequest` when a
 proxy-backed app needs tenant headers, trace metadata, or backend-only body
-fields after the final chat id, messages, and request metadata are known.
+fields after the final chat id, messages, proxy `api`, credentials, and request
+metadata are known.
 Use `prepareStep` when automatic tool loops need request changes per assistant
 step, such as narrowing `activeTools` after a tool result arrives.
 Use `threadId` and `forwardedProps` when an agent backend needs a server thread
