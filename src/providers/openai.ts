@@ -19,6 +19,8 @@ type OpenAiUsage =
       total_tokens?: number
     }
 
+type OpenAiToolCallDelta = NonNullable<ChatChunk['toolCalls']>[number]
+
 function normalizeUsage(usage: OpenAiUsage | undefined): TokenUsage | undefined {
   if (!usage) return undefined
   if ('promptTokens' in usage) return usage
@@ -29,6 +31,16 @@ function normalizeUsage(usage: OpenAiUsage | undefined): TokenUsage | undefined 
     completionTokens,
     totalTokens: usage.total_tokens ?? promptTokens + completionTokens
   }
+}
+
+function normalizeToolCalls(
+  toolCalls: Array<Omit<OpenAiToolCallDelta, 'index'> & { index?: number }> | undefined
+): ChatChunk['toolCalls'] | undefined {
+  if (!toolCalls?.length) return undefined
+  return toolCalls.map((call, index) => ({
+    ...call,
+    index: call.index ?? index
+  }))
 }
 
 /** Configuration shared by OpenAI-family providers. */
@@ -145,15 +157,23 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
       })
 
       if (!stream) {
-        // Non-streaming: just yield the whole content in a single chunk.
         const data = (await response.json()) as {
-          choices: Array<{ message: { content: string }; finish_reason: string | null }>
+          choices: Array<{
+            message: {
+              content: string | null
+              tool_calls?: Array<Omit<OpenAiToolCallDelta, 'index'> & { index?: number }>
+            }
+            finish_reason: string | null
+          }>
           usage?: OpenAiUsage
         }
         return (async function* () {
+          const choice = data.choices?.[0]
           yield {
-            content: data.choices?.[0]?.message?.content ?? '',
-            finishReason: (data.choices?.[0]?.finish_reason as ChatChunk['finishReason']) ?? 'stop',
+            content:
+              typeof choice?.message?.content === 'string' ? choice.message.content : undefined,
+            toolCalls: normalizeToolCalls(choice?.message?.tool_calls),
+            finishReason: (choice?.finish_reason as ChatChunk['finishReason']) ?? 'stop',
             usage: normalizeUsage(data.usage)
           }
         })()
@@ -164,7 +184,10 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
           const choice = (
             raw as {
               choices?: Array<{
-                delta?: { content?: string; tool_calls?: ChatChunk['toolCalls'] }
+                delta?: {
+                  content?: string
+                  tool_calls?: Array<Omit<OpenAiToolCallDelta, 'index'> & { index?: number }>
+                }
                 finish_reason?: ChatChunk['finishReason']
               }>
             }
@@ -173,7 +196,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
           const usage = normalizeUsage((raw as { usage?: OpenAiUsage }).usage)
           yield {
             content: choice.delta?.content,
-            toolCalls: choice.delta?.tool_calls,
+            toolCalls: normalizeToolCalls(choice.delta?.tool_calls),
             finishReason: choice.finish_reason ?? undefined,
             usage
           }

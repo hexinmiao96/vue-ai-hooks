@@ -78,6 +78,10 @@ required and no OpenAI default URL is applied.
 Use it for DeepSeek, Moonshot, Zhipu, Ollama's OpenAI shim, vLLM, LiteLLM, or
 your own OpenAI-compatible gateway.
 
+Streaming and non-streaming chat responses both preserve model tool calls as
+`ChatChunk.toolCalls`, so `useChat` can drive the same tool workflow regardless
+of transport mode.
+
 ## `openrouter(config)`
 
 OpenRouter-specific wrapper around `openaiCompatible`.

@@ -74,6 +74,9 @@ const provider = openaiCompatible({
 
 可用于 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、LiteLLM，或你自己的 OpenAI-compatible 网关。
 
+流式和非流式 chat 响应都会把模型工具调用保留为 `ChatChunk.toolCalls`，因此
+`useChat` 在不同 transport 模式下可以复用同一套工具流程。
+
 ## `openrouter(config)`
 
 基于 `openaiCompatible` 的 OpenRouter 专用封装。

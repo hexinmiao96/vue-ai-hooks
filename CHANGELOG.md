@@ -36,6 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coverage thresholds now require at least 98% statements, 90% branches, 96%
   functions, and 98% lines.
 
+### Fixed
+
+- Preserved OpenAI-compatible non-streaming chat `tool_calls` as
+  `ChatChunk.toolCalls`, so tool workflows work when a gateway returns a
+  single JSON response.
+
 ## [0.2.1] - 2026-06-18
 
 ### Added

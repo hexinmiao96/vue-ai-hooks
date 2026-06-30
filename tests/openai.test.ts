@@ -211,6 +211,59 @@ describe('openaiCompatible provider', () => {
     ])
   })
 
+  it('maps non-streaming chat tool calls', async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        choices: [
+          {
+            message: {
+              content: null,
+              tool_calls: [
+                {
+                  id: 'call_nonstream',
+                  type: 'function',
+                  function: { name: 'lookup', arguments: '{"q":"vue"}' }
+                }
+              ]
+            },
+            finish_reason: 'tool_calls'
+          }
+        ],
+        usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 }
+      })
+    )
+    const provider = openaiCompatible({
+      apiKey: 'k',
+      baseURL: 'https://api.example.test',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Use a tool' }],
+      stream: false
+    })
+    const chunks = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([
+      {
+        content: undefined,
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_nonstream',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"vue"}' }
+          }
+        ],
+        finishReason: 'tool_calls',
+        usage: { promptTokens: 2, completionTokens: 1, totalTokens: 3 }
+      }
+    ])
+  })
+
   it('serializes completion requests and reads non-streaming text', async () => {
     const fetcher = vi.fn(async () => jsonResponse({ choices: [{ text: 'done' }] }))
     const provider = openaiCompatible({
