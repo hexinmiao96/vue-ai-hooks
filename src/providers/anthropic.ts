@@ -32,6 +32,8 @@ export interface AnthropicConfig {
   headers?: Record<string, string>
   /** Custom fetch implementation. */
   fetch?: typeof fetch
+  /** Request timeout in milliseconds. */
+  timeoutMs?: number
 }
 
 /** Map Anthropic's stop_reason to our finishReason. */
@@ -91,7 +93,8 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     maxTokens: defaultMaxTokens = 1024,
     anthropicVersion = '2023-06-01',
     headers: extraHeaders = {},
-    fetch: fetcher
+    fetch: fetcher,
+    timeoutMs
   } = config
 
   const baseHeaders: Record<string, string> = {
@@ -247,6 +250,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
       headers: { ...baseHeaders, ...request.headers },
       body: JSON.stringify(body),
       signal: request.signal,
+      timeoutMs,
       fetcher
     })
 

@@ -65,6 +65,8 @@ export interface OpenAiLikeConfig {
    * a global `fetch` (e.g. older Node, polyfills).
    */
   fetch?: typeof fetch
+  /** Request timeout in milliseconds. */
+  timeoutMs?: number
 }
 
 /**
@@ -82,7 +84,8 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     chatPath = '/chat/completions',
     completionPath = '/completions',
     embeddingPath = '/embeddings',
-    fetch: fetcher
+    fetch: fetcher,
+    timeoutMs
   } = config
 
   const baseHeaders: Record<string, string> = {
@@ -153,6 +156,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
         signal,
+        timeoutMs,
         fetcher
       })
 
@@ -233,6 +237,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
         signal,
+        timeoutMs,
         fetcher
       })
 
@@ -265,6 +270,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
         headers: { ...baseHeaders, ...headers },
         body: JSON.stringify(body),
         signal,
+        timeoutMs,
         fetcher
       })
 

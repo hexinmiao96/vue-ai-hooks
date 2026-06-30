@@ -95,6 +95,7 @@ const provider = openai({
 | `chatPath`       | `string`                 | `/chat/completions`         | Chat endpoint path.                                  |
 | `completionPath` | `string`                 | `/completions`              | Completion endpoint path.                            |
 | `embeddingPath`  | `string`                 | `/embeddings`               | Embeddings endpoint path.                            |
+| `timeoutMs`      | `number`                 | -                           | Request timeout in milliseconds.                     |
 | `fetch`          | `typeof fetch`           | global `fetch`              | Custom fetch implementation.                         |
 
 ## `openaiCompatible(config)`
@@ -147,6 +148,7 @@ const provider = openrouter({
 | `chatPath`       | `string`                 | `/chat/completions`            | Chat endpoint path.                                                               |
 | `completionPath` | `string`                 | `/completions`                 | Completion endpoint path.                                                         |
 | `embeddingPath`  | `string`                 | `/embeddings`                  | Embeddings endpoint path.                                                         |
+| `timeoutMs`      | `number`                 | -                              | Request timeout in milliseconds.                                                  |
 | `fetch`          | `typeof fetch`           | global `fetch`                 | Custom fetch implementation.                                                      |
 
 The returned provider has `id: 'openrouter'`.
@@ -173,6 +175,7 @@ const provider = gemini({
 | `chatPath`       | `string`                 | `/chat/completions`                                       | Chat endpoint path.                                |
 | `completionPath` | `string`                 | `/completions`                                            | Completion endpoint path.                          |
 | `embeddingPath`  | `string`                 | `/embeddings`                                             | Embeddings endpoint path.                          |
+| `timeoutMs`      | `number`                 | -                                                         | Request timeout in milliseconds.                   |
 | `fetch`          | `typeof fetch`           | global `fetch`                                            | Custom fetch implementation.                       |
 
 The returned provider has `id: 'gemini'` and supports the same
@@ -277,6 +280,7 @@ const provider = anthropic({
 | `maxTokens`        | `number`                 | `1024`                       | Default `max_tokens`; Anthropic requires a value. |
 | `anthropicVersion` | `string`                 | `2023-06-01`                 | Anthropic API version header.                     |
 | `headers`          | `Record<string, string>` | `{}`                         | Extra headers sent on every request.              |
+| `timeoutMs`        | `number`                 | -                            | Request timeout in milliseconds.                  |
 | `fetch`            | `typeof fetch`           | global `fetch`               | Custom fetch implementation.                      |
 
 Provider behavior:

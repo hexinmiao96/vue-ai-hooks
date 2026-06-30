@@ -25,8 +25,27 @@ function sseResponse(events: unknown[]): Response {
   })
 }
 
+function abortError(): Error {
+  return Object.assign(new Error('Aborted'), { name: 'AbortError' })
+}
+
+function pendingFetch() {
+  return vi.fn(
+    (_url: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal
+        if (signal?.aborted) {
+          reject(abortError())
+          return
+        }
+        signal?.addEventListener('abort', () => reject(abortError()), { once: true })
+      })
+  )
+}
+
 describe('openaiCompatible provider', () => {
   afterEach(() => {
+    vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
@@ -378,5 +397,36 @@ describe('openaiCompatible provider', () => {
       model: 'embedding-model',
       usage: { promptTokens: 3, totalTokens: 5 }
     })
+  })
+
+  it('applies timeoutMs to chat, completion, and embedding requests', async () => {
+    vi.useFakeTimers()
+
+    async function expectTimedOut(
+      run: (provider: ReturnType<typeof openaiCompatible>) => Promise<unknown>
+    ) {
+      const fetcher = pendingFetch()
+      const provider = openaiCompatible({
+        apiKey: 'k',
+        baseURL: 'https://api.example.test',
+        timeoutMs: 10,
+        fetch: fetcher as unknown as typeof fetch
+      })
+
+      const request = run(provider)
+      const assertion = expect(request).rejects.toMatchObject({
+        name: 'AiHooksError',
+        message: 'Request aborted'
+      })
+      await vi.advanceTimersByTimeAsync(10)
+      await assertion
+      expect(fetcher).toHaveBeenCalledTimes(1)
+    }
+
+    await expectTimedOut((provider) =>
+      provider.chat({ messages: [{ id: 'm1', role: 'user', content: 'hi' }] })
+    )
+    await expectTimedOut((provider) => provider.completion({ prompt: 'hi' }))
+    await expectTimedOut((provider) => provider.embedding({ input: 'hi' }))
   })
 })

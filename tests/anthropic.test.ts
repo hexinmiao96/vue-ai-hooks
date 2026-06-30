@@ -37,6 +37,26 @@ function mockFetchOnce(response: Response | Error) {
   return fn
 }
 
+function abortError(): Error {
+  return Object.assign(new Error('Aborted'), { name: 'AbortError' })
+}
+
+function pendingFetch() {
+  const fn = vi.fn(
+    (_url: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal
+        if (signal?.aborted) {
+          reject(abortError())
+          return
+        }
+        signal?.addEventListener('abort', () => reject(abortError()), { once: true })
+      })
+  )
+  globalThis.fetch = fn as unknown as typeof fetch
+  return fn
+}
+
 describe('anthropic provider', () => {
   beforeEach(() => {
     vi.useFakeTimers()
@@ -101,6 +121,20 @@ describe('anthropic provider', () => {
     expect(body.thinking).toEqual({ type: 'enabled', budget_tokens: 128 })
     expect(body.max_tokens).toBe(256)
     expect(body.stream).toBe(true)
+  })
+
+  it('aborts chat when timeoutMs elapses', async () => {
+    const fetchMock = pendingFetch()
+    const p = anthropic({ apiKey: 'sk-ant-test', timeoutMs: 10 })
+
+    const request = p.chat({ messages: [{ id: 'u1', role: 'user', content: 'Hello' }] })
+    const assertion = expect(request).rejects.toMatchObject({
+      name: 'AiHooksError',
+      message: 'Request aborted'
+    })
+    await vi.advanceTimersByTimeAsync(10)
+    await assertion
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
   it('maps non-stream chat responses and serializes optional request fields', async () => {

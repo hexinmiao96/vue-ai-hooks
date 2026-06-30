@@ -92,6 +92,7 @@ const provider = openai({
 | `chatPath`       | `string`                 | `/chat/completions`         | Chat 端点路径。                          |
 | `completionPath` | `string`                 | `/completions`              | Completion 端点路径。                    |
 | `embeddingPath`  | `string`                 | `/embeddings`               | Embeddings 端点路径。                    |
+| `timeoutMs`      | `number`                 | -                           | 请求超时时间，单位毫秒。                 |
 | `fetch`          | `typeof fetch`           | 全局 `fetch`                | 自定义 fetch 实现。                      |
 
 ## `openaiCompatible(config)`
@@ -141,6 +142,7 @@ const provider = openrouter({
 | `chatPath`       | `string`                 | `/chat/completions`            | Chat 端点路径。                                                     |
 | `completionPath` | `string`                 | `/completions`                 | Completion 端点路径。                                               |
 | `embeddingPath`  | `string`                 | `/embeddings`                  | Embeddings 端点路径。                                               |
+| `timeoutMs`      | `number`                 | -                              | 请求超时时间，单位毫秒。                                            |
 | `fetch`          | `typeof fetch`           | 全局 `fetch`                   | 自定义 fetch 实现。                                                 |
 
 返回的 Provider 使用 `id: 'openrouter'`。
@@ -167,6 +169,7 @@ const provider = gemini({
 | `chatPath`       | `string`                 | `/chat/completions`                                       | Chat 端点路径。                        |
 | `completionPath` | `string`                 | `/completions`                                            | Completion 端点路径。                  |
 | `embeddingPath`  | `string`                 | `/embeddings`                                             | Embeddings 端点路径。                  |
+| `timeoutMs`      | `number`                 | -                                                         | 请求超时时间，单位毫秒。               |
 | `fetch`          | `typeof fetch`           | 全局 `fetch`                                              | 自定义 fetch 实现。                    |
 
 返回的 Provider 使用 `id: 'gemini'`，并支持 `useObject` 使用的
@@ -263,6 +266,7 @@ const provider = anthropic({
 | `maxTokens`        | `number`                 | `1024`                       | 默认 `max_tokens`；Anthropic 要求该值。 |
 | `anthropicVersion` | `string`                 | `2023-06-01`                 | Anthropic API version header。          |
 | `headers`          | `Record<string, string>` | `{}`                         | 每个请求都会带上的额外 headers。        |
+| `timeoutMs`        | `number`                 | -                            | 请求超时时间，单位毫秒。                |
 | `fetch`            | `typeof fetch`           | 全局 `fetch`                 | 自定义 fetch 实现。                     |
 
 Provider 行为：

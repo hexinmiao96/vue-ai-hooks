@@ -150,9 +150,21 @@ describe('public API types', () => {
     expectTypeOf(proxyProvider()).toEqualTypeOf<ChatProvider>()
     expectTypeOf(anthropic({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(fallbackProvider({ providers: [provider] })).toEqualTypeOf<ChatProvider>()
-    expectTypeOf<OpenAiLikeConfig>().toMatchTypeOf<{ apiKey: string; baseURL: string }>()
-    expectTypeOf<OpenRouterConfig>().toMatchTypeOf<{ apiKey: string; siteUrl?: string }>()
-    expectTypeOf<GeminiConfig>().toMatchTypeOf<{ apiKey: string; baseURL?: string }>()
+    expectTypeOf<OpenAiLikeConfig>().toMatchTypeOf<{
+      apiKey: string
+      baseURL: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<OpenRouterConfig>().toMatchTypeOf<{
+      apiKey: string
+      siteUrl?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<GeminiConfig>().toMatchTypeOf<{
+      apiKey: string
+      baseURL?: string
+      timeoutMs?: number
+    }>()
     expectTypeOf<ProxyProviderConfig['chatUrl']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<ProxyProviderConfig['credentials']>().toEqualTypeOf<
       RequestCredentials | undefined
@@ -174,7 +186,11 @@ describe('public API types', () => {
     >()
     expectTypeOf<ProxyRequestKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding' | 'resume'>()
     expectTypeOf(proxyConfig).toEqualTypeOf<ProxyProviderConfig>()
-    expectTypeOf<AnthropicConfig>().toMatchTypeOf<{ apiKey: string; maxTokens?: number }>()
+    expectTypeOf<AnthropicConfig>().toMatchTypeOf<{
+      apiKey: string
+      maxTokens?: number
+      timeoutMs?: number
+    }>()
     const fallbackConfig: FallbackProviderConfig = {
       providers: [provider],
       shouldFallback(context) {
