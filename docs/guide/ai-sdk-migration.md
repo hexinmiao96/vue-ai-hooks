@@ -26,6 +26,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `useChat()`                                      | `useChat()`                                                                                                                                                     |
 | `transport`                                      | `transport` or `provider`                                                                                                                                       |
 | `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`                                                                                                     |
+| `DirectChatTransport`                            | `new DirectChatTransport({ stream })` for in-process agents, tests, and local demos                                                                             |
 | `messages` initial option                        | `messages` or `initialMessages`                                                                                                                                 |
 | `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields                                                                                                 |
 | `generateId()` / `createIdGenerator()`           | `generateId()` and `createIdGenerator()` for composable id overrides                                                                                            |
@@ -77,6 +78,25 @@ const chat = useChat({
 
 `transport` is accepted as an AI SDK-style alias. New code can use either
 `provider` or `transport`; prefer one naming style in a codebase.
+
+Use `DirectChatTransport` when you already own the model or agent call in the
+same process and only need Vue stream state:
+
+```ts
+import { DirectChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DirectChatTransport({
+    async *stream() {
+      yield { type: 'text-delta', id: 'text_1', delta: 'Hello' }
+      yield { type: 'finish', finishReason: 'stop' }
+    }
+  })
+})
+```
+
+Its default protocol consumes AI SDK UI message stream parts. If your handler
+already yields `ChatChunk` values, pass `streamProtocol: 'chat-chunk'`.
 
 ## Input handling
 
@@ -253,30 +273,32 @@ fields for default chat proxy transports.
 1. Replace imports from AI SDK UI with `vue-ai-hooks`.
 2. Map `DefaultChatTransport` options to `api`, `baseURL`, `headers`, `body`,
    `credentials`, and `fetch`.
-3. Map completion `streamProtocol: 'text'` when your existing route returns a
+3. Map AI SDK `DirectChatTransport` style in-process handlers to
+   `new DirectChatTransport({ stream })`.
+4. Map completion `streamProtocol: 'text'` when your existing route returns a
    plain text stream.
-4. Keep `experimental_useObject` imports as-is or rename them to `useObject`
+5. Keep `experimental_useObject` imports as-is or rename them to `useObject`
    after the migration.
-5. Let `useObject` proxy routes return `text/plain` JSON streams when you are
+6. Let `useObject` proxy routes return `text/plain` JSON streams when you are
    porting an existing AI SDK object endpoint.
-6. Map image generation calls to `useImage({ api: '/api/image' })` and keep
+7. Map image generation calls to `useImage({ api: '/api/image' })` and keep
    image model credentials server-side.
-7. Map video generation calls to `useVideo({ api: '/api/video' })` and keep
+8. Map video generation calls to `useVideo({ api: '/api/video' })` and keep
    video model credentials server-side.
-8. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep
+9. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep
    text-to-speech credentials server-side.
-9. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
-   and keep transcription credentials server-side.
-10. Map reranking calls to `useRerank({ api: '/api/rerank' })` and keep rerank
+10. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
+    and keep transcription credentials server-side.
+11. Map reranking calls to `useRerank({ api: '/api/rerank' })` and keep rerank
     model credentials server-side.
-11. Keep existing initial messages by passing `messages` or `initialMessages`.
-12. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+12. Keep existing initial messages by passing `messages` or `initialMessages`.
+13. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
     `gemini`, `anthropic`, or `openaiCompatible`.
-13. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-14. Move AI SDK `tool()` definitions directly into `useChat({ tools })`, or keep
+14. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+15. Move AI SDK `tool()` definitions directly into `useChat({ tools })`, or keep
     existing wire-format `Tool[]` plus `toolHandlers`.
-15. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+16. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
     `addToolApprovalResponse()`.
-16. Add `lastRequest` and `lastResponse` to your debug view before swapping
+17. Add `lastRequest` and `lastResponse` to your debug view before swapping
     production traffic.
-17. Run `pnpm release:check` or your app's equivalent gate before shipping.
+18. Run `pnpm release:check` or your app's equivalent gate before shipping.

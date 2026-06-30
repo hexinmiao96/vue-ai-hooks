@@ -162,6 +162,11 @@ export {
   type ProxyRequestKind,
   type ProxyRequestOverride
 } from './providers/proxy'
+export {
+  DirectChatTransport,
+  type DirectChatStreamProtocol,
+  type DirectChatTransportOptions
+} from './providers/direct'
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 

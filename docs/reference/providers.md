@@ -9,8 +9,8 @@ exact config surface.
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
 `GeminiConfig`, `DeepSeekConfig`, `FallbackProviderConfig`,
 `FallbackProviderContext`, `FallbackProviderKind`, `ProxyProviderConfig`,
-`ProxyRequestContext`, `ProxyRequestKind`, `ProxyRequestOverride`, and
-`AnthropicConfig`.
+`ProxyRequestContext`, `ProxyRequestKind`, `ProxyRequestOverride`,
+`DirectChatTransportOptions`, `DirectChatStreamProtocol`, and `AnthropicConfig`.
 
 ## `ChatProvider`
 
@@ -295,6 +295,54 @@ where there is no body.
 `signal` and request-level `headers` are used for the proxy HTTP request and are
 not copied into the JSON body. Your backend owns upstream credentials, model
 selection, rate limiting, logging, and vendor-specific retries.
+
+## `DirectChatTransport`
+
+In-process chat transport for local agents, demos, tests, and edge runtimes that
+already own the model call. It implements `ChatProvider`, so it can be passed to
+`provider` or the AI SDK-style `transport` option.
+
+```ts
+import { DirectChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DirectChatTransport({
+    async *stream() {
+      yield { type: 'text-delta', id: 'text_1', delta: 'Hello' }
+      yield { type: 'finish', finishReason: 'stop' }
+    }
+  })
+})
+```
+
+| Option           | Type                       | Default        | Description                                                |
+| ---------------- | -------------------------- | -------------- | ---------------------------------------------------------- |
+| `id`             | `string`                   | `'direct'`     | Provider id shown in request traces.                       |
+| `stream`         | `(request) => stream`      | required       | Chat handler returning AI SDK UI message parts by default. |
+| `resumeStream`   | `(request) => stream`      | -              | Optional resumable stream handler for `resumeStream()`.    |
+| `streamProtocol` | `DirectChatStreamProtocol` | `'ui-message'` | Use `'chat-chunk'` when returning `ChatChunk` values.      |
+
+`DirectChatStreamProtocol` is `'ui-message' | 'chat-chunk'`.
+
+The default `ui-message` protocol accepts the same `UIMessageStreamSource` as
+`createUIMessageStreamResponse()`. Use `streamProtocol: 'chat-chunk'` when your
+local handler already yields provider-agnostic `ChatChunk` values:
+
+```ts
+const localTools = new DirectChatTransport({
+  id: 'local-tools',
+  streamProtocol: 'chat-chunk',
+  async *stream(request) {
+    yield { metadata: { messageCount: request.messages.length } }
+    yield { content: 'Tool result accepted.' }
+    yield { finishReason: 'stop' }
+  }
+})
+```
+
+`resumeStream` returns `null` when no active stream exists. `completion()` and
+`embedding()` throw `AiHooksError`; use `proxyProvider()` or a model provider
+when a surface needs those operations too.
 
 ## `anthropic(config)`
 

@@ -46,7 +46,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生产聊天工作流**：服务端代理路径、可恢复流、thread 上下文、请求准备钩子、自定义
   body、metadata 和请求追踪。
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
-  `Message.parts`、自定义流数据、消息裁剪，以及可复用的 UI stream 解码工具。
+  `Message.parts`、自定义流数据、消息裁剪、`DirectChatTransport`，以及可复用的 UI stream 解码工具。
 - **工具调用控制**：`tool()` / `dynamicTool()` helper、本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
 - **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片、视频、语音、转写和重排路由、
   自定义生成任务、稳定 id 和 Date-safe 持久化 helper。
@@ -373,9 +373,9 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 
 自有后端路由需要逐步产出 AI SDK UI message stream parts 时，可以使用
 `createUIMessageStream()`；需要发出这些 parts 时，可以使用
-`createUIMessageStreamResponse()` 或 `pipeUIMessageStreamToResponse()`。自定义 transport
-或测试工具需要在 `proxyProvider` 之外消费这些 stream 时，可以使用
-`readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
+`createUIMessageStreamResponse()` 或 `pipeUIMessageStreamToResponse()`。进程内 agent、demo
+或测试工具不想经过 HTTP proxy 时，可以使用 `DirectChatTransport` 消费这些 stream。
+底层自定义 transport 仍可直接使用 `readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
 `createUIMessageStreamParser()`、`toChatChunks()`、`formatSSEData()` 和 `parseSSE()`。
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
@@ -445,8 +445,8 @@ cp .env.example .env
 pnpm example:chat
 ```
 
-`examples/chat` 默认使用不需要 key 的 `local-tools` Provider；只有显式选择 Provider
-或配置真实 `VITE_OPENAI_KEY` 时才会请求外部模型服务。
+`examples/chat` 默认使用由 `DirectChatTransport` 驱动、不需要 key 的 `local-tools` Provider；
+只有显式选择 Provider 或配置真实 `VITE_OPENAI_KEY` 时才会请求外部模型服务。
 
 要让浏览器聊天示例通过本地代理模板运行：
 

@@ -151,13 +151,16 @@ expect(
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
+    files.chatExample.includes('DirectChatTransport') &&
     files.chatExample.includes("'sk-...'") &&
     files.chatExample.includes("'local-tools'"),
-  'Chat example must fall back to local-tools when no real OpenAI key is configured'
+  'Chat example must fall back to DirectChatTransport-backed local-tools when no real OpenAI key is configured'
 )
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
-    files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
+    files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
+    files.readme.includes('DirectChatTransport') &&
+    files.zhReadme.includes('DirectChatTransport') &&
     files.readme.includes('`examples/image`') &&
     files.zhReadme.includes('`examples/image`') &&
     files.readme.includes('`examples/video`') &&
@@ -248,6 +251,7 @@ for (const snippet of [
   'AI SDK Core transcription',
   'AI SDK Core reranking',
   'DefaultChatTransport',
+  'DirectChatTransport',
   'transport` or `provider`',
   'input`, `setInput()`, `handleInputChange()`',
   'addToolApprovalResponse()',
@@ -270,6 +274,7 @@ for (const snippet of [
   'AI SDK Core 音频转写',
   'AI SDK Core 文档重排',
   'DefaultChatTransport',
+  'DirectChatTransport',
   'transport` 或 `provider`',
   'input`、`setInput()`、`handleInputChange()`',
   'addToolApprovalResponse()',

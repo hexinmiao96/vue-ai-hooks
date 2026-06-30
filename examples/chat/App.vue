@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { useChat, deepseek, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
+import {
+  DirectChatTransport,
+  useChat,
+  deepseek,
+  gemini,
+  openai,
+  openrouter,
+  proxyProvider
+} from 'vue-ai-hooks'
 import type {
   ChatChunk,
-  ChatProvider,
   ChatRequest,
   ImageUrlPart,
   MessageContent,
@@ -46,7 +53,7 @@ type RenderedMessagePart = {
  * - gemini: created via `gemini` and reads `VITE_GEMINI_*` vars.
  * - deepseek: created via `deepseek` and reads `VITE_DEEPSEEK_*` vars.
  * - proxy: created via `proxyProvider` and reads `VITE_PROXY_*` vars.
- * - local-tools: deterministic fake provider for testing approval UI locally.
+ * - local-tools: deterministic DirectChatTransport for testing approval UI locally.
  *
  * Start the demo:
  *   pnpm install
@@ -192,20 +199,11 @@ async function* localToolStream(request: ChatRequest): AsyncIterable<ChatChunk> 
   yield { finishReason: 'tool_calls' }
 }
 
-const localToolProvider: ChatProvider = {
+const localToolProvider = new DirectChatTransport({
   id: 'local-tools',
-  async chat(request) {
-    return localToolStream(request)
-  },
-  async completion() {
-    return (async function* () {
-      yield ''
-    })()
-  },
-  async embedding() {
-    return { embeddings: [], model: 'local-tools', usage: { promptTokens: 0, totalTokens: 0 } }
-  }
-}
+  streamProtocol: 'chat-chunk',
+  stream: localToolStream
+})
 /**
  * Build the concrete provider instance used by this example so the compose logic
  * stays explicit and easy to compare in logs and screenshots.

@@ -27,6 +27,7 @@ const requiredRuntimeExports = [
   'createUIMessageStreamParser',
   'createUIMessageStreamResponse',
   'deepseek',
+  'DirectChatTransport',
   'dynamicTool',
   'formatSSEData',
   'generateId',
@@ -114,6 +115,11 @@ assertEqual(esm.openai({ apiKey: 'test-key' }).id, 'openai-compatible', 'ESM ope
 assertEqual(esm.deepseek({ apiKey: 'test-key' }).id, 'deepseek', 'ESM deepseek provider id')
 assertEqual(cjs.openrouter({ apiKey: 'test-key' }).id, 'openrouter', 'CJS openrouter provider id')
 assertEqual(esm.proxyProvider().id, 'proxy', 'ESM proxy provider id')
+assertEqual(
+  new esm.DirectChatTransport({ stream: () => [] }).id,
+  'direct',
+  'ESM DirectChatTransport provider id'
+)
 assertEqual(esm.anthropic({ apiKey: 'test-key' }).id, 'anthropic', 'ESM anthropic provider id')
 assertEqual(new cjs.AiHooksError('test').name, 'AiHooksError', 'CJS AiHooksError instance name')
 

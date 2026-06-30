@@ -11,6 +11,7 @@ import {
   createUIMessageStreamResponse,
   deepseek,
   deserializeMessages,
+  DirectChatTransport,
   dynamicTool,
   fallbackProvider,
   formatSSEData,
@@ -76,6 +77,8 @@ import type {
   DataPartValidator,
   DeepPartial,
   DeepSeekConfig,
+  DirectChatStreamProtocol,
+  DirectChatTransportOptions,
   EmbeddingRequestInfo,
   EmbeddingRequest,
   EmbeddingResponseInfo,
@@ -235,6 +238,7 @@ describe('public API types', () => {
     expectTypeOf(gemini({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(deepseek({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(proxyProvider()).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(new DirectChatTransport({ stream: () => [] })).toMatchTypeOf<ChatProvider>()
     expectTypeOf(anthropic({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(fallbackProvider({ providers: [provider] })).toEqualTypeOf<ChatProvider>()
     expectTypeOf<OpenAiLikeConfig>().toMatchTypeOf<{
@@ -284,6 +288,20 @@ describe('public API types', () => {
     expectTypeOf<ProxyRequestOverride['headers']>().toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf<ProxyRequestKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding' | 'resume'>()
     expectTypeOf(proxyConfig).toEqualTypeOf<ProxyProviderConfig>()
+    const directConfig: DirectChatTransportOptions = {
+      id: 'local-agent',
+      streamProtocol: 'ui-message',
+      stream(request) {
+        expectTypeOf(request).toEqualTypeOf<ChatRequest>()
+        return []
+      },
+      resumeStream(request) {
+        expectTypeOf(request).toEqualTypeOf<ChatResumeRequest>()
+        return null
+      }
+    }
+    expectTypeOf<DirectChatStreamProtocol>().toEqualTypeOf<'ui-message' | 'chat-chunk'>()
+    expectTypeOf(directConfig).toEqualTypeOf<DirectChatTransportOptions>()
     expectTypeOf<AnthropicConfig>().toMatchTypeOf<{
       apiKey: string
       maxTokens?: number
@@ -365,6 +383,7 @@ describe('public API types', () => {
     expect(gemini({ apiKey: 'test-key' }).id).toBe('gemini')
     expect(deepseek({ apiKey: 'test-key' }).id).toBe('deepseek')
     expect(proxyProvider().id).toBe('proxy')
+    expect(new DirectChatTransport({ stream: () => [] }).id).toBe('direct')
     expect(anthropic({ apiKey: 'test-key' }).id).toBe('anthropic')
     expect(fallbackProvider({ providers: [provider] }).id).toBe('fallback')
   })

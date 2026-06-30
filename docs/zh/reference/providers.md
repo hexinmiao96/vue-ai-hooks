@@ -8,7 +8,8 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
 `GeminiConfig`、`DeepSeekConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
 `FallbackProviderKind`、`ProxyProviderConfig`、`ProxyRequestContext`、
-`ProxyRequestKind`、`ProxyRequestOverride` 和 `AnthropicConfig`。
+`ProxyRequestKind`、`ProxyRequestOverride`、`DirectChatTransportOptions`、
+`DirectChatStreamProtocol` 和 `AnthropicConfig`。
 
 ## `ChatProvider`
 
@@ -278,6 +279,53 @@ POST body，然后再合并 Provider request 字段。`ChatRequest.threadId` 和
 `resumeChat()` 中运行，此时没有 body。
 
 `signal` 和单次请求的 `headers` 只用于代理 HTTP 请求，不会复制进 JSON body。上游凭据、模型选择、限流、日志和厂商专属重试都应由你的后端负责。
+
+## `DirectChatTransport`
+
+用于本地 agent、demo、测试和已经自行完成模型调用的 edge runtime 的进程内聊天
+transport。它实现 `ChatProvider`，因此可以传给 `provider`，也可以传给 AI SDK 风格的
+`transport` 选项。
+
+```ts
+import { DirectChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DirectChatTransport({
+    async *stream() {
+      yield { type: 'text-delta', id: 'text_1', delta: '你好' }
+      yield { type: 'finish', finishReason: 'stop' }
+    }
+  })
+})
+```
+
+| 选项             | 类型                       | 默认值         | 说明                                               |
+| ---------------- | -------------------------- | -------------- | -------------------------------------------------- |
+| `id`             | `string`                   | `'direct'`     | 请求追踪中展示的 Provider id。                     |
+| `stream`         | `(request) => stream`      | 必填           | 聊天处理函数，默认返回 AI SDK UI message parts。   |
+| `resumeStream`   | `(request) => stream`      | -              | 可选恢复流处理函数，供 `resumeStream()` 使用。     |
+| `streamProtocol` | `DirectChatStreamProtocol` | `'ui-message'` | handler 已返回 `ChatChunk` 时使用 `'chat-chunk'`。 |
+
+`DirectChatStreamProtocol` 是 `'ui-message' | 'chat-chunk'`。
+
+默认 `ui-message` 协议接受和 `createUIMessageStreamResponse()` 相同的
+`UIMessageStreamSource`。如果本地 handler 已经直接产出框架无关的 `ChatChunk`，使用
+`streamProtocol: 'chat-chunk'`：
+
+```ts
+const localTools = new DirectChatTransport({
+  id: 'local-tools',
+  streamProtocol: 'chat-chunk',
+  async *stream(request) {
+    yield { metadata: { messageCount: request.messages.length } }
+    yield { content: '工具结果已接收。' }
+    yield { finishReason: 'stop' }
+  }
+})
+```
+
+`resumeStream` 没有活动流时返回 `null`。`completion()` 和 `embedding()` 会抛出
+`AiHooksError`；如果同一入口还需要这些能力，请使用 `proxyProvider()` 或模型 Provider。
 
 ## `anthropic(config)`
 

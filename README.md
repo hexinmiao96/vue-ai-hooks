@@ -54,7 +54,7 @@ The AI-in-Vue story is currently fragmented. Options today:
   request tracing.
 - **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
-  pruning, plus reusable UI stream decoding utilities.
+  pruning, `DirectChatTransport`, plus reusable UI stream decoding utilities.
 - **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.
@@ -438,9 +438,10 @@ payloads directly.
 Use `createUIMessageStream()` when an app-owned route should produce AI SDK UI
 message stream parts over time. Use `createUIMessageStreamResponse()` or
 `pipeUIMessageStreamToResponse()` to emit those parts, and
-`readUIMessageStream()` when a custom transport or test harness needs to consume
-them outside `proxyProvider`. Lower-level helpers `createUIMessageStreamParser()`,
-`toChatChunks()`, `formatSSEData()`, and `parseSSE()` are exported for
+`DirectChatTransport` when an in-process agent, demo, or test harness should
+consume them without an HTTP proxy. `readUIMessageStream()` remains available
+for lower-level custom transports outside `proxyProvider`.
+`createUIMessageStreamParser()`, `toChatChunks()`, `formatSSEData()`, and `parseSSE()` are exported for
 already-parsed parts or custom SSE readers.
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
@@ -543,8 +544,9 @@ cp .env.example .env
 pnpm example:chat
 ```
 
-`examples/chat` defaults to the no-key `local-tools` provider unless you select a
-provider or configure a real `VITE_OPENAI_KEY`.
+`examples/chat` defaults to the no-key `local-tools` provider backed by
+`DirectChatTransport` unless you select a provider or configure a real
+`VITE_OPENAI_KEY`.
 
 To run the browser chat example through the local proxy template:
 

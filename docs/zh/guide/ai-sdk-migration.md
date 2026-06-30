@@ -24,6 +24,7 @@
 | `useChat()`                                    | `useChat()`                                                                                                                                                   |
 | `transport`                                    | `transport` 或 `provider`                                                                                                                                     |
 | `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`                                                                                                     |
+| `DirectChatTransport`                          | `new DirectChatTransport({ stream })`，用于进程内 agent、测试和本地 demo                                                                                      |
 | `messages` 初始选项                            | `messages` 或 `initialMessages`                                                                                                                               |
 | `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                                                                                                         |
 | `generateId()` / `createIdGenerator()`         | `generateId()` 和 `createIdGenerator()`，用于覆盖 composable id 生成逻辑                                                                                      |
@@ -74,6 +75,25 @@ const chat = useChat({
 ```
 
 `transport` 是 AI SDK 风格别名。新代码可以使用 `provider` 或 `transport`；同一个代码库里建议统一一种命名。
+
+如果模型或 agent 调用已经在同一进程内完成，只需要 Vue 的流式状态管理，可以使用
+`DirectChatTransport`：
+
+```ts
+import { DirectChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DirectChatTransport({
+    async *stream() {
+      yield { type: 'text-delta', id: 'text_1', delta: '你好' }
+      yield { type: 'finish', finishReason: 'stop' }
+    }
+  })
+})
+```
+
+它默认消费 AI SDK UI message stream parts。如果 handler 已经返回 `ChatChunk`，
+传入 `streamProtocol: 'chat-chunk'`。
 
 ## Input 处理
 
@@ -237,22 +257,24 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 1. 把 AI SDK UI 的 import 替换为 `vue-ai-hooks`。
 2. 将 `DefaultChatTransport` 选项映射到 `api`、`baseURL`、`headers`、`body`、
    `credentials` 和 `fetch`。
-3. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
-4. 可以先保留 `experimental_useObject` import，也可以迁移完成后改名为 `useObject`。
-5. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
+3. 将 AI SDK `DirectChatTransport` 风格的进程内 handler 映射到
+   `new DirectChatTransport({ stream })`。
+4. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
+5. 可以先保留 `experimental_useObject` import，也可以迁移完成后改名为 `useObject`。
+6. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。
-6. 将图片生成调用迁移到 `useImage({ api: '/api/image' })`，并把图片模型凭据保留在服务端。
-7. 将视频生成调用迁移到 `useVideo({ api: '/api/video' })`，并把视频模型凭据保留在服务端。
-8. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
-9. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。
-10. 将文档重排调用迁移到 `useRerank({ api: '/api/rerank' })`，并把重排模型凭据保留在服务端。
-11. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-12. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+7. 将图片生成调用迁移到 `useImage({ api: '/api/image' })`，并把图片模型凭据保留在服务端。
+8. 将视频生成调用迁移到 `useVideo({ api: '/api/video' })`，并把视频模型凭据保留在服务端。
+9. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
+10. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。
+11. 将文档重排调用迁移到 `useRerank({ api: '/api/rerank' })`，并把重排模型凭据保留在服务端。
+12. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+13. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
     或 `openaiCompatible`。
-13. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-14. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
+14. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+15. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
     wire-format `Tool[]` 加 `toolHandlers`。
-15. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+16. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-16. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-17. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+17. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+18. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
