@@ -11,7 +11,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
 `SendChatTrigger`, `SetMessagesInput`, `SetDataInput`, `PruneMessagesOptions`,
 `PruneToolCallsStrategy`, `PruneToolCallsRule`, `PruneToolCallsOption`,
-`ChatPersistOptions`, `SerializedMessage`,
+`ConvertToModelMessagesOptions`, `ChatPersistOptions`, `SerializedMessage`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
 `MessageFilePart`, `MessageDataPart`, `MessageToolPart`, `ToolApprovalPredicate`,
@@ -23,7 +23,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `ToolExecute`, `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
 `ChatToolsInput`, `RetryOptions`, and `RetryContext`.
 
-Public helpers: `pruneMessages`, `serializeMessages`, `deserializeMessages`,
+Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`, `deserializeMessages`,
 `lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`,
 `jsonSchema`, `tool`, and `dynamicTool`.
 
@@ -408,6 +408,38 @@ await append('Use the latest relevant context.')
 rules when only selected tools should be pruned. Each rule accepts `type: 'all' |
 'before-last-message' | before-last-N-messages` and optional `tools: string[]`.
 Omitting `tools` applies that rule to every tool call.
+
+## Model message conversion
+
+Use `convertToModelMessages()` when the UI keeps render-only `Message.parts` but
+your backend or provider request should receive a smaller model-facing history:
+
+```ts
+import { convertToModelMessages, pruneMessages, useChat } from 'vue-ai-hooks'
+
+const { append } = useChat({
+  provider,
+  prepareSendMessagesRequest({ request }) {
+    const pruned = pruneMessages({
+      messages: request.messages,
+      maxMessages: 12,
+      reasoning: 'before-last-message'
+    })
+
+    return {
+      messages: convertToModelMessages(pruned)
+    }
+  }
+})
+
+await append('Send compact model context.')
+```
+
+By default, `convertToModelMessages(messages)` removes UI-only `parts`, `id`,
+and `createdAt`, while preserving `role`, `content`, `name`, tool call fields,
+and shallow-cloned `metadata`. Pass `{ preserveIds: true }` or
+`{ preserveCreatedAt: true }` when your backend needs those fields, and
+`{ stripMetadata: true }` when metadata should stay client-side.
 
 ## Request preparation hooks
 

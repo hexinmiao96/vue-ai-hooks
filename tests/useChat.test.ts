@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import {
+  convertToModelMessages,
   deserializeMessages,
   dynamicTool,
   hasToolCall,
@@ -235,6 +236,129 @@ describe('useChat', () => {
         { id: 'bad-parts', role: 'user', content: 'x', parts: [{ type: 'file' }] }
       ])
     ).toBeNull()
+  })
+
+  it('converts UI messages to model messages without mutating originals', () => {
+    const createdAt = new Date('2026-01-02T03:04:05.000Z')
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Describe this image' },
+          {
+            type: 'image_url',
+            image_url: { url: 'https://cdn.test/image.png', detail: 'high' }
+          }
+        ],
+        parts: [{ type: 'text', id: 'part_1', text: 'Describe this image' }],
+        createdAt,
+        metadata: { source: 'composer' }
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"vue"}' }
+          }
+        ],
+        parts: [
+          {
+            type: 'tool-lookup',
+            toolCallId: 'call_1',
+            toolName: 'lookup',
+            state: 'input-available',
+            input: { q: 'vue' }
+          }
+        ]
+      },
+      {
+        id: 'tool_1',
+        role: 'tool',
+        toolCallId: 'call_1',
+        content: '{"ok":true}'
+      }
+    ]
+
+    const modelMessages = convertToModelMessages(messages)
+
+    expect(modelMessages).toEqual([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Describe this image' },
+          {
+            type: 'image_url',
+            image_url: { url: 'https://cdn.test/image.png', detail: 'high' }
+          }
+        ],
+        metadata: { source: 'composer' }
+      },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"vue"}' }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        toolCallId: 'call_1',
+        content: '{"ok":true}'
+      }
+    ])
+    expect('id' in modelMessages[0]).toBe(false)
+    expect('createdAt' in modelMessages[0]).toBe(false)
+    expect('parts' in modelMessages[0]).toBe(false)
+    expect(modelMessages[0].content).not.toBe(messages[0].content)
+    if (Array.isArray(modelMessages[0].content) && Array.isArray(messages[0].content)) {
+      expect(modelMessages[0].content[1]).not.toBe(messages[0].content[1])
+      if (
+        modelMessages[0].content[1].type === 'image_url' &&
+        messages[0].content[1].type === 'image_url'
+      ) {
+        expect(modelMessages[0].content[1].image_url).not.toBe(messages[0].content[1].image_url)
+      }
+    }
+    expect(modelMessages[1].toolCalls).not.toBe(messages[1].toolCalls)
+    expect(modelMessages[1].toolCalls?.[0].function).not.toBe(messages[1].toolCalls?.[0].function)
+    expect(messages[0].parts).toHaveLength(1)
+  })
+
+  it('can preserve model message ids and dates while stripping metadata', () => {
+    const createdAt = new Date('2026-01-02T03:04:05.000Z')
+    const modelMessages = convertToModelMessages(
+      [
+        {
+          id: 'u1',
+          role: 'user',
+          content: 'Hello',
+          createdAt,
+          metadata: { source: 'composer' }
+        }
+      ],
+      { preserveIds: true, preserveCreatedAt: true, stripMetadata: true }
+    )
+
+    expect(modelMessages).toEqual([
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Hello',
+        createdAt
+      }
+    ])
+    expect(modelMessages[0].createdAt).not.toBe(createdAt)
+    expect(modelMessages[0].createdAt?.toISOString()).toBe('2026-01-02T03:04:05.000Z')
+    expect('metadata' in modelMessages[0]).toBe(false)
   })
 
   it('deserializes all structured message part variants', () => {

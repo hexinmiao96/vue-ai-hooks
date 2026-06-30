@@ -109,6 +109,29 @@ interface Message {
 Vue UIs a render-ready structure for text, reasoning, sources, files, custom
 data, and `tool-*` states without parsing the assistant text.
 
+`convertToModelMessages(messages, options?)` returns provider/model-facing
+messages without UI-only `parts`. It strips `id` and `createdAt` by default, and
+can preserve them when the backend needs stable trace fields:
+
+```ts
+interface ModelMessage {
+  role: MessageRole
+  content: MessageContent
+  name?: string
+  toolCallId?: string
+  toolCalls?: ToolCall[]
+  metadata?: Record<string, unknown>
+  id?: string
+  createdAt?: Date
+}
+
+interface ConvertToModelMessagesOptions {
+  preserveIds?: boolean
+  preserveCreatedAt?: boolean
+  stripMetadata?: boolean
+}
+```
+
 `append(message, { messageMetadata })` stores metadata on the user message, while
 request-level `metadata` stays on `ChatRequest`. `useChat()` can validate message
 metadata with a JSON Schema subset or a custom predicate:

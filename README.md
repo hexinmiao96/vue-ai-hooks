@@ -410,7 +410,9 @@ only changes the id sent with future provider requests.
 
 Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to
-a provider.
+a provider. Use `convertToModelMessages()` after pruning when a proxy route or
+provider adapter should receive model-facing messages without UI-only
+`Message.parts`.
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

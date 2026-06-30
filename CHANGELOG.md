@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added AI SDK-style `tool()`, `dynamicTool()`, and `jsonSchema()` helpers so
   `useChat({ tools })` can accept object-mapped tool definitions with co-located
   `execute` handlers.
+- Added `convertToModelMessages()` for turning UI chat history into
+  model-facing messages without render-only `Message.parts`.
 - Added an AI SDK-compatible object signature for `addToolResult()`.
 - Added `data` and `setData()` as AI SDK-style custom stream data helpers.
 - Added AI SDK-compatible `streamProtocol` support for default proxy

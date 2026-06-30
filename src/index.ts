@@ -6,6 +6,7 @@
 
 // Composables
 export {
+  convertToModelMessages,
   deserializeMessages,
   dynamicTool,
   hasToolCall,
@@ -30,6 +31,7 @@ export {
   type DataPartSchema,
   type DataPartSchemas,
   type DataPartValidator,
+  type ConvertToModelMessagesOptions,
   type MessageMetadataSchema,
   type MessageMetadataValidator,
   type PrepareReconnectToStreamRequest,
@@ -161,6 +163,7 @@ export { usePersist, type UsePersistOptions } from './composables/usePersist'
 // Types
 export type {
   Message,
+  ModelMessage,
   MessagePart,
   MessageTextPart,
   MessageReasoningPart,

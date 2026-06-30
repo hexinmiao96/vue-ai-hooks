@@ -27,6 +27,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `transport`                                      | `transport` or `provider`                                               |
 | `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`             |
 | `messages` initial option                        | `messages` or `initialMessages`                                         |
+| `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields         |
 | Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included               |
 | `sendMessage()`                                  | `sendMessage()`                                                         |
 | `stop()`                                         | `stop()`                                                                |
@@ -117,6 +118,16 @@ useChat({
 
 `initialMessages` is also supported and wins when both are provided. The returned
 `messages` ref remains the source of truth for rendering.
+
+When a backend route or provider call needs model-facing history instead of UI
+rendering state, use `convertToModelMessages(messages)`. It removes `parts`,
+`id`, and `createdAt` by default, while preserving content and tool call fields:
+
+```ts
+import { convertToModelMessages } from 'vue-ai-hooks'
+
+const modelMessages = convertToModelMessages(chat.messages.value)
+```
 
 ## Tools
 

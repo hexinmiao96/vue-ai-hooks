@@ -106,6 +106,28 @@ interface Message {
 `Message.parts` 是可选字段，`content` 仍保持向后兼容。它为 Vue UI 提供可以直接渲染的
 text、reasoning、source、file、自定义 data 和 `tool-*` 状态，避免从 assistant 文本里再解析结构。
 
+`convertToModelMessages(messages, options?)` 返回面向 provider/model 的消息，
+不会包含 UI-only 的 `parts`。它默认移除 `id` 和 `createdAt`，如果后端需要稳定链路字段也可以显式保留：
+
+```ts
+interface ModelMessage {
+  role: MessageRole
+  content: MessageContent
+  name?: string
+  toolCallId?: string
+  toolCalls?: ToolCall[]
+  metadata?: Record<string, unknown>
+  id?: string
+  createdAt?: Date
+}
+
+interface ConvertToModelMessagesOptions {
+  preserveIds?: boolean
+  preserveCreatedAt?: boolean
+  stripMetadata?: boolean
+}
+```
+
 `append(message, { messageMetadata })` 会把 metadata 写到用户消息上，请求级
 `metadata` 仍然保留在 `ChatRequest`。`useChat()` 可以用 JSON Schema 子集或自定义
 predicate 校验消息 metadata：

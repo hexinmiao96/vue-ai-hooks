@@ -349,7 +349,8 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 多个 `useChat()` 传入同一个 `id` 时，会在组件之间共享聊天状态。某个 id 的第一个实例会写入 `initialMessages` 和 `initialInput`；`messages` 也可作为 AI SDK 风格的 `initialMessages` 别名。`setId()` 只会改变后续 provider request 携带的 id。
 
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
-`prepareSendMessagesRequest` 中使用 `pruneMessages()`。
+`prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用
+`convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息。
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

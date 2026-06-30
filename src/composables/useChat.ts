@@ -14,6 +14,7 @@ import type {
   ChatFileAttachment,
   Message,
   MessageContent,
+  ModelMessage,
   MessagePart,
   MessageRole,
   ContentPart,
@@ -280,6 +281,12 @@ export interface PruneMessagesOptions {
 }
 
 export type SerializedMessage = Omit<Message, 'createdAt'> & { createdAt?: string }
+
+export interface ConvertToModelMessagesOptions {
+  preserveIds?: boolean
+  preserveCreatedAt?: boolean
+  stripMetadata?: boolean
+}
 
 export interface ChatPersistOptions {
   key: string
@@ -826,6 +833,29 @@ export function deserializeMessages(raw: unknown): Message[] | null {
   }
 
   return messages
+}
+
+/**
+ * Convert UI chat messages into provider/model-facing messages.
+ */
+export function convertToModelMessages(
+  messages: Message[],
+  options: ConvertToModelMessagesOptions = {}
+): ModelMessage[] {
+  const { preserveIds = false, preserveCreatedAt = false, stripMetadata = false } = options
+
+  return messages.map((message) => {
+    const converted = cloneMessage(message) as ModelMessage & { parts?: MessagePart[] }
+
+    delete converted.parts
+    if (!preserveIds) delete converted.id
+    if (!preserveCreatedAt) delete converted.createdAt
+    else if (converted.createdAt !== undefined) {
+      converted.createdAt = new Date(converted.createdAt.getTime())
+    }
+    if (stripMetadata) delete converted.metadata
+    return converted
+  })
 }
 
 function hasContent(content: MessageContent): boolean {

@@ -137,6 +137,18 @@ export interface Message {
   metadata?: Record<string, unknown>
 }
 
+/** A provider/model-facing message without UI-only rendering parts. */
+export interface ModelMessage {
+  role: MessageRole
+  content: MessageContent
+  name?: string
+  toolCallId?: string
+  toolCalls?: ToolCall[]
+  metadata?: Record<string, unknown>
+  id?: string
+  createdAt?: Date
+}
+
 /** JSON response format controls for providers that support structured output. */
 export type ResponseFormat =
   | { type: 'json_object' }

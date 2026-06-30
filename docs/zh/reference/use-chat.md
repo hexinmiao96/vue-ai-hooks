@@ -11,7 +11,7 @@
 `PrepareReconnectToStreamRequest`、`PrepareReconnectToStreamRequestOptions`、
 `SendChatTrigger`、`SetMessagesInput`、`SetDataInput`、`PruneMessagesOptions`、
 `PruneToolCallsStrategy`、`PruneToolCallsRule`、`PruneToolCallsOption`、
-`ChatPersistOptions`、`SerializedMessage`、
+`ConvertToModelMessagesOptions`、`ChatPersistOptions`、`SerializedMessage`、
 `StreamDataPart`、`ChatAttachmentInput`、`ChatAttachmentsInput`、
 `MessagePart`、`MessageTextPart`、`MessageReasoningPart`、`MessageSourcePart`、
 `MessageFilePart`、`MessageDataPart`、`MessageToolPart`、`ToolApprovalPredicate`、
@@ -23,7 +23,7 @@
 `ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
 `RetryOptions` 和 `RetryContext`。
 
-公开 helper：`pruneMessages`、`serializeMessages`、`deserializeMessages` 和
+公开 helper：`pruneMessages`、`convertToModelMessages`、`serializeMessages`、`deserializeMessages` 和
 `lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、
 `jsonSchema`、`tool`、`dynamicTool`。
 
@@ -393,6 +393,37 @@ await append('使用最近的相关上下文。')
 `toolCalls` 可以使用和 `reasoning` 相同的字符串策略；如果只想裁剪指定工具，
 也可以传规则数组。每条规则包含 `type: 'all' | 'before-last-message' |
 before-last-N-messages`，以及可选的 `tools: string[]`。省略 `tools` 时，该规则会应用到所有工具调用。
+
+## 模型消息转换
+
+UI 里保留 render-only 的 `Message.parts`，但后端或 provider 请求只需要更小的模型上下文时，
+可以使用 `convertToModelMessages()`：
+
+```ts
+import { convertToModelMessages, pruneMessages, useChat } from 'vue-ai-hooks'
+
+const { append } = useChat({
+  provider,
+  prepareSendMessagesRequest({ request }) {
+    const pruned = pruneMessages({
+      messages: request.messages,
+      maxMessages: 12,
+      reasoning: 'before-last-message'
+    })
+
+    return {
+      messages: convertToModelMessages(pruned)
+    }
+  }
+})
+
+await append('发送精简后的模型上下文。')
+```
+
+默认情况下，`convertToModelMessages(messages)` 会移除 UI-only 的 `parts`、`id`
+和 `createdAt`，保留 `role`、`content`、`name`、工具调用字段和浅克隆的
+`metadata`。后端需要这些字段时可以传 `{ preserveIds: true }` 或
+`{ preserveCreatedAt: true }`；metadata 只应留在客户端时传 `{ stripMetadata: true }`。
 
 ## 请求准备钩子
 

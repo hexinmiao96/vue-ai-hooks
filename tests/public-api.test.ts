@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   AiHooksError,
   anthropic,
+  convertToModelMessages,
   deepseek,
   deserializeMessages,
   dynamicTool,
@@ -55,6 +56,7 @@ import type {
   CompletionResponseInfo,
   CompletionStreamProtocol,
   ContentPart,
+  ConvertToModelMessagesOptions,
   DataPartSchema,
   DataPartSchemas,
   DataPartValidator,
@@ -87,6 +89,7 @@ import type {
   MessageFilePart,
   MessageMetadataSchema,
   MessageMetadataValidator,
+  ModelMessage,
   MessagePart,
   MessageReasoningPart,
   MessageRole,
@@ -1343,6 +1346,15 @@ describe('public API types', () => {
     const persisted = usePersist(source, persistOptions)
     const serializedMessages = serializeMessages([message])
     const restoredMessages = deserializeMessages(serializedMessages)
+    const modelMessages = convertToModelMessages([message])
+    const modelMessagesWithOptions = convertToModelMessages([message], {
+      preserveIds: true,
+      preserveCreatedAt: true,
+      stripMetadata: true
+    })
+    const convertOptions: ConvertToModelMessagesOptions = {
+      preserveIds: true
+    }
     const chatPersistOptions: ChatPersistOptions = {
       key: 'public-chat-test',
       storage: null,
@@ -1368,6 +1380,24 @@ describe('public API types', () => {
     expectTypeOf<ChatAttachmentInput>().toEqualTypeOf<File | ChatFileAttachment>()
     expectTypeOf<ChatAttachmentsInput>().toEqualTypeOf<FileList | readonly ChatAttachmentInput[]>()
     expectTypeOf(request.messages).toEqualTypeOf<Message[]>()
+    expectTypeOf<ModelMessage>().toEqualTypeOf<{
+      role: MessageRole
+      content: MessageContent
+      name?: string
+      toolCallId?: string
+      toolCalls?: ToolCall[]
+      metadata?: Record<string, unknown>
+      id?: string
+      createdAt?: Date
+    }>()
+    expectTypeOf(convertToModelMessages).parameter(0).toEqualTypeOf<Message[]>()
+    expectTypeOf(convertToModelMessages)
+      .parameter(1)
+      .toEqualTypeOf<ConvertToModelMessagesOptions | undefined>()
+    expectTypeOf(convertToModelMessages).returns.toEqualTypeOf<ModelMessage[]>()
+    expectTypeOf(modelMessages).toEqualTypeOf<ModelMessage[]>()
+    expectTypeOf(modelMessagesWithOptions).toEqualTypeOf<ModelMessage[]>()
+    expectTypeOf(convertOptions).toEqualTypeOf<ConvertToModelMessagesOptions>()
     expectTypeOf(request.messages[0].parts).toEqualTypeOf<MessagePart[] | undefined>()
     expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()

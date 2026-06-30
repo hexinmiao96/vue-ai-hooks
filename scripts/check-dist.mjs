@@ -20,6 +20,7 @@ const requiredExportFields = {
 const requiredRuntimeExports = [
   'AiHooksError',
   'anthropic',
+  'convertToModelMessages',
   'deepseek',
   'dynamicTool',
   'jsonSchema',

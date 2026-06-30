@@ -25,6 +25,7 @@
 | `transport`                                    | `transport` 或 `provider`                                             |
 | `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`             |
 | `messages` 初始选项                            | `messages` 或 `initialMessages`                                       |
+| `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                 |
 | 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                     |
 | `sendMessage()`                                | `sendMessage()`                                                       |
 | `stop()`                                       | `stop()`                                                              |
@@ -113,6 +114,16 @@ useChat({
 
 也支持 `initialMessages`，两者同时存在时 `initialMessages` 优先。返回的 `messages`
 ref 仍是渲染时的事实来源。
+
+后端路由或 provider 调用需要面向模型的历史，而不是 UI 渲染状态时，可以使用
+`convertToModelMessages(messages)`。它默认移除 `parts`、`id` 和 `createdAt`，
+保留 content 和工具调用字段：
+
+```ts
+import { convertToModelMessages } from 'vue-ai-hooks'
+
+const modelMessages = convertToModelMessages(chat.messages.value)
+```
 
 ## Tools
 
