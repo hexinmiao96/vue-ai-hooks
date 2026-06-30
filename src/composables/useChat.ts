@@ -837,6 +837,13 @@ export function deserializeMessages(raw: unknown): Message[] | null {
 }
 
 /**
+ * Check whether an unknown payload can be restored by `deserializeMessages()`.
+ */
+export function validateMessages(raw: unknown): boolean {
+  return !!deserializeMessages(raw)
+}
+
+/**
  * Convert UI chat messages into provider/model-facing messages.
  */
 export function convertToModelMessages(

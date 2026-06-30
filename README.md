@@ -508,8 +508,9 @@ state across components. Omit `id` for independent generated state.
 
 Persists any Vue `Ref` to `localStorage`, with optional versioning and custom
 serialization. `useChat({ persist })` uses Date-safe message serialization
-internally, and the exported `serializeMessages()` / `deserializeMessages()`
-helpers also preserve valid `Message.parts` for structured chat rendering. See the
+internally, and the exported `serializeMessages()` / `deserializeMessages()` /
+`validateMessages()` helpers also preserve and check valid `Message.parts` for
+structured chat rendering. See the
 [usePersist reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-persist.md) for details.
 
 See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),

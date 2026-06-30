@@ -11,6 +11,7 @@ import {
   pruneMessages,
   serializeMessages,
   tool,
+  validateMessages,
   useChat
 } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
@@ -236,6 +237,23 @@ describe('useChat', () => {
         { id: 'bad-parts', role: 'user', content: 'x', parts: [{ type: 'file' }] }
       ])
     ).toBeNull()
+  })
+
+  it('validates persisted messages without hydrating them', () => {
+    const raw = [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: 'answer',
+        parts: [{ type: 'text', text: 'answer' }],
+        createdAt: '2026-01-02T03:04:05.000Z'
+      }
+    ]
+
+    expect(validateMessages(raw)).toBe(true)
+    expect(raw[0].createdAt).toBe('2026-01-02T03:04:05.000Z')
+    expect(validateMessages([{ id: 'bad', role: 'assistant', content: 1 }])).toBe(false)
+    expect(validateMessages({ messages: raw })).toBe(false)
   })
 
   it('converts UI messages to model messages without mutating originals', () => {

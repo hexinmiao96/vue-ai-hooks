@@ -58,27 +58,27 @@ export class DirectChatTransport implements ChatProvider {
 
   async chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>> {
     const source = await this.s(request)
-    return this.read(source, request.signal)
+    return this.c(source, request.signal)
   }
 
   async resumeChat(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null> {
     if (!this.r) return null
 
     const source = await this.r(request)
-    return source ? this.read(source, request.signal) : null
+    return source ? this.c(source, request.signal) : null
   }
 
   completion(request: CompletionRequest): Promise<AsyncIterable<string>>
   async completion(): Promise<AsyncIterable<string>> {
-    throw new AiHooksError('Chat only')
+    throw new AiHooksError('Chat')
   }
 
   embedding(request: EmbeddingRequest): Promise<EmbeddingResult>
   async embedding(): Promise<EmbeddingResult> {
-    throw new AiHooksError('Chat only')
+    throw new AiHooksError('Chat')
   }
 
-  private read(source: DirectChatStreamSource, signal?: AbortSignal): AsyncIterable<ChatChunk> {
+  private c(source: DirectChatStreamSource, signal?: AbortSignal): AsyncIterable<ChatChunk> {
     if (this.p === 'chat-chunk') {
       return readChatChunkStream(source as DirectChatChunkSource, signal)
     }

@@ -854,6 +854,7 @@ expect(
   files.useChat.includes('## Message persistence') &&
     files.useChat.includes('ChatPersistOptions') &&
     files.useChat.includes('SerializedMessage') &&
+    files.useChat.includes('validateMessages(raw)') &&
     files.useChat.includes('serializeMessages(messages.value)') &&
     files.useChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'English useChat docs must document Date-safe message persistence helpers and public types'
@@ -919,6 +920,7 @@ expect(
   files.zhUseChat.includes('## 消息持久化') &&
     files.zhUseChat.includes('ChatPersistOptions') &&
     files.zhUseChat.includes('SerializedMessage') &&
+    files.zhUseChat.includes('validateMessages(raw)') &&
     files.zhUseChat.includes('serializeMessages(messages.value)') &&
     files.zhUseChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'Chinese useChat docs must document Date-safe message persistence helpers and public types'

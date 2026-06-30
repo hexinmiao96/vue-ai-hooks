@@ -33,6 +33,7 @@ import {
   serializeMessages,
   tool,
   toChatChunks,
+  validateMessages,
   useChat,
   useCompletion,
   useEmbedding,
@@ -1557,6 +1558,7 @@ describe('public API types', () => {
     const persisted = usePersist(source, persistOptions)
     const serializedMessages = serializeMessages([message])
     const restoredMessages = deserializeMessages(serializedMessages)
+    const messagesAreValid = validateMessages(serializedMessages)
     const modelMessages = convertToModelMessages([message])
     const modelRequest: ChatRequest = {
       messages: modelMessages
@@ -1595,6 +1597,8 @@ describe('public API types', () => {
     expectTypeOf<ChatAttachmentsInput>().toEqualTypeOf<FileList | readonly ChatAttachmentInput[]>()
     expectTypeOf<ChatRequestMessage>().toEqualTypeOf<Message | ModelMessage>()
     expectTypeOf<ChatRequest['messages']>().toEqualTypeOf<ChatRequestMessage[]>()
+    expectTypeOf(validateMessages).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(validateMessages).returns.toEqualTypeOf<boolean>()
     expectTypeOf(request.messages).toEqualTypeOf<ChatRequestMessage[]>()
     expectTypeOf(modelRequest.messages).toEqualTypeOf<ChatRequestMessage[]>()
     expectTypeOf<PrepareSendMessagesRequestOptions['messages']>().toEqualTypeOf<Message[]>()
@@ -1661,6 +1665,7 @@ describe('public API types', () => {
     expectTypeOf(regenerateOptions).toEqualTypeOf<RegenerateChatOptions>()
     expectTypeOf(dataPart).toEqualTypeOf<StreamDataPart>()
     expectTypeOf(chunk).toEqualTypeOf<ChatChunk>()
+    expectTypeOf(messagesAreValid).toEqualTypeOf<boolean>()
     expectTypeOf(finishInfo).toEqualTypeOf<ChatFinishInfo>()
     expectTypeOf<UseChatOptions['onFinish']>().toEqualTypeOf<
       ((m: Message, info: ChatFinishInfo) => void) | undefined

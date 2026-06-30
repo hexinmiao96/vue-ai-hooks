@@ -16,6 +16,7 @@ export {
   pruneMessages,
   serializeMessages,
   tool,
+  validateMessages,
   useChat,
   type AddToolOutputOptions,
   type AddToolResultOptions,

@@ -41,6 +41,7 @@ const requiredRuntimeExports = [
   'readUIMessageStream',
   'tool',
   'toChatChunks',
+  'validateMessages',
   'useChat',
   'useCompletion',
   'useEmbedding',

@@ -23,9 +23,10 @@
 `ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
 `RetryOptions` 和 `RetryContext`。
 
-公开 helper：`pruneMessages`、`convertToModelMessages`、`serializeMessages`、`deserializeMessages` 和
-`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、
-`jsonSchema`、`tool`、`dynamicTool`。
+公开 helper：`pruneMessages`、`convertToModelMessages`、`serializeMessages`、
+`deserializeMessages`、`validateMessages` 和
+`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、`jsonSchema`、
+`tool`、`dynamicTool`。
 
 ## 用法
 
@@ -195,6 +196,15 @@ await saveChat('support-thread-1', payload)
 
 const restored = deserializeMessages(await loadChat('support-thread-1'))
 if (restored) setMessages(restored)
+```
+
+只需要在导入或接收 payload 前做 boolean 门禁时，用 `validateMessages(raw)`；需要恢复
+`Date` 并得到克隆后的消息对象时，继续用 `deserializeMessages(raw)`：
+
+```ts
+const raw = await loadChat('support-thread-1')
+if (!validateMessages(raw)) throw new Error('Invalid stored chat')
+setMessages(deserializeMessages(raw)!)
 ```
 
 只有当你需要自定义包裹结构，或不想用默认 localStorage 时，才覆盖 `storage`、

@@ -23,9 +23,10 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `ToolExecute`, `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
 `ChatToolsInput`, `RetryOptions`, and `RetryContext`.
 
-Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`, `deserializeMessages`,
-`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`,
-`jsonSchema`, `tool`, and `dynamicTool`.
+Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`,
+`deserializeMessages`, `validateMessages`,
+`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`, `jsonSchema`,
+`tool`, and `dynamicTool`.
 
 ## Usage
 
@@ -198,6 +199,16 @@ await saveChat('support-thread-1', payload)
 
 const restored = deserializeMessages(await loadChat('support-thread-1'))
 if (restored) setMessages(restored)
+```
+
+Use `validateMessages(raw)` when you only need a boolean gate before accepting
+or importing a payload. Use `deserializeMessages(raw)` when you need restored
+`Date` values and cloned message objects:
+
+```ts
+const raw = await loadChat('support-thread-1')
+if (!validateMessages(raw)) throw new Error('Invalid stored chat')
+setMessages(deserializeMessages(raw)!)
 ```
 
 Override `storage`, `serialize`, or `deserialize` only when you need a custom
