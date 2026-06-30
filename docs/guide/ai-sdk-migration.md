@@ -36,6 +36,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `stopWhen`                                       | `stopWhen`                                                           |
 | `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                    |
 | Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`    |
+| `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`          |
 | UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport               |
 
 ## Transport
@@ -176,6 +177,16 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 })
 ```
 
+## Structured objects
+
+AI SDK names its structured output hook `experimental_useObject()`. This
+library exports the same name as a compatibility alias, so existing migrations
+can keep that import while new Vue code can use the shorter `useObject()` name:
+
+```ts
+import { experimental_useObject as useObject } from 'vue-ai-hooks'
+```
+
 ## Request inspection
 
 AI SDK migrations often need request visibility while changing transports. Use
@@ -199,14 +210,16 @@ fields for default chat proxy transports.
    `credentials`, and `fetch`.
 3. Map completion `streamProtocol: 'text'` when your existing route returns a
    plain text stream.
-4. Let `useObject` proxy routes return `text/plain` JSON streams when you are
+4. Keep `experimental_useObject` imports as-is or rename them to `useObject`
+   after the migration.
+5. Let `useObject` proxy routes return `text/plain` JSON streams when you are
    porting an existing AI SDK object endpoint.
-5. Keep existing initial messages by passing `messages` or `initialMessages`.
-6. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+6. Keep existing initial messages by passing `messages` or `initialMessages`.
+7. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
    `gemini`, `anthropic`, or `openaiCompatible`.
-7. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-8. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+8. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+9. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
    `addToolApprovalResponse()`.
-9. Add `lastRequest` and `lastResponse` to your debug view before swapping
-   production traffic.
-10. Run `pnpm release:check` or your app's equivalent gate before shipping.
+10. Add `lastRequest` and `lastResponse` to your debug view before swapping
+    production traffic.
+11. Run `pnpm release:check` or your app's equivalent gate before shipping.

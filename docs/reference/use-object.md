@@ -7,6 +7,9 @@ Public TypeScript types: `UseObjectOptions`, `UseObjectReturn`, `DeepPartial`,
 `ObjectRequestInfo`, `ObjectResponseInfo`, `ResponseFormat`, `IdGenerator`,
 `RetryOptions`, and `RetryContext`.
 
+`experimental_useObject` is exported as an AI SDK-compatible alias for the same
+composable.
+
 ## Usage
 
 ```ts

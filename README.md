@@ -356,6 +356,8 @@ proxy `api` and browser credentials mode.
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object. Default proxy object
 routes may return either chat chunks or `text/plain` JSON streams.
+`experimental_useObject` is also exported as an AI SDK-compatible alias for the
+same composable.
 Its `onFinish` callback keeps the parsed object as the first argument and passes
 `ObjectFinishInfo` with the final object, raw JSON text, abort status, and error
 field.

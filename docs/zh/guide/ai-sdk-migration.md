@@ -34,6 +34,7 @@
 | `stopWhen`                                     | `stopWhen`                                                           |
 | `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                     |
 | 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`      |
+| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`            |
 | UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                          |
 
 ## Transport
@@ -169,6 +170,14 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 })
 ```
 
+## 结构化对象
+
+AI SDK 把结构化输出 hook 命名为 `experimental_useObject()`。本库导出了同名兼容别名，所以迁移代码可以先保留原 import，新 Vue 代码则可以使用更短的 `useObject()`：
+
+```ts
+import { experimental_useObject as useObject } from 'vue-ai-hooks'
+```
+
 ## 请求检查
 
 AI SDK 迁移经常需要在切换 transport 时看清最终请求。可以使用内置 trace refs：
@@ -185,13 +194,14 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 2. 将 `DefaultChatTransport` 选项映射到 `api`、`baseURL`、`headers`、`body`、
    `credentials` 和 `fetch`。
 3. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
-4. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
+4. 可以先保留 `experimental_useObject` import，也可以迁移完成后改名为 `useObject`。
+5. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。
-5. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-6. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+6. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+7. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-7. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-8. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+8. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+9. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
    `addToolApprovalResponse()`。
-9. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-10. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+10. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+11. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

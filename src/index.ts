@@ -84,6 +84,7 @@ export {
   type UseGenerationReturn
 } from './composables/useGeneration'
 export {
+  useObject as experimental_useObject,
   useObject,
   type DeepPartial,
   type ObjectFinishInfo,

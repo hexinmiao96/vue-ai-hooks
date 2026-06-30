@@ -8,6 +8,7 @@ import {
   fallbackProvider,
   gemini,
   hasToolCall,
+  experimental_useObject,
   isStepCount,
   lastAssistantMessageIsCompleteWithToolCalls,
   openai,
@@ -146,6 +147,8 @@ const provider: ChatProvider = openaiCompatible({
 function assertInvalidPublicApiUsage() {
   // @ts-expect-error schema is required by the public useObject contract.
   useObject({})
+  // @ts-expect-error schema is required by the AI SDK-compatible object alias too.
+  experimental_useObject({})
 }
 
 describe('public API types', () => {
@@ -275,6 +278,10 @@ describe('public API types', () => {
       }
     } satisfies UseGenerationOptions<string, { url: string }, { percent: number }, string>)
     const structured = useObject<{ answer: string }>({
+      provider,
+      schema: { type: 'object' }
+    } satisfies UseObjectOptions<{ answer: string }>)
+    const experimentalStructured = experimental_useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
     } satisfies UseObjectOptions<{ answer: string }>)
@@ -654,6 +661,8 @@ describe('public API types', () => {
     >()
 
     expectTypeOf(structured).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
+    expectTypeOf(experimental_useObject).toEqualTypeOf<typeof useObject>()
+    expectTypeOf(experimentalStructured).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
     expectTypeOf(defaultTransportObject).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
     expectTypeOf(objectApi).toEqualTypeOf<UseObjectReturn<{ answer: string }>>()
     expectTypeOf(structured.id).toEqualTypeOf<Ref<string>>()

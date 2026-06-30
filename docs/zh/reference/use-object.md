@@ -6,6 +6,8 @@
 `ObjectRequestInfo`、`ObjectResponseInfo`、`ResponseFormat`、`IdGenerator`、
 `RetryOptions` 和 `RetryContext`。
 
+`experimental_useObject` 作为 AI SDK 兼容别名导出，指向同一个组合式函数。
+
 ## 用法
 
 ```ts
