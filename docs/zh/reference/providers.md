@@ -6,7 +6,8 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 集成示例请看 Provider 指南；如果需要精确配置项，请看本页。
 
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
-`GeminiConfig`、`ProxyProviderConfig`、`ProxyRequestContext`、
+`GeminiConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
+`FallbackProviderKind`、`ProxyProviderConfig`、`ProxyRequestContext`、
 `ProxyRequestKind`、`ProxyRequestOverride` 和 `AnthropicConfig`。
 
 ## `ChatProvider`
@@ -32,6 +33,43 @@ interface ChatProvider {
 `ChatRequest`、`CompletionRequest` 和 `EmbeddingRequest` 都支持 `body`，用于传递
 typed options 尚未覆盖的 Provider 专属 JSON 字段。Provider 会先合并 `body`，再写入
 显式 request 字段；如果 key 冲突，typed 字段优先。
+
+## `fallbackProvider(config)`
+
+生产路由使用的 Provider 级 fallback 包装器。
+
+```ts
+import { fallbackProvider, openai, openrouter } from 'vue-ai-hooks'
+
+const provider = fallbackProvider({
+  providers: [
+    openai({ apiKey: process.env.OPENAI_API_KEY! }),
+    openrouter({ apiKey: process.env.OPENROUTER_API_KEY! })
+  ],
+  shouldFallback({ error }) {
+    return !('status' in error) || Number(error.status) >= 500
+  },
+  onFallback({ providerId, nextProviderId, error }) {
+    console.warn(`Falling back from ${providerId} to ${nextProviderId}`, error)
+  }
+})
+```
+
+| 选项             | 类型                                            | 默认值       | 说明                                           |
+| ---------------- | ----------------------------------------------- | ------------ | ---------------------------------------------- |
+| `id`             | `string`                                        | `'fallback'` | Provider id。                                  |
+| `providers`      | `readonly ChatProvider[]`                       | 必填         | 按顺序尝试的 Provider 列表。                   |
+| `shouldFallback` | `(context: FallbackProviderContext) => boolean` | 所有失败     | 返回 `false` 时不再尝试下一个 Provider。       |
+| `onFallback`     | `(context: FallbackProviderContext) => void`    | -            | 决定 fallback 后、尝试下一个 Provider 前调用。 |
+
+`FallbackProviderContext` 包含 `kind`、`provider`、`providerId`、`index`、
+`error`、`nextProvider` 和 `nextProviderId`。`FallbackProviderKind` 是
+`'chat' | 'completion' | 'embedding'`。
+
+对于 `chat()` 和 `completion()`，只有在 Provider 尚未产出任何 stream chunk 前失败时才会
+fallback。一旦已经开始输出，就会直接抛出原始错误，避免 UI 在同一条流里混合多个
+Provider 的内容。`embedding()` 会在 Provider reject 时 fallback。已中止的请求和
+`AbortError` 不会 fallback。
 
 ## `openai(config)`
 

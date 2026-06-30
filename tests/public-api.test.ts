@@ -4,6 +4,7 @@ import {
   AiHooksError,
   anthropic,
   deserializeMessages,
+  fallbackProvider,
   gemini,
   hasToolCall,
   isStepCount,
@@ -51,6 +52,9 @@ import type {
   EmbeddingRequest,
   EmbeddingResponseInfo,
   EmbeddingResult,
+  FallbackProviderConfig,
+  FallbackProviderContext,
+  FallbackProviderKind,
   GeminiConfig,
   GenerateOptions,
   GenerationFetcher,
@@ -145,6 +149,7 @@ describe('public API types', () => {
     expectTypeOf(gemini({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(proxyProvider()).toEqualTypeOf<ChatProvider>()
     expectTypeOf(anthropic({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(fallbackProvider({ providers: [provider] })).toEqualTypeOf<ChatProvider>()
     expectTypeOf<OpenAiLikeConfig>().toMatchTypeOf<{ apiKey: string; baseURL: string }>()
     expectTypeOf<OpenRouterConfig>().toMatchTypeOf<{ apiKey: string; siteUrl?: string }>()
     expectTypeOf<GeminiConfig>().toMatchTypeOf<{ apiKey: string; baseURL?: string }>()
@@ -170,12 +175,25 @@ describe('public API types', () => {
     expectTypeOf<ProxyRequestKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding' | 'resume'>()
     expectTypeOf(proxyConfig).toEqualTypeOf<ProxyProviderConfig>()
     expectTypeOf<AnthropicConfig>().toMatchTypeOf<{ apiKey: string; maxTokens?: number }>()
+    const fallbackConfig: FallbackProviderConfig = {
+      providers: [provider],
+      shouldFallback(context) {
+        expectTypeOf(context).toEqualTypeOf<FallbackProviderContext>()
+        return context.kind === 'chat'
+      },
+      onFallback(context) {
+        expectTypeOf(context.nextProviderId).toEqualTypeOf<string | undefined>()
+      }
+    }
+    expectTypeOf<FallbackProviderKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding'>()
+    expectTypeOf(fallbackConfig).toEqualTypeOf<FallbackProviderConfig>()
 
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')
     expect(openrouter({ apiKey: 'test-key' }).id).toBe('openrouter')
     expect(gemini({ apiKey: 'test-key' }).id).toBe('gemini')
     expect(proxyProvider().id).toBe('proxy')
     expect(anthropic({ apiKey: 'test-key' }).id).toBe('anthropic')
+    expect(fallbackProvider({ providers: [provider] }).id).toBe('fallback')
   })
 
   it('keeps composable return types stable for consumers', () => {

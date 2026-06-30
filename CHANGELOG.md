@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added provider request trace refs with `lastRequest`, `lastResponse`, and
   `clearTrace()` across chat, completion, embedding, object, and generation
   composables for UI-visible diagnostics.
+- Added `fallbackProvider()` for provider-level chat, completion, and embedding
+  failover before a stream starts.
 - Added AI SDK-style chat helpers for message submission, stream resume, manual
   tool output, and approval-gated tool calls.
 - Added structured chat message parts, stream data typing, metadata handling, and

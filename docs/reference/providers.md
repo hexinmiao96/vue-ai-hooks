@@ -7,7 +7,8 @@ Use the provider guide for integration examples. Use this page when you need the
 exact config surface.
 
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
-`GeminiConfig`, `ProxyProviderConfig`, `ProxyRequestContext`,
+`GeminiConfig`, `FallbackProviderConfig`, `FallbackProviderContext`,
+`FallbackProviderKind`, `ProxyProviderConfig`, `ProxyRequestContext`,
 `ProxyRequestKind`, `ProxyRequestOverride`, and `AnthropicConfig`.
 
 ## `ChatProvider`
@@ -34,6 +35,44 @@ interface ChatProvider {
 provider-specific JSON fields that are not modeled by the typed options. The
 provider merges `body` before explicit request fields, so typed fields win if a
 key conflicts.
+
+## `fallbackProvider(config)`
+
+Provider-level fallback wrapper for production routing.
+
+```ts
+import { fallbackProvider, openai, openrouter } from 'vue-ai-hooks'
+
+const provider = fallbackProvider({
+  providers: [
+    openai({ apiKey: process.env.OPENAI_API_KEY! }),
+    openrouter({ apiKey: process.env.OPENROUTER_API_KEY! })
+  ],
+  shouldFallback({ error }) {
+    return !('status' in error) || Number(error.status) >= 500
+  },
+  onFallback({ providerId, nextProviderId, error }) {
+    console.warn(`Falling back from ${providerId} to ${nextProviderId}`, error)
+  }
+})
+```
+
+| Option           | Type                                            | Default      | Description                                               |
+| ---------------- | ----------------------------------------------- | ------------ | --------------------------------------------------------- |
+| `id`             | `string`                                        | `'fallback'` | Provider id.                                              |
+| `providers`      | `readonly ChatProvider[]`                       | required     | Providers tried in order.                                 |
+| `shouldFallback` | `(context: FallbackProviderContext) => boolean` | all failures | Return `false` to stop before trying the next provider.   |
+| `onFallback`     | `(context: FallbackProviderContext) => void`    | -            | Called after a fallback decision and before the next try. |
+
+`FallbackProviderContext` includes `kind`, `provider`, `providerId`, `index`,
+`error`, `nextProvider`, and `nextProviderId`. `FallbackProviderKind` is
+`'chat' | 'completion' | 'embedding'`.
+
+For `chat()` and `completion()`, fallback is attempted only if the provider
+throws before yielding any stream chunk. Once content has started, the original
+error is rethrown so UI output cannot mix providers mid-stream. `embedding()`
+falls back on provider rejection. Aborted requests and `AbortError` failures do
+not fall back.
 
 ## `openai(config)`
 

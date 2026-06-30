@@ -96,6 +96,12 @@ export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/ope
 export { openrouter, type OpenRouterConfig } from './providers/openrouter'
 export { gemini, type GeminiConfig } from './providers/gemini'
 export {
+  fallbackProvider,
+  type FallbackProviderConfig,
+  type FallbackProviderContext,
+  type FallbackProviderKind
+} from './providers/fallback'
+export {
   proxyProvider,
   type ProxyProviderConfig,
   type ProxyRequestContext,
