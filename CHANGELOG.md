@@ -72,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trace refs, and form helpers.
 - Added `cosineSimilarity()` for comparing embedding vectors in semantic search
   and local reranking UIs.
+- Added `generateId()` and `createIdGenerator()` for AI SDK-style ID generation
+  and composable `generateId` overrides.
 - Added a runnable no-key `useRerank` example with deterministic local ranking
   output and proxy `/api/rerank` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request

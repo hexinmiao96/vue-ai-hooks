@@ -40,27 +40,27 @@ await generate(input.value)
 
 ## 选项
 
-| 名称                    | 类型                                                                   | 默认值     | 说明                                            |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | ----------------------------------------------- |
-| `fetcher`               | `GenerationFetcher<TInput, TResult, TProgress, TChunk>`                | 必填       | 异步生成函数，接收输入和运行上下文。            |
-| `id`                    | `string`                                                               | 自动生成   | Generation 状态标识；相同 id 会共享状态。       |
-| `generateId`            | `IdGenerator`                                                          | `createId` | 未传 `id` 时用于生成 id。                       |
-| `initialInput`          | `TInput`                                                               | -          | 初始输入。                                      |
-| `initialResult`         | `TResult \| null`                                                      | `null`     | 初始或重置后的结果。                            |
-| `initialProgress`       | `TProgress \| null`                                                    | `null`     | 初始或重置后的进度。                            |
-| `defaultBody`           | `Record<string, unknown>`                                              | -          | 与单次调用 `body` 合并的默认 JSON-like 元数据。 |
-| `maxRetries`            | `number`                                                               | `0`        | 进度或 chunk 出现前失败时最多重试几次。         |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | 每次重试前等待的毫秒数。                        |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -          | 覆盖默认的错误是否可重试判断。                  |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -          | 等待并重新发起请求前调用。                      |
-| `throttleMs`            | `number`                                                               | -          | 响应式进度和 chunk 更新之间的最小等待毫秒数。   |
-| `experimental_throttle` | `number`                                                               | -          | AI SDK 风格兼容别名，建议用 `throttleMs`。      |
-| `onRequest`             | `(info: GenerationRequestInfo<TInput>) => void`                        | -          | `fetcher` 运行前调用。                          |
-| `onResponse`            | `(info: GenerationResponseInfo<TInput, TResult>) => void`              | -          | `fetcher` resolve 后调用。                      |
-| `onProgress`            | `(progress: TProgress) => void`                                        | -          | `context.reportProgress()` flush 时调用。       |
-| `onChunk`               | `(chunk: TChunk) => void`                                              | -          | `context.reportChunk()` flush 时调用。          |
-| `onFinish`              | `(result: TResult) => void`                                            | -          | 最终结果写入后调用。                            |
-| `onError`               | `(e: Error) => void`                                                   | -          | 非取消错误发生时调用。                          |
+| 名称                    | 类型                                                                   | 默认值       | 说明                                            |
+| ----------------------- | ---------------------------------------------------------------------- | ------------ | ----------------------------------------------- |
+| `fetcher`               | `GenerationFetcher<TInput, TResult, TProgress, TChunk>`                | 必填         | 异步生成函数，接收输入和运行上下文。            |
+| `id`                    | `string`                                                               | 自动生成     | Generation 状态标识；相同 id 会共享状态。       |
+| `generateId`            | `IdGenerator`                                                          | `generateId` | 未传 `id` 时用于生成 id。                       |
+| `initialInput`          | `TInput`                                                               | -            | 初始输入。                                      |
+| `initialResult`         | `TResult \| null`                                                      | `null`       | 初始或重置后的结果。                            |
+| `initialProgress`       | `TProgress \| null`                                                    | `null`       | 初始或重置后的进度。                            |
+| `defaultBody`           | `Record<string, unknown>`                                              | -            | 与单次调用 `body` 合并的默认 JSON-like 元数据。 |
+| `maxRetries`            | `number`                                                               | `0`          | 进度或 chunk 出现前失败时最多重试几次。         |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`          | 每次重试前等待的毫秒数。                        |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -            | 覆盖默认的错误是否可重试判断。                  |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -            | 等待并重新发起请求前调用。                      |
+| `throttleMs`            | `number`                                                               | -            | 响应式进度和 chunk 更新之间的最小等待毫秒数。   |
+| `experimental_throttle` | `number`                                                               | -            | AI SDK 风格兼容别名，建议用 `throttleMs`。      |
+| `onRequest`             | `(info: GenerationRequestInfo<TInput>) => void`                        | -            | `fetcher` 运行前调用。                          |
+| `onResponse`            | `(info: GenerationResponseInfo<TInput, TResult>) => void`              | -            | `fetcher` resolve 后调用。                      |
+| `onProgress`            | `(progress: TProgress) => void`                                        | -            | `context.reportProgress()` flush 时调用。       |
+| `onChunk`               | `(chunk: TChunk) => void`                                              | -            | `context.reportChunk()` flush 时调用。          |
+| `onFinish`              | `(result: TResult) => void`                                            | -            | 最终结果写入后调用。                            |
+| `onError`               | `(e: Error) => void`                                                   | -            | 非取消错误发生时调用。                          |
 
 ## Fetcher 上下文
 

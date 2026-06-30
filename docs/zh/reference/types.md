@@ -665,11 +665,38 @@ interface StreamThrottleOptions {
 
 ```ts
 type IdGenerator = (prefix?: string) => string
+
+interface CreateIdGeneratorOptions {
+  prefix?: string
+  separator?: string
+  size?: number
+  alphabet?: string
+}
 ```
 
 `UseChatOptions.generateId` 使用该类型覆盖自动生成的 chat、message、tool result
 和 stream data id。`UseObjectOptions.generateId` 会用于从字符串 prompt 创建的
 message。调用方显式提供的 id 会被保留。
+
+`generateId(prefix?)` 是默认的无依赖生成器。它会生成 16 位随机后缀，并在传入
+runtime prefix 时添加前缀：
+
+```ts
+import { createIdGenerator, generateId } from 'vue-ai-hooks'
+
+generateId('user') // user-...
+
+const createTraceId = createIdGenerator({
+  prefix: 'trace',
+  size: 24
+})
+
+createTraceId() // trace-...
+```
+
+`createIdGenerator(options?)` 支持 `prefix`、`separator`、`size` 和 `alphabet`。
+配置了 `prefix` 时，该生成器会固定使用这个前缀；否则会使用 composable 传入的
+runtime prefix。
 
 ## 聊天历史更新
 

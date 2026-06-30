@@ -845,6 +845,9 @@ expect(
     files.types.includes('type ChatToolsInput') &&
     files.types.includes('interface ModelMessage') &&
     files.types.includes('interface ConvertToModelMessagesOptions') &&
+    files.types.includes('interface CreateIdGeneratorOptions') &&
+    files.types.includes('createIdGenerator(options?)') &&
+    files.types.includes('generateId(prefix?)') &&
     files.types.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.types.includes('jsonSchema(schema)') &&
     files.types.includes('dynamicTool()'),
@@ -864,6 +867,9 @@ expect(
     files.zhTypes.includes('type ChatToolsInput') &&
     files.zhTypes.includes('interface ModelMessage') &&
     files.zhTypes.includes('interface ConvertToModelMessagesOptions') &&
+    files.zhTypes.includes('interface CreateIdGeneratorOptions') &&
+    files.zhTypes.includes('createIdGenerator(options?)') &&
+    files.zhTypes.includes('generateId(prefix?)') &&
     files.zhTypes.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.zhTypes.includes('jsonSchema(schema)') &&
     files.zhTypes.includes('dynamicTool()'),

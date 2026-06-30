@@ -5,11 +5,13 @@ import {
   anthropic,
   convertToModelMessages,
   cosineSimilarity,
+  createIdGenerator,
   deepseek,
   deserializeMessages,
   dynamicTool,
   fallbackProvider,
   gemini,
+  generateId,
   hasToolCall,
   experimental_useObject,
   isStepCount,
@@ -59,6 +61,7 @@ import type {
   CompletionStreamProtocol,
   ContentPart,
   ConvertToModelMessagesOptions,
+  CreateIdGeneratorOptions,
   DataPartSchema,
   DataPartSchemas,
   DataPartValidator,
@@ -651,6 +654,17 @@ describe('public API types', () => {
     >()
     expectTypeOf<IdGenerator>().returns.toEqualTypeOf<string>()
     expectTypeOf<IdGenerator>().parameter(0).toEqualTypeOf<string | undefined>()
+    expectTypeOf<CreateIdGeneratorOptions>().toMatchTypeOf<{
+      prefix?: string
+      separator?: string
+      size?: number
+      alphabet?: string
+    }>()
+    expectTypeOf(createIdGenerator)
+      .parameter(0)
+      .toEqualTypeOf<CreateIdGeneratorOptions | undefined>()
+    expectTypeOf(createIdGenerator).returns.toEqualTypeOf<IdGenerator>()
+    expectTypeOf(generateId).toEqualTypeOf<IdGenerator>()
 
     expectTypeOf(completion).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf(completion.id).toEqualTypeOf<Ref<string>>()

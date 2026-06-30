@@ -41,7 +41,7 @@ const { complete } = useCompletion({
 | `credentials`           | `RequestCredentials`                                                   | —                 | Browser credentials mode for the default proxy.         |
 | `fetch`                 | `typeof fetch`                                                         | global            | Custom fetch implementation for the default proxy.      |
 | `id`                    | `string`                                                               | generated         | Completion state identifier. Matching ids share state.  |
-| `generateId`            | `IdGenerator`                                                          | `createId`        | Generate an id when `id` is omitted.                    |
+| `generateId`            | `IdGenerator`                                                          | `generateId`      | Generate an id when `id` is omitted.                    |
 | `initialInput`          | `string`                                                               | `''`              | Seed the form input prompt.                             |
 | `initialCompletion`     | `string`                                                               | `''`              | Seed the completion.                                    |
 | `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | Default options.                                        |

@@ -1840,7 +1840,7 @@ describe('useChat', () => {
     expect(messages.value.map((m) => m.id)).toEqual([
       's1',
       'u1',
-      expect.stringMatching(/^assistant_/)
+      expect.stringMatching(/^assistant-/)
     ])
     expect(messages.value[1]).toMatchObject({
       id: 'u1',

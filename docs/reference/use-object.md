@@ -76,7 +76,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `initialValue`          | `DeepPartial<T> \| null`                                               | —             | AI SDK-style initial partial object value.                                 |
 | `initialInput`          | `string`                                                               | `''`          | Initial prompt text for object forms.                                      |
 | `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | Default request payload merged into every submit.                          |
-| `generateId`            | `IdGenerator`                                                          | `createId`    | Override automatic object and prompt message id generation.                |
+| `generateId`            | `IdGenerator`                                                          | `generateId`  | Override automatic object and prompt message id generation.                |
 | `maxRetries`            | `number`                                                               | `0`           | Retry attempts for failures before the first stream chunk.                 |
 | `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | Delay before each retry.                                                   |
 | `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | Override the default retryable error decision.                             |

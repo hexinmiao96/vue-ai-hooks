@@ -398,9 +398,11 @@ routes that return plain text streams.
 also passes `ChatFinishInfo` with the message snapshot, abort/error/disconnect
 flags, and finish reason.
 
-Pass `generateId` to `useChat`, `useCompletion`, or `useObject` when you need
-deterministic IDs for SSR, persistence, tests, or backend trace correlation.
-Explicit `id` and `messageId` values still take priority over generated IDs.
+Pass `generateId` to `useChat`, `useCompletion`, `useGeneration`, or
+`useObject` when you need deterministic IDs for SSR, persistence, tests, or
+backend trace correlation. Use `createIdGenerator()` when AI SDK-style random
+IDs are enough. Explicit `id` and `messageId` values still take priority over
+generated IDs.
 Proxy streams can also send `ChatChunk.messageId` or AI SDK UI stream
 `start.messageId` to replace the current assistant id with the server's id.
 

@@ -41,7 +41,7 @@ const { complete } = useCompletion({
 | `credentials`           | `RequestCredentials`                                                   | -                 | 默认 proxy 的浏览器 credentials 模式。         |
 | `fetch`                 | `typeof fetch`                                                         | global            | 默认 proxy 的自定义 fetch 实现。               |
 | `id`                    | `string`                                                               | 自动生成          | Completion 状态标识；相同 id 会共享状态。      |
-| `generateId`            | `IdGenerator`                                                          | `createId`        | 未传 `id` 时用于生成 id。                      |
+| `generateId`            | `IdGenerator`                                                          | `generateId`      | 未传 `id` 时用于生成 id。                      |
 | `initialInput`          | `string`                                                               | `''`              | 初始表单 prompt。                              |
 | `initialCompletion`     | `string`                                                               | `''`              | 初始补全文本。                                 |
 | `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | 默认请求选项。                                 |

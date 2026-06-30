@@ -44,27 +44,27 @@ callbacks.
 
 ## Options
 
-| Name                    | Type                                                                   | Default    | Description                                                     |
-| ----------------------- | ---------------------------------------------------------------------- | ---------- | --------------------------------------------------------------- |
-| `fetcher`               | `GenerationFetcher<TInput, TResult, TProgress, TChunk>`                | required   | Async generation function. Receives the input and run context.  |
-| `id`                    | `string`                                                               | generated  | Generation state identifier. Matching ids share state.          |
-| `generateId`            | `IdGenerator`                                                          | `createId` | Generate an id when `id` is omitted.                            |
-| `initialInput`          | `TInput`                                                               | —          | Seed the input value.                                           |
-| `initialResult`         | `TResult \| null`                                                      | `null`     | Seed or reset the result.                                       |
-| `initialProgress`       | `TProgress \| null`                                                    | `null`     | Seed or reset the progress value.                               |
-| `defaultBody`           | `Record<string, unknown>`                                              | —          | Default JSON-like metadata merged with per-call `body`.         |
-| `maxRetries`            | `number`                                                               | `0`        | Retry attempts for failures before progress or chunks appear.   |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`        | Delay before each retry.                                        |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —          | Override the default retryable error decision.                  |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —          | Called before a retry attempt waits and re-runs.                |
-| `throttleMs`            | `number`                                                               | —          | Minimum wait in ms between reactive progress and chunk updates. |
-| `experimental_throttle` | `number`                                                               | —          | AI SDK-compatible alias. Prefer `throttleMs`.                   |
-| `onRequest`             | `(info: GenerationRequestInfo<TInput>) => void`                        | —          | Called before `fetcher` runs.                                   |
-| `onResponse`            | `(info: GenerationResponseInfo<TInput, TResult>) => void`              | —          | Called when `fetcher` resolves.                                 |
-| `onProgress`            | `(progress: TProgress) => void`                                        | —          | Called when `context.reportProgress()` flushes.                 |
-| `onChunk`               | `(chunk: TChunk) => void`                                              | —          | Called when `context.reportChunk()` flushes.                    |
-| `onFinish`              | `(result: TResult) => void`                                            | —          | Called once the final result is stored.                         |
-| `onError`               | `(e: Error) => void`                                                   | —          | Called on non-abort errors.                                     |
+| Name                    | Type                                                                   | Default      | Description                                                     |
+| ----------------------- | ---------------------------------------------------------------------- | ------------ | --------------------------------------------------------------- |
+| `fetcher`               | `GenerationFetcher<TInput, TResult, TProgress, TChunk>`                | required     | Async generation function. Receives the input and run context.  |
+| `id`                    | `string`                                                               | generated    | Generation state identifier. Matching ids share state.          |
+| `generateId`            | `IdGenerator`                                                          | `generateId` | Generate an id when `id` is omitted.                            |
+| `initialInput`          | `TInput`                                                               | —            | Seed the input value.                                           |
+| `initialResult`         | `TResult \| null`                                                      | `null`       | Seed or reset the result.                                       |
+| `initialProgress`       | `TProgress \| null`                                                    | `null`       | Seed or reset the progress value.                               |
+| `defaultBody`           | `Record<string, unknown>`                                              | —            | Default JSON-like metadata merged with per-call `body`.         |
+| `maxRetries`            | `number`                                                               | `0`          | Retry attempts for failures before progress or chunks appear.   |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`          | Delay before each retry.                                        |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —            | Override the default retryable error decision.                  |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —            | Called before a retry attempt waits and re-runs.                |
+| `throttleMs`            | `number`                                                               | —            | Minimum wait in ms between reactive progress and chunk updates. |
+| `experimental_throttle` | `number`                                                               | —            | AI SDK-compatible alias. Prefer `throttleMs`.                   |
+| `onRequest`             | `(info: GenerationRequestInfo<TInput>) => void`                        | —            | Called before `fetcher` runs.                                   |
+| `onResponse`            | `(info: GenerationResponseInfo<TInput, TResult>) => void`              | —            | Called when `fetcher` resolves.                                 |
+| `onProgress`            | `(progress: TProgress) => void`                                        | —            | Called when `context.reportProgress()` flushes.                 |
+| `onChunk`               | `(chunk: TChunk) => void`                                              | —            | Called when `context.reportChunk()` flushes.                    |
+| `onFinish`              | `(result: TResult) => void`                                            | —            | Called once the final result is stored.                         |
+| `onError`               | `(e: Error) => void`                                                   | —            | Called on non-abort errors.                                     |
 
 ## Fetcher context
 

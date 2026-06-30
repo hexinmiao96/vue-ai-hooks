@@ -688,12 +688,39 @@ new code.
 
 ```ts
 type IdGenerator = (prefix?: string) => string
+
+interface CreateIdGeneratorOptions {
+  prefix?: string
+  separator?: string
+  size?: number
+  alphabet?: string
+}
 ```
 
 `UseChatOptions.generateId` uses this type to override generated chat, message,
 tool result, and stream data ids. `UseObjectOptions.generateId` uses it for
 prompt messages created from string prompts. Explicit ids supplied by the caller
 are preserved.
+
+`generateId(prefix?)` is the default dependency-free generator. It creates a
+16-character random suffix and adds the runtime prefix when one is supplied:
+
+```ts
+import { createIdGenerator, generateId } from 'vue-ai-hooks'
+
+generateId('user') // user-...
+
+const createTraceId = createIdGenerator({
+  prefix: 'trace',
+  size: 24
+})
+
+createTraceId() // trace-...
+```
+
+`createIdGenerator(options?)` accepts `prefix`, `separator`, `size`, and
+`alphabet`. A configured `prefix` is fixed for that generator; otherwise the
+runtime prefix passed by composables is used.
 
 ## Chat history updates
 

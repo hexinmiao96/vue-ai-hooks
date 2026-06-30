@@ -19,30 +19,31 @@
 
 ## 快速映射
 
-| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                 |
-| ---------------------------------------------- | --------------------------------------------------------------------- |
-| `useChat()`                                    | `useChat()`                                                           |
-| `transport`                                    | `transport` 或 `provider`                                             |
-| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`             |
-| `messages` 初始选项                            | `messages` 或 `initialMessages`                                       |
-| `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                 |
-| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                     |
-| `sendMessage()`                                | `sendMessage()`                                                       |
-| `stop()`                                       | `stop()`                                                              |
-| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                     |
-| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`          |
-| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`  |
-| `tool()` / `dynamicTool()`                     | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })` |
-| `stopWhen`                                     | `stopWhen`                                                            |
-| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                      |
-| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`       |
-| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`             |
-| AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                           |
-| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                         |
-| AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由           |
-| AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                         |
-| AI SDK Core `cosineSimilarity()`               | `cosineSimilarity()`，用于比较 embedding 向量                         |
-| UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                           |
+| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                    |
+| ---------------------------------------------- | ------------------------------------------------------------------------ |
+| `useChat()`                                    | `useChat()`                                                              |
+| `transport`                                    | `transport` 或 `provider`                                                |
+| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`                |
+| `messages` 初始选项                            | `messages` 或 `initialMessages`                                          |
+| `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                    |
+| `generateId()` / `createIdGenerator()`         | `generateId()` 和 `createIdGenerator()`，用于覆盖 composable id 生成逻辑 |
+| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                        |
+| `sendMessage()`                                | `sendMessage()`                                                          |
+| `stop()`                                       | `stop()`                                                                 |
+| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                        |
+| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`             |
+| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`     |
+| `tool()` / `dynamicTool()`                     | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`    |
+| `stopWhen`                                     | `stopWhen`                                                               |
+| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                         |
+| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`          |
+| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`                |
+| AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                              |
+| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                            |
+| AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由              |
+| AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                            |
+| AI SDK Core `cosineSimilarity()`               | `cosineSimilarity()`，用于比较 embedding 向量                            |
+| UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                              |
 
 ## Transport
 

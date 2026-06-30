@@ -177,6 +177,52 @@ export type AiRequestStatus = 'ready' | 'submitted' | 'streaming' | 'error'
 /** Override automatic chat, message, tool, and stream data id generation. */
 export type IdGenerator = (prefix?: string) => string
 
+export interface CreateIdGeneratorOptions {
+  prefix?: string
+  separator?: string
+  size?: number
+  alphabet?: string
+}
+
+const defaultIdAlphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+
+/**
+ * Create a dependency-free ID generator for SSR, persistence, tests, and trace fields.
+ */
+export function createIdGenerator({
+  prefix,
+  separator = '-',
+  size = 16,
+  alphabet = defaultIdAlphabet
+}: CreateIdGeneratorOptions = {}): IdGenerator {
+  if (!Number.isInteger(size) || size < 1) {
+    throw new Error('createIdGenerator() size must be a positive integer')
+  }
+  if (!alphabet) {
+    throw new Error('createIdGenerator() alphabet must not be empty')
+  }
+  if (prefix !== undefined && alphabet.includes(separator)) {
+    throw new Error('createIdGenerator() separator must not be part of the alphabet')
+  }
+
+  const createRandomPart = () => {
+    let id = ''
+    for (let index = 0; index < size; index += 1) {
+      id += alphabet[(Math.random() * alphabet.length) | 0]
+    }
+    return id
+  }
+
+  return (runtimePrefix?: string) => {
+    const id = createRandomPart()
+    const resolvedPrefix = prefix ?? runtimePrefix
+    return resolvedPrefix ? `${resolvedPrefix}${separator}${id}` : id
+  }
+}
+
+/** Generate a random ID. Pass a prefix to namespace the generated value. */
+export const generateId = createIdGenerator()
+
 /** A custom data item emitted alongside a streaming assistant response. */
 export interface StreamDataPart<TData = unknown> {
   id: string

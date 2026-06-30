@@ -28,6 +28,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`             |
 | `messages` initial option                        | `messages` or `initialMessages`                                         |
 | `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields         |
+| `generateId()` / `createIdGenerator()`           | `generateId()` and `createIdGenerator()` for composable id overrides    |
 | Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included               |
 | `sendMessage()`                                  | `sendMessage()`                                                         |
 | `stop()`                                         | `stop()`                                                                |

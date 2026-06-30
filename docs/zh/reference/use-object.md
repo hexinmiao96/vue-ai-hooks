@@ -72,7 +72,7 @@ const { object, partialObject, submit } = useObject<Ticket>({
 | `initialValue`          | `DeepPartial<T> \| null`                                               | -             | AI SDK 风格的初始部分对象值。                               |
 | `initialInput`          | `string`                                                               | `''`          | 结构化输出表单的初始提示词文本。                            |
 | `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | 每次 submit 都会合并的默认请求参数。                        |
-| `generateId`            | `IdGenerator`                                                          | `createId`    | 覆盖自动生成 object 和 prompt message id 的逻辑。           |
+| `generateId`            | `IdGenerator`                                                          | `generateId`  | 覆盖自动生成 object 和 prompt message id 的逻辑。           |
 | `maxRetries`            | `number`                                                               | `0`           | 首个 stream chunk 到达前失败时最多重试几次。                |
 | `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | 每次重试前等待的毫秒数。                                    |
 | `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | 覆盖默认的错误是否可重试判断。                              |

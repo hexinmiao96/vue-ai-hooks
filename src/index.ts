@@ -181,6 +181,7 @@ export type {
   ChatAttachmentInput,
   ChatAttachmentsInput,
   AiRequestStatus,
+  CreateIdGeneratorOptions,
   IdGenerator,
   Tool,
   ToolCall,
@@ -211,4 +212,4 @@ export type {
   RetryOptions,
   StreamThrottleOptions
 } from './types'
-export { AiHooksError } from './types'
+export { AiHooksError, createIdGenerator, generateId } from './types'

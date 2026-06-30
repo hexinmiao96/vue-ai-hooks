@@ -345,7 +345,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `useTranscription`、`useRerank` 和 `useObject` 可设置 `maxRetries`，在临时 Provider 或后端失败时重试。流式调用只会在首个 chunk 到达前重试，
 因此不会复制已有的部分文本。
 
-`useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
+`useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。AI SDK 风格的随机 ID 可以直接使用 `createIdGenerator()`。显式传入的 `id` 和 `messageId` 仍然优先。
 
 多个 `useChat()` 传入同一个 `id` 时，会在组件之间共享聊天状态。某个 id 的第一个实例会写入 `initialMessages` 和 `initialInput`；`messages` 也可作为 AI SDK 风格的 `initialMessages` 别名。`setId()` 只会改变后续 provider request 携带的 id。
 
