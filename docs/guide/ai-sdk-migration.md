@@ -43,6 +43,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route                |
 | AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route  |
 | AI SDK Core reranking                            | `useRerank()` calling your app-owned `/api/rerank` route                |
+| AI SDK Core `cosineSimilarity()`                 | `cosineSimilarity()` for comparing embedding vectors                    |
 | UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport                  |
 
 ## Transport

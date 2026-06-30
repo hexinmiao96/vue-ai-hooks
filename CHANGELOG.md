@@ -70,6 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `useRerank` for app-owned document reranking routes with normalized
   `originalDocuments`/`rerankedDocuments`/`ranking` state, retries, aborts,
   trace refs, and form helpers.
+- Added `cosineSimilarity()` for comparing embedding vectors in semantic search
+  and local reranking UIs.
 - Added a runnable no-key `useRerank` example with deterministic local ranking
   output and proxy `/api/rerank` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request

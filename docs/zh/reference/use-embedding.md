@@ -5,10 +5,12 @@
 公开 TypeScript 类型：`UseEmbeddingOptions`、`UseEmbeddingReturn`、
 `EmbeddingRequestInfo`、`EmbeddingResponseInfo`、`RetryOptions` 和 `RetryContext`。
 
+公开 helper：`cosineSimilarity`。
+
 ## 用法
 
 ```ts
-import { useEmbedding, openai } from 'vue-ai-hooks'
+import { cosineSimilarity, useEmbedding, openai } from 'vue-ai-hooks'
 
 const { embed, embeddings, isLoading, error } = useEmbedding({
   provider: openai({ apiKey: '...' })
@@ -16,6 +18,7 @@ const { embed, embeddings, isLoading, error } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+console.log(cosineSimilarity(result.embeddings[0], result.embeddings[1]))
 ```
 
 如果走应用自己的后端，可以不传 `provider`，直接使用默认 proxy transport：
@@ -84,6 +87,20 @@ console.log(embeddings.value)
 | `clearTrace()`           | `() => void`                                                                                 | 清空 `lastRequest` 和 `lastResponse`，不改变向量。   |
 | `clear()`                | `() => void`                                                                                 | 重置 embeddings、result 和 error，也会中止当前请求。 |
 | `abortController`        | `Ref<AbortController \| null>`                                                               | 暴露给高级用法。                                     |
+
+## 向量相似度
+
+构建语义搜索、聚类、重复内容检测或本地 reranking UI 时，可以使用
+`cosineSimilarity(vectorA, vectorB)` 比较两条 embedding 向量：
+
+```ts
+import { cosineSimilarity } from 'vue-ai-hooks'
+
+const score = cosineSimilarity(queryEmbedding, documentEmbedding)
+```
+
+两条向量必须非空、长度一致、模长非零，并且只包含有限数字。返回值会被限制在
+`[-1, 1]` 的余弦相似度范围内。
 
 ## 说明
 

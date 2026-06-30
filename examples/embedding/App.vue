@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useEmbedding, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
+import {
+  cosineSimilarity,
+  useEmbedding,
+  gemini,
+  openai,
+  openrouter,
+  proxyProvider
+} from 'vue-ai-hooks'
 
 /**
  * Runtime provider selection for the embedding example:
@@ -81,26 +88,6 @@ const c = ref('Quantum mechanics is hard.')
 const similarities = ref<{ ab: number; ac: number; bc: number } | null>(null)
 
 /**
- * Compute cosine similarity for the demo's pairwise matrix.
- *
- * Values in [0,1] are treated as similarity where larger means closer.
- */
-function cosine(x: number[], y: number[]): number {
-  // Cosine = dot(x,y)/(||x|| * ||y||), used only for quick local vector
-  // comparison in the demo. No numerical safety checks are needed for short,
-  // controlled-length vectors in UI display mode.
-  let dot = 0
-  let nx = 0
-  let ny = 0
-  for (let i = 0; i < x.length; i++) {
-    dot += x[i] * y[i]
-    nx += x[i] * x[i]
-    ny += y[i] * y[i]
-  }
-  return dot / (Math.sqrt(nx) * Math.sqrt(ny))
-}
-
-/**
  * Request embeddings for three input texts, then render pairwise similarity.
  */
 async function run() {
@@ -109,9 +96,9 @@ async function run() {
   // or malformed responses from producing invalid DOM state.
   if (result.embeddings.length !== 3) return
   similarities.value = {
-    ab: cosine(result.embeddings[0], result.embeddings[1]),
-    ac: cosine(result.embeddings[0], result.embeddings[2]),
-    bc: cosine(result.embeddings[1], result.embeddings[2])
+    ab: cosineSimilarity(result.embeddings[0], result.embeddings[1]),
+    ac: cosineSimilarity(result.embeddings[0], result.embeddings[2]),
+    bc: cosineSimilarity(result.embeddings[1], result.embeddings[2])
   }
 }
 </script>

@@ -41,6 +41,7 @@
 | AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                         |
 | AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由           |
 | AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                         |
+| AI SDK Core `cosineSimilarity()`               | `cosineSimilarity()`，用于比较 embedding 向量                         |
 | UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                           |
 
 ## Transport

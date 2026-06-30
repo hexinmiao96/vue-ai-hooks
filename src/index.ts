@@ -79,6 +79,7 @@ export {
   type UseCompletionReturn
 } from './composables/useCompletion'
 export {
+  cosineSimilarity,
   useEmbedding,
   type EmbeddingRequestInfo,
   type EmbeddingResponseInfo,

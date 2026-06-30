@@ -135,7 +135,7 @@ await complete('Write a haiku about TypeScript:')
 ### Embeddings
 
 ```ts
-import { useEmbedding, openai } from 'vue-ai-hooks'
+import { cosineSimilarity, useEmbedding, openai } from 'vue-ai-hooks'
 
 const { embed, embeddings } = useEmbedding({
   provider: openai({ apiKey: '...' })
@@ -143,6 +143,7 @@ const { embed, embeddings } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+console.log(cosineSimilarity(result.embeddings[0], result.embeddings[1]))
 ```
 
 ### Reranking

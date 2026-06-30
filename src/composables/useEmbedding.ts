@@ -14,6 +14,8 @@ import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createRequestTrace } from '../utils/trace'
 
+export { cosineSimilarity } from '../utils/embedding'
+
 export interface EmbeddingRequestInfo {
   providerId: string
   attempt: number

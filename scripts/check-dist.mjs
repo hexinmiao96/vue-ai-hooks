@@ -21,6 +21,7 @@ const requiredRuntimeExports = [
   'AiHooksError',
   'anthropic',
   'convertToModelMessages',
+  'cosineSimilarity',
   'deepseek',
   'dynamicTool',
   'jsonSchema',

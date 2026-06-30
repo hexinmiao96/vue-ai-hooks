@@ -4,6 +4,7 @@ import {
   AiHooksError,
   anthropic,
   convertToModelMessages,
+  cosineSimilarity,
   deepseek,
   deserializeMessages,
   dynamicTool,
@@ -486,6 +487,9 @@ describe('public API types', () => {
       ProxyProviderConfig['body'] | undefined
     >()
     expectTypeOf<UseEmbeddingOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf(cosineSimilarity).parameter(0).toEqualTypeOf<readonly number[]>()
+    expectTypeOf(cosineSimilarity).parameter(1).toEqualTypeOf<readonly number[]>()
+    expectTypeOf(cosineSimilarity).returns.toEqualTypeOf<number>()
     expectTypeOf<UseEmbeddingOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseImageOptions>().toMatchTypeOf<RetryOptions>()

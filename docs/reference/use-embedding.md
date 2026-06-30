@@ -6,10 +6,12 @@ Public TypeScript types: `UseEmbeddingOptions`, `UseEmbeddingReturn`,
 `EmbeddingRequestInfo`, `EmbeddingResponseInfo`, `RetryOptions`, and
 `RetryContext`.
 
+Public helpers: `cosineSimilarity`.
+
 ## Usage
 
 ```ts
-import { useEmbedding, openai } from 'vue-ai-hooks'
+import { cosineSimilarity, useEmbedding, openai } from 'vue-ai-hooks'
 
 const { embed, embeddings, isLoading, error } = useEmbedding({
   provider: openai({ apiKey: '...' })
@@ -17,6 +19,7 @@ const { embed, embeddings, isLoading, error } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+console.log(cosineSimilarity(result.embeddings[0], result.embeddings[1]))
 ```
 
 For an app-owned backend, omit `provider` and use the default proxy transport:
@@ -85,6 +88,22 @@ console.log(embeddings.value)
 | `clearTrace()`           | `() => void`                                                                                 | Clear `lastRequest` and `lastResponse` without changing embeddings.     |
 | `clear()`                | `() => void`                                                                                 | Reset embeddings, result, and error. Also aborts the in-flight request. |
 | `abortController`        | `Ref<AbortController \| null>`                                                               | Exposed for advanced use cases.                                         |
+
+## Vector similarity
+
+Use `cosineSimilarity(vectorA, vectorB)` to compare two embedding vectors when
+building semantic search, clustering, duplicate detection, or local reranking
+UIs:
+
+```ts
+import { cosineSimilarity } from 'vue-ai-hooks'
+
+const score = cosineSimilarity(queryEmbedding, documentEmbedding)
+```
+
+Both vectors must be non-empty, have the same length, have non-zero magnitude,
+and contain only finite numbers. The returned score is clamped to the `[-1, 1]`
+cosine similarity range.
 
 ## Notes
 

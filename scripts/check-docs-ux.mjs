@@ -38,6 +38,7 @@ const files = {
   examplesEnvExample: readFileSync('examples/.env.example', 'utf8'),
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
+  embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   speechExample: readFileSync('examples/speech/App.vue', 'utf8'),
   transcriptionExample: readFileSync('examples/transcription/App.vue', 'utf8'),
@@ -581,12 +582,16 @@ expect(
     files.useEmbedding.includes('handleInputChange(e)') &&
     files.useEmbedding.includes('handleSubmit(e, opts?)') &&
     files.useEmbedding.includes('Provider errors leave the text available for retry') &&
+    files.useEmbedding.includes('## Vector similarity') &&
+    files.useEmbedding.includes('cosineSimilarity(vectorA, vectorB)') &&
     files.zhUseEmbedding.includes('initialInput') &&
     files.zhUseEmbedding.includes('input`') &&
     files.zhUseEmbedding.includes('setInput(value)') &&
     files.zhUseEmbedding.includes('handleInputChange(e)') &&
     files.zhUseEmbedding.includes('handleSubmit(e, opts?)') &&
     files.zhUseEmbedding.includes('Provider 错误会保留文本') &&
+    files.zhUseEmbedding.includes('## 向量相似度') &&
+    files.zhUseEmbedding.includes('cosineSimilarity(vectorA, vectorB)') &&
     files.useSpeech.includes('initialInput') &&
     files.useSpeech.includes('audio`') &&
     files.useSpeech.includes('setInput(value)') &&
@@ -633,8 +638,13 @@ expect(
     files.zhUseRerank.includes('后端错误会保留查询和文档') &&
     files.readme.includes('`useTranscription`, `useRerank`, and `useObject` also expose') &&
     files.readme.includes('All nine') &&
+    files.readme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
     files.zhReadme.includes('`useTranscription`、`useRerank` 和 `useObject`') &&
-    files.zhReadme.includes('九者都支持 `initialInput`'),
+    files.zhReadme.includes('九者都支持 `initialInput`') &&
+    files.zhReadme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
+    files.embeddingExample.includes('cosineSimilarity') &&
+    files.aiSdkMigration.includes('AI SDK Core `cosineSimilarity()`') &&
+    files.zhAiSdkMigration.includes('AI SDK Core `cosineSimilarity()`'),
   'Object, embedding, speech, transcription, rerank docs plus READMEs must document form helpers'
 )
 expect(

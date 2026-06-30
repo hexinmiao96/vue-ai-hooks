@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { useEmbedding } from '../src/composables/useEmbedding'
+import { cosineSimilarity, useEmbedding } from '../src/composables/useEmbedding'
 import type { ChatProvider } from '../src/providers/types'
 import { AiHooksError, type ChatChunk, type EmbeddingRequest } from '../src/types'
 
@@ -44,6 +44,20 @@ function fakeEmbeddingProvider(embedding: ChatProvider['embedding']): ChatProvid
 }
 
 describe('useEmbedding', () => {
+  it('calculates cosine similarity for embedding vectors', () => {
+    expect(cosineSimilarity([1, 0], [1, 0])).toBe(1)
+    expect(cosineSimilarity([1, 0], [0, 1])).toBe(0)
+    expect(cosineSimilarity([1, 0], [-1, 0])).toBe(-1)
+    expect(cosineSimilarity([1, 1], [2, 2])).toBeCloseTo(1)
+  })
+
+  it('rejects invalid cosine similarity vectors', () => {
+    expect(() => cosineSimilarity([1, 2], [1])).toThrow(/same length/)
+    expect(() => cosineSimilarity([], [])).toThrow(/must not be empty/)
+    expect(() => cosineSimilarity([0, 0], [1, 2])).toThrow(/non-zero magnitude/)
+    expect(() => cosineSimilarity([Number.NaN], [1])).toThrow(/finite numbers/)
+  })
+
   it('uses a proxy transport when provider is omitted', async () => {
     const response = {
       embeddings: [[0.1, 0.2]],
