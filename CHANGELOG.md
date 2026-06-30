@@ -49,6 +49,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `handleSubmit()` to `useEmbedding` for embedding forms.
 - Added `useImage` for app-owned image generation routes with normalized
   `image`/`images` state, retries, aborts, trace refs, and form helpers.
+- Added a runnable no-key `useImage` example with deterministic local SVG output
+  and proxy `/api/image` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.

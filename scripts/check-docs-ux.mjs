@@ -31,6 +31,7 @@ const files = {
   envExample: readFileSync('.env.example', 'utf8'),
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
+  imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
@@ -76,6 +77,7 @@ for (const snippet of [
   'falls back to `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   'The browser sends provider-agnostic JSON to your own `/api/chat` route',
+  "useImage({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[Examples](/examples/)'
 ]) {
@@ -92,6 +94,7 @@ for (const snippet of [
   '自动回退到 `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
+  "useImage({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[示例](/zh/examples/)'
 ]) {
@@ -112,8 +115,9 @@ expect(
   ) &&
     files.envExample.includes('VITE_CHAT_PROVIDER=local-tools') &&
     files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&
+    files.envExample.includes('VITE_PROXY_IMAGE_URL=/api/ai/image') &&
     files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object'),
-  '.env.example must make the chat and object examples runnable without provider keys by default'
+  '.env.example must make the chat, image, and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -124,6 +128,8 @@ expect(
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
+    files.readme.includes('`examples/image`') &&
+    files.zhReadme.includes('`examples/image`') &&
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/choosing.md') &&
@@ -132,7 +138,7 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md'),
-  'Readmes must explain no-key chat defaults, list the object example, and link upgrade/migration guidance'
+  'Readmes must explain no-key chat defaults, list image/object examples, and link upgrade/migration guidance'
 )
 
 for (const snippet of [
@@ -234,10 +240,13 @@ for (const snippet of [
   )
 }
 expect(
-  files.packageJson.includes('"example:object"') &&
+  files.packageJson.includes('"example:image"') &&
+    files.packageJson.includes('"example:image:build"') &&
+    files.packageJson.includes('pnpm example:image:build') &&
+    files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the object example'
+  'package scripts must expose and build the image and object examples'
 )
 
 expect(
@@ -254,11 +263,16 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  'default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`',
+  'default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, and',
+  'pnpm example:image',
+  'deterministic local SVG',
+  'proxy `/api/image`',
   '`local-object` provider',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
+  'Generate an image through an app route',
+  '[Image generation](#image-demo)',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
 ]) {
@@ -271,11 +285,16 @@ for (const snippet of [
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
-  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/object`',
+  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/object`',
+  'pnpm example:image',
+  '确定性的本地',
+  'proxy `/api/image`',
   '`local-object` Provider',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
+  '通过应用后端生成图片',
+  '[图片生成](#image-demo)',
   '从提示词抽取类型化 JSON',
   '[结构化对象输出](#object-demo)'
 ]) {
@@ -285,6 +304,14 @@ for (const snippet of [
 expect(
   files.demoShowcase.includes("locale: 'en'"),
   'DemoShowcase default locale must be English for root docs'
+)
+expect(
+  files.imageExample.includes('useImage') &&
+    files.imageExample.includes('localImageFetch') &&
+    files.imageExample.includes('VITE_PROXY_IMAGE_URL') &&
+    files.imageExample.includes('VITE_PROXY_BASE_URL') &&
+    files.imageExample.includes('previewUrl'),
+  'Image example must run without keys and switch to the proxy image route when configured'
 )
 expect(
   files.objectExample.includes("id: 'local-object'") &&
@@ -302,6 +329,15 @@ expect(
 expect(
   files.demoShowcase.includes("quickChoiceTitle: 'Choose by job'"),
   'DemoShowcase must include an English job-based chooser'
+)
+expect(
+  files.demoShowcase.includes("{ job: 'Image generation', pick: 'useImage' }") &&
+    files.demoShowcase.includes("{ label: 'Composables', value: '6' }") &&
+    files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
+    files.demoShowcase.includes("{ label: 'useImage API', href: '#image-demo-api' }") &&
+    files.demoShowcase.includes('const imageCode = computed') &&
+    files.demoShowcase.includes('id="image-demo"'),
+  'DemoShowcase must include the image generation demo and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),

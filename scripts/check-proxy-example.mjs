@@ -12,6 +12,7 @@ try {
   await checkResumeRoute('/api/ai/chat/legacy-chat/stream')
   await checkCompletionRoute()
   await checkEmbeddingRoute()
+  await checkImageRoute()
   await checkObjectRoute()
   console.log('Proxy example check passed for default and legacy routes.')
 } finally {
@@ -87,6 +88,22 @@ async function checkEmbeddingRoute() {
     '/api/embedding should return deterministic vectors'
   )
   expect(response.usage?.totalTokens > 0, '/api/embedding should return usage metadata')
+}
+
+async function checkImageRoute() {
+  const response = await postJson('/api/image', {
+    prompt: 'A Vue composable dashboard hero image',
+    model: 'proxy-image-model'
+  })
+  expect(response.image?.url?.startsWith('data:image/svg+xml'), '/api/image should return an SVG')
+  expect(response.images?.length === 1, '/api/image should return one normalized image')
+  expect(response.model === 'proxy-image-model', '/api/image should preserve the requested model')
+
+  const legacy = await postJson('/api/ai/image', { prompt: 'legacy image route' })
+  expect(
+    legacy.image?.metadata?.seed !== undefined,
+    '/api/ai/image should return deterministic image metadata'
+  )
 }
 
 async function checkObjectRoute() {

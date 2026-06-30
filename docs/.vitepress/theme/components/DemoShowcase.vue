@@ -7,10 +7,12 @@ type DemoHref =
   | '#chat-demo'
   | '#completion-demo'
   | '#embedding-demo'
+  | '#image-demo'
   | '#object-demo'
   | '#chat-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
+  | '#image-demo-api'
   | '#object-demo-api'
   | '#chat-demo-api-props'
   | '#chat-demo-api-methods'
@@ -18,6 +20,8 @@ type DemoHref =
   | '#completion-demo-api-methods'
   | '#embedding-demo-api-props'
   | '#embedding-demo-api-methods'
+  | '#image-demo-api-props'
+  | '#image-demo-api-methods'
   | '#object-demo-api-props'
   | '#object-demo-api-methods'
 type NavLink = {
@@ -95,6 +99,20 @@ await embed([
   'Semantic search over documents',
   'A recipe for iced coffee'
 ])`,
+    image: `const { image, images, input, handleSubmit, stop, clear } = useImage({
+  api: '/api/image',
+  defaultRequest: {
+    model: 'image-model',
+    size: '1024x1024',
+    aspectRatio: '1:1'
+  }
+})
+
+input.value = 'A clean Vue composable dashboard hero image'
+
+await handleSubmit()
+
+console.log(image.value?.url, images.value.length)`,
     object: `type Ticket = { title: string; priority: 'low' | 'high' }
 
 const { object, partialObject, text, input, submit, stop, clear } = useObject<Ticket>({
@@ -173,6 +191,20 @@ await embed([
   '文档语义检索',
   '冰咖啡配方向量化片段'
 ])`,
+    image: `const { image: 图片, images: 图片列表, input: 输入文本, handleSubmit, stop, clear } = useImage({
+  api: '/api/image',
+  defaultRequest: {
+    model: 'image-model',
+    size: '1024x1024',
+    aspectRatio: '1:1'
+  }
+})
+
+输入文本.value = '一个干净的 Vue 组合式函数仪表盘头图'
+
+await handleSubmit()
+
+console.log(图片.value?.url, 图片列表.value.length)`,
     object: `type 工单 = { title: string; priority: 'low' | 'high' }
 
 const { object: 工单对象, partialObject: 部分工单, text: 原始JSON, input: 输入文本, submit, stop, clear } = useObject<工单>({
@@ -212,10 +244,11 @@ const copy = {
       { job: 'Chat UI or tool approval', pick: 'useChat' },
       { job: 'One prompt to text', pick: 'useCompletion' },
       { job: 'Similarity search', pick: 'useEmbedding' },
+      { job: 'Image generation', pick: 'useImage' },
       { job: 'Typed JSON extraction', pick: 'useObject' }
     ],
     heroStats: [
-      { label: 'Composables', value: '4' },
+      { label: 'Composables', value: '6' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
@@ -223,12 +256,14 @@ const copy = {
       { label: 'Chat', href: '#chat-demo' },
       { label: 'Completion', href: '#completion-demo' },
       { label: 'Embedding', href: '#embedding-demo' },
+      { label: 'Image', href: '#image-demo' },
       { label: 'Object', href: '#object-demo' }
     ],
     apiLinks: [
       { label: 'useChat API', href: '#chat-demo-api' },
       { label: 'useCompletion API', href: '#completion-demo-api' },
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
+      { label: 'useImage API', href: '#image-demo-api' },
       { label: 'useObject API', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: 'Composables',
@@ -468,6 +503,80 @@ const copy = {
         ]
       }
     },
+    image: {
+      title: 'Image generation',
+      topbarTitle: 'useImage',
+      description:
+        'A backend-owned image route pattern with prompt input, generated image refs, trace visibility, and stop/reset controls.',
+      promptLabel: 'Prompt',
+      prompt: 'A clean Vue composable dashboard hero image',
+      resultLabel: 'Generated image',
+      badge: '1 image - SVG fallback - trace ready',
+      footer: 'generateImage - stop - clear',
+      apiRef: {
+        title: 'useImage API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Image endpoint for the default app-owned backend route.'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: 'optional',
+            description: 'Backend origin for local proxy or deployed server routes.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'ImageGenerationRequest',
+            required: 'optional',
+            description: 'Default model, size, and provider options merged into each request.'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: ImageGenerationResult) => void',
+            required: 'optional',
+            description: 'Callback invoked after the backend returns normalized images.'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateImage',
+            type: '(prompt?: string): Promise<ImageGenerationResult>',
+            description: 'Send a prompt and resolve with normalized image results.'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<ImageGenerationResult>',
+            description: 'Wire an image form submit and clear input only after success.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active image request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear images, result, trace, input, and current error.'
+          }
+        ]
+      }
+    },
     object: {
       title: 'Structured object output',
       topbarTitle: 'useObject',
@@ -567,6 +676,12 @@ const copy = {
         fit: 'Search, clustering, similarity scoring'
       },
       {
+        name: 'useImage',
+        state: 'image, images, input, result, isLoading, error',
+        actions: 'generateImage, handleSubmit, stop, clear',
+        fit: 'Image tools through app-owned backend routes'
+      },
+      {
         name: 'useObject',
         state: 'partialObject, object, text, input, isLoading, error',
         actions: 'submit, stop, clear',
@@ -603,10 +718,11 @@ const copy = {
       { job: '聊天界面或工具审批', pick: 'useChat' },
       { job: '一个提示词生成文本', pick: 'useCompletion' },
       { job: '语义相似度检索', pick: 'useEmbedding' },
+      { job: '图片生成', pick: 'useImage' },
       { job: '类型化 JSON 抽取', pick: 'useObject' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '4' },
+      { label: '组合式函数', value: '6' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
@@ -614,12 +730,14 @@ const copy = {
       { label: '对话', href: '#chat-demo' },
       { label: '补全', href: '#completion-demo' },
       { label: '向量检索', href: '#embedding-demo' },
+      { label: '图片', href: '#image-demo' },
       { label: '结构化对象', href: '#object-demo' }
     ],
     apiLinks: [
       { label: 'useChat 接口', href: '#chat-demo-api' },
       { label: 'useCompletion 接口', href: '#completion-demo-api' },
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
+      { label: 'useImage 接口', href: '#image-demo-api' },
       { label: 'useObject 接口', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: '组合式函数',
@@ -847,6 +965,80 @@ const copy = {
         ]
       }
     },
+    image: {
+      title: '图片生成',
+      topbarTitle: 'useImage（图片生成）',
+      description:
+        '面向自有后端图片路由的表单模式：提示词输入、生成图片 refs、请求 trace，以及停止和清空控制。',
+      promptLabel: '提示词',
+      prompt: '一个干净的 Vue 组合式函数仪表盘头图',
+      resultLabel: '生成图片',
+      badge: '1 张图片 - SVG fallback - trace 已就绪',
+      footer: 'generateImage - 停止 - 清空',
+      apiRef: {
+        title: 'useImage 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认自有后端路由的图片生成端点。'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: '可选',
+            description: '本地 proxy 或已部署服务端路由的后端地址。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'ImageGenerationRequest',
+            required: '可选',
+            description: '每次请求都会合并的默认模型、尺寸和 provider 选项。'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: ImageGenerationResult) => void',
+            required: '可选',
+            description: '后端返回并归一化图片结果后触发。'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateImage',
+            type: '（prompt?: string）：Promise<ImageGenerationResult>',
+            description: '提交提示词并返回归一化后的图片结果。'
+          },
+          {
+            name: 'handleSubmit',
+            type: '（event?）：Promise<ImageGenerationResult>',
+            description: '接入图片表单提交，并且只在成功后清空输入。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中断当前图片生成请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理图片、结果、trace、输入和当前错误。'
+          }
+        ]
+      }
+    },
     object: {
       title: '结构化对象输出',
       topbarTitle: 'useObject（结构化 JSON）',
@@ -925,7 +1117,7 @@ const copy = {
     apiTitle: 'API 结构',
     apiSectionLabel: 'API 参考',
     apiIntro:
-      '四个组合式函数保持同一套心智模型：状态、异步动作、加载中状态和错误状态，以及少量命令式控制。',
+      '这些组合式函数保持同一套心智模型：状态、异步动作、加载中状态和错误状态，以及少量命令式控制。',
     apiRows: [
       {
         name: 'useChat',
@@ -947,6 +1139,13 @@ const copy = {
         fit: '搜索、聚类、相似度计算'
       },
       {
+        name: 'useImage',
+        state:
+          'image（当前图片）、images（图片列表）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
+        actions: 'generateImage 生成图片, handleSubmit 表单提交, stop 停止, clear 清空',
+        fit: '通过自有后端路由构建图片工具'
+      },
+      {
         name: 'useObject',
         state:
           'partialObject（部分对象）、object（最终对象）、text（原始文本）、input（输入）、isLoading（加载中）、error（错误）',
@@ -966,16 +1165,19 @@ const content = computed(() => copy[localeKey.value])
 const chatCode = computed(() => codeSamples[localeKey.value].chat)
 const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
+const imageCode = computed(() => codeSamples[localeKey.value].image)
 const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
 const sectionIds: DemoHref[] = [
   '#chat-demo',
   '#completion-demo',
   '#embedding-demo',
+  '#image-demo',
   '#object-demo',
   '#chat-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
+  '#image-demo-api',
   '#object-demo-api',
   '#chat-demo-api-props',
   '#chat-demo-api-methods',
@@ -983,6 +1185,8 @@ const sectionIds: DemoHref[] = [
   '#completion-demo-api-methods',
   '#embedding-demo-api-props',
   '#embedding-demo-api-methods',
+  '#image-demo-api-props',
+  '#image-demo-api-methods',
   '#object-demo-api-props',
   '#object-demo-api-methods'
 ]
@@ -1282,6 +1486,48 @@ onUnmounted(() => {
             </table>
             <footer class="preview-footer">
               <span>{{ content.embedding.usage }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="image-demo"
+          api-title-id="image-demo-api"
+          api-props-section-id="image-demo-api-props"
+          api-methods-section-id="image-demo-api-methods"
+          :title="content.image.title"
+          :description="content.image.description"
+          :code="imageCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.image.apiRef"
+        >
+          <div class="image-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-cyan" />
+              <span>{{ content.image.topbarTitle }}</span>
+            </div>
+            <div class="image-preview__grid">
+              <article class="image-prompt">
+                <span class="field-label">{{ content.image.promptLabel }}</span>
+                <p>{{ content.image.prompt }}</p>
+                <span class="image-badge">{{ content.image.badge }}</span>
+              </article>
+              <article class="image-card">
+                <span class="field-label">{{ content.image.resultLabel }}</span>
+                <div class="image-card__art">
+                  <span />
+                </div>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.image.footer }}</span>
             </footer>
           </div>
         </DemoBlock>
@@ -1656,6 +1902,7 @@ onUnmounted(() => {
 .chat-preview,
 .completion-preview,
 .embedding-preview,
+.image-preview,
 .structured-preview {
   display: grid;
   gap: 18px;
@@ -1690,6 +1937,10 @@ onUnmounted(() => {
 
 .preview-topbar__mark.is-green {
   background: var(--demo-green);
+}
+
+.preview-topbar__mark.is-cyan {
+  background: oklch(62% 0.14 205);
 }
 
 .preview-topbar__mark.is-indigo {
@@ -1827,6 +2078,8 @@ onUnmounted(() => {
 .completion-editor,
 .completion-output,
 .embedding-list,
+.image-prompt,
+.image-card,
 .structured-panel,
 .similarity-table {
   border: 1px solid var(--demo-border);
@@ -1836,10 +2089,79 @@ onUnmounted(() => {
 
 .completion-editor,
 .completion-output,
+.image-prompt,
+.image-card,
 .structured-panel {
   display: grid;
   gap: 10px;
   padding: 16px;
+}
+
+.image-preview__grid {
+  display: grid;
+  gap: 12px;
+}
+
+.image-prompt p {
+  margin: 0;
+  color: var(--demo-ink);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.image-badge {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 4px 9px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  color: var(--demo-muted);
+  font-size: 0.75rem;
+  font-weight: 760;
+}
+
+.image-card__art {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, oklch(58% 0.16 205), oklch(62% 0.16 150)), var(--demo-brand-soft);
+}
+
+.image-card__art::before {
+  position: absolute;
+  inset: 14%;
+  border-radius: 8px;
+  background: oklch(100% 0.005 245 / 82%);
+  content: '';
+}
+
+.image-card__art::after {
+  position: absolute;
+  right: 14%;
+  bottom: 13%;
+  width: 34%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--demo-amber);
+  content: '';
+}
+
+.image-card__art span {
+  position: absolute;
+  left: 18%;
+  top: 24%;
+  z-index: 1;
+  width: 48%;
+  height: 12px;
+  border-radius: 8px;
+  background: var(--demo-ink);
+  box-shadow:
+    0 42px 0 var(--demo-muted),
+    0 82px 0 var(--demo-border);
 }
 
 .structured-grid {
@@ -2082,6 +2404,10 @@ onUnmounted(() => {
 
   .structured-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .image-preview__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   }
 
   .api-grid {

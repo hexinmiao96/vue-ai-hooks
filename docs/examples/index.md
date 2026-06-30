@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, backend proxying, and structured output.
+description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, image generation, backend proxying, and structured output.
 aside: false
 pageClass: demo-page
 ---
@@ -28,9 +28,13 @@ the deterministic `local-tools` provider, streams a reply, pauses on a
 to verify the UI before wiring real provider keys or a backend proxy.
 
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
-default `/api/chat`, `/api/completion`, `/api/embedding`, and `/api/object`
-routes, plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
-examples.
+default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, and
+`/api/object` routes, plus the explicit `proxyProvider` `/api/ai/*` routes used
+by the browser examples.
+
+For a no-key image generation flow, run `pnpm example:image`. It renders a
+deterministic local SVG by default, then switches to the proxy `/api/image`
+route when `VITE_PROXY_BASE_URL` is set.
 
 For a no-key structured JSON flow, run `pnpm example:object`. It uses the local
 `local-object` provider by default, then can switch to `proxy` or a real provider
@@ -43,6 +47,7 @@ through the same environment variables as the other browser examples.
 | Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)             |
 | Turn one prompt into text                                | [Text completion](#completion-demo)      |
 | Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)  |
+| Generate an image through an app route                   | [Image generation](#image-demo)          |
 | Extract typed JSON from a prompt                         | [Structured object output](#object-demo) |
 
 <DemoShowcase locale="en" />

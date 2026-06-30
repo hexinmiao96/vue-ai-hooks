@@ -417,12 +417,13 @@ If you are porting an AI SDK UI surface, use the
 
 ## Examples
 
-Five runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Six runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
+- `examples/image` — no-key image generation form with a deterministic local SVG fallback
 - `examples/object` — no-key structured JSON extraction demo with a local object provider
 
 To run them:
@@ -446,8 +447,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 The same proxy template also accepts `useChat({ baseURL })`,
 `useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
-`useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
-`/api/embedding`, and `/api/object`. Provider, proxy, and per-request headers
+`useImage({ baseURL })`, and `useObject({ baseURL, schema })` through
+`/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, and `/api/object`.
+Provider, proxy, and per-request headers
 accept `HeadersInit`, so records, `Headers` instances, and `[key, value][]`
 entries all work.
 

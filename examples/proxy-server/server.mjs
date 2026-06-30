@@ -7,6 +7,7 @@ const routes = {
   chat: new Set(['/api/chat', '/api/ai/chat']),
   completion: new Set(['/api/completion', '/api/ai/completion']),
   embedding: new Set(['/api/embedding', '/api/ai/embedding']),
+  image: new Set(['/api/image', '/api/ai/image']),
   object: new Set(['/api/object', '/api/ai/object'])
 }
 
@@ -39,6 +40,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.embedding.has(url.pathname)) {
       await handleEmbedding(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.image.has(url.pathname)) {
+      await handleImage(request, response)
       return
     }
 
@@ -114,6 +120,27 @@ async function handleEmbedding(request, response) {
     usage: {
       promptTokens: texts.reduce((total, text) => total + estimateTokens(text), 0),
       totalTokens: texts.reduce((total, text) => total + estimateTokens(text), 0)
+    }
+  })
+}
+
+async function handleImage(request, response) {
+  const body = await readJson(request)
+  const prompt = typeof body.prompt === 'string' ? body.prompt : 'Vue AI Hooks'
+  const image = {
+    url: imageSvgDataUrl(prompt),
+    mediaType: 'image/svg+xml',
+    revisedPrompt: prompt,
+    metadata: {
+      seed: deterministicSeed(prompt)
+    }
+  }
+  sendJson(response, 200, {
+    image,
+    images: [image],
+    model: body.model || 'proxy-example-image',
+    providerMetadata: {
+      provider: 'proxy-server-example'
     }
   })
 }
@@ -208,6 +235,43 @@ function estimateTokens(text) {
 function deterministicVector(text) {
   const hash = createHash('sha256').update(text).digest()
   return Array.from({ length: 8 }, (_, index) => Number((hash[index] / 255).toFixed(6)))
+}
+
+function deterministicSeed(text) {
+  return createHash('sha256').update(text).digest().readUInt32BE(0)
+}
+
+function imageSvgDataUrl(prompt) {
+  const normalized = String(prompt || 'Vue AI Hooks')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const shortPrompt = normalized.length > 82 ? `${normalized.slice(0, 79)}...` : normalized
+  const hue = deterministicSeed(normalized) % 360
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="hsl(${hue} 78% 48%)"/>
+      <stop offset="100%" stop-color="hsl(${(hue + 56) % 360} 72% 42%)"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="64" fill="url(#bg)"/>
+  <rect x="96" y="122" width="832" height="780" rx="42" fill="rgba(255,255,255,0.88)"/>
+  <text x="144" y="228" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700">Proxy image route</text>
+  <text x="144" y="320" fill="#334155" font-family="Inter, Arial, sans-serif" font-size="30">${escapeSvg(shortPrompt)}</text>
+  <circle cx="780" cy="690" r="118" fill="hsl(${(hue + 150) % 360} 82% 48%)"/>
+  <rect x="144" y="520" width="420" height="34" rx="17" fill="#0f172a"/>
+  <rect x="144" y="590" width="560" height="26" rx="13" fill="#475569"/>
+  <rect x="144" y="650" width="480" height="26" rx="13" fill="#64748b"/>
+</svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+function escapeSvg(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
 }
 
 function titleFromPrompt(prompt) {
