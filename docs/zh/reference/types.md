@@ -380,6 +380,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | 工具选择策略。                                   |
 | `responseFormat`   | `ResponseFormat`                                                                     | 兼容 Provider 使用的结构化输出格式。             |
 | `metadata`         | `unknown`                                                                            | 应用自定义的请求 metadata，通常给代理/后端使用。 |
+| `streamProtocol`   | `'ui-message' \| 'data' \| 'text'`                                                   | proxy 路由使用的 chat stream protocol 提示。     |
 | `user`             | `string`                                                                             | 用于 Provider 策略或风控的终端用户标识。         |
 | `stream`           | `boolean`                                                                            | 是否要求 Provider 流式返回。                     |
 | `signal`           | `AbortSignal`                                                                        | 中止信号。                                       |
@@ -387,15 +388,16 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 ### `ChatResumeRequest`
 
-| 字段             | 类型                      | 说明                                             |
-| ---------------- | ------------------------- | ------------------------------------------------ |
-| `id`             | `string`                  | 恢复端点使用的 chat/session 标识。               |
-| `threadId`       | `string`                  | 和客户端共享状态 id 分离的后端 thread id。       |
-| `forwardedProps` | `Record<string, unknown>` | 转发给 proxy/agent 后端的应用上下文 props。      |
-| `body`           | `Record<string, unknown>` | 额外 JSON body 字段，用于 Provider/代理选项。    |
-| `metadata`       | `unknown`                 | 应用自定义的请求 metadata，通常给代理/后端使用。 |
-| `signal`         | `AbortSignal`             | 中止信号。                                       |
-| `headers`        | `HeadersInit`             | Provider 合并的单次请求 headers。                |
+| 字段             | 类型                               | 说明                                             |
+| ---------------- | ---------------------------------- | ------------------------------------------------ |
+| `id`             | `string`                           | 恢复端点使用的 chat/session 标识。               |
+| `threadId`       | `string`                           | 和客户端共享状态 id 分离的后端 thread id。       |
+| `forwardedProps` | `Record<string, unknown>`          | 转发给 proxy/agent 后端的应用上下文 props。      |
+| `body`           | `Record<string, unknown>`          | 额外 JSON body 字段，用于 Provider/代理选项。    |
+| `metadata`       | `unknown`                          | 应用自定义的请求 metadata，通常给代理/后端使用。 |
+| `streamProtocol` | `'ui-message' \| 'data' \| 'text'` | 应用自有恢复流路由使用的协议提示。               |
+| `signal`         | `AbortSignal`                      | 中止信号。                                       |
+| `headers`        | `HeadersInit`                      | Provider 合并的单次请求 headers。                |
 
 ### `CompletionRequest`
 

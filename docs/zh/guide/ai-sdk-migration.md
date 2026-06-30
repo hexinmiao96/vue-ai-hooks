@@ -63,6 +63,16 @@ const chat = useChat({
 })
 ```
 
+只有已有 chat endpoint 返回原始文本流时才需要 `streamProtocol: 'text'`。AI SDK UI message
+stream、`ChatChunk` SSE 和 JSON chunk 响应保持默认即可。
+
+```ts
+const chat = useChat({
+  api: '/api/chat',
+  streamProtocol: 'text'
+})
+```
+
 需要直连模型 adapter 时，使用 `provider` 或 `transport`：
 
 ```ts
@@ -259,7 +269,7 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
    `credentials` 和 `fetch`。
 3. 将 AI SDK `DirectChatTransport` 风格的进程内 handler 映射到
    `new DirectChatTransport({ stream })`。
-4. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
+4. 已有 chat 或 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
 5. 可以先保留 `experimental_useObject` import，也可以迁移完成后改名为 `useObject`。
 6. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。

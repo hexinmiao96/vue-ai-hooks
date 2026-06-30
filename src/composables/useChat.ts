@@ -8,6 +8,7 @@ import type {
   ChatChunk,
   ChatRequest,
   ChatResumeRequest,
+  ChatStreamProtocol,
   AiRequestStatus,
   ChatAttachmentInput,
   ChatAttachmentsInput,
@@ -87,6 +88,7 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
 export type AnyToolDefinition = ToolDefinition<unknown, unknown>
 export type ToolSet = Record<string, Tool | AnyToolDefinition>
 export type ChatToolsInput = Tool[] | ToolSet
+export type { ChatStreamProtocol }
 
 export function jsonSchema<TInput = unknown>(
   schema: Record<string, unknown>,
@@ -324,6 +326,7 @@ export interface UseChatOptions<
   headers?: ProxyProviderConfig['headers']
   body?: ProxyProviderConfig['body']
   fetch?: typeof fetch
+  streamProtocol?: ChatStreamProtocol
   initialMessages?: Message[]
   messages?: Message[]
   initialInput?: string
@@ -1042,6 +1045,7 @@ export function useChat<
     headers: transportHeaders,
     body: transportBody,
     fetch: transportFetch,
+    streamProtocol,
     initialMessages,
     messages: messagesOption,
     initialInput = '',
@@ -1806,6 +1810,7 @@ export function useChat<
     const threadId = request.threadId ?? defaultRequest.threadId ?? defaultThreadId
     const base: ChatRequest = {
       ...defaultRequest,
+      ...(streamProtocol ? { streamProtocol } : {}),
       ...(defaultTools && !request.tools ? { tools: defaultTools } : {}),
       ...(defaultToolChoice && !request.toolChoice ? { toolChoice: defaultToolChoice } : {}),
       ...request,
@@ -1858,6 +1863,7 @@ export function useChat<
   ): Promise<ChatResumeRequest> {
     const body = mergeRequestBody(defaultRequest.body, resumeOptions.body)
     const headers = mergeRequestHeaders(defaultRequest.headers, resumeOptions.headers)
+    const resumeStreamProtocol = resumeOptions.streamProtocol ?? defaultRequest.streamProtocol
     const forwardedProps = mergeRequestBody(
       mergeRequestBody(defaultForwardedProps, defaultRequest.forwardedProps),
       resumeOptions.forwardedProps
@@ -1868,6 +1874,7 @@ export function useChat<
       metadata: defaultRequest.metadata,
       ...resumeOptions,
       ...(threadId !== undefined ? { threadId } : {}),
+      ...(resumeStreamProtocol ? { streamProtocol: resumeStreamProtocol } : {}),
       ...(forwardedProps ? { forwardedProps } : {}),
       ...(body ? { body } : {}),
       ...(headers ? { headers } : {}),

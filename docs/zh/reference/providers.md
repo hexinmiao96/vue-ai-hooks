@@ -254,7 +254,9 @@ Proxy 的 `headers` 和 `prepareRequest().headers` 接受任意 `HeadersInit`，
 - `chat()` 会把 `ChatRequest` JSON POST 到 `chatUrl`。后端可以返回
   `text/event-stream`，每个 `data:` payload 是一个 `ChatChunk`；也可以返回 JSON：
   `ChatChunk`、`ChatChunk[]` 或 `{ chunks: ChatChunk[] }`。`text/plain` chunks 会映射为
-  chat `content`，适合兼容流式返回原始 JSON 文本的 AI SDK object 路由。
+  chat `content`，适合兼容流式返回原始 JSON 文本的 AI SDK object 路由。如果已有 chat
+  endpoint 流式返回纯文本但响应头不稳定，可以在 `ChatRequest` 上设置
+  `streamProtocol: 'text'`。
   `ChatChunk` payload 可以包含 `metadata`、`data`、`dataId`、`dataType` 和
   `transient`，供 `useChat().streamData` 消费自定义流数据。
 - SSE 流也可以使用 AI SDK UI message stream 协议。此时 `text-delta` 会转换成
@@ -264,7 +266,7 @@ Proxy 的 `headers` 和 `prepareRequest().headers` 接受任意 `HeadersInit`，
   会转换成 `Message.parts` reasoning 条目，`data-*`、`source-*`、`file` 和
   tool-output 片段会进入 `streamData`，`tool-input-*` 会转换成流式 `toolCalls`，
   `error` 片段会让当前聊天请求 reject。
-- `resumeChat()` 会对 `resumeUrl` 发起 GET 请求，并把其中的 `:id` 或 `{id}` 占位符替换为编码后的 chat id。没有活动流时返回 `204 No Content`；存在活动流时返回和 `chat()` 相同的 SSE/JSON chunk 结构。
+- `resumeChat()` 会对 `resumeUrl` 发起 GET 请求，并把其中的 `:id` 或 `{id}` 占位符替换为编码后的 chat id。没有活动流时返回 `204 No Content`；存在活动流时返回和 `chat()` 相同的 SSE/JSON/text chunk 结构。
 - `completion()` 会把 `CompletionRequest` JSON POST 到 `completionUrl`。SSE
   payload 可以是 JSON 字符串，也可以是包含 `text`、`completion` 或 `content` 的对象。
   `streamProtocol: 'text'` 和 `text/plain` 响应会按纯文本流读取，以兼容 AI SDK completion 路由。

@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and AI SDK UI message stream handlers that do not need an HTTP proxy.
 - Added `validateMessages()` for boolean validation of persisted or imported
   chat message payloads before hydration.
+- Added chat `streamProtocol: 'text'` support for app-owned proxy chat and
+  resume endpoints that stream raw text.
 
 ## [0.3.0] - 2026-06-30
 

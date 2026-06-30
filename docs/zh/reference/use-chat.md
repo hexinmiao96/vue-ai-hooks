@@ -6,6 +6,7 @@
 `AppendChatOptions`、`SendChatMessageInput`、`AddToolResultOptions`、`AddToolOutputOptions`、
 `ToolApprovalResponse`、`ChatFinishInfo`、`ChatRequestInfo`、`ChatRequestLifecycleKind`、
 `ChatResponseInfo`、`ChatStatus`、`RegenerateChatOptions`、`ResumeChatOptions`、
+`ChatStreamProtocol`、
 `PrepareSendMessagesRequest`、`PrepareSendMessagesRequestOptions`、
 `PrepareStep`、`PrepareStepOptions`、
 `PrepareReconnectToStreamRequest`、`PrepareReconnectToStreamRequestOptions`、
@@ -83,6 +84,7 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 | `body`                            | `Record<string, unknown> \| () => ...`                                 | -            | 默认 proxy transport 附加到 JSON body 的字段。                 |
 | `credentials`                     | `RequestCredentials`                                                   | -            | 默认 proxy transport 的浏览器 credentials 模式。               |
 | `fetch`                           | `typeof fetch`                                                         | global       | 默认 proxy transport 的自定义 fetch 实现。                     |
+| `streamProtocol`                  | `ChatStreamProtocol`                                                   | auto         | 应用自有 chat proxy 的流协议提示；纯文本流使用 `'text'`。      |
 | `id`                              | `string`                                                               | 自动生成     | 随 provider request 透传的稳定 chat id。                       |
 | `threadId`                        | `string`                                                               | -            | 随 chat 和 resume request 透传的后端 thread id。               |
 | `forwardedProps`                  | `Record<string, unknown>`                                              | -            | 转发给 proxy/agent 后端的应用上下文 props。                    |

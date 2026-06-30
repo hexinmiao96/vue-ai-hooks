@@ -65,6 +65,7 @@ import type {
   ChatRequestLifecycleKind,
   ChatResumeRequest,
   ChatResponseInfo,
+  ChatStreamProtocol,
   CompletionFinishInfo,
   CompletionRequest,
   CompletionRequestInfo,
@@ -556,6 +557,7 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseChatOptions['body']>().toEqualTypeOf<ProxyProviderConfig['body'] | undefined>()
     expectTypeOf<UseChatOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseChatOptions['streamProtocol']>().toEqualTypeOf<ChatStreamProtocol | undefined>()
     expectTypeOf<UseChatOptions['tools']>().toEqualTypeOf<ChatToolsInput | undefined>()
     expectTypeOf<UseChatOptions['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<ChatRequest['tools']>().toEqualTypeOf<Tool[] | undefined>()
@@ -823,6 +825,7 @@ describe('public API types', () => {
       CompletionRequestInfo & { hasStream: boolean }
     >()
     expectTypeOf<CompletionStreamProtocol>().toEqualTypeOf<'text' | 'data'>()
+    expectTypeOf<ChatStreamProtocol>().toEqualTypeOf<'ui-message' | 'data' | 'text'>()
     expectTypeOf<UseCompletionOptions['onRequest']>().toEqualTypeOf<
       ((info: CompletionRequestInfo) => void) | undefined
     >()
@@ -1626,10 +1629,12 @@ describe('public API types', () => {
     expectTypeOf(request.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.headers).toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf(request.metadata).toEqualTypeOf<unknown>()
+    expectTypeOf(request.streamProtocol).toEqualTypeOf<ChatStreamProtocol | undefined>()
     expectTypeOf(resumeRequest.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(resumeRequest.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(resumeRequest.body).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(resumeRequest.headers).toEqualTypeOf<HeadersInit | undefined>()
+    expectTypeOf(resumeRequest.streamProtocol).toEqualTypeOf<ChatStreamProtocol | undefined>()
     expectTypeOf(prepareSendOptions.trigger).toEqualTypeOf<SendChatTrigger>()
     expectTypeOf(prepareStepOptions.stepNumber).toEqualTypeOf<number>()
     expectTypeOf(prepareStepOptions.toolCalls).toEqualTypeOf<ToolCall[]>()

@@ -409,7 +409,8 @@ stream updates for busy UIs. The final stream state is always flushed before the
 request resolves. `experimental_throttle` is accepted as an AI SDK-compatible
 alias, but new code should prefer `throttleMs`.
 `useCompletion({ streamProtocol: 'text' })` is available for app-owned proxy
-routes that return plain text streams.
+routes that return plain text streams. `useChat({ streamProtocol: 'text' })`
+does the same for existing chat endpoints that stream raw text.
 
 `useChat` keeps the final assistant message as the first `onFinish` argument and
 also passes `ChatFinishInfo` with the message snapshot, abort/error/disconnect

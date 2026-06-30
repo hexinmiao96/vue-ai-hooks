@@ -2,6 +2,7 @@ import type {
   ChatChunk,
   ChatRequest,
   ChatResumeRequest,
+  ChatStreamProtocol,
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult
@@ -189,13 +190,13 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
 
     async chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>> {
       const response = await post('chat', chatUrl, request)
-      return readChatChunks(response, request.signal)
+      return readChatChunks(response, request.signal, request.streamProtocol)
     },
 
     async resumeChat(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null> {
       const response = await get('resume', resolveResumeUrl(resumeUrl, request.id), request)
       if (response.status === 204) return null
-      return readChatChunks(response, request.signal)
+      return readChatChunks(response, request.signal, request.streamProtocol)
     },
 
     async completion(request: CompletionRequest): Promise<AsyncIterable<string>> {
@@ -275,8 +276,12 @@ async function readTextChunks(response: Response, signal?: AbortSignal) {
   })()
 }
 
-async function readChatChunks(response: Response, signal?: AbortSignal) {
-  if (isTextResponse(response)) {
+async function readChatChunks(
+  response: Response,
+  signal?: AbortSignal,
+  streamProtocol?: ChatStreamProtocol
+) {
+  if (streamProtocol === 'text' || isTextResponse(response)) {
     return (async function* () {
       for await (const content of await readTextChunks(response, signal)) {
         yield { content }

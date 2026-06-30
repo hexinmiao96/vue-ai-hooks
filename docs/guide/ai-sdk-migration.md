@@ -65,6 +65,17 @@ const chat = useChat({
 })
 ```
 
+Use `streamProtocol: 'text'` only when an existing chat endpoint streams raw
+text. Omit it for AI SDK UI message streams, `ChatChunk` SSE, and JSON chunk
+responses.
+
+```ts
+const chat = useChat({
+  api: '/api/chat',
+  streamProtocol: 'text'
+})
+```
+
 Use `provider` or `transport` when you want a direct model adapter:
 
 ```ts
@@ -275,8 +286,8 @@ fields for default chat proxy transports.
    `credentials`, and `fetch`.
 3. Map AI SDK `DirectChatTransport` style in-process handlers to
    `new DirectChatTransport({ stream })`.
-4. Map completion `streamProtocol: 'text'` when your existing route returns a
-   plain text stream.
+4. Map chat or completion `streamProtocol: 'text'` when an existing route
+   returns a plain text stream.
 5. Keep `experimental_useObject` imports as-is or rename them to `useObject`
    after the migration.
 6. Let `useObject` proxy routes return `text/plain` JSON streams when you are

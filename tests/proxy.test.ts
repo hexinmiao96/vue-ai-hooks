@@ -24,7 +24,7 @@ function sseResponse(events: unknown[]): Response {
   })
 }
 
-function textResponse(chunks: string[]): Response {
+function textResponse(chunks: string[], contentType = 'text/plain; charset=utf-8'): Response {
   const encoder = new TextEncoder()
   const body = new ReadableStream({
     start(controller) {
@@ -36,7 +36,7 @@ function textResponse(chunks: string[]): Response {
   })
   return new Response(body, {
     status: 200,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    headers: { 'Content-Type': contentType }
   })
 }
 
@@ -115,6 +115,30 @@ describe('proxyProvider', () => {
     for await (const chunk of stream) chunks.push(chunk)
 
     expect(chunks).toEqual([{ content: 'Hel' }, { content: 'lo' }])
+  })
+
+  it('uses explicit chat text stream protocol when response headers are generic', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(textResponse(['Hel', 'lo'], 'application/octet-stream'))
+      .mockResolvedValueOnce(textResponse([' again'], 'application/octet-stream'))
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }],
+      streamProtocol: 'text'
+    })
+    const chunks: unknown[] = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    const resumed = await provider.resumeChat?.({ id: 'chat_1', streamProtocol: 'text' })
+    const resumedChunks: unknown[] = []
+    for await (const chunk of resumed ?? []) resumedChunks.push(chunk)
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({ streamProtocol: 'text' })
+    expect(chunks).toEqual([{ content: 'Hel' }, { content: 'lo' }])
+    expect(resumedChunks).toEqual([{ content: ' again' }])
   })
 
   it('accepts HeadersInit values for proxy headers and prepared overrides', async () => {

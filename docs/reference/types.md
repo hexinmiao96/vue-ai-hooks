@@ -395,6 +395,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `toolChoice`       | `'auto' \| 'none' \| 'required' \| { type: 'function'; function: { name: string } }` | Tool choice policy.                                      |
 | `responseFormat`   | `ResponseFormat`                                                                     | Structured output format for compatible providers.       |
 | `metadata`         | `unknown`                                                                            | App-defined request metadata for proxy/backend layers.   |
+| `streamProtocol`   | `'ui-message' \| 'data' \| 'text'`                                                   | Chat stream protocol hint for proxy routes.              |
 | `user`             | `string`                                                                             | End-user identifier for provider policy/abuse tracking.  |
 | `stream`           | `boolean`                                                                            | Whether the provider should stream.                      |
 | `signal`           | `AbortSignal`                                                                        | Abort signal.                                            |
@@ -402,15 +403,16 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 ### `ChatResumeRequest`
 
-| Field            | Type                      | Description                                              |
-| ---------------- | ------------------------- | -------------------------------------------------------- |
-| `id`             | `string`                  | Chat/session identifier used by the resume endpoint.     |
-| `threadId`       | `string`                  | Backend thread id, separate from client shared state id. |
-| `forwardedProps` | `Record<string, unknown>` | App props forwarded to proxy/agent backends.             |
-| `body`           | `Record<string, unknown>` | Extra JSON body fields for provider/proxy options.       |
-| `metadata`       | `unknown`                 | App-defined request metadata for proxy/backend layers.   |
-| `signal`         | `AbortSignal`             | Abort signal.                                            |
-| `headers`        | `HeadersInit`             | Per-request headers merged by the provider.              |
+| Field            | Type                               | Description                                              |
+| ---------------- | ---------------------------------- | -------------------------------------------------------- |
+| `id`             | `string`                           | Chat/session identifier used by the resume endpoint.     |
+| `threadId`       | `string`                           | Backend thread id, separate from client shared state id. |
+| `forwardedProps` | `Record<string, unknown>`          | App props forwarded to proxy/agent backends.             |
+| `body`           | `Record<string, unknown>`          | Extra JSON body fields for provider/proxy options.       |
+| `metadata`       | `unknown`                          | App-defined request metadata for proxy/backend layers.   |
+| `streamProtocol` | `'ui-message' \| 'data' \| 'text'` | Stream protocol hint for app-owned resume routes.        |
+| `signal`         | `AbortSignal`                      | Abort signal.                                            |
+| `headers`        | `HeadersInit`                      | Per-request headers merged by the provider.              |
 
 ### `CompletionRequest`
 

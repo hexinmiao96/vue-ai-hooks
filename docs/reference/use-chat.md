@@ -6,6 +6,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `AppendChatOptions`, `SendChatMessageInput`, `AddToolResultOptions`, `AddToolOutputOptions`,
 `ToolApprovalResponse`, `ChatFinishInfo`, `ChatRequestInfo`, `ChatRequestLifecycleKind`,
 `ChatResponseInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
+`ChatStreamProtocol`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
 `PrepareStep`, `PrepareStepOptions`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
@@ -83,6 +84,7 @@ Use `input` with a Vue form for the common composer flow:
 | `body`                            | `Record<string, unknown> \| () => ...`                                 | —            | Extra JSON body fields for the default proxy transport.                |
 | `credentials`                     | `RequestCredentials`                                                   | —            | Browser credentials mode for the default proxy transport.              |
 | `fetch`                           | `typeof fetch`                                                         | global       | Custom fetch implementation for the default proxy transport.           |
+| `streamProtocol`                  | `ChatStreamProtocol`                                                   | auto         | Hint for app-owned proxy chat streams; use `'text'` for raw text.      |
 | `id`                              | `string`                                                               | generated    | Stable chat id sent with provider requests.                            |
 | `threadId`                        | `string`                                                               | —            | Backend thread id sent with chat and resume requests.                  |
 | `forwardedProps`                  | `Record<string, unknown>`                                              | —            | App props forwarded to proxy/agent backends.                           |

@@ -262,7 +262,9 @@ Protocol:
   `text/event-stream` SSE where each `data:` payload is a `ChatChunk`, or JSON
   as `ChatChunk`, `ChatChunk[]`, or `{ chunks: ChatChunk[] }`. `text/plain`
   chunks are mapped to chat `content`, which is useful for AI SDK-compatible
-  object routes that stream raw JSON text.
+  object routes that stream raw JSON text. Set `streamProtocol: 'text'` on a
+  `ChatRequest` when an existing chat endpoint streams plain text but does not
+  send a reliable `text/plain` response header.
   `ChatChunk` payloads may include `metadata`, `data`, `dataId`, `dataType`, and
   `transient` for custom stream data consumed by `useChat().streamData`.
   The SSE stream may also use the AI SDK UI message stream protocol. In that
@@ -275,7 +277,7 @@ Protocol:
   parts reject the active chat request.
 - `resumeChat()` sends a GET request to `resumeUrl`, replacing `:id` or `{id}`
   placeholders with the encoded chat id. Return `204 No Content` when no active
-  stream exists, or return the same SSE/JSON chunk shapes as `chat()`.
+  stream exists, or return the same SSE/JSON/text chunk shapes as `chat()`.
 - `completion()` posts `CompletionRequest` JSON to `completionUrl`. SSE payloads
   may be JSON strings or objects with `text`, `completion`, or `content`.
   `streamProtocol: 'text'` and `text/plain` responses are read as plain streamed

@@ -257,6 +257,7 @@ for (const snippet of [
   'addToolApprovalResponse()',
   'tool()` / `dynamicTool()`',
   'stopWhen',
+  "streamProtocol: 'text'",
   'UI message stream protocol',
   'Migration checklist'
 ]) {
@@ -280,6 +281,7 @@ for (const snippet of [
   'addToolApprovalResponse()',
   'tool()` / `dynamicTool()`',
   'stopWhen',
+  "streamProtocol: 'text'",
   'UI message stream 协议',
   '迁移清单'
 ]) {
@@ -288,6 +290,13 @@ for (const snippet of [
     `Chinese AI SDK migration guide must include: ${snippet}`
   )
 }
+expect(
+  files.providers.includes("Set `streamProtocol: 'text'` on a") &&
+    files.zhProviders.includes("`streamProtocol: 'text'`") &&
+    files.readme.includes("useChat({ streamProtocol: 'text' })") &&
+    files.zhReadme.includes("useChat({ streamProtocol: 'text' })"),
+  'English and Chinese docs must document chat text stream protocol compatibility'
+)
 expect(
   files.packageJson.includes('"example:image"') &&
     files.packageJson.includes('"example:image:build"') &&

@@ -29,6 +29,7 @@ export {
   type ChatRequestLifecycleKind,
   type ChatResponseInfo,
   type ChatStatus,
+  type ChatStreamProtocol,
   type DataPartSchema,
   type DataPartSchemas,
   type DataPartValidator,

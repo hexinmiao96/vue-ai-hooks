@@ -232,6 +232,8 @@ export interface StreamDataPart<TData = unknown> {
   createdAt?: Date
 }
 
+export type ChatStreamProtocol = 'ui-message' | 'data' | 'text'
+
 /** Request payload for a chat completion. */
 export interface ChatRequest {
   id?: string
@@ -255,6 +257,8 @@ export interface ChatRequest {
   toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } }
   responseFormat?: ResponseFormat
   metadata?: unknown
+  /** AI SDK-compatible chat stream protocol hint for app-owned proxy endpoints. */
+  streamProtocol?: ChatStreamProtocol
   user?: string
   stream?: boolean
   signal?: AbortSignal
@@ -271,6 +275,8 @@ export interface ChatResumeRequest {
   /** Extra JSON body fields for provider/proxy-specific resume options. */
   body?: Record<string, unknown>
   metadata?: unknown
+  /** Protocol hint used when resuming app-owned proxy streams. */
+  streamProtocol?: ChatStreamProtocol
   signal?: AbortSignal
   headers?: HeadersInit
 }
