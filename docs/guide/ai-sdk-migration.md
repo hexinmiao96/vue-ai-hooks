@@ -37,6 +37,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                    |
 | Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`    |
 | `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`          |
+| AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route               |
 | UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport               |
 
 ## Transport
@@ -219,12 +220,14 @@ fields for default chat proxy transports.
    after the migration.
 5. Let `useObject` proxy routes return `text/plain` JSON streams when you are
    porting an existing AI SDK object endpoint.
-6. Keep existing initial messages by passing `messages` or `initialMessages`.
-7. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+6. Map image generation calls to `useImage({ api: '/api/image' })` and keep
+   image model credentials server-side.
+7. Keep existing initial messages by passing `messages` or `initialMessages`.
+8. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
    `gemini`, `anthropic`, or `openaiCompatible`.
-8. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-9. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
-   `addToolApprovalResponse()`.
-10. Add `lastRequest` and `lastResponse` to your debug view before swapping
+9. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+10. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+    `addToolApprovalResponse()`.
+11. Add `lastRequest` and `lastResponse` to your debug view before swapping
     production traffic.
-11. Run `pnpm release:check` or your app's equivalent gate before shipping.
+12. Run `pnpm release:check` or your app's equivalent gate before shipping.

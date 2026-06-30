@@ -38,6 +38,7 @@ const rootSidebar = {
         { text: 'useCompletion', link: '/reference/use-completion' },
         { text: 'useEmbedding', link: '/reference/use-embedding' },
         { text: 'useGeneration', link: '/reference/use-generation' },
+        { text: 'useImage', link: '/reference/use-image' },
         { text: 'useObject', link: '/reference/use-object' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
@@ -90,6 +91,7 @@ const zhSidebar = {
         { text: 'useCompletion', link: '/zh/reference/use-completion' },
         { text: 'useEmbedding', link: '/zh/reference/use-embedding' },
         { text: 'useGeneration', link: '/zh/reference/use-generation' },
+        { text: 'useImage', link: '/zh/reference/use-image' },
         { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]

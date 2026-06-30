@@ -84,6 +84,13 @@ export {
   type UseGenerationReturn
 } from './composables/useGeneration'
 export {
+  useImage,
+  type ImageGenerationRequestInfo,
+  type ImageGenerationResponseInfo,
+  type UseImageOptions,
+  type UseImageReturn
+} from './composables/useImage'
+export {
   useObject as experimental_useObject,
   useObject,
   type DeepPartial,
@@ -151,6 +158,9 @@ export type {
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult,
+  GeneratedImage,
+  ImageGenerationRequest,
+  ImageGenerationResult,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions

@@ -28,6 +28,7 @@ const requiredRuntimeExports = [
   'useChat',
   'useCompletion',
   'useEmbedding',
+  'useImage',
   'usePersist'
 ]
 const publicExports = extractExports(readFileSync(fromRoot('src/index.ts'), 'utf8'))

@@ -47,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `handleSubmit()` to `useObject` for structured-output forms.
 - Added `initialInput`, `input`, `setInput()`, `handleInputChange()`, and
   `handleSubmit()` to `useEmbedding` for embedding forms.
+- Added `useImage` for app-owned image generation routes with normalized
+  `image`/`images` state, retries, aborts, trace refs, and form helpers.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.

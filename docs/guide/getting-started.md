@@ -190,4 +190,5 @@ const { messages: messages6, append: append6 } = useChat({
 - [useChat reference](/reference/use-chat) — full API
 - [useCompletion reference](/reference/use-completion)
 - [useEmbedding reference](/reference/use-embedding)
+- [useImage reference](/reference/use-image)
 - [useObject reference](/reference/use-object)

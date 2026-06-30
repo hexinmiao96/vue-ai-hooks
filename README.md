@@ -14,7 +14,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Five composables, pluggable
+[Axios](https://axios-http.com) to the LLM world. Six composables, pluggable
 providers, Server-Sent Events streaming handled for you. Works with OpenAI and any
 OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
 vLLM, Gemini's OpenAI-compatible endpoint, etc.).
@@ -40,8 +40,8 @@ The AI-in-Vue story is currently fragmented. Options today:
 
 ## Features
 
-- **Five composables, one mental model**: `useChat`, `useCompletion`,
-  `useEmbedding`, `useGeneration`, and `useObject`.
+- **Six composables, one mental model**: `useChat`, `useCompletion`,
+  `useEmbedding`, `useGeneration`, `useImage`, and `useObject`.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -57,7 +57,8 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Tool calling controls**: local handlers, approval gates, active tool
   filtering, stop conditions, and per-step request preparation.
 - **Typed output and generation**: JSON Schema object output, embedding vectors,
-  custom generation jobs, deterministic ids, and Date-safe persistence helpers.
+  app-owned image generation routes, custom generation jobs, deterministic ids,
+  and Date-safe persistence helpers.
 - **Library quality**: strict TypeScript, no runtime dependencies beyond Vue,
   tree-shakable ESM/CJS builds, and Vitest coverage.
 
@@ -140,6 +141,21 @@ const { embed, embeddings } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+```
+
+### Image generation
+
+```ts
+import { useImage } from 'vue-ai-hooks'
+
+const { image, generateImage } = useImage({
+  api: '/api/image'
+})
+
+await generateImage('A Vue workspace hero image', {
+  size: '1024x1024'
+})
+console.log(image.value?.url)
 ```
 
 ### Structured object output
@@ -296,10 +312,10 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `clear()`                       | `() => void`                                                                                   | Reset to empty state                                              |
 | `abortController`               | `Ref<AbortController \| null>`                                                                 | Exposed for advanced use cases                                    |
 
-Set `maxRetries` on `useChat`, `useCompletion`, `useEmbedding`, or `useObject`
-to retry transient provider failures. Streaming calls only retry when the
-failure happens before the first chunk arrives, so partial text is never
-duplicated.
+Set `maxRetries` on `useChat`, `useCompletion`, `useEmbedding`, `useImage`, or
+`useObject` to retry transient provider or backend failures. Streaming calls
+only retry when the failure happens before the first chunk arrives, so partial
+text is never duplicated.
 
 Use `body` in `defaultRequest` or per-call request options to pass
 provider-specific JSON fields through OpenAI-compatible, Anthropic, or proxy
@@ -342,16 +358,17 @@ Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to
 a provider.
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useObject(options)`
 
 Same shape, scoped to single-shot completions, embedding vectors, custom
-generation jobs, and structured JSON object output respectively.
+generation jobs, app-owned image generation routes, and structured JSON object
+output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
 state and trace panels can follow one pattern across chat, text, vectors, custom
-generation jobs, and structured JSON. Default proxy traces include the resolved
-proxy `api` and browser credentials mode.
+generation jobs, image generation, and structured JSON. Default proxy traces
+include the resolved proxy `api` and browser credentials mode.
 
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object. Default proxy object
@@ -366,10 +383,14 @@ field.
 `progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before
 visible output.
 
-`useChat`, `useCompletion`, `useEmbedding`, and `useObject` also expose
+`useImage` targets your own `/api/image` route and provides `image`, `images`,
+`result`, `generateImage()`, lifecycle trace refs, aborts, retries, and form
+helpers while keeping provider credentials server-side.
+
+`useChat`, `useCompletion`, `useEmbedding`, `useImage`, and `useObject` also expose
 `setInput()`, `handleInputChange()`, and `handleSubmit()` for simple form
 wiring. Successful form submissions clear `input`; failed submissions leave it
-intact. All four accept `initialInput`.
+intact. All five accept `initialInput`.
 
 `useCompletion`'s `onFinish` callback keeps the final text as the first argument
 and passes the original prompt plus abort status through `CompletionFinishInfo`.

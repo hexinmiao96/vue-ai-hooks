@@ -8,8 +8,8 @@ AI feature. It compares product fit rather than trying to rank libraries.
 Choose `vue-ai-hooks` when you want:
 
 - Vue 3 refs and composables as the primary API.
-- Streaming chat, completions, embeddings, structured objects, and custom
-  generation jobs in one package.
+- Streaming chat, completions, embeddings, image generation, structured objects,
+  and custom generation jobs in one package.
 - App-owned proxy routes by default for browser production safety.
 - Direct provider helpers for local demos, prototypes, and restricted keys.
 - Tool calls, tool approvals, stream data, retries, persistence, and request
@@ -24,6 +24,7 @@ server-only calls, or a multi-agent orchestration framework.
 | ----------------------------------------------------- | ----------------------------------------------- |
 | Build a Vue chat UI with streaming state              | `useChat`                                       |
 | Use your own backend or edge route                    | default proxy transport or `proxyProvider`      |
+| Generate images through an app-owned backend          | `useImage`                                      |
 | Port an existing AI SDK UI surface                    | [AI SDK migration](/guide/ai-sdk-migration)     |
 | Add provider failover before a stream starts          | `fallbackProvider`                              |
 | Run local tool approval UX without provider keys      | `examples/chat`                                 |

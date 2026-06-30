@@ -13,7 +13,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178c6.svg)](https://www.typescriptlang.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
-`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供五个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
+`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供六个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -36,8 +36,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 
 ## 特性
 
-- **五个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
-  `useGeneration` 和 `useObject`。
+- **六个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
+  `useGeneration`、`useImage` 和 `useObject`。
 - **流式优先的 Vue 状态**：内置 SSE 解析、AbortController、节流、重试、生命周期回调、
   同 id 共享状态，以及统一的 `status`/`error` 控制。
 - **Provider 和代理覆盖**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、
@@ -47,8 +47,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
   `Message.parts`、自定义流数据和消息裁剪。
 - **工具调用控制**：本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
-- **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自定义生成任务、稳定 id
-  和 Date-safe 持久化 helper。
+- **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片生成路由、
+  自定义生成任务、稳定 id 和 Date-safe 持久化 helper。
 - **库级质量**：严格 TypeScript、除 Vue 外无运行时依赖、可 tree-shaking 的 ESM/CJS 构建、
   Vitest 覆盖。
 
@@ -128,6 +128,21 @@ const { embed, embeddings } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+```
+
+### 图片生成
+
+```ts
+import { useImage } from 'vue-ai-hooks'
+
+const { image, generateImage } = useImage({
+  api: '/api/image'
+})
+
+await generateImage('一张 Vue 工作台主视觉图', {
+  size: '1024x1024'
+})
+console.log(image.value?.url)
 ```
 
 ### 结构化对象输出
@@ -272,6 +287,10 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 浏览器本地工具 handler 需要 store、服务实例或 session 状态时，可以使用 `context`，
 这些数据不会被序列化。
 
+`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 可设置
+`maxRetries`，在临时 Provider 或后端失败时重试。流式调用只会在首个 chunk 到达前重试，
+因此不会复制已有的部分文本。
+
 `useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
 
 多个 `useChat()` 传入同一个 `id` 时，会在组件之间共享聊天状态。某个 id 的第一个实例会写入 `initialMessages` 和 `initialInput`；`messages` 也可作为 AI SDK 风格的 `initialMessages` 别名。`setId()` 只会改变后续 provider request 携带的 id。
@@ -279,15 +298,18 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useObject(options)`
 
-分别用于单次流式补全、embedding 向量生成、自定义生成任务和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
+分别用于单次流式补全、embedding 向量生成、自定义生成任务、自有后端图片生成路由和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
 
 这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。默认 proxy trace 会包含解析后的 proxy `api` 和浏览器 credentials 模式。
 
-`useChat`、`useCompletion`、`useEmbedding` 和 `useObject` 还提供 `setInput()`、
+`useImage` 面向你自己的 `/api/image` 路由，提供 `image`、`images`、`result`、
+`generateImage()`、生命周期 trace refs、中止、重试和表单 helpers，同时把 Provider 凭据保留在服务端。
+
+`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 还提供 `setInput()`、
 `handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空
-`input`；失败时会保留输入内容。四者都支持 `initialInput`。
+`input`；失败时会保留输入内容。五者都支持 `initialInput`。
 
 `useGeneration` 接收自定义 `fetcher`，并提供 typed `result`、`progress`、`chunks`、
 `stop()`、`reset()`、生命周期回调，以及首个可见输出前的重试。

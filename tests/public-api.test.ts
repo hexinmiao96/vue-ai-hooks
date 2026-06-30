@@ -21,6 +21,7 @@ import {
   useCompletion,
   useEmbedding,
   useGeneration,
+  useImage,
   useObject,
   usePersist
 } from 'vue-ai-hooks'
@@ -67,6 +68,11 @@ import type {
   GenerationResponseInfo,
   GenerationRunContext,
   IdGenerator,
+  GeneratedImage,
+  ImageGenerationRequest,
+  ImageGenerationRequestInfo,
+  ImageGenerationResponseInfo,
+  ImageGenerationResult,
   ImageUrlPart,
   Message,
   MessageContent,
@@ -134,6 +140,8 @@ import type {
   UseEmbeddingReturn,
   UseGenerationOptions,
   UseGenerationReturn,
+  UseImageOptions,
+  UseImageReturn,
   UseObjectOptions,
   UseObjectReturn,
   UsePersistOptions
@@ -277,6 +285,9 @@ describe('public API types', () => {
         return { url: input }
       }
     } satisfies UseGenerationOptions<string, { url: string }, { percent: number }, string>)
+    const imageGeneration = useImage({
+      api: '/api/image'
+    } satisfies UseImageOptions)
     const structured = useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
@@ -427,6 +438,16 @@ describe('public API types', () => {
     expectTypeOf<UseEmbeddingOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseEmbeddingOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseGenerationOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseImageOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseImageOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseImageOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseImageOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseImageOptions['headers']>().toMatchTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
+    expectTypeOf<UseImageOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseImageOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<UseImageOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseObjectOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -630,6 +651,68 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseGenerationOptions<string, { url: string }>['onResponse']>().toEqualTypeOf<
       ((info: GenerationResponseInfo<string, { url: string }>) => void) | undefined
+    >()
+
+    expectTypeOf(imageGeneration).toEqualTypeOf<UseImageReturn>()
+    expectTypeOf(imageGeneration.input).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(imageGeneration.image).toEqualTypeOf<Ref<GeneratedImage | null>>()
+    expectTypeOf(imageGeneration.images).toEqualTypeOf<Ref<GeneratedImage[]>>()
+    expectTypeOf(imageGeneration.result).toEqualTypeOf<Ref<ImageGenerationResult | null>>()
+    expectTypeOf(imageGeneration.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(imageGeneration.generate).returns.toEqualTypeOf<Promise<ImageGenerationResult>>()
+    expectTypeOf(imageGeneration.generate)
+      .parameter(1)
+      .toEqualTypeOf<Partial<ImageGenerationRequest> | undefined>()
+    expectTypeOf(imageGeneration.generateImage).returns.toEqualTypeOf<
+      Promise<ImageGenerationResult>
+    >()
+    expectTypeOf(imageGeneration.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(imageGeneration.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(imageGeneration.handleSubmit).returns.toEqualTypeOf<
+      Promise<ImageGenerationResult>
+    >()
+    expectTypeOf(imageGeneration.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<ImageGenerationRequest> | undefined>()
+    expectTypeOf(imageGeneration.lastRequest).toEqualTypeOf<
+      Ref<ImageGenerationRequestInfo | null>
+    >()
+    expectTypeOf(imageGeneration.lastResponse).toEqualTypeOf<
+      Ref<ImageGenerationResponseInfo | null>
+    >()
+    expectTypeOf<ImageGenerationRequest>().toMatchTypeOf<{
+      prompt: string
+      body?: Record<string, unknown>
+      model?: string
+      n?: number
+      size?: string
+      aspectRatio?: string
+      seed?: number
+      providerOptions?: Record<string, unknown>
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<ImageGenerationResult>().toMatchTypeOf<{
+      image?: GeneratedImage
+      images: GeneratedImage[]
+      model?: string
+    }>()
+    expectTypeOf<ImageGenerationRequestInfo>().toMatchTypeOf<{
+      providerId: 'proxy'
+      attempt: number
+      api: string
+      prompt: string
+      request: ImageGenerationRequest
+    }>()
+    expectTypeOf<ImageGenerationResponseInfo>().toMatchTypeOf<
+      ImageGenerationRequestInfo & { result: ImageGenerationResult }
+    >()
+    expectTypeOf<UseImageOptions['onRequest']>().toEqualTypeOf<
+      ((info: ImageGenerationRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseImageOptions['onResponse']>().toEqualTypeOf<
+      ((info: ImageGenerationResponseInfo) => void) | undefined
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()

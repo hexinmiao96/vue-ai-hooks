@@ -1,7 +1,7 @@
 {
   "name": "vue-ai-hooks",
   "version": "0.3.0",
-  "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding, useObject — multi-provider, streaming-first, fully typed.",
+  "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding, useImage, useObject — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "packageManager": "pnpm@8.15.9",
   "main": "./dist/index.cjs",
@@ -97,7 +97,8 @@
     "sse",
     "typescript",
     "gpt",
-    "embedding"
+    "embedding",
+    "image"
   ],
   "license": "MIT",
   "author": "hexinmiao96",

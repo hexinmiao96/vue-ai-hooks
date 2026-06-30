@@ -16,6 +16,8 @@ const files = {
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
   useEmbedding: readFileSync('docs/reference/use-embedding.md', 'utf8'),
   zhUseEmbedding: readFileSync('docs/zh/reference/use-embedding.md', 'utf8'),
+  useImage: readFileSync('docs/reference/use-image.md', 'utf8'),
+  zhUseImage: readFileSync('docs/zh/reference/use-image.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -424,10 +426,29 @@ expect(
     files.zhUseEmbedding.includes('handleSubmit(e, opts?)') &&
     files.zhUseEmbedding.includes('Provider 错误会保留文本') &&
     files.readme.includes(
-      '`useChat`, `useCompletion`, `useEmbedding`, and `useObject` also expose'
+      '`useChat`, `useCompletion`, `useEmbedding`, `useImage`, and `useObject` also expose'
     ) &&
-    files.zhReadme.includes('`useChat`、`useCompletion`、`useEmbedding` 和 `useObject` 还提供'),
+    files.zhReadme.includes(
+      '`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 还提供'
+    ),
   'Object and embedding docs plus READMEs must document form helpers'
+)
+expect(
+  files.config.includes("{ text: 'useImage', link: '/reference/use-image' }") &&
+    files.config.includes("{ text: 'useImage', link: '/zh/reference/use-image' }") &&
+    files.useImage.includes('# useImage') &&
+    files.useImage.includes('app-owned backend') &&
+    files.useImage.includes('generateImage(prompt?, opts?)') &&
+    files.useImage.includes('handleSubmit(e, opts?)') &&
+    files.useImage.includes('Backend errors leave the prompt available for retry') &&
+    files.zhUseImage.includes('# useImage') &&
+    files.zhUseImage.includes('应用自有后端') &&
+    files.zhUseImage.includes('generateImage(prompt?, opts?)') &&
+    files.zhUseImage.includes('handleSubmit(e, opts?)') &&
+    files.zhUseImage.includes('后端错误会保留提示词') &&
+    files.readme.includes('`useImage`') &&
+    files.zhReadme.includes('`useImage`'),
+  'Image generation docs and navigation must document the app-owned proxy hook'
 )
 expect(
   files.useChat.includes('## Message pruning') &&
@@ -571,6 +592,8 @@ for (const noisyLabel of [
   "label: 'useCompletion Methods'",
   "label: 'useEmbedding Properties'",
   "label: 'useEmbedding Methods'",
+  "label: 'useImage Properties'",
+  "label: 'useImage Methods'",
   "label: 'useObject Properties'",
   "label: 'useObject Methods'",
   "label: 'useChat 参数'",
@@ -579,6 +602,8 @@ for (const noisyLabel of [
   "label: 'useCompletion 方法'",
   "label: 'useEmbedding 参数'",
   "label: 'useEmbedding 方法'",
+  "label: 'useImage 参数'",
+  "label: 'useImage 方法'",
   "label: 'useObject 参数'",
   "label: 'useObject 方法'"
 ]) {

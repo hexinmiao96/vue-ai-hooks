@@ -286,6 +286,44 @@ export interface EmbeddingResult {
   }
 }
 
+export interface GeneratedImage {
+  /** Public URL, blob URL, or data URL for the generated image. */
+  url?: string
+  /** Base64-encoded image payload when your backend returns inline image data. */
+  base64?: string
+  /** MIME type such as `image/png` or `image/webp`. */
+  mediaType?: string
+  /** Provider-revised prompt when the upstream model returns one. */
+  revisedPrompt?: string
+  /** Provider-specific metadata for this image. */
+  metadata?: Record<string, unknown>
+}
+
+/** Request payload for image generation through an app-owned backend. */
+export interface ImageGenerationRequest {
+  prompt: string
+  /** Extra JSON body fields for proxy-specific request options. */
+  body?: Record<string, unknown>
+  model?: string
+  n?: number
+  size?: string
+  aspectRatio?: string
+  seed?: number
+  providerOptions?: Record<string, unknown>
+  user?: string
+  signal?: AbortSignal
+  headers?: HeadersInit
+}
+
+export interface ImageGenerationResult {
+  image?: GeneratedImage
+  images: GeneratedImage[]
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
 export interface RetryContext {
   /** 1-based retry attempt number. */
   attempt: number

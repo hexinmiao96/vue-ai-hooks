@@ -178,4 +178,5 @@ const { messages: messages6, append: append6 } = useChat({
 - [useChat 参考](/zh/reference/use-chat) - 完整 API
 - [useCompletion 参考](/zh/reference/use-completion)
 - [useEmbedding 参考](/zh/reference/use-embedding)
+- [useImage 参考](/zh/reference/use-image)
 - [useObject 参考](/zh/reference/use-object)

@@ -124,7 +124,8 @@ const requiredPackageKeywords = [
   'streaming',
   'sse',
   'typescript',
-  'embedding'
+  'embedding',
+  'image'
 ]
 const requiredReadmeBadgeSnippets = [
   'actions/workflows/ci.yml/badge.svg',
