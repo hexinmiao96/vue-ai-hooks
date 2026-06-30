@@ -54,7 +54,7 @@ The AI-in-Vue story is currently fragmented. Options today:
   request tracing.
 - **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
-  pruning.
+  pruning, plus reusable UI stream decoding utilities.
 - **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.
@@ -434,6 +434,11 @@ a provider. Use `convertToModelMessages()` after pruning when a proxy route or
 provider adapter should receive model-facing messages without UI-only
 `Message.parts`; `ChatRequest.messages` accepts those `ChatRequestMessage[]`
 payloads directly.
+
+Use `readUIMessageStream()` when a custom transport or test harness needs to
+consume AI SDK UI message streams outside `proxyProvider`. Lower-level helpers
+`createUIMessageStreamParser()`, `toChatChunks()`, and `parseSSE()` are exported
+for already-parsed parts or custom SSE readers.
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

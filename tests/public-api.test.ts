@@ -6,6 +6,7 @@ import {
   convertToModelMessages,
   cosineSimilarity,
   createIdGenerator,
+  createUIMessageStreamParser,
   deepseek,
   deserializeMessages,
   dynamicTool,
@@ -20,10 +21,13 @@ import {
   openai,
   openaiCompatible,
   openrouter,
+  parseSSE,
   pruneMessages,
   proxyProvider,
+  readUIMessageStream,
   serializeMessages,
   tool,
+  toChatChunks,
   useChat,
   useCompletion,
   useEmbedding,
@@ -124,6 +128,7 @@ import type {
   ProxyRequestOverride,
   ProxyProviderConfig,
   RegenerateChatOptions,
+  ReadUIMessageStreamOptions,
   RerankDocument,
   RerankRankingItem,
   RerankRequest,
@@ -176,6 +181,7 @@ import type {
   ToolCallHandler,
   ToolCallHandlerContext,
   ToolResultHandlerContext,
+  UIMessageStreamParser,
   UseChatOptions,
   UseChatReturn,
   UseCompletionOptions,
@@ -285,6 +291,21 @@ describe('public API types', () => {
     }
     expectTypeOf<FallbackProviderKind>().toEqualTypeOf<'chat' | 'completion' | 'embedding'>()
     expectTypeOf(fallbackConfig).toEqualTypeOf<FallbackProviderConfig>()
+    expectTypeOf(createUIMessageStreamParser).returns.toEqualTypeOf<UIMessageStreamParser>()
+    expectTypeOf<UIMessageStreamParser['toChatChunks']>()
+      .parameter(0)
+      .toEqualTypeOf<Record<string, unknown>>()
+    expectTypeOf<UIMessageStreamParser['toChatChunks']>().returns.toEqualTypeOf<ChatChunk[]>()
+    expectTypeOf(toChatChunks).parameter(0).toEqualTypeOf<Record<string, unknown>>()
+    expectTypeOf(toChatChunks).parameter(1).toEqualTypeOf<UIMessageStreamParser | undefined>()
+    expectTypeOf(toChatChunks).returns.toEqualTypeOf<ChatChunk[]>()
+    expectTypeOf(readUIMessageStream)
+      .parameter(0)
+      .toEqualTypeOf<ReadUIMessageStreamOptions & { response: Response }>()
+    expectTypeOf(readUIMessageStream).returns.toEqualTypeOf<AsyncGenerator<ChatChunk>>()
+    expectTypeOf(parseSSE).parameter(0).toEqualTypeOf<Response>()
+    expectTypeOf(parseSSE).parameter(1).toEqualTypeOf<AbortSignal | undefined>()
+    expectTypeOf(parseSSE).returns.toEqualTypeOf<AsyncGenerator<Record<string, unknown>>>()
 
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')
     expect(openrouter({ apiKey: 'test-key' }).id).toBe('openrouter')

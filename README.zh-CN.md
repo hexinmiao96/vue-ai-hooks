@@ -46,7 +46,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生产聊天工作流**：服务端代理路径、可恢复流、thread 上下文、请求准备钩子、自定义
   body、metadata 和请求追踪。
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
-  `Message.parts`、自定义流数据和消息裁剪。
+  `Message.parts`、自定义流数据、消息裁剪，以及可复用的 UI stream 解码工具。
 - **工具调用控制**：`tool()` / `dynamicTool()` helper、本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
 - **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片、视频、语音、转写和重排路由、
   自定义生成任务、稳定 id 和 Date-safe 持久化 helper。
@@ -370,6 +370,10 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用
 `convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息；
 `ChatRequest.messages` 可直接接收这些 `ChatRequestMessage[]` payload。
+
+自定义 transport 或测试工具需要在 `proxyProvider` 之外消费 AI SDK UI message stream 时，
+可以使用 `readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
+`createUIMessageStreamParser()`、`toChatChunks()` 和 `parseSSE()`。
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

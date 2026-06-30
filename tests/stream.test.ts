@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { parseSSE } from '../src/utils/stream'
+import {
+  createUIMessageStreamParser,
+  parseSSE,
+  readUIMessageStream,
+  toChatChunks
+} from '../src/utils/stream'
 
 function makeResponse(events: string[]): Response {
   const body = new ReadableStream({
@@ -102,5 +107,113 @@ describe('parseSSE', () => {
 
     expect(out).toEqual([])
     expect(cancelled).toBe(true)
+  })
+})
+
+describe('AI SDK UI message stream helpers', () => {
+  it('reads AI SDK UI message stream responses as ChatChunk values', async () => {
+    const response = makeResponse([
+      'data: {"type":"start","messageId":"msg_1","messageMetadata":{"model":"test"}}\n\n',
+      'data: {"type":"text-delta","delta":"Hel"}\n\n',
+      'data: {"type":"text-delta","delta":"lo"}\n\n',
+      'data: {"type":"reasoning-start","id":"r1"}\n\n',
+      'data: {"type":"reasoning-delta","id":"r1","delta":"Check "}\n\n',
+      'data: {"type":"reasoning-delta","id":"r1","delta":"sources."}\n\n',
+      'data: {"type":"data-progress","id":"progress_1","data":{"step":1}}\n\n',
+      'data: {"type":"finish","finishReason":"stop","totalUsage":{"inputTokens":2,"outputTokens":3}}\n\n'
+    ])
+    const chunks: unknown[] = []
+
+    for await (const chunk of readUIMessageStream({ response })) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([
+      { messageId: 'msg_1', metadata: { type: 'start', messageId: 'msg_1', model: 'test' } },
+      { content: 'Hel' },
+      { content: 'lo' },
+      { parts: [{ type: 'reasoning', id: 'r1', text: 'Check ' }] },
+      { parts: [{ type: 'reasoning', id: 'r1', text: 'Check sources.' }] },
+      { data: { step: 1 }, dataType: 'data-progress', dataId: 'progress_1' },
+      { finishReason: 'stop', usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 } }
+    ])
+  })
+
+  it('lets custom transports reuse parser state across already-parsed parts', () => {
+    const parser = createUIMessageStreamParser()
+    const chunks = [
+      ...toChatChunks(
+        { type: 'tool-input-start', toolCallId: 'call_1', toolName: 'lookup' },
+        parser
+      ),
+      ...toChatChunks(
+        { type: 'tool-input-delta', toolCallId: 'call_1', inputTextDelta: '{"q":"' },
+        parser
+      ),
+      ...toChatChunks(
+        { type: 'tool-input-delta', toolCallId: 'call_1', inputTextDelta: 'vue"}' },
+        parser
+      ),
+      ...parser.toChatChunks({
+        type: 'tool-output-available',
+        toolCallId: 'call_1',
+        output: { ok: true },
+        transient: true
+      })
+    ]
+
+    expect(chunks).toEqual([
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { arguments: '{"q":"' }
+          }
+        ]
+      },
+      {
+        toolCalls: [
+          {
+            index: 0,
+            id: 'call_1',
+            type: 'function',
+            function: { arguments: 'vue"}' }
+          }
+        ]
+      },
+      {
+        data: { toolCallId: 'call_1', output: { ok: true }, transient: true },
+        dataType: 'tool-output-available',
+        dataId: 'call_1',
+        transient: true
+      }
+    ])
+  })
+
+  it('surfaces AI SDK UI message stream error parts', async () => {
+    const response = makeResponse([
+      'data: {"type":"text-delta","delta":"partial"}\n\n',
+      'data: {"type":"error","errorText":"bad stream"}\n\n'
+    ])
+    const chunks: unknown[] = []
+
+    await expect(async () => {
+      for await (const chunk of readUIMessageStream({ response })) {
+        chunks.push(chunk)
+      }
+    }).rejects.toMatchObject({ message: 'bad stream' })
+    expect(chunks).toEqual([{ content: 'partial' }])
   })
 })

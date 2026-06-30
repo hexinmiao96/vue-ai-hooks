@@ -51,6 +51,7 @@ const rootSidebar = {
       text: 'Core API',
       items: [
         { text: 'Providers', link: '/reference/providers' },
+        { text: 'Stream utilities', link: '/reference/streams' },
         { text: 'Public types', link: '/reference/types' }
       ]
     }
@@ -108,6 +109,7 @@ const zhSidebar = {
       text: '核心 API',
       items: [
         { text: 'Provider', link: '/zh/reference/providers' },
+        { text: 'Stream 工具', link: '/zh/reference/streams' },
         { text: '公共类型', link: '/zh/reference/types' }
       ]
     }

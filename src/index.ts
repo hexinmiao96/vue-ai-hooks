@@ -165,6 +165,16 @@ export {
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 
+// Stream utilities
+export {
+  createUIMessageStreamParser,
+  parseSSE,
+  readUIMessageStream,
+  toChatChunks,
+  type ReadUIMessageStreamOptions,
+  type UIMessageStreamParser
+} from './utils/stream'
+
 // Persistence
 export { usePersist, type UsePersistOptions } from './composables/usePersist'
 

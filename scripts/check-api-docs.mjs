@@ -125,6 +125,7 @@ function extractExportSources(content) {
 function isAllowedPublicSource(sourcePath) {
   return (
     sourcePath === './types' ||
+    sourcePath === './utils/stream' ||
     sourcePath.startsWith('./composables/use') ||
     sourcePath.startsWith('./providers/')
   )
