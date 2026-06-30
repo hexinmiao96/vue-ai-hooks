@@ -14,6 +14,7 @@ export {
   serializeMessages,
   useChat,
   type AddToolOutputOptions,
+  type AddToolResultOptions,
   type AppendChatOptions,
   type ChatPersistOptions,
   type ChatFinishInfo,

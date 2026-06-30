@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failover before a stream starts.
 - Added AI SDK-style chat helpers for message submission, stream resume, manual
   tool output, and approval-gated tool calls.
+- Added an AI SDK-compatible object signature for `addToolResult()`.
 - Added structured chat message parts, stream data typing, metadata handling, and
   pruning controls for production chat surfaces.
 - Added a runnable no-key structured object example and documentation coverage

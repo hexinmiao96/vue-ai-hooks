@@ -176,6 +176,8 @@ export type AddToolOutputOptions =
       errorText: string
     }
 
+export type AddToolResultOptions = AddToolOutputOptions
+
 export interface ToolApprovalResponse {
   id: string
   approved: boolean
@@ -300,7 +302,10 @@ export interface UseChatReturn<
     c?: string | Message | SendChatMessageInput<TMessageMetadata>,
     o?: AppendChatOptions<TMessageMetadata>
   ) => Promise<void>
-  addToolResult: (toolCallId: string, result: unknown, o?: Partial<ChatRequest>) => Promise<void>
+  addToolResult: {
+    (toolCallId: string, result: unknown, o?: Partial<ChatRequest>): Promise<void>
+    (output: AddToolResultOptions, o?: Partial<ChatRequest>): Promise<void>
+  }
   addToolOutput: (output: AddToolOutputOptions, o?: Partial<ChatRequest>) => Promise<void>
   addToolApprovalResponse: (
     response: ToolApprovalResponse,
@@ -1912,10 +1917,20 @@ export function useChat<
     )
   }
   async function addToolResult(
-    toolCallId: string,
-    result: unknown,
+    toolCallIdOrOutput: string | AddToolResultOptions,
+    resultOrRequestOptions?: unknown | Partial<ChatRequest>,
     requestOptions: Partial<ChatRequest> = {}
   ) {
+    const objectOutput = typeof toolCallIdOrOutput === 'string' ? null : toolCallIdOrOutput
+    const toolCallId = objectOutput ? objectOutput.toolCallId : (toolCallIdOrOutput as string)
+    const result = objectOutput
+      ? 'state' in objectOutput
+        ? { state: objectOutput.state, errorText: objectOutput.errorText }
+        : objectOutput.output
+      : resultOrRequestOptions
+    const options = objectOutput
+      ? ((resultOrRequestOptions as Partial<ChatRequest> | undefined) ?? {})
+      : requestOptions
     const call = requirePendingToolCall(toolCallId)
     const args = parseToolArgs(call)
     const resultMessage = toolResultMessage(call, result)
@@ -1923,7 +1938,7 @@ export function useChat<
     pendingToolCalls.value = pendingToolCalls.value.filter((item) => item.id !== toolCallId)
     reportToolResult(call, args, result, resultMessage)
 
-    await continueAfterToolResults(requestOptions)
+    await continueAfterToolResults(options)
   }
   async function addToolOutput(
     output: AddToolOutputOptions,

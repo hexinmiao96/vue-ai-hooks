@@ -21,22 +21,22 @@ refs and provider objects instead of a full-stack framework integration layer.
 
 ## Quick mapping
 
-| AI SDK UI concept           | vue-ai-hooks equivalent                                              |
-| --------------------------- | -------------------------------------------------------------------- |
-| `useChat()`                 | `useChat()`                                                          |
-| `transport`                 | `transport` or `provider`                                            |
-| `DefaultChatTransport`      | Omit `provider` and use `api`, `baseURL`, `headers`, `body`          |
-| `messages` initial option   | `messages` or `initialMessages`                                      |
-| Input state managed by app  | `input`, `setInput()`, `handleInputChange()` are included            |
-| `sendMessage()`             | `sendMessage()`                                                      |
-| `stop()`                    | `stop()`                                                             |
-| `resumeStream()`            | `resumeStream()` with a provider that supports `resumeChat`          |
-| `addToolOutput()`           | `addToolOutput()` or `addToolResult()`                               |
-| `addToolApprovalResponse()` | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()` |
-| `stopWhen`                  | `stopWhen`                                                           |
-| `experimental_throttle`     | `experimental_throttle` or preferred `throttleMs`                    |
-| Custom stream data          | `streamData`, `onData`, and `ChatChunk.data`                         |
-| UI message stream protocol  | Supported by `proxyProvider` / default proxy transport               |
+| AI SDK UI concept                                | vue-ai-hooks equivalent                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `useChat()`                                      | `useChat()`                                                          |
+| `transport`                                      | `transport` or `provider`                                            |
+| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`          |
+| `messages` initial option                        | `messages` or `initialMessages`                                      |
+| Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included            |
+| `sendMessage()`                                  | `sendMessage()`                                                      |
+| `stop()`                                         | `stop()`                                                             |
+| `resumeStream()`                                 | `resumeStream()` with a provider that supports `resumeChat`          |
+| `addToolOutput()` / deprecated `addToolResult()` | `addToolOutput()` or `addToolResult({ toolCallId, output })`         |
+| `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()` |
+| `stopWhen`                                       | `stopWhen`                                                           |
+| `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                    |
+| Custom stream data                               | `streamData`, `onData`, and `ChatChunk.data`                         |
+| UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport               |
 
 ## Transport
 
@@ -196,7 +196,8 @@ options, body, headers, and retry attempt values are resolved.
 3. Keep existing initial messages by passing `messages` or `initialMessages`.
 4. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
    `gemini`, `anthropic`, or `openaiCompatible`.
-5. Move tool result code to `addToolOutput()` or `addToolApprovalResponse()`.
+5. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+   `addToolApprovalResponse()`.
 6. Add `lastRequest` and `lastResponse` to your debug view before swapping
    production traffic.
 7. Run `pnpm release:check` or your app's equivalent gate before shipping.

@@ -3,8 +3,8 @@
 The core composable for streaming chat completions.
 
 Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
-`AppendChatOptions`, `SendChatMessageInput`, `AddToolOutputOptions`, `ToolApprovalResponse`,
-`ChatFinishInfo`, `ChatRequestInfo`, `ChatRequestLifecycleKind`,
+`AppendChatOptions`, `SendChatMessageInput`, `AddToolResultOptions`, `AddToolOutputOptions`,
+`ToolApprovalResponse`, `ChatFinishInfo`, `ChatRequestInfo`, `ChatRequestLifecycleKind`,
 `ChatResponseInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
 `PrepareStep`, `PrepareStepOptions`,
@@ -256,7 +256,7 @@ state.
 | `lastResponse`                  | `Ref<ChatResponseInfo \| null>`                                                                | Last provider response snapshot, including whether a stream opened.    |
 | `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`                                      | Send or replace a message and stream the reply.                        |
 | `sendMessage(content?, opts?)`  | `(string \| Message \| SendChatMessageInput \| undefined, AppendChatOptions) => Promise<void>` | AI SDK-style send helper; omit content to submit the current messages. |
-| `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`                                     | Append a manual tool result and continue after all results are ready.  |
+| `addToolResult(input, opts?)`   | `(string, unknown, Partial<ChatRequest>) \| (AddToolResultOptions, Partial<ChatRequest>)`      | Append a manual tool result and continue after all results are ready.  |
 | `addToolOutput(output)`         | `(AddToolOutputOptions, Partial<ChatRequest>) => Promise<void>`                                | AI SDK-style alias for manual tool output.                             |
 | `addToolApprovalResponse(resp)` | `(ToolApprovalResponse, Partial<ChatRequest>) => Promise<void>`                                | AI SDK-style approval/denial response helper.                          |
 | `approveToolCall(id)`           | `(string, Partial<ChatRequest>) => Promise<void>`                                              | Run an approval-gated local handler and continue when ready.           |
@@ -555,10 +555,11 @@ await append('Buy the pro plan.')
 
 const [call] = pendingToolCalls.value
 await addToolResult(call.id, { approved: true })
+await addToolResult({ tool: 'confirmPurchase', toolCallId: call.id, output: { approved: true } })
 ```
 
-`addToolOutput({ toolCallId, output })` is available as an AI SDK-style alias.
-For failed browser-side tool work, pass
+`addToolResult({ toolCallId, output })` and `addToolOutput({ toolCallId, output })` are available
+as AI SDK-style object signatures. For failed browser-side tool work, pass
 `{ toolCallId, state: 'output-error', errorText }`.
 
 By default, `useChat` continues automatically when the latest assistant tool

@@ -19,22 +19,22 @@
 
 ## 快速映射
 
-| AI SDK UI 概念              | vue-ai-hooks 对应能力                                                |
-| --------------------------- | -------------------------------------------------------------------- |
-| `useChat()`                 | `useChat()`                                                          |
-| `transport`                 | `transport` 或 `provider`                                            |
-| `DefaultChatTransport`      | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`            |
-| `messages` 初始选项         | `messages` 或 `initialMessages`                                      |
-| 应用自行管理 input state    | 内置 `input`、`setInput()`、`handleInputChange()`                    |
-| `sendMessage()`             | `sendMessage()`                                                      |
-| `stop()`                    | `stop()`                                                             |
-| `resumeStream()`            | `resumeStream()`，需要 provider 支持 `resumeChat`                    |
-| `addToolOutput()`           | `addToolOutput()` 或 `addToolResult()`                               |
-| `addToolApprovalResponse()` | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()` |
-| `stopWhen`                  | `stopWhen`                                                           |
-| `experimental_throttle`     | `experimental_throttle`，或更推荐的 `throttleMs`                     |
-| 自定义 stream data          | `streamData`、`onData` 和 `ChatChunk.data`                           |
-| UI message stream 协议      | `proxyProvider` / 默认 proxy transport 支持                          |
+| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
+| `useChat()`                                    | `useChat()`                                                          |
+| `transport`                                    | `transport` 或 `provider`                                            |
+| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`            |
+| `messages` 初始选项                            | `messages` 或 `initialMessages`                                      |
+| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                    |
+| `sendMessage()`                                | `sendMessage()`                                                      |
+| `stop()`                                       | `stop()`                                                             |
+| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                    |
+| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`         |
+| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()` |
+| `stopWhen`                                     | `stopWhen`                                                           |
+| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                     |
+| 自定义 stream data                             | `streamData`、`onData` 和 `ChatChunk.data`                           |
+| UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                          |
 
 ## Transport
 
@@ -188,6 +188,7 @@ provider/proxy 请求。
 3. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
 4. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-5. 将工具结果逻辑迁移到 `addToolOutput()` 或 `addToolApprovalResponse()`。
+5. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+   `addToolApprovalResponse()`。
 6. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
 7. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

@@ -2645,6 +2645,51 @@ describe('useChat', () => {
     expect(messages.value[3].content).toBe('Lookup failed but handled.')
   })
 
+  it('accepts AI SDK-style addToolResult() options', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookupAccount', arguments: '{"accountId":"acct_1"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Account is active.' }, { finishReason: 'stop' }]
+      ],
+      requests
+    )
+    const { addToolResult, append, messages, pendingToolCalls } = useChat({ provider })
+
+    await append('Look up this account.')
+    await addToolResult(
+      {
+        tool: 'lookupAccount',
+        toolCallId: 'call_1',
+        output: { status: 'active' }
+      },
+      { headers: { 'X-Tool-Source': 'modal' } }
+    )
+
+    expect(pendingToolCalls.value).toEqual([])
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toMatchObject({ headers: { 'X-Tool-Source': 'modal' } })
+    expect(requests[1].messages.map((m) => m.role)).toEqual(['user', 'assistant', 'tool'])
+    expect(messages.value[2]).toMatchObject({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: '{"status":"active"}'
+    })
+    expect(messages.value[3].content).toBe('Account is active.')
+  })
+
   it('waits for approval before running a registered tool handler', async () => {
     const requests: ChatRequest[] = []
     const runtimeContext = { userId: 'user_1' }

@@ -275,7 +275,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `lastResponse`                  | `Ref<ChatResponseInfo \| null>`                                                                | Last provider response snapshot                                   |
 | `append(content, opts?)`        | `(string \| Message, AppendChatOptions) => Promise<void>`                                      | Send or replace a message and stream the reply                    |
 | `sendMessage(content?, opts?)`  | `(string \| Message \| SendChatMessageInput \| undefined, AppendChatOptions) => Promise<void>` | AI SDK-style send helper; omit content to submit current messages |
-| `addToolResult(id, res)`        | `(string, unknown, Partial<ChatRequest>) => Promise<void>`                                     | Submit a manual tool result and continue when ready               |
+| `addToolResult(input, opts?)`   | `(string, unknown, Partial<ChatRequest>) \| (AddToolResultOptions, Partial<ChatRequest>)`      | Submit a manual tool result and continue when ready               |
 | `addToolOutput(output)`         | `(AddToolOutputOptions, Partial<ChatRequest>) => Promise<void>`                                | AI SDK-style alias for manual tool output                         |
 | `addToolApprovalResponse(resp)` | `(ToolApprovalResponse, Partial<ChatRequest>) => Promise<void>`                                | AI SDK-style approval response helper                             |
 | `approveToolCall(id)`           | `(string, Partial<ChatRequest>) => Promise<void>`                                              | Run an approval-gated local tool handler                          |

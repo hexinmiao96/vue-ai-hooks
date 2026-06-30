@@ -26,6 +26,7 @@ import {
 import type {
   AiRequestStatus,
   AddToolOutputOptions,
+  AddToolResultOptions,
   AppendChatOptions,
   AnthropicConfig,
   ChatFinishInfo,
@@ -306,9 +307,18 @@ describe('public API types', () => {
       .toEqualTypeOf<
         string | Message | SendChatMessageInput<{ source: string; intent?: string }> | undefined
       >()
-    expectTypeOf(chat.addToolResult).parameter(0).toEqualTypeOf<string>()
-    expectTypeOf(chat.addToolResult).parameter(1).toEqualTypeOf<unknown>()
-    expectTypeOf(chat.addToolResult).parameter(2).toEqualTypeOf<Partial<ChatRequest> | undefined>()
+    const legacyAddToolResult: (
+      toolCallId: string,
+      result: unknown,
+      options?: Partial<ChatRequest>
+    ) => Promise<void> = chat.addToolResult
+    const objectAddToolResult: (
+      output: AddToolResultOptions,
+      options?: Partial<ChatRequest>
+    ) => Promise<void> = chat.addToolResult
+    expectTypeOf<AddToolResultOptions>().toEqualTypeOf<AddToolOutputOptions>()
+    void legacyAddToolResult
+    void objectAddToolResult
     expectTypeOf(chat.addToolOutput).parameter(0).toEqualTypeOf<AddToolOutputOptions>()
     expectTypeOf(chat.addToolOutput).parameter(1).toEqualTypeOf<Partial<ChatRequest> | undefined>()
     expectTypeOf(chat.addToolApprovalResponse).parameter(0).toEqualTypeOf<ToolApprovalResponse>()
