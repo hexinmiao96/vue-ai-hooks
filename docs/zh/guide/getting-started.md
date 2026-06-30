@@ -15,6 +15,7 @@ npm install vue-ai-hooks
 | 你想做什么                   | 从这里开始                                         |
 | ---------------------------- | -------------------------------------------------- |
 | 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)     |
+| 比较库的适用边界             | 阅读 [选择 vue-ai-hooks](/zh/guide/choosing)       |
 | 从 v0.2.1 升级               | 阅读 [v0.3.0 升级指南](/zh/guide/upgrade-0.3)      |
 | 迁移 AI SDK UI 应用          | 使用 [AI SDK 迁移指南](/zh/guide/ai-sdk-migration) |
 | 验证自己的后端代理契约       | 跑 [proxy 模板](#本地试用后端代理模板)             |

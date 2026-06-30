@@ -4,6 +4,8 @@ const files = {
   config: readFileSync('docs/.vitepress/config.ts', 'utf8'),
   home: readFileSync('docs/index.md', 'utf8'),
   zhHome: readFileSync('docs/zh/index.md', 'utf8'),
+  choosing: readFileSync('docs/guide/choosing.md', 'utf8'),
+  zhChoosing: readFileSync('docs/zh/guide/choosing.md', 'utf8'),
   gettingStarted: readFileSync('docs/guide/getting-started.md', 'utf8'),
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
@@ -46,12 +48,21 @@ expect(
   'English home page must tell users they can start without an API key'
 )
 expect(
+  files.home.includes('Choose Fit') && files.home.includes('/guide/choosing'),
+  'English home page must link to the library-fit guide'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
+)
+expect(
+  files.zhHome.includes('选型对比') && files.zhHome.includes('/zh/guide/choosing'),
+  'Chinese home page must link to the library-fit guide'
 )
 
 for (const snippet of [
   '## Pick a path',
+  '[Choosing vue-ai-hooks](/guide/choosing)',
   '[v0.3.0 upgrade guide](/guide/upgrade-0.3)',
   '[AI SDK migration guide](/guide/ai-sdk-migration)',
   '## Run a demo without API keys',
@@ -67,6 +78,7 @@ for (const snippet of [
 
 for (const snippet of [
   '## 先选一条路径',
+  '[选择 vue-ai-hooks](/zh/guide/choosing)',
   '[v0.3.0 升级指南](/zh/guide/upgrade-0.3)',
   '[AI SDK 迁移指南](/zh/guide/ai-sdk-migration)',
   '## 不需要 API key 的 Demo',
@@ -108,12 +120,42 @@ expect(
     files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
+    files.readme.includes('/docs/guide/choosing.md') &&
+    files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
     files.readme.includes('/docs/guide/upgrade-0.3.md') &&
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md'),
   'Readmes must explain no-key chat defaults, list the object example, and link upgrade/migration guidance'
 )
+
+for (const snippet of [
+  '# Choosing vue-ai-hooks',
+  'Short answer',
+  'Decision table',
+  'Vercel AI SDK',
+  'LangChain.js',
+  'Direct fetch and SSE parsing',
+  'VueUse',
+  'Architecture fit',
+  'What this package intentionally does not own'
+]) {
+  expect(files.choosing.includes(snippet), `English choosing guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 选择 vue-ai-hooks',
+  '简短结论',
+  '决策表',
+  'Vercel AI SDK',
+  'LangChain.js',
+  '手写 fetch 和 SSE 解析',
+  'VueUse',
+  '架构适配',
+  '本包刻意不负责什么'
+]) {
+  expect(files.zhChoosing.includes(snippet), `Chinese choosing guide must include: ${snippet}`)
+}
 
 for (const snippet of [
   '# Upgrade to v0.3.0',

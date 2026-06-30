@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   adoption.
 - Added English and Chinese AI SDK migration guides for teams porting existing
   chat surfaces.
+- Added English and Chinese library-fit guides comparing `vue-ai-hooks` with
+  common alternatives.
 - Added `timeoutMs` to OpenAI-compatible, OpenRouter, Gemini, and Anthropic
   provider configs for bounded direct provider requests.
 - Added default proxy transports for `useChat`, `useCompletion`, `useEmbedding`,

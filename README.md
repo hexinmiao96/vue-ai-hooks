@@ -374,6 +374,7 @@ helpers also preserve valid `Message.parts` for structured chat rendering. See t
 
 See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),
 and [public types](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/types.md) for full type definitions.
+For library fit, see [Choosing vue-ai-hooks](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/choosing.md).
 For upgrade guarantees, see the [API stability guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/api-stability.md).
 If you are coming from `0.2.1`, use the
 [v0.3.0 upgrade guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/upgrade-0.3.md).

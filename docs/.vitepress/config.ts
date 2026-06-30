@@ -13,6 +13,7 @@ const rootSidebar = {
       text: 'Introduction',
       items: [
         { text: 'Getting started', link: '/guide/getting-started' },
+        { text: 'Choosing vue-ai-hooks', link: '/guide/choosing' },
         { text: 'Upgrade to v0.3.0', link: '/guide/upgrade-0.3' },
         { text: 'AI SDK migration', link: '/guide/ai-sdk-migration' },
         { text: 'Providers', link: '/guide/providers' },
@@ -64,6 +65,7 @@ const zhSidebar = {
       text: '入门',
       items: [
         { text: '快速开始', link: '/zh/guide/getting-started' },
+        { text: '选择 vue-ai-hooks', link: '/zh/guide/choosing' },
         { text: '升级到 v0.3.0', link: '/zh/guide/upgrade-0.3' },
         { text: 'AI SDK 迁移', link: '/zh/guide/ai-sdk-migration' },
         { text: 'Provider', link: '/zh/guide/providers' },

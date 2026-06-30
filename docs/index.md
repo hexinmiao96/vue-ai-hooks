@@ -13,6 +13,9 @@ hero:
       text: Examples
       link: /examples/
     - theme: alt
+      text: Choose Fit
+      link: /guide/choosing
+    - theme: alt
       text: View on GitHub
       link: https://github.com/hexinmiao96/vue-ai-hooks
 

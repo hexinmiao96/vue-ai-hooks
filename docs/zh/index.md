@@ -13,6 +13,9 @@ hero:
       text: 示例
       link: /zh/examples/
     - theme: alt
+      text: 选型对比
+      link: /zh/guide/choosing
+    - theme: alt
       text: 查看 GitHub
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
