@@ -6,6 +6,8 @@ const files = {
   zhHome: readFileSync('docs/zh/index.md', 'utf8'),
   gettingStarted: readFileSync('docs/guide/getting-started.md', 'utf8'),
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
+  upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
+  zhUpgrade03: readFileSync('docs/zh/guide/upgrade-0.3.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -48,6 +50,7 @@ expect(
 
 for (const snippet of [
   '## Pick a path',
+  '[v0.3.0 upgrade guide](/guide/upgrade-0.3)',
   '## Run a demo without API keys',
   'pnpm example:chat',
   'falls back to `local-tools`',
@@ -61,6 +64,7 @@ for (const snippet of [
 
 for (const snippet of [
   '## 先选一条路径',
+  '[v0.3.0 升级指南](/zh/guide/upgrade-0.3)',
   '## 不需要 API key 的 Demo',
   'pnpm example:chat',
   '自动回退到 `local-tools`',
@@ -99,9 +103,46 @@ expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`examples/object`') &&
-    files.zhReadme.includes('`examples/object`'),
-  'Readmes must explain no-key chat defaults and list the object example'
+    files.zhReadme.includes('`examples/object`') &&
+    files.readme.includes('/docs/guide/upgrade-0.3.md') &&
+    files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md'),
+  'Readmes must explain no-key chat defaults, list the object example, and link upgrade guidance'
 )
+
+for (const snippet of [
+  '# Upgrade to v0.3.0',
+  'currently on `vue-ai-hooks@0.2.1`',
+  'v0.3.0 does not intentionally remove or rename documented public exports',
+  'pnpm add vue-ai-hooks@^0.3.0',
+  'pnpm release:check',
+  'Default proxy transports',
+  'Request inspection',
+  'Provider fallback',
+  'Direct provider timeouts',
+  'DeepSeek helper',
+  'Recommended migration order'
+]) {
+  expect(files.upgrade03.includes(snippet), `English v0.3.0 upgrade guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 升级到 v0.3.0',
+  '当前使用 `vue-ai-hooks@0.2.1`',
+  'v0.3.0 不会有意移除或重命名',
+  'pnpm add vue-ai-hooks@^0.3.0',
+  'pnpm release:check',
+  '默认 proxy transport',
+  '请求检查',
+  'Provider fallback',
+  '直连 Provider 超时',
+  'DeepSeek helper',
+  '推荐迁移顺序'
+]) {
+  expect(
+    files.zhUpgrade03.includes(snippet),
+    `Chinese v0.3.0 upgrade guide must include: ${snippet}`
+  )
+}
 expect(
   files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&

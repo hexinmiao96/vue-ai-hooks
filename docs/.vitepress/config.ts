@@ -13,6 +13,7 @@ const rootSidebar = {
       text: 'Introduction',
       items: [
         { text: 'Getting started', link: '/guide/getting-started' },
+        { text: 'Upgrade to v0.3.0', link: '/guide/upgrade-0.3' },
         { text: 'Providers', link: '/guide/providers' },
         { text: 'API stability', link: '/guide/api-stability' },
         { text: 'SSR and Nuxt', link: '/guide/ssr' },
@@ -62,6 +63,7 @@ const zhSidebar = {
       text: '入门',
       items: [
         { text: '快速开始', link: '/zh/guide/getting-started' },
+        { text: '升级到 v0.3.0', link: '/zh/guide/upgrade-0.3' },
         { text: 'Provider', link: '/zh/guide/providers' },
         { text: 'API 稳定性', link: '/zh/guide/api-stability' },
         { text: 'SSR 和 Nuxt', link: '/zh/guide/ssr' },

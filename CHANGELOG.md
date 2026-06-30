@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a first-class `deepseek()` provider helper with current DeepSeek
   OpenAI-compatible defaults.
+- Added English and Chinese v0.2.1-to-v0.3.0 upgrade guides for release
+  adoption.
 - Added `timeoutMs` to OpenAI-compatible, OpenRouter, Gemini, and Anthropic
   provider configs for bounded direct provider requests.
 - Added default proxy transports for `useChat`, `useCompletion`, `useEmbedding`,
