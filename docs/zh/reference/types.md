@@ -363,8 +363,25 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`  | `AbortSignal`             | 中止信号。                                    |
 | `headers` | `HeadersInit`             | Provider 合并的单次请求 headers。             |
 
+### `SpeechGenerationRequest`
+
+| 字段              | 类型                      | 说明                                        |
+| ----------------- | ------------------------- | ------------------------------------------- |
+| `text`            | `string`                  | 要转成语音的文本。                          |
+| `body`            | `Record<string, unknown>` | 应用自有后端选项使用的额外 JSON body 字段。 |
+| `model`           | `string`                  | 你的后端使用的语音模型 ID。                 |
+| `voice`           | `string`                  | 后端或 Provider 使用的音色或说话人 ID。     |
+| `outputFormat`    | `string`                  | `mp3`、`wav` 或 `ogg` 这类音频格式提示。    |
+| `instructions`    | `string`                  | Provider 专属朗读风格或指令文本。           |
+| `speed`           | `number`                  | Provider 支持时的语速。                     |
+| `language`        | `string`                  | Provider 支持时的语言提示。                 |
+| `providerOptions` | `Record<string, unknown>` | 透传给后端的 Provider 专属选项。            |
+| `user`            | `string`                  | 用于 Provider 策略或风控的终端用户标识。    |
+| `signal`          | `AbortSignal`             | 中止信号。                                  |
+| `headers`         | `HeadersInit`             | 合并进后端请求的单次 headers。              |
+
 `body` 会先合并进 Provider/代理的 JSON 请求体，然后再写入 typed request 字段。
-如果 key 冲突，`messages`、`prompt`、`input`、`model`、`stream` 这类显式字段优先。
+如果 key 冲突，`messages`、`prompt`、`input`、`text`、`model`、`stream` 这类显式字段优先。
 
 ## 响应
 
@@ -414,6 +431,23 @@ interface EmbeddingResult {
     promptTokens: number
     totalTokens: number
   }
+}
+
+interface GeneratedAudio {
+  url?: string
+  base64?: string
+  mediaType?: string
+  revisedText?: string
+  durationInSeconds?: number
+  metadata?: Record<string, unknown>
+}
+
+interface SpeechGenerationResult {
+  audio?: GeneratedAudio
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
 }
 ```
 

@@ -375,9 +375,26 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`  | `AbortSignal`             | Abort signal.                                           |
 | `headers` | `HeadersInit`             | Per-request headers merged by the provider.             |
 
+### `SpeechGenerationRequest`
+
+| Field             | Type                      | Description                                             |
+| ----------------- | ------------------------- | ------------------------------------------------------- |
+| `text`            | `string`                  | Text to turn into speech.                               |
+| `body`            | `Record<string, unknown>` | Extra JSON body fields for app-owned backend options.   |
+| `model`           | `string`                  | Speech model id used by your backend.                   |
+| `voice`           | `string`                  | Voice or speaker id used by your backend/provider.      |
+| `outputFormat`    | `string`                  | Audio format hint such as `mp3`, `wav`, or `ogg`.       |
+| `instructions`    | `string`                  | Provider-specific speaking style or instruction text.   |
+| `speed`           | `number`                  | Speaking speed when supported by the provider.          |
+| `language`        | `string`                  | Language hint when supported by the provider.           |
+| `providerOptions` | `Record<string, unknown>` | Provider-specific options passed through your backend.  |
+| `user`            | `string`                  | End-user identifier for provider policy/abuse tracking. |
+| `signal`          | `AbortSignal`             | Abort signal.                                           |
+| `headers`         | `HeadersInit`             | Per-request headers merged into the backend request.    |
+
 `body` is merged into provider/proxy JSON request bodies before the typed
 request fields. If keys conflict, explicit typed fields such as `messages`,
-`prompt`, `input`, `model`, and `stream` win.
+`prompt`, `input`, `text`, `model`, and `stream` win.
 
 ## Responses
 
@@ -427,6 +444,23 @@ interface EmbeddingResult {
     promptTokens: number
     totalTokens: number
   }
+}
+
+interface GeneratedAudio {
+  url?: string
+  base64?: string
+  mediaType?: string
+  revisedText?: string
+  durationInSeconds?: number
+  metadata?: Record<string, unknown>
+}
+
+interface SpeechGenerationResult {
+  audio?: GeneratedAudio
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
 }
 ```
 

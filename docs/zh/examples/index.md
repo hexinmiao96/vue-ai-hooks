@@ -1,6 +1,6 @@
 ---
 title: 示例
-description: 面向对话、工具审批、文本补全、向量嵌入、图片生成、后端代理和结构化输出的精致 vue-ai-hooks 示例页。
+description: 面向对话、工具审批、文本补全、向量嵌入、图片生成、语音生成、后端代理和结构化输出的精致 vue-ai-hooks 示例页。
 aside: false
 pageClass: demo-page
 ---
@@ -25,11 +25,14 @@ pnpm example:chat
 先用这条路径确认 UI，再接真实 Provider key 或后端代理。
 
 要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
-`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/object`
-路由，以及浏览器示例通过 `proxyProvider` 使用的 `/api/ai/*` 路由。
+`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/speech`、
+`/api/object` 路由，以及浏览器示例通过 `proxyProvider` 使用的 `/api/ai/*` 路由。
 
 如果要试不需要 key 的图片生成流程，运行 `pnpm example:image`。它默认渲染确定性的本地
 SVG；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/image` 路由。
+
+如果要试不需要 key 的语音生成流程，运行 `pnpm example:speech`。它默认返回确定性的本地
+WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 
 如果要试结构化 JSON 流程，运行 `pnpm example:object`。它默认使用本地
 `local-object` Provider，不需要 key；之后也可以用和其它浏览器示例相同的环境变量切到
@@ -43,6 +46,7 @@ SVG；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/image` 路由。
 | 一个提示词生成一段文本           | [文本补全](#completion-demo)   |
 | 做语义相似度比较                 | [向量相似度](#embedding-demo)  |
 | 通过应用后端生成图片             | [图片生成](#image-demo)        |
+| 通过应用后端生成语音             | [语音生成](#speech-demo)       |
 | 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo) |
 
 <DemoShowcase locale="zh" />

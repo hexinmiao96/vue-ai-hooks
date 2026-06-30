@@ -13,6 +13,7 @@ try {
   await checkCompletionRoute()
   await checkEmbeddingRoute()
   await checkImageRoute()
+  await checkSpeechRoute()
   await checkObjectRoute()
   console.log('Proxy example check passed for default and legacy routes.')
 } finally {
@@ -103,6 +104,22 @@ async function checkImageRoute() {
   expect(
     legacy.image?.metadata?.seed !== undefined,
     '/api/ai/image should return deterministic image metadata'
+  )
+}
+
+async function checkSpeechRoute() {
+  const response = await postJson('/api/speech', {
+    text: 'Read the status update',
+    model: 'proxy-speech-model'
+  })
+  expect(response.audio?.url?.startsWith('data:audio/wav'), '/api/speech should return a WAV')
+  expect(response.audio?.revisedText === 'Read the status update', '/api/speech should echo text')
+  expect(response.model === 'proxy-speech-model', '/api/speech should preserve the requested model')
+
+  const legacy = await postJson('/api/ai/speech', { text: 'legacy speech route' })
+  expect(
+    legacy.audio?.metadata?.seed !== undefined,
+    '/api/ai/speech should return deterministic audio metadata'
   )
 }
 

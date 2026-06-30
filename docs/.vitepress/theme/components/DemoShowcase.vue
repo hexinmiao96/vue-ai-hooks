@@ -8,11 +8,13 @@ type DemoHref =
   | '#completion-demo'
   | '#embedding-demo'
   | '#image-demo'
+  | '#speech-demo'
   | '#object-demo'
   | '#chat-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
   | '#image-demo-api'
+  | '#speech-demo-api'
   | '#object-demo-api'
   | '#chat-demo-api-props'
   | '#chat-demo-api-methods'
@@ -22,6 +24,8 @@ type DemoHref =
   | '#embedding-demo-api-methods'
   | '#image-demo-api-props'
   | '#image-demo-api-methods'
+  | '#speech-demo-api-props'
+  | '#speech-demo-api-methods'
   | '#object-demo-api-props'
   | '#object-demo-api-methods'
 type NavLink = {
@@ -113,6 +117,20 @@ input.value = 'A clean Vue composable dashboard hero image'
 await handleSubmit()
 
 console.log(image.value?.url, images.value.length)`,
+    speech: `const { audio, input, handleSubmit, generateSpeech, stop, clear } = useSpeech({
+  api: '/api/speech',
+  defaultRequest: {
+    model: 'speech-model',
+    voice: 'alloy',
+    outputFormat: 'mp3'
+  }
+})
+
+input.value = 'Read this release note aloud for the product team.'
+
+await handleSubmit()
+
+console.log(audio.value?.url)`,
     object: `type Ticket = { title: string; priority: 'low' | 'high' }
 
 const { object, partialObject, text, input, submit, stop, clear } = useObject<Ticket>({
@@ -205,6 +223,20 @@ await embed([
 await handleSubmit()
 
 console.log(图片.value?.url, 图片列表.value.length)`,
+    speech: `const { audio: 音频, input: 输入文本, handleSubmit, generateSpeech, stop, clear } = useSpeech({
+  api: '/api/speech',
+  defaultRequest: {
+    model: 'speech-model',
+    voice: 'alloy',
+    outputFormat: 'mp3'
+  }
+})
+
+输入文本.value = '为产品团队朗读这段发布说明。'
+
+await handleSubmit()
+
+console.log(音频.value?.url)`,
     object: `type 工单 = { title: string; priority: 'low' | 'high' }
 
 const { object: 工单对象, partialObject: 部分工单, text: 原始JSON, input: 输入文本, submit, stop, clear } = useObject<工单>({
@@ -245,10 +277,11 @@ const copy = {
       { job: 'One prompt to text', pick: 'useCompletion' },
       { job: 'Similarity search', pick: 'useEmbedding' },
       { job: 'Image generation', pick: 'useImage' },
+      { job: 'Speech generation', pick: 'useSpeech' },
       { job: 'Typed JSON extraction', pick: 'useObject' }
     ],
     heroStats: [
-      { label: 'Composables', value: '6' },
+      { label: 'Composables', value: '7' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
@@ -257,6 +290,7 @@ const copy = {
       { label: 'Completion', href: '#completion-demo' },
       { label: 'Embedding', href: '#embedding-demo' },
       { label: 'Image', href: '#image-demo' },
+      { label: 'Speech', href: '#speech-demo' },
       { label: 'Object', href: '#object-demo' }
     ],
     apiLinks: [
@@ -264,6 +298,7 @@ const copy = {
       { label: 'useCompletion API', href: '#completion-demo-api' },
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
       { label: 'useImage API', href: '#image-demo-api' },
+      { label: 'useSpeech API', href: '#speech-demo-api' },
       { label: 'useObject API', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: 'Composables',
@@ -577,6 +612,86 @@ const copy = {
         ]
       }
     },
+    speech: {
+      title: 'Speech generation',
+      topbarTitle: 'useSpeech',
+      description:
+        'A backend-owned text-to-speech route pattern with text input, generated audio refs, trace visibility, and stop/reset controls.',
+      textLabel: 'Text',
+      text: 'Read this release note aloud for the product team.',
+      resultLabel: 'Generated audio',
+      badge: '1 audio - WAV fallback - trace ready',
+      footer: 'generateSpeech - speak - stop - clear',
+      apiRef: {
+        title: 'useSpeech API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Speech endpoint for the default app-owned backend route.'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: 'optional',
+            description: 'Backend origin for local proxy or deployed server routes.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'SpeechGenerationRequest',
+            required: 'optional',
+            description:
+              'Default model, voice, format, and provider options merged into each request.'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: SpeechGenerationResult) => void',
+            required: 'optional',
+            description: 'Callback invoked after the backend returns normalized audio.'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateSpeech',
+            type: '(text?: string): Promise<SpeechGenerationResult>',
+            description: 'Send text and resolve with normalized audio results.'
+          },
+          {
+            name: 'speak',
+            type: '(text?: string): Promise<SpeechGenerationResult>',
+            description: 'Alias for generateSpeech() when UI copy favors speech wording.'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<SpeechGenerationResult>',
+            description: 'Wire a speech form submit and clear input only after success.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active speech request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear audio, result, trace, input, and current error.'
+          }
+        ]
+      }
+    },
     object: {
       title: 'Structured object output',
       topbarTitle: 'useObject',
@@ -682,6 +797,12 @@ const copy = {
         fit: 'Image tools through app-owned backend routes'
       },
       {
+        name: 'useSpeech',
+        state: 'audio, input, result, isLoading, error',
+        actions: 'generateSpeech, speak, handleSubmit, stop, clear',
+        fit: 'Text-to-speech tools through app-owned backend routes'
+      },
+      {
         name: 'useObject',
         state: 'partialObject, object, text, input, isLoading, error',
         actions: 'submit, stop, clear',
@@ -719,10 +840,11 @@ const copy = {
       { job: '一个提示词生成文本', pick: 'useCompletion' },
       { job: '语义相似度检索', pick: 'useEmbedding' },
       { job: '图片生成', pick: 'useImage' },
+      { job: '语音生成', pick: 'useSpeech' },
       { job: '类型化 JSON 抽取', pick: 'useObject' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '6' },
+      { label: '组合式函数', value: '7' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
@@ -731,6 +853,7 @@ const copy = {
       { label: '补全', href: '#completion-demo' },
       { label: '向量检索', href: '#embedding-demo' },
       { label: '图片', href: '#image-demo' },
+      { label: '语音', href: '#speech-demo' },
       { label: '结构化对象', href: '#object-demo' }
     ],
     apiLinks: [
@@ -738,6 +861,7 @@ const copy = {
       { label: 'useCompletion 接口', href: '#completion-demo-api' },
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
       { label: 'useImage 接口', href: '#image-demo-api' },
+      { label: 'useSpeech 接口', href: '#speech-demo-api' },
       { label: 'useObject 接口', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: '组合式函数',
@@ -1039,6 +1163,85 @@ const copy = {
         ]
       }
     },
+    speech: {
+      title: '语音生成',
+      topbarTitle: 'useSpeech（语音生成）',
+      description:
+        '面向自有后端文字转语音路由的表单模式：文本输入、生成音频 refs、请求 trace，以及停止和清空控制。',
+      textLabel: '文本',
+      text: '为产品团队朗读这段发布说明。',
+      resultLabel: '生成音频',
+      badge: '1 段音频 - WAV fallback - trace 已就绪',
+      footer: 'generateSpeech - speak - 停止 - 清空',
+      apiRef: {
+        title: 'useSpeech 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认自有后端路由的语音生成端点。'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: '可选',
+            description: '本地 proxy 或已部署服务端路由的后端地址。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'SpeechGenerationRequest',
+            required: '可选',
+            description: '每次请求都会合并的默认模型、音色、格式和 provider 选项。'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: SpeechGenerationResult) => void',
+            required: '可选',
+            description: '后端返回并归一化音频结果后触发。'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateSpeech',
+            type: '（text?: string）：Promise<SpeechGenerationResult>',
+            description: '提交文本并返回归一化后的音频结果。'
+          },
+          {
+            name: 'speak',
+            type: '（text?: string）：Promise<SpeechGenerationResult>',
+            description: '当界面文案更偏语音时可使用的 generateSpeech() 别名。'
+          },
+          {
+            name: 'handleSubmit',
+            type: '（event?）：Promise<SpeechGenerationResult>',
+            description: '接入语音表单提交，并且只在成功后清空输入。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中断当前语音生成请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理音频、结果、trace、输入和当前错误。'
+          }
+        ]
+      }
+    },
     object: {
       title: '结构化对象输出',
       topbarTitle: 'useObject（结构化 JSON）',
@@ -1146,6 +1349,14 @@ const copy = {
         fit: '通过自有后端路由构建图片工具'
       },
       {
+        name: 'useSpeech',
+        state:
+          'audio（当前音频）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
+        actions:
+          'generateSpeech 生成语音, speak 别名, handleSubmit 表单提交, stop 停止, clear 清空',
+        fit: '通过自有后端路由构建文字转语音工具'
+      },
+      {
         name: 'useObject',
         state:
           'partialObject（部分对象）、object（最终对象）、text（原始文本）、input（输入）、isLoading（加载中）、error（错误）',
@@ -1166,6 +1377,7 @@ const chatCode = computed(() => codeSamples[localeKey.value].chat)
 const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
 const imageCode = computed(() => codeSamples[localeKey.value].image)
+const speechCode = computed(() => codeSamples[localeKey.value].speech)
 const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
 const sectionIds: DemoHref[] = [
@@ -1173,11 +1385,13 @@ const sectionIds: DemoHref[] = [
   '#completion-demo',
   '#embedding-demo',
   '#image-demo',
+  '#speech-demo',
   '#object-demo',
   '#chat-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
   '#image-demo-api',
+  '#speech-demo-api',
   '#object-demo-api',
   '#chat-demo-api-props',
   '#chat-demo-api-methods',
@@ -1187,6 +1401,8 @@ const sectionIds: DemoHref[] = [
   '#embedding-demo-api-methods',
   '#image-demo-api-props',
   '#image-demo-api-methods',
+  '#speech-demo-api-props',
+  '#speech-demo-api-methods',
   '#object-demo-api-props',
   '#object-demo-api-methods'
 ]
@@ -1528,6 +1744,56 @@ onUnmounted(() => {
             </div>
             <footer class="preview-footer">
               <span>{{ content.image.footer }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="speech-demo"
+          api-title-id="speech-demo-api"
+          api-props-section-id="speech-demo-api-props"
+          api-methods-section-id="speech-demo-api-methods"
+          :title="content.speech.title"
+          :description="content.speech.description"
+          :code="speechCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.speech.apiRef"
+        >
+          <div class="speech-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-violet" />
+              <span>{{ content.speech.topbarTitle }}</span>
+            </div>
+            <div class="speech-preview__grid">
+              <article class="speech-prompt">
+                <span class="field-label">{{ content.speech.textLabel }}</span>
+                <p>{{ content.speech.text }}</p>
+                <span class="image-badge">{{ content.speech.badge }}</span>
+              </article>
+              <article class="speech-card">
+                <span class="field-label">{{ content.speech.resultLabel }}</span>
+                <div class="speech-wave" aria-hidden="true">
+                  <span
+                    v-for="index in 18"
+                    :key="index"
+                    :style="{ height: `${12 + (index % 6) * 6}px` }"
+                  />
+                </div>
+                <div class="speech-player">
+                  <span />
+                  <i />
+                </div>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.speech.footer }}</span>
             </footer>
           </div>
         </DemoBlock>
@@ -1903,6 +2169,7 @@ onUnmounted(() => {
 .completion-preview,
 .embedding-preview,
 .image-preview,
+.speech-preview,
 .structured-preview {
   display: grid;
   gap: 18px;
@@ -1943,6 +2210,10 @@ onUnmounted(() => {
   background: oklch(62% 0.14 205);
 }
 
+.preview-topbar__mark.is-violet {
+  background: oklch(58% 0.16 305);
+}
+
 .preview-topbar__mark.is-indigo {
   background: var(--demo-brand);
 }
@@ -1971,7 +2242,8 @@ onUnmounted(() => {
 
 .chat-message p,
 .completion-editor p,
-.completion-output p {
+.completion-output p,
+.speech-prompt p {
   margin: 0;
   color: var(--demo-ink);
   font-size: 0.9375rem;
@@ -2080,6 +2352,8 @@ onUnmounted(() => {
 .embedding-list,
 .image-prompt,
 .image-card,
+.speech-prompt,
+.speech-card,
 .structured-panel,
 .similarity-table {
   border: 1px solid var(--demo-border);
@@ -2091,6 +2365,8 @@ onUnmounted(() => {
 .completion-output,
 .image-prompt,
 .image-card,
+.speech-prompt,
+.speech-card,
 .structured-panel {
   display: grid;
   gap: 10px;
@@ -2102,7 +2378,8 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-.image-prompt p {
+.image-prompt p,
+.speech-prompt p {
   margin: 0;
   color: var(--demo-ink);
   font-size: 0.9375rem;
@@ -2162,6 +2439,53 @@ onUnmounted(() => {
   box-shadow:
     0 42px 0 var(--demo-muted),
     0 82px 0 var(--demo-border);
+}
+
+.speech-preview__grid {
+  display: grid;
+  gap: 12px;
+}
+
+.speech-wave {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 82px;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--demo-subtle);
+}
+
+.speech-wave span {
+  width: 8px;
+  border-radius: 999px;
+  background: oklch(58% 0.16 305);
+}
+
+.speech-player {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-surface);
+}
+
+.speech-player span {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--demo-brand);
+}
+
+.speech-player i {
+  display: block;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--demo-border);
 }
 
 .structured-grid {
@@ -2407,6 +2731,10 @@ onUnmounted(() => {
   }
 
   .image-preview__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  }
+
+  .speech-preview__grid {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   }
 

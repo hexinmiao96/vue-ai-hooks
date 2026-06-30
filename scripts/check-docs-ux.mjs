@@ -18,6 +18,8 @@ const files = {
   zhUseEmbedding: readFileSync('docs/zh/reference/use-embedding.md', 'utf8'),
   useImage: readFileSync('docs/reference/use-image.md', 'utf8'),
   zhUseImage: readFileSync('docs/zh/reference/use-image.md', 'utf8'),
+  useSpeech: readFileSync('docs/reference/use-speech.md', 'utf8'),
+  zhUseSpeech: readFileSync('docs/zh/reference/use-speech.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -32,6 +34,7 @@ const files = {
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
+  speechExample: readFileSync('examples/speech/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
@@ -116,8 +119,9 @@ expect(
     files.envExample.includes('VITE_CHAT_PROVIDER=local-tools') &&
     files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&
     files.envExample.includes('VITE_PROXY_IMAGE_URL=/api/ai/image') &&
+    files.envExample.includes('VITE_PROXY_SPEECH_URL=/api/ai/speech') &&
     files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object'),
-  '.env.example must make the chat, image, and object examples runnable without provider keys by default'
+  '.env.example must make the chat, image, speech, and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -130,6 +134,8 @@ expect(
     files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`examples/image`') &&
     files.zhReadme.includes('`examples/image`') &&
+    files.readme.includes('`examples/speech`') &&
+    files.zhReadme.includes('`examples/speech`') &&
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/choosing.md') &&
@@ -243,6 +249,9 @@ expect(
   files.packageJson.includes('"example:image"') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&
+    files.packageJson.includes('"example:speech"') &&
+    files.packageJson.includes('"example:speech:build"') &&
+    files.packageJson.includes('pnpm example:speech:build') &&
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
@@ -263,16 +272,21 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  'default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, and',
+  '`/api/speech`, and `/api/object` routes',
   'pnpm example:image',
   'deterministic local SVG',
   'proxy `/api/image`',
+  'pnpm example:speech',
+  'deterministic local WAV',
+  'proxy `/api/speech`',
   '`local-object` provider',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
   'Generate an image through an app route',
   '[Image generation](#image-demo)',
+  'Generate speech through an app route',
+  '[Speech generation](#speech-demo)',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
 ]) {
@@ -285,16 +299,21 @@ for (const snippet of [
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
-  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/object`',
+  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/speech`',
   'pnpm example:image',
   '确定性的本地',
   'proxy `/api/image`',
+  'pnpm example:speech',
+  '确定性的本地',
+  'proxy `/api/speech`',
   '`local-object` Provider',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
   '通过应用后端生成图片',
   '[图片生成](#image-demo)',
+  '通过应用后端生成语音',
+  '[语音生成](#speech-demo)',
   '从提示词抽取类型化 JSON',
   '[结构化对象输出](#object-demo)'
 ]) {
@@ -312,6 +331,14 @@ expect(
     files.imageExample.includes('VITE_PROXY_BASE_URL') &&
     files.imageExample.includes('previewUrl'),
   'Image example must run without keys and switch to the proxy image route when configured'
+)
+expect(
+  files.speechExample.includes('useSpeech') &&
+    files.speechExample.includes('localSpeechFetch') &&
+    files.speechExample.includes('VITE_PROXY_SPEECH_URL') &&
+    files.speechExample.includes('VITE_PROXY_BASE_URL') &&
+    files.speechExample.includes('audioUrl'),
+  'Speech example must run without keys and switch to the proxy speech route when configured'
 )
 expect(
   files.objectExample.includes("id: 'local-object'") &&
@@ -332,16 +359,28 @@ expect(
 )
 expect(
   files.demoShowcase.includes("{ job: 'Image generation', pick: 'useImage' }") &&
-    files.demoShowcase.includes("{ label: 'Composables', value: '6' }") &&
+    files.demoShowcase.includes("{ job: 'Speech generation', pick: 'useSpeech' }") &&
+    files.demoShowcase.includes("{ label: 'Composables', value: '7' }") &&
     files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: 'useImage API', href: '#image-demo-api' }") &&
+    files.demoShowcase.includes("{ label: 'useSpeech API', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes('const imageCode = computed') &&
-    files.demoShowcase.includes('id="image-demo"'),
-  'DemoShowcase must include the image generation demo and API shortcuts'
+    files.demoShowcase.includes('const speechCode = computed') &&
+    files.demoShowcase.includes('id="image-demo"') &&
+    files.demoShowcase.includes('id="speech-demo"'),
+  'DemoShowcase must include the image and speech generation demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),
   'DemoShowcase must include a Chinese job-based chooser'
+)
+expect(
+  files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
+    files.demoShowcase.includes("{ label: '组合式函数', value: '7' }") &&
+    files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
+    files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }"),
+  'DemoShowcase must include the Chinese speech generation demo and API shortcuts'
 )
 expect(
   files.demoShowcase.includes('const attachments = fileInput.value?.files ?? undefined'),
@@ -461,13 +500,25 @@ expect(
     files.zhUseEmbedding.includes('handleInputChange(e)') &&
     files.zhUseEmbedding.includes('handleSubmit(e, opts?)') &&
     files.zhUseEmbedding.includes('Provider 错误会保留文本') &&
+    files.useSpeech.includes('initialInput') &&
+    files.useSpeech.includes('audio`') &&
+    files.useSpeech.includes('setInput(value)') &&
+    files.useSpeech.includes('handleInputChange(e)') &&
+    files.useSpeech.includes('handleSubmit(e, opts?)') &&
+    files.useSpeech.includes('Backend errors leave the text available for retry') &&
+    files.zhUseSpeech.includes('initialInput') &&
+    files.zhUseSpeech.includes('audio`') &&
+    files.zhUseSpeech.includes('setInput(value)') &&
+    files.zhUseSpeech.includes('handleInputChange(e)') &&
+    files.zhUseSpeech.includes('handleSubmit(e, opts?)') &&
+    files.zhUseSpeech.includes('后端错误会保留文本') &&
     files.readme.includes(
-      '`useChat`, `useCompletion`, `useEmbedding`, `useImage`, and `useObject` also expose'
+      '`useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useSpeech`, and'
     ) &&
     files.zhReadme.includes(
-      '`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 还提供'
+      '`useChat`、`useCompletion`、`useEmbedding`、`useImage`、`useSpeech` 和'
     ),
-  'Object and embedding docs plus READMEs must document form helpers'
+  'Object, embedding, speech docs plus READMEs must document form helpers'
 )
 expect(
   files.config.includes("{ text: 'useImage', link: '/reference/use-image' }") &&
@@ -485,6 +536,23 @@ expect(
     files.readme.includes('`useImage`') &&
     files.zhReadme.includes('`useImage`'),
   'Image generation docs and navigation must document the app-owned proxy hook'
+)
+expect(
+  files.config.includes("{ text: 'useSpeech', link: '/reference/use-speech' }") &&
+    files.config.includes("{ text: 'useSpeech', link: '/zh/reference/use-speech' }") &&
+    files.useSpeech.includes('# useSpeech') &&
+    files.useSpeech.includes('app-owned backend') &&
+    files.useSpeech.includes('generateSpeech(text?, opts?)') &&
+    files.useSpeech.includes('handleSubmit(e, opts?)') &&
+    files.useSpeech.includes('Backend errors leave the text available for retry') &&
+    files.zhUseSpeech.includes('# useSpeech') &&
+    files.zhUseSpeech.includes('应用自有后端') &&
+    files.zhUseSpeech.includes('generateSpeech(text?, opts?)') &&
+    files.zhUseSpeech.includes('handleSubmit(e, opts?)') &&
+    files.zhUseSpeech.includes('后端错误会保留文本') &&
+    files.readme.includes('`useSpeech`') &&
+    files.zhReadme.includes('`useSpeech`'),
+  'Speech generation docs and navigation must document the app-owned proxy hook'
 )
 expect(
   files.useChat.includes('## Message pruning') &&

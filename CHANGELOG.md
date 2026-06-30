@@ -51,6 +51,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `image`/`images` state, retries, aborts, trace refs, and form helpers.
 - Added a runnable no-key `useImage` example with deterministic local SVG output
   and proxy `/api/image` route coverage.
+- Added `useSpeech` for app-owned text-to-speech routes with normalized `audio`
+  state, retries, aborts, trace refs, and form helpers.
+- Added a runnable no-key `useSpeech` example with deterministic local WAV
+  output and proxy `/api/speech` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.
@@ -59,8 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a runnable no-key structured object example and documentation coverage
   for choosing the right demo first.
 - Added a proxy example contract check that verifies default `/api/*` routes,
-  legacy `/api/ai/*` routes, chat resume, completion, embedding, and object
-  endpoints.
+  legacy `/api/ai/*` routes, chat resume, completion, embedding, image, speech,
+  and object endpoints.
 
 ### Changed
 

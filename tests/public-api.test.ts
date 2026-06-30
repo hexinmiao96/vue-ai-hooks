@@ -23,6 +23,7 @@ import {
   useGeneration,
   useImage,
   useObject,
+  useSpeech,
   usePersist
 } from 'vue-ai-hooks'
 import type {
@@ -68,6 +69,7 @@ import type {
   GenerationResponseInfo,
   GenerationRunContext,
   IdGenerator,
+  GeneratedAudio,
   GeneratedImage,
   ImageGenerationRequest,
   ImageGenerationRequestInfo,
@@ -118,6 +120,10 @@ import type {
   SetMessagesInput,
   SendChatTrigger,
   SerializedMessage,
+  SpeechGenerationRequest,
+  SpeechGenerationRequestInfo,
+  SpeechGenerationResponseInfo,
+  SpeechGenerationResult,
   ChatStatus,
   StopWhen,
   StopWhenOptions,
@@ -144,6 +150,8 @@ import type {
   UseImageReturn,
   UseObjectOptions,
   UseObjectReturn,
+  UseSpeechOptions,
+  UseSpeechReturn,
   UsePersistOptions
 } from 'vue-ai-hooks'
 
@@ -288,6 +296,9 @@ describe('public API types', () => {
     const imageGeneration = useImage({
       api: '/api/image'
     } satisfies UseImageOptions)
+    const speechGeneration = useSpeech({
+      api: '/api/speech'
+    } satisfies UseSpeechOptions)
     const structured = useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
@@ -448,6 +459,16 @@ describe('public API types', () => {
     expectTypeOf<UseImageOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseImageOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
     expectTypeOf<UseImageOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseSpeechOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseSpeechOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseSpeechOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseSpeechOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseSpeechOptions['headers']>().toMatchTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
+    expectTypeOf<UseSpeechOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseSpeechOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<UseSpeechOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseObjectOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -713,6 +734,68 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseImageOptions['onResponse']>().toEqualTypeOf<
       ((info: ImageGenerationResponseInfo) => void) | undefined
+    >()
+
+    expectTypeOf(speechGeneration).toEqualTypeOf<UseSpeechReturn>()
+    expectTypeOf(speechGeneration.input).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(speechGeneration.audio).toEqualTypeOf<Ref<GeneratedAudio | null>>()
+    expectTypeOf(speechGeneration.result).toEqualTypeOf<Ref<SpeechGenerationResult | null>>()
+    expectTypeOf(speechGeneration.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(speechGeneration.generate).returns.toEqualTypeOf<Promise<SpeechGenerationResult>>()
+    expectTypeOf(speechGeneration.generate)
+      .parameter(1)
+      .toEqualTypeOf<Partial<SpeechGenerationRequest> | undefined>()
+    expectTypeOf(speechGeneration.generateSpeech).returns.toEqualTypeOf<
+      Promise<SpeechGenerationResult>
+    >()
+    expectTypeOf(speechGeneration.speak).toEqualTypeOf<typeof speechGeneration.generateSpeech>()
+    expectTypeOf(speechGeneration.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(speechGeneration.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(speechGeneration.handleSubmit).returns.toEqualTypeOf<
+      Promise<SpeechGenerationResult>
+    >()
+    expectTypeOf(speechGeneration.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<SpeechGenerationRequest> | undefined>()
+    expectTypeOf(speechGeneration.lastRequest).toEqualTypeOf<
+      Ref<SpeechGenerationRequestInfo | null>
+    >()
+    expectTypeOf(speechGeneration.lastResponse).toEqualTypeOf<
+      Ref<SpeechGenerationResponseInfo | null>
+    >()
+    expectTypeOf<SpeechGenerationRequest>().toMatchTypeOf<{
+      text: string
+      body?: Record<string, unknown>
+      model?: string
+      voice?: string
+      outputFormat?: string
+      instructions?: string
+      speed?: number
+      language?: string
+      providerOptions?: Record<string, unknown>
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<SpeechGenerationResult>().toMatchTypeOf<{
+      audio?: GeneratedAudio
+      model?: string
+    }>()
+    expectTypeOf<SpeechGenerationRequestInfo>().toMatchTypeOf<{
+      providerId: 'proxy'
+      attempt: number
+      api: string
+      text: string
+      request: SpeechGenerationRequest
+    }>()
+    expectTypeOf<SpeechGenerationResponseInfo>().toMatchTypeOf<
+      SpeechGenerationRequestInfo & { result: SpeechGenerationResult }
+    >()
+    expectTypeOf<UseSpeechOptions['onRequest']>().toEqualTypeOf<
+      ((info: SpeechGenerationRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseSpeechOptions['onResponse']>().toEqualTypeOf<
+      ((info: SpeechGenerationResponseInfo) => void) | undefined
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()

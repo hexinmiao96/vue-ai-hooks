@@ -36,6 +36,7 @@
 | 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`      |
 | `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`            |
 | AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                          |
+| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                        |
 | UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                          |
 
 ## Transport
@@ -203,11 +204,12 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 5. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。
 6. 将图片生成调用迁移到 `useImage({ api: '/api/image' })`，并把图片模型凭据保留在服务端。
-7. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-8. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+7. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
+8. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+9. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-9. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-10. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+10. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+11. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-11. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-12. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+12. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+13. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

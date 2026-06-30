@@ -91,6 +91,13 @@ export {
   type UseImageReturn
 } from './composables/useImage'
 export {
+  useSpeech,
+  type SpeechGenerationRequestInfo,
+  type SpeechGenerationResponseInfo,
+  type UseSpeechOptions,
+  type UseSpeechReturn
+} from './composables/useSpeech'
+export {
   useObject as experimental_useObject,
   useObject,
   type DeepPartial,
@@ -161,6 +168,9 @@ export type {
   GeneratedImage,
   ImageGenerationRequest,
   ImageGenerationResult,
+  GeneratedAudio,
+  SpeechGenerationRequest,
+  SpeechGenerationResult,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions

@@ -1,7 +1,7 @@
 {
   "name": "vue-ai-hooks",
   "version": "0.3.0",
-  "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding, useImage, useObject — multi-provider, streaming-first, fully typed.",
+  "description": "Vue 3 Composable library for building AI-powered applications. useChat, useCompletion, useEmbedding, useImage, useSpeech, useObject — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "packageManager": "pnpm@8.15.9",
   "main": "./dist/index.cjs",
@@ -41,9 +41,11 @@
     "example:embedding:build": "vite build examples/embedding --config examples/embedding/vite.config.ts --outDir ../../output/examples/embedding --emptyOutDir",
     "example:image": "vite --config examples/image/vite.config.ts",
     "example:image:build": "vite build examples/image --config examples/image/vite.config.ts --outDir ../../output/examples/image --emptyOutDir",
+    "example:speech": "vite --config examples/speech/vite.config.ts",
+    "example:speech:build": "vite build examples/speech --config examples/speech/vite.config.ts --outDir ../../output/examples/speech --emptyOutDir",
     "example:object": "vite --config examples/object/vite.config.ts",
     "example:object:build": "vite build examples/object --config examples/object/vite.config.ts --outDir ../../output/examples/object --emptyOutDir",
-    "examples:build": "pnpm example:chat:build && pnpm example:completion:build && pnpm example:embedding:build && pnpm example:image:build && pnpm example:object:build",
+    "examples:build": "pnpm example:chat:build && pnpm example:completion:build && pnpm example:embedding:build && pnpm example:image:build && pnpm example:speech:build && pnpm example:object:build",
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "pnpm clean && vue-tsc -p tsconfig.build.json && vite build",
     "typecheck:all": "vue-tsc -p tsconfig.json --noEmit",
@@ -100,7 +102,8 @@
     "typescript",
     "gpt",
     "embedding",
-    "image"
+    "image",
+    "speech"
   ],
   "license": "MIT",
   "author": "hexinmiao96",

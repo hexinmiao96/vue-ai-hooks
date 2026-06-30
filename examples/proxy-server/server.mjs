@@ -8,6 +8,7 @@ const routes = {
   completion: new Set(['/api/completion', '/api/ai/completion']),
   embedding: new Set(['/api/embedding', '/api/ai/embedding']),
   image: new Set(['/api/image', '/api/ai/image']),
+  speech: new Set(['/api/speech', '/api/ai/speech']),
   object: new Set(['/api/object', '/api/ai/object'])
 }
 
@@ -45,6 +46,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.image.has(url.pathname)) {
       await handleImage(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.speech.has(url.pathname)) {
+      await handleSpeech(request, response)
       return
     }
 
@@ -139,6 +145,27 @@ async function handleImage(request, response) {
     image,
     images: [image],
     model: body.model || 'proxy-example-image',
+    providerMetadata: {
+      provider: 'proxy-server-example'
+    }
+  })
+}
+
+async function handleSpeech(request, response) {
+  const body = await readJson(request)
+  const text = typeof body.text === 'string' ? body.text : 'Vue AI Hooks speech demo'
+  const audio = {
+    url: silentWavDataUrl(),
+    mediaType: 'audio/wav',
+    revisedText: text,
+    durationInSeconds: 0,
+    metadata: {
+      seed: deterministicSeed(text)
+    }
+  }
+  sendJson(response, 200, {
+    audio,
+    model: body.model || 'proxy-example-speech',
     providerMetadata: {
       provider: 'proxy-server-example'
     }
@@ -264,6 +291,10 @@ function imageSvgDataUrl(prompt) {
   <rect x="144" y="650" width="480" height="26" rx="13" fill="#64748b"/>
 </svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+function silentWavDataUrl() {
+  return 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA='
 }
 
 function escapeSvg(value) {

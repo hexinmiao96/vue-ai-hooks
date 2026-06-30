@@ -13,7 +13,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178c6.svg)](https://www.typescriptlang.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
-`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供六个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
+`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供七个组合式函数、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -36,8 +36,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 
 ## 特性
 
-- **六个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
-  `useGeneration`、`useImage` 和 `useObject`。
+- **七个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
+  `useGeneration`、`useImage`、`useSpeech` 和 `useObject`。
 - **流式优先的 Vue 状态**：内置 SSE 解析、AbortController、节流、重试、生命周期回调、
   同 id 共享状态，以及统一的 `status`/`error` 控制。
 - **Provider 和代理覆盖**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、
@@ -47,7 +47,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
   `Message.parts`、自定义流数据和消息裁剪。
 - **工具调用控制**：本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
-- **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片生成路由、
+- **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片和语音生成路由、
   自定义生成任务、稳定 id 和 Date-safe 持久化 helper。
 - **库级质量**：严格 TypeScript、除 Vue 外无运行时依赖、可 tree-shaking 的 ESM/CJS 构建、
   Vitest 覆盖。
@@ -143,6 +143,22 @@ await generateImage('一张 Vue 工作台主视觉图', {
   size: '1024x1024'
 })
 console.log(image.value?.url)
+```
+
+### 语音生成
+
+```ts
+import { useSpeech } from 'vue-ai-hooks'
+
+const { audio, generateSpeech } = useSpeech({
+  api: '/api/speech'
+})
+
+await generateSpeech('朗读这段发布说明。', {
+  voice: 'alloy',
+  outputFormat: 'mp3'
+})
+console.log(audio.value?.url)
 ```
 
 ### 结构化对象输出
@@ -287,8 +303,8 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 浏览器本地工具 handler 需要 store、服务实例或 session 状态时，可以使用 `context`，
 这些数据不会被序列化。
 
-`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 可设置
-`maxRetries`，在临时 Provider 或后端失败时重试。流式调用只会在首个 chunk 到达前重试，
+`useChat`、`useCompletion`、`useEmbedding`、`useImage`、`useSpeech` 和
+`useObject` 可设置 `maxRetries`，在临时 Provider 或后端失败时重试。流式调用只会在首个 chunk 到达前重试，
 因此不会复制已有的部分文本。
 
 `useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。显式传入的 `id` 和 `messageId` 仍然优先。
@@ -298,18 +314,21 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useObject(options)`
 
-分别用于单次流式补全、embedding 向量生成、自定义生成任务、自有后端图片生成路由和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
+分别用于单次流式补全、embedding 向量生成、自定义生成任务、自有后端图片生成路由、自有后端语音生成路由和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
 
 这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。默认 proxy trace 会包含解析后的 proxy `api` 和浏览器 credentials 模式。
 
 `useImage` 面向你自己的 `/api/image` 路由，提供 `image`、`images`、`result`、
 `generateImage()`、生命周期 trace refs、中止、重试和表单 helpers，同时把 Provider 凭据保留在服务端。
 
-`useChat`、`useCompletion`、`useEmbedding`、`useImage` 和 `useObject` 还提供 `setInput()`、
-`handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空
-`input`；失败时会保留输入内容。五者都支持 `initialInput`。
+`useSpeech` 面向你自己的 `/api/speech` 路由，提供 `audio`、`result`、
+`generateSpeech()`、`speak()`、生命周期 trace refs、中止、重试和表单 helpers，同时把文字转语音凭据保留在服务端。
+
+`useChat`、`useCompletion`、`useEmbedding`、`useImage`、`useSpeech` 和
+`useObject` 还提供 `setInput()`、`handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空
+`input`；失败时会保留输入内容。六者都支持 `initialInput`。
 
 `useGeneration` 接收自定义 `fetcher`，并提供 typed `result`、`progress`、`chunks`、
 `stop()`、`reset()`、生命周期回调，以及首个可见输出前的重试。
@@ -332,13 +351,14 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 
 ## 示例
 
-六个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
+七个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
 
 - `examples/chat`：支持 Provider 切换、结构化 `Message.parts` 和本地工具审批演示的流式聊天 UI
 - `examples/proxy-server`：本地后端代理模板，覆盖默认 `/api/*` 路由和显式 `/api/ai/*` 契约
 - `examples/completion`：单次补全表单
 - `examples/embedding`：成对余弦相似度热力图
 - `examples/image`：不需要 key 的图片生成表单，默认返回确定性的本地 SVG
+- `examples/speech`：不需要 key 的语音生成表单，默认返回确定性的本地 WAV
 - `examples/object`：不需要 key 的结构化 JSON 抽取示例，内置本地 object Provider
 
 运行方式：
@@ -361,9 +381,10 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 ```
 
 同一个代理模板也支持 `useChat({ baseURL })`、`useCompletion({ baseURL })`、
-`useEmbedding({ baseURL })`、`useImage({ baseURL })` 和 `useObject({ baseURL, schema })`
+`useEmbedding({ baseURL })`、`useImage({ baseURL })`、`useSpeech({ baseURL })` 和
+`useObject({ baseURL, schema })`
 默认路径：`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、
-`/api/object`。Provider、proxy
+`/api/speech`、`/api/object`。Provider、proxy
 和单次请求 headers 都接受 `HeadersInit`，普通对象、`Headers` 实例和
 `[key, value][]` entries 都能使用。
 

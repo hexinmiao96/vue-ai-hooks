@@ -324,6 +324,46 @@ export interface ImageGenerationResult {
   response?: unknown
 }
 
+export interface GeneratedAudio {
+  /** Public URL, blob URL, or data URL for the generated audio. */
+  url?: string
+  /** Base64-encoded audio payload when your backend returns inline audio data. */
+  base64?: string
+  /** MIME type such as `audio/mpeg`, `audio/wav`, or `audio/ogg`. */
+  mediaType?: string
+  /** Provider-revised text when the upstream model returns one. */
+  revisedText?: string
+  /** Audio duration in seconds when the backend can report it. */
+  durationInSeconds?: number
+  /** Provider-specific metadata for this audio output. */
+  metadata?: Record<string, unknown>
+}
+
+/** Request payload for speech generation through an app-owned backend. */
+export interface SpeechGenerationRequest {
+  text: string
+  /** Extra JSON body fields for proxy-specific request options. */
+  body?: Record<string, unknown>
+  model?: string
+  voice?: string
+  outputFormat?: string
+  instructions?: string
+  speed?: number
+  language?: string
+  providerOptions?: Record<string, unknown>
+  user?: string
+  signal?: AbortSignal
+  headers?: HeadersInit
+}
+
+export interface SpeechGenerationResult {
+  audio?: GeneratedAudio
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
 export interface RetryContext {
   /** 1-based retry attempt number. */
   attempt: number
