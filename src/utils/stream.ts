@@ -14,6 +14,18 @@ export type UIMessageStreamSource =
   | AsyncIterable<UIMessageStreamPart>
   | ReadableStream<UIMessageStreamPart>
 
+export interface UIMessageStreamWriter {
+  write(part: UIMessageStreamPart): void
+  merge(stream: UIMessageStreamSource): Promise<void>
+  error(error: unknown): void
+}
+
+export interface CreateUIMessageStreamOptions {
+  execute: (writer: UIMessageStreamWriter) => void | Promise<void>
+  onError?: (error: unknown) => UIMessageStreamPart | string | null | undefined
+  signal?: AbortSignal
+}
+
 export interface UIMessageStreamParser {
   toChatChunks(raw: Record<string, unknown>): ChatChunk[]
 }
@@ -131,6 +143,58 @@ export async function* readUIMessageStream({
     const chunks = parser.toChatChunks(raw)
     for (const chunk of chunks) yield chunk
   }
+}
+
+/**
+ * Create an AI SDK UI message stream from imperative writer callbacks.
+ */
+export function createUIMessageStream({
+  execute,
+  onError,
+  signal
+}: CreateUIMessageStreamOptions): ReadableStream<UIMessageStreamPart> {
+  return new ReadableStream<UIMessageStreamPart>({
+    async start(controller) {
+      let closed = false
+      const close = () => {
+        if (closed) return
+        closed = true
+        controller.close()
+      }
+      const write = (part: UIMessageStreamPart) => {
+        if (closed || signal?.aborted) return
+        controller.enqueue(part)
+      }
+      const abort = () => close()
+      const writer: UIMessageStreamWriter = {
+        write,
+        async merge(stream) {
+          for await (const part of streamParts(stream)) {
+            write(part)
+          }
+        },
+        error(error) {
+          const part = normalizeUIMessageStreamError(error, onError)
+          if (part) write(part)
+        }
+      }
+
+      if (signal?.aborted) {
+        close()
+        return
+      }
+
+      signal?.addEventListener('abort', abort, { once: true })
+      try {
+        await execute(writer)
+      } catch (error) {
+        writer.error(error)
+      } finally {
+        signal?.removeEventListener('abort', abort)
+        close()
+      }
+    }
+  })
 }
 
 /**
@@ -254,6 +318,23 @@ function isReadableStream(
   source: UIMessageStreamSource
 ): source is ReadableStream<UIMessageStreamPart> {
   return typeof (source as ReadableStream<UIMessageStreamPart>).getReader === 'function'
+}
+
+function normalizeUIMessageStreamError(
+  error: unknown,
+  onError?: (error: unknown) => UIMessageStreamPart | string | null | undefined
+): UIMessageStreamPart | null {
+  const handled = onError ? onError(error) : defaultUIMessageStreamError(error)
+  if (handled === null || handled === undefined) return null
+  if (typeof handled === 'string') return { type: 'error', errorText: handled }
+  return handled
+}
+
+function defaultUIMessageStreamError(error: unknown): UIMessageStreamPart {
+  return {
+    type: 'error',
+    errorText: error instanceof Error ? error.message : 'UI message stream failed'
+  }
 }
 
 function encodeTextStream(stream: ReadableStream<string>): ReadableStream<Uint8Array> {

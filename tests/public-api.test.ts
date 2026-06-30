@@ -6,6 +6,7 @@ import {
   convertToModelMessages,
   cosineSimilarity,
   createIdGenerator,
+  createUIMessageStream,
   createUIMessageStreamParser,
   createUIMessageStreamResponse,
   deepseek,
@@ -130,6 +131,7 @@ import type {
   ProxyRequestKind,
   ProxyRequestOverride,
   ProxyProviderConfig,
+  CreateUIMessageStreamOptions,
   CreateUIMessageStreamResponseOptions,
   PipeUIMessageStreamToResponseOptions,
   RegenerateChatOptions,
@@ -190,6 +192,7 @@ import type {
   UIMessageStreamPart,
   UIMessageStreamParser,
   UIMessageStreamSource,
+  UIMessageStreamWriter,
   UseChatOptions,
   UseChatReturn,
   UseCompletionOptions,
@@ -310,6 +313,22 @@ describe('public API types', () => {
       | AsyncIterable<UIMessageStreamPart>
       | ReadableStream<UIMessageStreamPart>
     >()
+    expectTypeOf(createUIMessageStream).parameter(0).toEqualTypeOf<CreateUIMessageStreamOptions>()
+    expectTypeOf(createUIMessageStream).returns.toEqualTypeOf<ReadableStream<UIMessageStreamPart>>()
+    expectTypeOf<CreateUIMessageStreamOptions['execute']>().toEqualTypeOf<
+      (writer: UIMessageStreamWriter) => void | Promise<void>
+    >()
+    expectTypeOf<CreateUIMessageStreamOptions['onError']>().toEqualTypeOf<
+      ((error: unknown) => UIMessageStreamPart | string | null | undefined) | undefined
+    >()
+    expectTypeOf<CreateUIMessageStreamOptions['signal']>().toEqualTypeOf<AbortSignal | undefined>()
+    expectTypeOf<UIMessageStreamWriter['write']>().toEqualTypeOf<
+      (part: UIMessageStreamPart) => void
+    >()
+    expectTypeOf<UIMessageStreamWriter['merge']>().toEqualTypeOf<
+      (stream: UIMessageStreamSource) => Promise<void>
+    >()
+    expectTypeOf<UIMessageStreamWriter['error']>().toEqualTypeOf<(error: unknown) => void>()
     expectTypeOf(toChatChunks).parameter(0).toEqualTypeOf<Record<string, unknown>>()
     expectTypeOf(toChatChunks).parameter(1).toEqualTypeOf<UIMessageStreamParser | undefined>()
     expectTypeOf(toChatChunks).returns.toEqualTypeOf<ChatChunk[]>()

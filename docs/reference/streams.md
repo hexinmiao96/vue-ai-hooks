@@ -5,11 +5,50 @@ advanced transports that need to produce or consume AI SDK UI message streams
 without using `proxyProvider`.
 
 Public exports: `parseSSE`, `readUIMessageStream`, `toChatChunks`,
-`createUIMessageStreamParser`, `createUIMessageStreamResponse`,
+`createUIMessageStream`, `createUIMessageStreamParser`, `createUIMessageStreamResponse`,
 `pipeUIMessageStreamToResponse`, `formatSSEData`, `ReadUIMessageStreamOptions`,
-`CreateUIMessageStreamResponseOptions`, `PipeUIMessageStreamToResponseOptions`,
-`ServerResponseLike`, `UIMessageStreamPart`, `UIMessageStreamSource`, and
+`CreateUIMessageStreamOptions`, `CreateUIMessageStreamResponseOptions`,
+`PipeUIMessageStreamToResponseOptions`, `ServerResponseLike`,
+`UIMessageStreamPart`, `UIMessageStreamSource`, `UIMessageStreamWriter`, and
 `UIMessageStreamParser`.
+
+## `createUIMessageStream()`
+
+Create a `ReadableStream<UIMessageStreamPart>` with an imperative writer. Use it
+when a backend route needs to write parts over time, merge another part stream,
+or normalize errors before handing the stream to a response helper:
+
+```ts
+import { createUIMessageStream, createUIMessageStreamResponse } from 'vue-ai-hooks'
+
+export async function POST() {
+  const stream = createUIMessageStream({
+    async execute({ write, merge }) {
+      write({ type: 'start', messageId: 'msg_1' })
+      write({ type: 'text-delta', delta: 'Hello' })
+      await merge([{ type: 'finish', finishReason: 'stop' }])
+    },
+    onError(error) {
+      return error instanceof Error ? error.message : 'Stream failed'
+    }
+  })
+
+  return createUIMessageStreamResponse({ stream })
+}
+```
+
+`CreateUIMessageStreamOptions` accepts:
+
+| Option    | Type                                                                     | Description                                     |
+| --------- | ------------------------------------------------------------------------ | ----------------------------------------------- |
+| `execute` | `(writer: UIMessageStreamWriter) => void \| Promise<void>`               | Writes or merges stream parts.                  |
+| `onError` | `(error: unknown) => UIMessageStreamPart \| string \| null \| undefined` | Optional error-part mapper for thrown failures. |
+| `signal`  | `AbortSignal`                                                            | Closes the stream early when aborted.           |
+
+`UIMessageStreamWriter` exposes `write(part)`, `merge(stream)`, and
+`error(error)`. Returning a string from `onError` writes
+`{ type: 'error', errorText: string }`; returning `null` or `undefined`
+suppresses the error part.
 
 ## `createUIMessageStreamResponse()`
 

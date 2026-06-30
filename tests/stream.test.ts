@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  createUIMessageStream,
   createUIMessageStreamParser,
   createUIMessageStreamResponse,
   formatSSEData,
@@ -114,6 +115,119 @@ describe('parseSSE', () => {
 })
 
 describe('AI SDK UI message stream helpers', () => {
+  it('creates UI message streams with writer callbacks', async () => {
+    const stream = createUIMessageStream({
+      execute({ write }) {
+        write({ type: 'start', messageId: 'msg_1' })
+        write({ type: 'text-delta', delta: 'Hello' })
+        write({ type: 'finish', finishReason: 'stop' })
+      }
+    })
+    const response = createUIMessageStreamResponse({ stream })
+    const chunks: unknown[] = []
+
+    for await (const chunk of readUIMessageStream({ response })) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([
+      { messageId: 'msg_1', metadata: { type: 'start', messageId: 'msg_1' } },
+      { content: 'Hello' },
+      { finishReason: 'stop' }
+    ])
+  })
+
+  it('merges nested UI message stream sources', async () => {
+    const stream = createUIMessageStream({
+      async execute({ write, merge }) {
+        write({ type: 'text-delta', delta: 'A' })
+        await merge([{ type: 'text-delta', delta: 'B' }])
+        await merge(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue({ type: 'text-delta', delta: 'C' })
+              controller.close()
+            }
+          })
+        )
+      }
+    })
+    const response = createUIMessageStreamResponse({ stream })
+    const chunks: unknown[] = []
+
+    for await (const chunk of readUIMessageStream({ response })) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([{ content: 'A' }, { content: 'B' }, { content: 'C' }])
+  })
+
+  it('writes error parts from thrown stream executors', async () => {
+    const defaultError = createUIMessageStream({
+      execute() {
+        throw new Error('default failed')
+      }
+    })
+    const customError = createUIMessageStream({
+      execute() {
+        throw new Error('hidden')
+      },
+      onError(error) {
+        expect(error).toBeInstanceOf(Error)
+        return 'custom failed'
+      }
+    })
+
+    await expect(async () => {
+      for await (const _chunk of readUIMessageStream({
+        response: createUIMessageStreamResponse({ stream: defaultError })
+      })) {
+        // consume stream
+      }
+    }).rejects.toMatchObject({ message: 'default failed' })
+    await expect(async () => {
+      for await (const _chunk of readUIMessageStream({
+        response: createUIMessageStreamResponse({ stream: customError })
+      })) {
+        // consume stream
+      }
+    }).rejects.toMatchObject({ message: 'custom failed' })
+  })
+
+  it('can suppress stream executor errors and close on abort', async () => {
+    const suppressed = createUIMessageStream({
+      execute({ write }) {
+        write({ type: 'text-delta', delta: 'before' })
+        throw new Error('suppressed')
+      },
+      onError: () => null
+    })
+    const controller = new AbortController()
+    controller.abort()
+    const aborted = createUIMessageStream({
+      signal: controller.signal,
+      execute({ write }) {
+        write({ type: 'text-delta', delta: 'after' })
+      }
+    })
+    const suppressedChunks: unknown[] = []
+    const abortedChunks: unknown[] = []
+
+    for await (const chunk of readUIMessageStream({
+      response: createUIMessageStreamResponse({ stream: suppressed })
+    })) {
+      suppressedChunks.push(chunk)
+    }
+    for await (const chunk of readUIMessageStream({
+      response: createUIMessageStreamResponse({ stream: aborted })
+    })) {
+      abortedChunks.push(chunk)
+    }
+
+    expect(suppressedChunks).toEqual([{ content: 'before' }])
+    expect(abortedChunks).toEqual([])
+  })
+
   it('formats JSON values as SSE data events', () => {
     expect(formatSSEData({ type: 'text-delta', delta: 'Hi' })).toBe(
       'data: {"type":"text-delta","delta":"Hi"}\n\n'

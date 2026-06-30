@@ -23,6 +23,7 @@ const requiredRuntimeExports = [
   'convertToModelMessages',
   'cosineSimilarity',
   'createIdGenerator',
+  'createUIMessageStream',
   'createUIMessageStreamParser',
   'createUIMessageStreamResponse',
   'deepseek',

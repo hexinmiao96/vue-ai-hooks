@@ -5,11 +5,48 @@ transport 场景：即使不使用 `proxyProvider`，也能产出或消费 AI SD
 stream。
 
 公开导出：`parseSSE`、`readUIMessageStream`、`toChatChunks`、
-`createUIMessageStreamParser`、`createUIMessageStreamResponse`、
+`createUIMessageStream`、`createUIMessageStreamParser`、`createUIMessageStreamResponse`、
 `pipeUIMessageStreamToResponse`、`formatSSEData`、`ReadUIMessageStreamOptions`、
-`CreateUIMessageStreamResponseOptions`、`PipeUIMessageStreamToResponseOptions`、
-`ServerResponseLike`、`UIMessageStreamPart`、`UIMessageStreamSource` 和
+`CreateUIMessageStreamOptions`、`CreateUIMessageStreamResponseOptions`、
+`PipeUIMessageStreamToResponseOptions`、`ServerResponseLike`、
+`UIMessageStreamPart`、`UIMessageStreamSource`、`UIMessageStreamWriter` 和
 `UIMessageStreamParser`。
+
+## `createUIMessageStream()`
+
+用命令式 writer 创建 `ReadableStream<UIMessageStreamPart>`。当后端路由需要逐步写入
+parts、合并另一个 part stream，或在交给 response helper 前统一错误格式时使用：
+
+```ts
+import { createUIMessageStream, createUIMessageStreamResponse } from 'vue-ai-hooks'
+
+export async function POST() {
+  const stream = createUIMessageStream({
+    async execute({ write, merge }) {
+      write({ type: 'start', messageId: 'msg_1' })
+      write({ type: 'text-delta', delta: 'Hello' })
+      await merge([{ type: 'finish', finishReason: 'stop' }])
+    },
+    onError(error) {
+      return error instanceof Error ? error.message : 'Stream failed'
+    }
+  })
+
+  return createUIMessageStreamResponse({ stream })
+}
+```
+
+`CreateUIMessageStreamOptions` 支持：
+
+| 选项      | 类型                                                                     | 说明                           |
+| --------- | ------------------------------------------------------------------------ | ------------------------------ |
+| `execute` | `(writer: UIMessageStreamWriter) => void \| Promise<void>`               | 写入或合并 stream parts。      |
+| `onError` | `(error: unknown) => UIMessageStreamPart \| string \| null \| undefined` | 可选的异常到 error part 映射。 |
+| `signal`  | `AbortSignal`                                                            | abort 时提前关闭 stream。      |
+
+`UIMessageStreamWriter` 暴露 `write(part)`、`merge(stream)` 和 `error(error)`。
+`onError` 返回字符串时会写入 `{ type: 'error', errorText: string }`；返回 `null`
+或 `undefined` 会抑制 error part。
 
 ## `createUIMessageStreamResponse()`
 
