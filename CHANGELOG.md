@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createUIMessageStreamParser`, `toChatChunks`,
   `createUIMessageStreamResponse`, `pipeUIMessageStreamToResponse`,
   `formatSSEData`, and `parseSSE`.
+- Added a no-key `/api/ui-message-stream` proxy-server route, docs example, and
+  DemoShowcase block for exercising AI SDK UI message stream parts end to end.
 
 ## [0.3.0] - 2026-06-30
 

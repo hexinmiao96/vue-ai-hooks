@@ -18,6 +18,7 @@ try {
   await checkTranscriptionRoute()
   await checkRerankRoute()
   await checkObjectRoute()
+  await checkUIMessageStreamRoute()
   console.log('Proxy example check passed for default and legacy routes.')
 } finally {
   server?.kill()
@@ -204,6 +205,39 @@ async function checkObjectRoute() {
   expect(
     object.title.includes('urgent account'),
     '/api/object should derive a title from the prompt'
+  )
+}
+
+async function checkUIMessageStreamRoute() {
+  const events = await postSse('/api/ui-message-stream', {
+    id: 'msg_docs_demo',
+    messages: [{ role: 'user', content: 'show stream helpers' }]
+  })
+  expect(
+    events.some((event) => event.type === 'start' && event.messageId === 'msg_docs_demo'),
+    '/api/ui-message-stream should emit a start part with messageId'
+  )
+  expect(
+    events
+      .filter((event) => event.type === 'text-delta')
+      .map((event) => event.delta || '')
+      .join('')
+      .includes('show stream helpers'),
+    '/api/ui-message-stream should stream text-delta parts'
+  )
+  expect(
+    events.some((event) => event.type === 'source-url' && event.sourceId === 'docs_streams'),
+    '/api/ui-message-stream should emit source-url metadata'
+  )
+  expect(
+    events.some((event) => event.type === 'finish' && event.finishReason === 'stop'),
+    '/api/ui-message-stream should emit a finish part'
+  )
+
+  const legacy = await postSse('/api/ai/ui-message-stream', { prompt: 'legacy stream route' })
+  expect(
+    legacy.some((event) => event.type === 'data-progress'),
+    '/api/ai/ui-message-stream should emit progress data parts'
   )
 }
 

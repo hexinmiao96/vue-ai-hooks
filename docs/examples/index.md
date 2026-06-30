@@ -29,9 +29,9 @@ to verify the UI before wiring real provider keys or a backend proxy.
 
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
 default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/rerank`,
-`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, and `/api/object` routes,
-plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
-examples.
+`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and
+`/api/ui-message-stream` routes, plus the explicit `proxyProvider` `/api/ai/*`
+routes used by the browser examples.
 
 For a no-key image generation flow, run `pnpm example:image`. It renders a
 deterministic local SVG by default, then switches to the proxy `/api/image`
@@ -57,11 +57,17 @@ For a no-key structured JSON flow, run `pnpm example:object`. It uses the local
 `local-object` provider by default, then can switch to `proxy` or a real provider
 through the same environment variables as the other browser examples.
 
+For a no-key UI message stream contract check, run `pnpm example:proxy-server`
+and POST to `/api/ui-message-stream`. It emits AI SDK UI stream parts that can be
+decoded with `readUIMessageStream()` or consumed by the default proxy chat
+transport.
+
 ## Which demo should I open first?
 
 | Goal                                                     | Start with                                 |
 | -------------------------------------------------------- | ------------------------------------------ |
 | Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)               |
+| Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)    |
 | Turn one prompt into text                                | [Text completion](#completion-demo)        |
 | Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)    |
 | Generate an image through an app route                   | [Image generation](#image-demo)            |

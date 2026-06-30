@@ -12,7 +12,8 @@ const routes = {
   speech: new Set(['/api/speech', '/api/ai/speech']),
   transcription: new Set(['/api/transcription', '/api/ai/transcription']),
   rerank: new Set(['/api/rerank', '/api/ai/rerank']),
-  object: new Set(['/api/object', '/api/ai/object'])
+  object: new Set(['/api/object', '/api/ai/object']),
+  uiMessageStream: new Set(['/api/ui-message-stream', '/api/ai/ui-message-stream'])
 }
 
 const server = createServer(async (request, response) => {
@@ -74,6 +75,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.object.has(url.pathname)) {
       await handleObject(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.uiMessageStream.has(url.pathname)) {
+      await handleUIMessageStream(request, response)
       return
     }
 
@@ -264,6 +270,44 @@ async function handleObject(request, response) {
     { content: text.slice(0, Math.ceil(text.length / 2)) },
     { content: text.slice(Math.ceil(text.length / 2)) },
     {
+      finishReason: 'stop',
+      usage: {
+        promptTokens: estimateTokens(prompt),
+        completionTokens: estimateTokens(text),
+        totalTokens: estimateTokens(prompt) + estimateTokens(text)
+      }
+    }
+  ])
+}
+
+async function handleUIMessageStream(request, response) {
+  const body = await readJson(request)
+  const prompt = latestUserText(body.messages) || String(body.prompt || 'Vue AI Hooks stream demo')
+  const messageId = typeof body.id === 'string' && body.id ? body.id : `msg_${Date.now()}`
+  const text = `UI stream accepted: ${prompt}`
+  const firstBreak = Math.max(1, Math.ceil(text.length / 3))
+  const secondBreak = Math.max(firstBreak + 1, Math.ceil((text.length * 2) / 3))
+
+  sendSse(response, [
+    {
+      type: 'start',
+      messageId,
+      messageMetadata: { provider: 'proxy-server-example', route: 'ui-message-stream' }
+    },
+    { type: 'text-start', id: 'text_1' },
+    { type: 'text-delta', id: 'text_1', delta: text.slice(0, firstBreak) },
+    { type: 'data-progress', id: 'progress_1', data: { step: 'accepted', value: 0.33 } },
+    { type: 'text-delta', id: 'text_1', delta: text.slice(firstBreak, secondBreak) },
+    {
+      type: 'source-url',
+      sourceId: 'docs_streams',
+      url: 'https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/streams.md',
+      title: 'Stream utilities'
+    },
+    { type: 'text-delta', id: 'text_1', delta: text.slice(secondBreak) },
+    { type: 'text-end', id: 'text_1' },
+    {
+      type: 'finish',
       finishReason: 'stop',
       usage: {
         promptTokens: estimateTokens(prompt),

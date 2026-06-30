@@ -26,8 +26,8 @@ pnpm example:chat
 
 要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
 `/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/video`、
-`/api/speech`、`/api/rerank`、`/api/transcription`、`/api/object` 路由，以及浏览器示例通过
-`proxyProvider` 使用的 `/api/ai/*` 路由。
+`/api/speech`、`/api/rerank`、`/api/transcription`、`/api/object` 和
+`/api/ui-message-stream` 路由，以及浏览器示例通过 `proxyProvider` 使用的 `/api/ai/*` 路由。
 
 如果要试不需要 key 的图片生成流程，运行 `pnpm example:image`。它默认渲染确定性的本地
 SVG；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/image` 路由。
@@ -46,18 +46,23 @@ WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 `local-object` Provider，不需要 key；之后也可以用和其它浏览器示例相同的环境变量切到
 `proxy` 或真实 Provider。
 
+如果要检查 UI message stream 契约，运行 `pnpm example:proxy-server`，然后向
+`/api/ui-message-stream` 发 POST 请求。该路由会输出 AI SDK UI stream parts，可用
+`readUIMessageStream()` 解码，也可被默认 proxy chat transport 消费。
+
 ## 先看哪个示例？
 
-| 目标                             | 从这里开始                      |
-| -------------------------------- | ------------------------------- |
-| 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)          |
-| 一个提示词生成一段文本           | [文本补全](#completion-demo)    |
-| 做语义相似度比较                 | [向量相似度](#embedding-demo)   |
-| 通过应用后端生成图片             | [图片生成](#image-demo)         |
-| 通过应用后端生成视频             | [视频生成](#video-demo)         |
-| 通过应用后端生成语音             | [语音生成](#speech-demo)        |
-| 通过应用后端把音频转成文本       | [音频转写](#transcription-demo) |
-| 通过应用后端重排搜索结果         | [文档重排](#rerank-demo)        |
-| 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo)  |
+| 目标                             | 从这里开始                             |
+| -------------------------------- | -------------------------------------- |
+| 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)                 |
+| 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo) |
+| 一个提示词生成一段文本           | [文本补全](#completion-demo)           |
+| 做语义相似度比较                 | [向量相似度](#embedding-demo)          |
+| 通过应用后端生成图片             | [图片生成](#image-demo)                |
+| 通过应用后端生成视频             | [视频生成](#video-demo)                |
+| 通过应用后端生成语音             | [语音生成](#speech-demo)               |
+| 通过应用后端把音频转成文本       | [音频转写](#transcription-demo)        |
+| 通过应用后端重排搜索结果         | [文档重排](#rerank-demo)               |
+| 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo)         |
 
 <DemoShowcase locale="zh" />

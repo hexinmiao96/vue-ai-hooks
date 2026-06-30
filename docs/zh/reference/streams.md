@@ -12,6 +12,10 @@ stream。
 `UIMessageStreamPart`、`UIMessageStreamSource`、`UIMessageStreamWriter` 和
 `UIMessageStreamParser`。
 
+如果想做不需要 key 的可运行契约检查，先启动 `pnpm example:proxy-server`，再向
+`/api/ui-message-stream` 发 POST 请求。该路由会输出 AI SDK UI message stream parts，
+可以用 `readUIMessageStream()` 检查。
+
 ## `createUIMessageStream()`
 
 用命令式 writer 创建 `ReadableStream<UIMessageStreamPart>`。当后端路由需要逐步写入

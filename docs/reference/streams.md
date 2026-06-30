@@ -12,6 +12,10 @@ Public exports: `parseSSE`, `readUIMessageStream`, `toChatChunks`,
 `UIMessageStreamPart`, `UIMessageStreamSource`, `UIMessageStreamWriter`, and
 `UIMessageStreamParser`.
 
+For a runnable no-key contract check, start `pnpm example:proxy-server` and POST
+to `/api/ui-message-stream`. That route emits AI SDK UI message stream parts you
+can inspect with `readUIMessageStream()`.
+
 ## `createUIMessageStream()`
 
 Create a `ReadableStream<UIMessageStreamPart>` with an imperative writer. Use it

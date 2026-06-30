@@ -427,7 +427,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 十个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
 
 - `examples/chat`：支持 Provider 切换、结构化 `Message.parts` 和本地工具审批演示的流式聊天 UI
-- `examples/proxy-server`：本地后端代理模板，覆盖默认 `/api/*` 路由和显式 `/api/ai/*` 契约
+- `examples/proxy-server`：本地后端代理模板，覆盖默认 `/api/*` 路由、显式 `/api/ai/*` 契约和 UI message stream 路由
 - `examples/completion`：单次补全表单
 - `examples/embedding`：成对余弦相似度热力图
 - `examples/image`：不需要 key 的图片生成表单，默认返回确定性的本地 SVG
@@ -460,7 +460,8 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 `useEmbedding({ baseURL })`、`useImage({ baseURL })`、`useVideo({ baseURL })`、`useSpeech({ baseURL })` 和
 `useTranscription({ baseURL })`、`useRerank({ baseURL })` 和 `useObject({ baseURL, schema })`
 默认路径：`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、
-`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank`、`/api/object`。Provider、proxy
+`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank`、`/api/object`。它还提供
+`/api/ui-message-stream`，用于配合 `readUIMessageStream()` 检查 AI SDK UI message stream parts。Provider、proxy
 和单次请求 headers 都接受 `HeadersInit`，普通对象、`Headers` 实例和
 `[key, value][]` entries 都能使用。
 

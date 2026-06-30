@@ -5,6 +5,7 @@ import DemoBlock from './DemoBlock.vue'
 type LocaleKey = 'en' | 'zh'
 type DemoHref =
   | '#chat-demo'
+  | '#stream-demo'
   | '#completion-demo'
   | '#embedding-demo'
   | '#rerank-demo'
@@ -14,6 +15,7 @@ type DemoHref =
   | '#transcription-demo'
   | '#object-demo'
   | '#chat-demo-api'
+  | '#stream-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
   | '#rerank-demo-api'
@@ -24,6 +26,8 @@ type DemoHref =
   | '#object-demo-api'
   | '#chat-demo-api-props'
   | '#chat-demo-api-methods'
+  | '#stream-demo-api-props'
+  | '#stream-demo-api-methods'
   | '#completion-demo-api-props'
   | '#completion-demo-api-methods'
   | '#embedding-demo-api-props'
@@ -93,6 +97,37 @@ async function send(event?: { preventDefault?: () => void }) {
 async function approveFirstTool() {
   const [call] = pendingToolCalls.value
   if (call) await approveToolCall(call.id)
+}`,
+    stream: `import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  readUIMessageStream
+} from 'vue-ai-hooks'
+
+export async function POST(request: Request) {
+  const { prompt = 'Explain stream helpers.' } = await request.json()
+  const stream = createUIMessageStream({
+    async execute({ write }) {
+      write({ type: 'start', messageId: 'msg_stream_demo' })
+      write({ type: 'text-start', id: 'text_1' })
+      write({ type: 'text-delta', id: 'text_1', delta: 'Route accepted: ' })
+      write({ type: 'text-delta', id: 'text_1', delta: prompt })
+      write({ type: 'text-end', id: 'text_1' })
+      write({ type: 'finish', finishReason: 'stop' })
+    },
+    onError: (error) => (error instanceof Error ? error.message : 'Stream failed')
+  })
+
+  return createUIMessageStreamResponse({ stream })
+}
+
+const response = await fetch('/api/ui-message-stream', {
+  method: 'POST',
+  body: JSON.stringify({ prompt: 'Ship a Vue stream route.' })
+})
+
+for await (const chunk of readUIMessageStream({ response })) {
+  console.log(chunk)
 }`,
     completion: `const { completion, input: prompt, complete, stop, clear, isLoading } = useCompletion({
   api: '/api/completion',
@@ -241,6 +276,37 @@ async function send(event?: { preventDefault?: () => void }) {
 async function approveFirstTool() {
   const [call] = pendingToolCalls.value
   if (call) await approveToolCall(call.id)
+}`,
+    stream: `import {
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  readUIMessageStream
+} from 'vue-ai-hooks'
+
+export async function POST(request: Request) {
+  const { prompt = '解释 stream helper。' } = await request.json()
+  const stream = createUIMessageStream({
+    async execute({ write }) {
+      write({ type: 'start', messageId: 'msg_stream_demo' })
+      write({ type: 'text-start', id: 'text_1' })
+      write({ type: 'text-delta', id: 'text_1', delta: '路由已接收：' })
+      write({ type: 'text-delta', id: 'text_1', delta: prompt })
+      write({ type: 'text-end', id: 'text_1' })
+      write({ type: 'finish', finishReason: 'stop' })
+    },
+    onError: (error) => (error instanceof Error ? error.message : 'Stream 失败')
+  })
+
+  return createUIMessageStreamResponse({ stream })
+}
+
+const response = await fetch('/api/ui-message-stream', {
+  method: 'POST',
+  body: JSON.stringify({ prompt: '发布一个 Vue stream route。' })
+})
+
+for await (const chunk of readUIMessageStream({ response })) {
+  console.log(chunk)
 }`,
     completion: `const { completion: 补全结果, input: 输入文本, complete, stop, clear, isLoading } = useCompletion({
   api: '/api/completion',
@@ -392,6 +458,7 @@ const copy = {
     ],
     demoLinks: [
       { label: 'Chat', href: '#chat-demo' },
+      { label: 'Streams', href: '#stream-demo' },
       { label: 'Completion', href: '#completion-demo' },
       { label: 'Embedding', href: '#embedding-demo' },
       { label: 'Rerank', href: '#rerank-demo' },
@@ -403,6 +470,7 @@ const copy = {
     ],
     apiLinks: [
       { label: 'useChat API', href: '#chat-demo-api' },
+      { label: 'Stream API', href: '#stream-demo-api' },
       { label: 'useCompletion API', href: '#completion-demo-api' },
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
       { label: 'useRerank API', href: '#rerank-demo-api' },
@@ -520,6 +588,81 @@ const copy = {
             name: 'clear',
             type: '(): void',
             description: 'Reset chat messages and error state.'
+          }
+        ]
+      }
+    },
+    stream: {
+      title: 'UI message stream route',
+      topbarTitle: 'Stream utilities',
+      description:
+        'A backend route pattern for producing AI SDK UI message stream parts, then decoding them into provider-agnostic chat chunks.',
+      requestLabel: 'Request',
+      request: 'POST /api/ui-message-stream',
+      eventsLabel: 'Stream parts',
+      events: [
+        'start: msg_stream_demo',
+        'text-delta: Route accepted',
+        'data-progress: accepted',
+        'source-url: Stream utilities',
+        'finish: stop'
+      ],
+      footer: 'createUIMessageStream - response - readUIMessageStream',
+      apiRef: {
+        title: 'Stream utilities API',
+        propsTitle: 'Functions',
+        methodsTitle: 'Types',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Signature',
+          required: 'Export',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Type',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'createUIMessageStream',
+            type: '(options) => ReadableStream',
+            required: 'public',
+            description: 'Create UI message stream parts from a writer callback.'
+          },
+          {
+            name: 'createUIMessageStreamResponse',
+            type: '({ stream }) => Response',
+            required: 'public',
+            description: 'Return stream parts as Server-Sent Events from Fetch-compatible routes.'
+          },
+          {
+            name: 'pipeUIMessageStreamToResponse',
+            type: '({ stream, response }) => Promise<void>',
+            required: 'public',
+            description: 'Pipe stream parts into Node-style response objects.'
+          },
+          {
+            name: 'readUIMessageStream',
+            type: '({ response }) => AsyncGenerator<ChatChunk>',
+            required: 'public',
+            description: 'Decode AI SDK UI stream parts into ChatChunk values.'
+          }
+        ],
+        methods: [
+          {
+            name: 'CreateUIMessageStreamOptions',
+            type: 'execute, onError, signal',
+            description: 'Options accepted by createUIMessageStream().'
+          },
+          {
+            name: 'UIMessageStreamWriter',
+            type: 'write, merge, error',
+            description: 'Writer passed to the execute callback for app-owned routes.'
+          },
+          {
+            name: 'UIMessageStreamSource',
+            type: 'Iterable | AsyncIterable | ReadableStream',
+            description: 'Input accepted by response, pipe, and merge helpers.'
           }
         ]
       }
@@ -1212,6 +1355,7 @@ const copy = {
     ],
     demoLinks: [
       { label: '对话', href: '#chat-demo' },
+      { label: 'Stream', href: '#stream-demo' },
       { label: '补全', href: '#completion-demo' },
       { label: '向量检索', href: '#embedding-demo' },
       { label: '重排', href: '#rerank-demo' },
@@ -1223,6 +1367,7 @@ const copy = {
     ],
     apiLinks: [
       { label: 'useChat 接口', href: '#chat-demo-api' },
+      { label: 'Stream 接口', href: '#stream-demo-api' },
       { label: 'useCompletion 接口', href: '#completion-demo-api' },
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
       { label: 'useRerank 接口', href: '#rerank-demo-api' },
@@ -1331,6 +1476,81 @@ const copy = {
             name: 'clear',
             type: '（）：void',
             description: '清空消息列表并重置错误状态。'
+          }
+        ]
+      }
+    },
+    stream: {
+      title: 'UI message stream 路由',
+      topbarTitle: 'Stream 工具',
+      description:
+        '面向自有后端的 stream 路由模式：逐步产出 AI SDK UI message stream parts，再解码为框架无关的 ChatChunk。',
+      requestLabel: '请求',
+      request: 'POST /api/ui-message-stream',
+      eventsLabel: 'Stream 片段',
+      events: [
+        'start：msg_stream_demo',
+        'text-delta：路由已接收',
+        'data-progress：accepted',
+        'source-url：Stream 工具',
+        'finish：stop'
+      ],
+      footer: 'createUIMessageStream - response - readUIMessageStream',
+      apiRef: {
+        title: 'Stream 工具接口',
+        propsTitle: '函数',
+        methodsTitle: '类型',
+        propsHeaders: {
+          name: '名称',
+          type: '签名',
+          required: '导出',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '类型',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'createUIMessageStream',
+            type: '(options) => ReadableStream',
+            required: '公开',
+            description: '通过 writer 回调创建 UI message stream parts。'
+          },
+          {
+            name: 'createUIMessageStreamResponse',
+            type: '({ stream }) => Response',
+            required: '公开',
+            description: '在 Fetch 兼容路由里以 SSE 返回 stream parts。'
+          },
+          {
+            name: 'pipeUIMessageStreamToResponse',
+            type: '({ stream, response }) => Promise<void>',
+            required: '公开',
+            description: '把 stream parts 写入 Node 风格 response。'
+          },
+          {
+            name: 'readUIMessageStream',
+            type: '({ response }) => AsyncGenerator<ChatChunk>',
+            required: '公开',
+            description: '把 AI SDK UI stream parts 解码成 ChatChunk。'
+          }
+        ],
+        methods: [
+          {
+            name: 'CreateUIMessageStreamOptions',
+            type: 'execute, onError, signal',
+            description: 'createUIMessageStream() 接收的选项。'
+          },
+          {
+            name: 'UIMessageStreamWriter',
+            type: 'write, merge, error',
+            description: '传给 execute 回调的 writer，用于自有后端路由。'
+          },
+          {
+            name: 'UIMessageStreamSource',
+            type: 'Iterable | AsyncIterable | ReadableStream',
+            description: 'response、pipe 和 merge helper 可接收的输入。'
           }
         ]
       }
@@ -1994,6 +2214,7 @@ const copy = {
 
 const content = computed(() => copy[localeKey.value])
 const chatCode = computed(() => codeSamples[localeKey.value].chat)
+const streamCode = computed(() => codeSamples[localeKey.value].stream)
 const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
 const rerankCode = computed(() => codeSamples[localeKey.value].rerank)
@@ -2005,6 +2226,7 @@ const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
 const sectionIds: DemoHref[] = [
   '#chat-demo',
+  '#stream-demo',
   '#completion-demo',
   '#embedding-demo',
   '#rerank-demo',
@@ -2014,6 +2236,7 @@ const sectionIds: DemoHref[] = [
   '#transcription-demo',
   '#object-demo',
   '#chat-demo-api',
+  '#stream-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
   '#rerank-demo-api',
@@ -2024,6 +2247,8 @@ const sectionIds: DemoHref[] = [
   '#object-demo-api',
   '#chat-demo-api-props',
   '#chat-demo-api-methods',
+  '#stream-demo-api-props',
+  '#stream-demo-api-methods',
   '#completion-demo-api-props',
   '#completion-demo-api-methods',
   '#embedding-demo-api-props',
@@ -2226,6 +2451,49 @@ onUnmounted(() => {
                   {{ action }}
                 </span>
               </span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="stream-demo"
+          api-title-id="stream-demo-api"
+          api-props-section-id="stream-demo-api-props"
+          api-methods-section-id="stream-demo-api-methods"
+          :title="content.stream.title"
+          :description="content.stream.description"
+          :code="streamCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.stream.apiRef"
+        >
+          <div class="stream-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-cyan" />
+              <span>{{ content.stream.topbarTitle }}</span>
+            </div>
+            <div class="stream-preview__grid">
+              <article class="stream-route">
+                <span class="field-label">{{ content.stream.requestLabel }}</span>
+                <p>{{ content.stream.request }}</p>
+              </article>
+              <article class="stream-events">
+                <span class="field-label">{{ content.stream.eventsLabel }}</span>
+                <ul>
+                  <li v-for="event in content.stream.events" :key="event">
+                    {{ event }}
+                  </li>
+                </ul>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.stream.footer }}</span>
             </footer>
           </div>
         </DemoBlock>
@@ -2930,6 +3198,7 @@ onUnmounted(() => {
 
 .chat-preview,
 .completion-preview,
+.stream-preview,
 .embedding-preview,
 .image-preview,
 .speech-preview,
@@ -3009,6 +3278,7 @@ onUnmounted(() => {
 }
 
 .chat-message p,
+.stream-route p,
 .completion-editor p,
 .completion-output p,
 .speech-prompt p,
@@ -3119,6 +3389,8 @@ onUnmounted(() => {
 
 .completion-editor,
 .completion-output,
+.stream-route,
+.stream-events,
 .embedding-list,
 .image-prompt,
 .image-card,
@@ -3135,6 +3407,8 @@ onUnmounted(() => {
 
 .completion-editor,
 .completion-output,
+.stream-route,
+.stream-events,
 .image-prompt,
 .image-card,
 .speech-prompt,
@@ -3148,9 +3422,30 @@ onUnmounted(() => {
 }
 
 .image-preview__grid,
+.stream-preview__grid,
 .transcription-preview__grid {
   display: grid;
   gap: 12px;
+}
+
+.stream-events ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stream-events li {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--demo-subtle);
+  color: var(--demo-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .image-prompt p,
@@ -3513,6 +3808,10 @@ onUnmounted(() => {
 
   .image-preview__grid {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  }
+
+  .stream-preview__grid {
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
   }
 
   .speech-preview__grid {

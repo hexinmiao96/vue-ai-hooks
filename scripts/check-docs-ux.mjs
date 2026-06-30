@@ -30,6 +30,8 @@ const files = {
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
   zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
+  streams: readFileSync('docs/reference/streams.md', 'utf8'),
+  zhStreams: readFileSync('docs/zh/reference/streams.md', 'utf8'),
   providers: readFileSync('docs/reference/providers.md', 'utf8'),
   zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
@@ -47,6 +49,7 @@ const files = {
   transcriptionExample: readFileSync('examples/transcription/App.vue', 'utf8'),
   rerankExample: readFileSync('examples/rerank/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
+  proxyServer: readFileSync('examples/proxy-server/server.mjs', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
 const failures = []
@@ -316,8 +319,9 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  '`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, and `/api/object` routes',
+  '`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and',
   '`/api/rerank`',
+  '`/api/ui-message-stream`',
   'pnpm example:image',
   'deterministic local SVG',
   'proxy `/api/image`',
@@ -337,6 +341,8 @@ for (const snippet of [
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
+  'Test an AI SDK UI stream backend route',
+  '[UI message stream route](#stream-demo)',
   'Generate an image through an app route',
   '[Image generation](#image-demo)',
   'Generate a video through an app route',
@@ -360,8 +366,9 @@ for (const snippet of [
   '`local-tools` Provider',
   '点击 **Run approval demo**',
   '`/api/video`',
-  '`/api/transcription`、`/api/object` 路由',
+  '`/api/transcription`、`/api/object` 和',
   '`/api/rerank`',
+  '`/api/ui-message-stream`',
   'pnpm example:image',
   '确定性的本地',
   'proxy `/api/image`',
@@ -381,6 +388,8 @@ for (const snippet of [
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
+  '测试 AI SDK UI stream 后端路由',
+  '[UI message stream 路由](#stream-demo)',
   '通过应用后端生成图片',
   '[图片生成](#image-demo)',
   '通过应用后端生成视频',
@@ -470,7 +479,9 @@ expect(
     files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: 'Transcription', href: '#transcription-demo' }") &&
     files.demoShowcase.includes("{ label: 'Rerank', href: '#rerank-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Streams', href: '#stream-demo' }") &&
     files.demoShowcase.includes("{ label: 'useImage API', href: '#image-demo-api' }") &&
+    files.demoShowcase.includes("{ label: 'Stream API', href: '#stream-demo-api' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech API', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes(
       "{ label: 'useTranscription API', href: '#transcription-demo-api' }"
@@ -482,12 +493,14 @@ expect(
     files.demoShowcase.includes('const speechCode = computed') &&
     files.demoShowcase.includes('const transcriptionCode = computed') &&
     files.demoShowcase.includes('const rerankCode = computed') &&
+    files.demoShowcase.includes('const streamCode = computed') &&
     files.demoShowcase.includes('id="image-demo"') &&
+    files.demoShowcase.includes('id="stream-demo"') &&
     files.demoShowcase.includes('id="video-demo"') &&
     files.demoShowcase.includes('id="speech-demo"') &&
     files.demoShowcase.includes('id="transcription-demo"') &&
     files.demoShowcase.includes('id="rerank-demo"'),
-  'DemoShowcase must include the image, video, speech, transcription, and rerank demos and API shortcuts'
+  'DemoShowcase must include the stream, image, video, speech, transcription, and rerank demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),
@@ -503,13 +516,38 @@ expect(
     files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: '转写', href: '#transcription-demo' }") &&
     files.demoShowcase.includes("{ label: '重排', href: '#rerank-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Stream', href: '#stream-demo' }") &&
     files.demoShowcase.includes("{ label: 'useVideo 接口', href: '#video-demo-api' }") &&
+    files.demoShowcase.includes("{ label: 'Stream 接口', href: '#stream-demo-api' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes(
       "{ label: 'useTranscription 接口', href: '#transcription-demo-api' }"
     ) &&
     files.demoShowcase.includes("{ label: 'useRerank 接口', href: '#rerank-demo-api' }"),
-  'DemoShowcase must include the Chinese video, speech, transcription, and rerank demos and API shortcuts'
+  'DemoShowcase must include the Chinese stream, video, speech, transcription, and rerank demos and API shortcuts'
+)
+expect(
+  files.demoShowcase.includes('createUIMessageStreamResponse') &&
+    files.demoShowcase.includes('/api/ui-message-stream') &&
+    files.demoShowcase.includes('readUIMessageStream({ response })') &&
+    files.demoShowcase.includes("title: 'UI message stream route'") &&
+    files.demoShowcase.includes("title: 'UI message stream 路由'"),
+  'DemoShowcase must include copyable UI message stream route examples in English and Chinese'
+)
+expect(
+  files.streams.includes('pnpm example:proxy-server') &&
+    files.streams.includes('/api/ui-message-stream') &&
+    files.streams.includes('readUIMessageStream()') &&
+    files.zhStreams.includes('pnpm example:proxy-server') &&
+    files.zhStreams.includes('/api/ui-message-stream') &&
+    files.zhStreams.includes('readUIMessageStream()') &&
+    files.readme.includes('/api/ui-message-stream') &&
+    files.zhReadme.includes('/api/ui-message-stream') &&
+    files.proxyServer.includes("uiMessageStream: new Set(['/api/ui-message-stream'") &&
+    files.proxyServer.includes('async function handleUIMessageStream') &&
+    files.proxyServer.includes("type: 'text-delta'") &&
+    files.proxyServer.includes("type: 'finish'"),
+  'Stream reference docs, READMEs, and proxy server must expose the runnable UI message stream route'
 )
 expect(
   files.demoShowcase.includes('const attachments = fileInput.value?.files ?? undefined'),

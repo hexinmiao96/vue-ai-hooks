@@ -525,7 +525,7 @@ If you are porting an AI SDK UI surface, use the
 Ten runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
-- `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
+- `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
 - `examples/image` — no-key image generation form with a deterministic local SVG fallback
@@ -560,7 +560,8 @@ The same proxy template also accepts `useChat({ baseURL })`,
 `useTranscription({ baseURL })`, `useRerank({ baseURL })`, and
 `useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
 `/api/embedding`, `/api/image`, `/api/video`, `/api/speech`, `/api/transcription`,
-`/api/rerank`, and `/api/object`.
+`/api/rerank`, and `/api/object`. It also exposes `/api/ui-message-stream` for
+checking AI SDK UI message stream parts with `readUIMessageStream()`.
 Provider, proxy, and per-request headers
 accept `HeadersInit`, so records, `Headers` instances, and `[key, value][]`
 entries all work.
