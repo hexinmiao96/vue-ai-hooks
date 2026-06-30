@@ -10,6 +10,7 @@ const routes = {
   image: new Set(['/api/image', '/api/ai/image']),
   speech: new Set(['/api/speech', '/api/ai/speech']),
   transcription: new Set(['/api/transcription', '/api/ai/transcription']),
+  rerank: new Set(['/api/rerank', '/api/ai/rerank']),
   object: new Set(['/api/object', '/api/ai/object'])
 }
 
@@ -57,6 +58,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.transcription.has(url.pathname)) {
       await handleTranscription(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.rerank.has(url.pathname)) {
+      await handleRerank(request, response)
       return
     }
 
@@ -187,6 +193,30 @@ async function handleTranscription(request, response) {
     language: body.language || 'en',
     durationInSeconds: 0,
     model: body.model || 'proxy-example-transcription',
+    providerMetadata: {
+      provider: 'proxy-server-example'
+    }
+  })
+}
+
+async function handleRerank(request, response) {
+  const body = await readJson(request)
+  const query = typeof body.query === 'string' ? body.query : ''
+  const documents = Array.isArray(body.documents) ? body.documents : []
+  const ranking = documents
+    .map((document, index) => ({
+      index,
+      score: rerankScore(query, document),
+      document
+    }))
+    .sort((a, b) => b.score - a.score)
+  const topN = Number.isInteger(body.topN) && body.topN > 0 ? body.topN : ranking.length
+  const limitedRanking = ranking.slice(0, topN)
+  sendJson(response, 200, {
+    originalDocuments: documents,
+    rerankedDocuments: limitedRanking.map((item) => item.document),
+    ranking: limitedRanking,
+    model: body.model || 'proxy-example-rerank',
     providerMetadata: {
       provider: 'proxy-server-example'
     }
@@ -339,4 +369,28 @@ function transcriptionLabel(audio) {
     .trim()
   if (normalized.startsWith('data:audio/')) return 'inline audio payload'
   return normalized.length > 48 ? `${normalized.slice(0, 45)}...` : normalized
+}
+
+function rerankScore(query, document) {
+  const queryTerms = tokenize(query)
+  const documentTerms = new Set(tokenize(documentText(document)))
+  const overlap = queryTerms.filter((term) => documentTerms.has(term)).length
+  const seed = deterministicSeed(`${query}:${documentText(document)}`) % 100
+  return Number((overlap + seed / 1000).toFixed(6))
+}
+
+function documentText(document) {
+  if (typeof document === 'string') return document
+  if (!document || typeof document !== 'object') return ''
+  return Object.values(document)
+    .map((value) => (typeof value === 'string' ? value : ''))
+    .filter(Boolean)
+    .join(' ')
+}
+
+function tokenize(value) {
+  return String(value || '')
+    .toLowerCase()
+    .split(/[^a-z0-9\u4e00-\u9fa5]+/u)
+    .filter(Boolean)
 }

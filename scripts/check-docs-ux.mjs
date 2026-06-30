@@ -22,6 +22,8 @@ const files = {
   zhUseSpeech: readFileSync('docs/zh/reference/use-speech.md', 'utf8'),
   useTranscription: readFileSync('docs/reference/use-transcription.md', 'utf8'),
   zhUseTranscription: readFileSync('docs/zh/reference/use-transcription.md', 'utf8'),
+  useRerank: readFileSync('docs/reference/use-rerank.md', 'utf8'),
+  zhUseRerank: readFileSync('docs/zh/reference/use-rerank.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -39,6 +41,7 @@ const files = {
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   speechExample: readFileSync('examples/speech/App.vue', 'utf8'),
   transcriptionExample: readFileSync('examples/transcription/App.vue', 'utf8'),
+  rerankExample: readFileSync('examples/rerank/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
@@ -86,6 +89,7 @@ for (const snippet of [
   'The browser sends provider-agnostic JSON to your own `/api/chat` route',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
+  "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[Examples](/examples/)'
 ]) {
@@ -104,6 +108,7 @@ for (const snippet of [
   '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
+  "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[示例](/zh/examples/)'
 ]) {
@@ -127,9 +132,11 @@ expect(
     files.envExample.includes('VITE_PROXY_IMAGE_URL=/api/ai/image') &&
     files.envExample.includes('VITE_PROXY_SPEECH_URL=/api/ai/speech') &&
     files.envExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription') &&
+    files.envExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
     files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object') &&
+    files.examplesEnvExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
     files.examplesEnvExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription'),
-  '.env.example files must make the chat, image, speech, transcription, and object examples runnable without provider keys by default'
+  '.env.example files must make the chat, image, speech, transcription, rerank, and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -144,6 +151,8 @@ expect(
     files.zhReadme.includes('`examples/image`') &&
     files.readme.includes('`examples/speech`') &&
     files.zhReadme.includes('`examples/speech`') &&
+    files.readme.includes('`examples/rerank`') &&
+    files.zhReadme.includes('`examples/rerank`') &&
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/choosing.md') &&
@@ -223,6 +232,7 @@ for (const snippet of [
   'AI SDK `useChat` reference',
   'Quick mapping',
   'AI SDK Core transcription',
+  'AI SDK Core reranking',
   'DefaultChatTransport',
   'transport` or `provider`',
   'input`, `setInput()`, `handleInputChange()`',
@@ -242,6 +252,7 @@ for (const snippet of [
   'AI SDK `useChat` 参考',
   '快速映射',
   'AI SDK Core 音频转写',
+  'AI SDK Core 文档重排',
   'DefaultChatTransport',
   'transport` 或 `provider`',
   'input`、`setInput()`、`handleInputChange()`',
@@ -265,10 +276,13 @@ expect(
     files.packageJson.includes('"example:transcription"') &&
     files.packageJson.includes('"example:transcription:build"') &&
     files.packageJson.includes('pnpm example:transcription:build') &&
+    files.packageJson.includes('"example:rerank"') &&
+    files.packageJson.includes('"example:rerank:build"') &&
+    files.packageJson.includes('pnpm example:rerank:build') &&
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the image, speech, transcription, and object examples'
+  'package scripts must expose and build the image, speech, transcription, rerank, and object examples'
 )
 
 expect(
@@ -285,7 +299,8 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  '`/api/speech`, `/api/transcription`, and `/api/object` routes',
+  '`/api/image`, `/api/speech`, `/api/transcription`, and `/api/object` routes',
+  '`/api/rerank`',
   'pnpm example:image',
   'deterministic local SVG',
   'proxy `/api/image`',
@@ -295,6 +310,9 @@ for (const snippet of [
   'pnpm example:transcription',
   'deterministic local transcript',
   '`/api/transcription` route',
+  'pnpm example:rerank',
+  'local ranking by default',
+  'proxy `/api/rerank`',
   '`local-object` provider',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
@@ -305,6 +323,8 @@ for (const snippet of [
   '[Speech generation](#speech-demo)',
   'Turn audio into text through an app route',
   '[Audio transcription](#transcription-demo)',
+  'Rerank search results through an app route',
+  '[Document reranking](#rerank-demo)',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
 ]) {
@@ -318,6 +338,7 @@ for (const snippet of [
   '`local-tools` Provider',
   '点击 **Run approval demo**',
   '`/api/transcription`、`/api/object` 路由',
+  '`/api/rerank`',
   'pnpm example:image',
   '确定性的本地',
   'proxy `/api/image`',
@@ -327,6 +348,9 @@ for (const snippet of [
   'pnpm example:transcription',
   '确定性的本地转写文本',
   'proxy `/api/transcription`',
+  'pnpm example:rerank',
+  '确定性的本地排序',
+  'proxy `/api/rerank`',
   '`local-object` Provider',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
@@ -337,6 +361,8 @@ for (const snippet of [
   '[语音生成](#speech-demo)',
   '通过应用后端把音频转成文本',
   '[音频转写](#transcription-demo)',
+  '通过应用后端重排搜索结果',
+  '[文档重排](#rerank-demo)',
   '从提示词抽取类型化 JSON',
   '[结构化对象输出](#object-demo)'
 ]) {
@@ -372,6 +398,14 @@ expect(
   'Transcription example must run without keys and switch to the proxy transcription route when configured'
 )
 expect(
+  files.rerankExample.includes('useRerank') &&
+    files.rerankExample.includes('localRerankFetch') &&
+    files.rerankExample.includes('VITE_PROXY_RERANK_URL') &&
+    files.rerankExample.includes('VITE_PROXY_BASE_URL') &&
+    files.rerankExample.includes('traceSummary'),
+  'Rerank example must run without keys and switch to the proxy rerank route when configured'
+)
+expect(
   files.objectExample.includes("id: 'local-object'") &&
     files.objectExample.includes('useObject<Ticket>') &&
     files.objectExample.includes("schemaName: 'support_ticket'") &&
@@ -392,22 +426,27 @@ expect(
   files.demoShowcase.includes("{ job: 'Image generation', pick: 'useImage' }") &&
     files.demoShowcase.includes("{ job: 'Speech generation', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: 'Audio transcription', pick: 'useTranscription' }") &&
-    files.demoShowcase.includes("{ label: 'Composables', value: '8' }") &&
+    files.demoShowcase.includes("{ job: 'Document reranking', pick: 'useRerank' }") &&
+    files.demoShowcase.includes("{ label: 'Composables', value: '9' }") &&
     files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
     files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: 'Transcription', href: '#transcription-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Rerank', href: '#rerank-demo' }") &&
     files.demoShowcase.includes("{ label: 'useImage API', href: '#image-demo-api' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech API', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes(
       "{ label: 'useTranscription API', href: '#transcription-demo-api' }"
     ) &&
+    files.demoShowcase.includes("{ label: 'useRerank API', href: '#rerank-demo-api' }") &&
     files.demoShowcase.includes('const imageCode = computed') &&
     files.demoShowcase.includes('const speechCode = computed') &&
     files.demoShowcase.includes('const transcriptionCode = computed') &&
+    files.demoShowcase.includes('const rerankCode = computed') &&
     files.demoShowcase.includes('id="image-demo"') &&
     files.demoShowcase.includes('id="speech-demo"') &&
-    files.demoShowcase.includes('id="transcription-demo"'),
-  'DemoShowcase must include the image, speech, and transcription demos and API shortcuts'
+    files.demoShowcase.includes('id="transcription-demo"') &&
+    files.demoShowcase.includes('id="rerank-demo"'),
+  'DemoShowcase must include the image, speech, transcription, and rerank demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),
@@ -416,14 +455,17 @@ expect(
 expect(
   files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: '音频转写', pick: 'useTranscription' }") &&
-    files.demoShowcase.includes("{ label: '组合式函数', value: '8' }") &&
+    files.demoShowcase.includes("{ job: '文档重排', pick: 'useRerank' }") &&
+    files.demoShowcase.includes("{ label: '组合式函数', value: '9' }") &&
     files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: '转写', href: '#transcription-demo' }") &&
+    files.demoShowcase.includes("{ label: '重排', href: '#rerank-demo' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes(
       "{ label: 'useTranscription 接口', href: '#transcription-demo-api' }"
-    ),
-  'DemoShowcase must include the Chinese speech and transcription demos and API shortcuts'
+    ) &&
+    files.demoShowcase.includes("{ label: 'useRerank 接口', href: '#rerank-demo-api' }"),
+  'DemoShowcase must include the Chinese speech, transcription, and rerank demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes('const attachments = fileInput.value?.files ?? undefined'),
@@ -562,6 +604,15 @@ expect(
     files.useTranscription.includes('handleInputChange(e)') &&
     files.useTranscription.includes('handleSubmit(e, opts?)') &&
     files.useTranscription.includes('Backend errors leave the audio input available for retry') &&
+    files.useRerank.includes('initialInput') &&
+    files.useRerank.includes('initialDocuments') &&
+    files.useRerank.includes('rerankedDocuments') &&
+    files.useRerank.includes('setInput(value)') &&
+    files.useRerank.includes('setQuery(value)') &&
+    files.useRerank.includes('setDocuments(value)') &&
+    files.useRerank.includes('handleInputChange(e)') &&
+    files.useRerank.includes('handleSubmit(e, opts?)') &&
+    files.useRerank.includes('Backend errors leave the query and documents available for retry') &&
     files.zhUseTranscription.includes('initialInput') &&
     files.zhUseTranscription.includes('transcription`') &&
     files.zhUseTranscription.includes('text`') &&
@@ -569,11 +620,20 @@ expect(
     files.zhUseTranscription.includes('handleInputChange(e)') &&
     files.zhUseTranscription.includes('handleSubmit(e, opts?)') &&
     files.zhUseTranscription.includes('后端错误会保留音频输入') &&
-    files.readme.includes('`useTranscription`, and `useObject` also expose') &&
-    files.readme.includes('All eight accept `initialInput`') &&
-    files.zhReadme.includes('`useTranscription` 和') &&
-    files.zhReadme.includes('八者都支持 `initialInput`'),
-  'Object, embedding, speech, transcription docs plus READMEs must document form helpers'
+    files.zhUseRerank.includes('initialInput') &&
+    files.zhUseRerank.includes('initialDocuments') &&
+    files.zhUseRerank.includes('rerankedDocuments') &&
+    files.zhUseRerank.includes('setInput(value)') &&
+    files.zhUseRerank.includes('setQuery(value)') &&
+    files.zhUseRerank.includes('setDocuments(value)') &&
+    files.zhUseRerank.includes('handleInputChange(e)') &&
+    files.zhUseRerank.includes('handleSubmit(e, opts?)') &&
+    files.zhUseRerank.includes('后端错误会保留查询和文档') &&
+    files.readme.includes('`useTranscription`, `useRerank`, and `useObject` also expose') &&
+    files.readme.includes('All nine') &&
+    files.zhReadme.includes('`useTranscription`、`useRerank` 和 `useObject`') &&
+    files.zhReadme.includes('九者都支持 `initialInput`'),
+  'Object, embedding, speech, transcription, rerank docs plus READMEs must document form helpers'
 )
 expect(
   files.config.includes("{ text: 'useImage', link: '/reference/use-image' }") &&
@@ -627,6 +687,23 @@ expect(
     files.readme.includes('`useTranscription`') &&
     files.zhReadme.includes('`useTranscription`'),
   'Transcription docs and navigation must document the app-owned proxy hook'
+)
+expect(
+  files.config.includes("{ text: 'useRerank', link: '/reference/use-rerank' }") &&
+    files.config.includes("{ text: 'useRerank', link: '/zh/reference/use-rerank' }") &&
+    files.useRerank.includes('# useRerank') &&
+    files.useRerank.includes('app-owned backend') &&
+    files.useRerank.includes('rerankDocuments(query?, docs?, opts?)') &&
+    files.useRerank.includes('handleSubmit(e, opts?)') &&
+    files.useRerank.includes('Backend errors leave the query and documents available for retry') &&
+    files.zhUseRerank.includes('# useRerank') &&
+    files.zhUseRerank.includes('应用自有后端') &&
+    files.zhUseRerank.includes('rerankDocuments(query?, docs?, opts?)') &&
+    files.zhUseRerank.includes('handleSubmit(e, opts?)') &&
+    files.zhUseRerank.includes('后端错误会保留查询和文档') &&
+    files.readme.includes('`useRerank`') &&
+    files.zhReadme.includes('`useRerank`'),
+  'Rerank docs and navigation must document the app-owned proxy hook'
 )
 expect(
   files.useChat.includes('## Message pruning') &&
@@ -739,15 +816,29 @@ expect(
     files.types.includes('interface TranscriptionSegment') &&
     files.types.includes('interface TranscriptionResult') &&
     files.types.includes('segments?: TranscriptionSegment[]') &&
-    files.types.includes('`audio`, `model`, and `stream` win') &&
+    files.types.includes('### `RerankRequest`') &&
+    files.types.includes('`query`') &&
+    files.types.includes('`documents`') &&
+    files.types.includes('type RerankDocument') &&
+    files.types.includes('interface RerankRankingItem') &&
+    files.types.includes('interface RerankResult') &&
+    files.types.includes('rerankedDocuments: TDocument[]') &&
+    files.types.includes('`query`, `documents`, `model`, and `stream`') &&
     files.zhTypes.includes('### `TranscriptionRequest`') &&
     files.zhTypes.includes('`audio`') &&
     files.zhTypes.includes('timestampGranularities') &&
     files.zhTypes.includes('interface TranscriptionSegment') &&
     files.zhTypes.includes('interface TranscriptionResult') &&
     files.zhTypes.includes('segments?: TranscriptionSegment[]') &&
-    files.zhTypes.includes('`audio`、`model`、`stream`'),
-  'Public type docs must expose transcription request and result contracts'
+    files.zhTypes.includes('### `RerankRequest`') &&
+    files.zhTypes.includes('`query`') &&
+    files.zhTypes.includes('`documents`') &&
+    files.zhTypes.includes('type RerankDocument') &&
+    files.zhTypes.includes('interface RerankRankingItem') &&
+    files.zhTypes.includes('interface RerankResult') &&
+    files.zhTypes.includes('rerankedDocuments: TDocument[]') &&
+    files.zhTypes.includes('`documents`、`model`、`stream`'),
+  'Public type docs must expose transcription and rerank request/result contracts'
 )
 expect(
   files.chatExample.includes('visibleMessageParts(message.parts)') &&
@@ -789,6 +880,8 @@ for (const noisyLabel of [
   "label: 'useEmbedding Methods'",
   "label: 'useImage Properties'",
   "label: 'useImage Methods'",
+  "label: 'useRerank Properties'",
+  "label: 'useRerank Methods'",
   "label: 'useTranscription Properties'",
   "label: 'useTranscription Methods'",
   "label: 'useObject Properties'",
@@ -801,6 +894,8 @@ for (const noisyLabel of [
   "label: 'useEmbedding 方法'",
   "label: 'useImage 参数'",
   "label: 'useImage 方法'",
+  "label: 'useRerank 参数'",
+  "label: 'useRerank 方法'",
   "label: 'useTranscription 参数'",
   "label: 'useTranscription 方法'",
   "label: 'useObject 参数'",
@@ -815,7 +910,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, transcription docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

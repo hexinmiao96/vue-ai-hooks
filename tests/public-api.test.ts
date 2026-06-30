@@ -23,6 +23,7 @@ import {
   useGeneration,
   useImage,
   useObject,
+  useRerank,
   useSpeech,
   useTranscription,
   usePersist
@@ -110,6 +111,12 @@ import type {
   ProxyRequestOverride,
   ProxyProviderConfig,
   RegenerateChatOptions,
+  RerankDocument,
+  RerankRankingItem,
+  RerankRequest,
+  RerankRequestInfo,
+  RerankResponseInfo,
+  RerankResult,
   RetryContext,
   RetryOptions,
   ResumeChatOptions,
@@ -156,6 +163,8 @@ import type {
   UseImageReturn,
   UseObjectOptions,
   UseObjectReturn,
+  UseRerankOptions,
+  UseRerankReturn,
   UseSpeechOptions,
   UseSpeechReturn,
   UseTranscriptionOptions,
@@ -310,6 +319,9 @@ describe('public API types', () => {
     const transcriptionGeneration = useTranscription({
       api: '/api/transcription'
     } satisfies UseTranscriptionOptions)
+    const reranking = useRerank<string>({
+      api: '/api/rerank'
+    } satisfies UseRerankOptions<string>)
     const structured = useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
@@ -492,6 +504,19 @@ describe('public API types', () => {
     expectTypeOf<UseTranscriptionOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseTranscriptionOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
     expectTypeOf<UseTranscriptionOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseRerankOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseRerankOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseRerankOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseRerankOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseRerankOptions['headers']>().toMatchTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
+    expectTypeOf<UseRerankOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseRerankOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<UseRerankOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseRerankOptions<string>['initialDocuments']>().toEqualTypeOf<
+      string[] | undefined
+    >()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseObjectOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -888,6 +913,73 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseTranscriptionOptions['onResponse']>().toEqualTypeOf<
       ((info: TranscriptionResponseInfo) => void) | undefined
+    >()
+
+    expectTypeOf(reranking).toEqualTypeOf<UseRerankReturn<string>>()
+    expectTypeOf(reranking.input).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(reranking.query).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(reranking.documents).toEqualTypeOf<Ref<string[]>>()
+    expectTypeOf(reranking.originalDocuments).toEqualTypeOf<Ref<string[]>>()
+    expectTypeOf(reranking.rerankedDocuments).toEqualTypeOf<Ref<string[]>>()
+    expectTypeOf(reranking.ranking).toEqualTypeOf<Ref<RerankRankingItem<string>[]>>()
+    expectTypeOf(reranking.result).toEqualTypeOf<Ref<RerankResult<string> | null>>()
+    expectTypeOf(reranking.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(reranking.rerank).returns.toEqualTypeOf<Promise<RerankResult<string>>>()
+    expectTypeOf(reranking.rerank).parameter(0).toEqualTypeOf<string | undefined>()
+    expectTypeOf(reranking.rerank).parameter(1).toEqualTypeOf<string[] | undefined>()
+    expectTypeOf(reranking.rerank)
+      .parameter(2)
+      .toEqualTypeOf<Partial<RerankRequest<string>> | undefined>()
+    expectTypeOf(reranking.rerankDocuments).toEqualTypeOf<typeof reranking.rerank>()
+    expectTypeOf(reranking.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(reranking.setQuery).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(reranking.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(reranking.setDocuments).toEqualTypeOf<(value: string[]) => void>()
+    expectTypeOf(reranking.handleSubmit).returns.toEqualTypeOf<Promise<RerankResult<string>>>()
+    expectTypeOf(reranking.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<RerankRequest<string>> | undefined>()
+    expectTypeOf(reranking.lastRequest).toEqualTypeOf<Ref<RerankRequestInfo<string> | null>>()
+    expectTypeOf(reranking.lastResponse).toEqualTypeOf<Ref<RerankResponseInfo<string> | null>>()
+    expectTypeOf<RerankDocument>().toEqualTypeOf<string | Record<string, unknown>>()
+    expectTypeOf<RerankRankingItem<string>>().toMatchTypeOf<{
+      index: number
+      score: number
+      document: string
+    }>()
+    expectTypeOf<RerankRequest<string>>().toMatchTypeOf<{
+      query: string
+      documents: string[]
+      body?: Record<string, unknown>
+      model?: string
+      topN?: number
+      providerOptions?: Record<string, unknown>
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<RerankResult<string>>().toMatchTypeOf<{
+      originalDocuments: string[]
+      rerankedDocuments: string[]
+      ranking: RerankRankingItem<string>[]
+      model?: string
+    }>()
+    expectTypeOf<RerankRequestInfo<string>>().toMatchTypeOf<{
+      providerId: 'proxy'
+      attempt: number
+      api: string
+      query: string
+      documents: string[]
+      request: RerankRequest<string>
+    }>()
+    expectTypeOf<RerankResponseInfo<string>>().toMatchTypeOf<
+      RerankRequestInfo<string> & { result: RerankResult<string> }
+    >()
+    expectTypeOf<UseRerankOptions<string>['onRequest']>().toEqualTypeOf<
+      ((info: RerankRequestInfo<string>) => void) | undefined
+    >()
+    expectTypeOf<UseRerankOptions<string>['onResponse']>().toEqualTypeOf<
+      ((info: RerankResponseInfo<string>) => void) | undefined
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()

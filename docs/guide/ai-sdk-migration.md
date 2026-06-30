@@ -40,6 +40,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route                 |
 | AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route               |
 | AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route |
+| AI SDK Core reranking                            | `useRerank()` calling your app-owned `/api/rerank` route               |
 | UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport                 |
 
 ## Transport
@@ -228,12 +229,14 @@ fields for default chat proxy transports.
    text-to-speech credentials server-side.
 8. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
    and keep transcription credentials server-side.
-9. Keep existing initial messages by passing `messages` or `initialMessages`.
-10. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+9. Map reranking calls to `useRerank({ api: '/api/rerank' })` and keep rerank
+   model credentials server-side.
+10. Keep existing initial messages by passing `messages` or `initialMessages`.
+11. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
     `gemini`, `anthropic`, or `openaiCompatible`.
-11. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-12. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+12. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+13. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
     `addToolApprovalResponse()`.
-13. Add `lastRequest` and `lastResponse` to your debug view before swapping
+14. Add `lastRequest` and `lastResponse` to your debug view before swapping
     production traffic.
-14. Run `pnpm release:check` or your app's equivalent gate before shipping.
+15. Run `pnpm release:check` or your app's equivalent gate before shipping.

@@ -14,7 +14,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Eight composables, pluggable
+[Axios](https://axios-http.com) to the LLM world. Nine composables, pluggable
 providers, Server-Sent Events streaming handled for you. Works with OpenAI and any
 OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
 vLLM, Gemini's OpenAI-compatible endpoint, etc.).
@@ -40,9 +40,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 
 ## Features
 
-- **Eight composables, one mental model**: `useChat`, `useCompletion`,
+- **Nine composables, one mental model**: `useChat`, `useCompletion`,
   `useEmbedding`, `useGeneration`, `useImage`, `useSpeech`, `useTranscription`,
-  and `useObject`.
+  `useRerank`, and `useObject`.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -58,8 +58,8 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Tool calling controls**: local handlers, approval gates, active tool
   filtering, stop conditions, and per-step request preparation.
 - **Typed output and generation**: JSON Schema object output, embedding vectors,
-  app-owned image, speech, and transcription routes, custom generation jobs,
-  deterministic ids, and Date-safe persistence helpers.
+  app-owned image, speech, transcription, and rerank routes, custom generation
+  jobs, deterministic ids, and Date-safe persistence helpers.
 - **Library quality**: strict TypeScript, no runtime dependencies beyond Vue,
   tree-shakable ESM/CJS builds, and Vitest coverage.
 
@@ -142,6 +142,24 @@ const { embed, embeddings } = useEmbedding({
 
 const result = await embed(['hello world', 'goodbye world'])
 console.log(result.embeddings) // number[][]
+```
+
+### Reranking
+
+```ts
+import { useRerank } from 'vue-ai-hooks'
+
+const { rerankedDocuments, rerankDocuments } = useRerank<string>({
+  api: '/api/rerank'
+})
+
+await rerankDocuments('Vue AI search', [
+  'Streaming chat state for Vue apps',
+  'Document reranking for search',
+  'Text-to-speech release notes'
+])
+
+console.log(rerankedDocuments.value)
 ```
 
 ### Image generation
@@ -345,9 +363,9 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `abortController`               | `Ref<AbortController \| null>`                                                                 | Exposed for advanced use cases                                    |
 
 Set `maxRetries` on `useChat`, `useCompletion`, `useEmbedding`, `useImage`,
-`useSpeech`, `useTranscription`, or `useObject` to retry transient provider or
-backend failures. Streaming calls only retry when the failure happens before the
-first chunk arrives, so partial text is never duplicated.
+`useSpeech`, `useTranscription`, `useRerank`, or `useObject` to retry transient
+provider or backend failures. Streaming calls only retry when the failure happens
+before the first chunk arrives, so partial text is never duplicated.
 
 Use `body` in `defaultRequest` or per-call request options to pass
 provider-specific JSON fields through OpenAI-compatible, Anthropic, or proxy
@@ -390,18 +408,18 @@ Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to
 a provider.
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 
 Same shape, scoped to single-shot completions, embedding vectors, custom
 generation jobs, app-owned image generation routes, app-owned speech generation
-routes, app-owned transcription routes, and structured JSON object output
-respectively.
+routes, app-owned transcription routes, app-owned rerank routes, and structured
+JSON object output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
 state and trace panels can follow one pattern across chat, text, vectors, custom
-generation jobs, image generation, speech generation, transcription, and
-structured JSON. Default proxy traces include the resolved proxy `api` and
+generation jobs, image generation, speech generation, transcription, reranking,
+and structured JSON. Default proxy traces include the resolved proxy `api` and
 browser credentials mode.
 
 `useObject` supports `id` for shared structured-output state across components
@@ -430,10 +448,15 @@ helpers while keeping text-to-speech credentials server-side.
 aborts, retries, and form helpers while keeping transcription credentials
 server-side.
 
+`useRerank` targets your own `/api/rerank` route and provides `documents`,
+`ranking`, `rerankedDocuments`, `rerankDocuments()`, lifecycle trace refs,
+aborts, retries, and form helpers while keeping rerank credentials server-side.
+
 `useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useSpeech`,
-`useTranscription`, and `useObject` also expose `setInput()`, `handleInputChange()`, and
-`handleSubmit()` for simple form wiring. Successful form submissions clear
-`input`; failed submissions leave it intact. All eight accept `initialInput`.
+`useTranscription`, `useRerank`, and `useObject` also expose `setInput()`,
+`handleInputChange()`, and `handleSubmit()` for simple form wiring. Successful
+form submissions clear `input`; failed submissions leave it intact. All nine
+accept `initialInput`.
 
 `useCompletion`'s `onFinish` callback keeps the final text as the first argument
 and passes the original prompt plus abort status through `CompletionFinishInfo`.
@@ -460,7 +483,7 @@ If you are porting an AI SDK UI surface, use the
 
 ## Examples
 
-Eight runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Nine runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
@@ -469,6 +492,7 @@ Eight runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue
 - `examples/image` — no-key image generation form with a deterministic local SVG fallback
 - `examples/speech` — no-key speech generation form with a deterministic local WAV fallback
 - `examples/transcription` — no-key audio transcription form with a deterministic local transcript
+- `examples/rerank` — no-key document reranking form with deterministic local ranking
 - `examples/object` — no-key structured JSON extraction demo with a local object provider
 
 To run them:
@@ -493,9 +517,10 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 The same proxy template also accepts `useChat({ baseURL })`,
 `useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
 `useImage({ baseURL })`, `useSpeech({ baseURL })`,
-`useTranscription({ baseURL })`, and `useObject({ baseURL, schema })` through
-`/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
-`/api/transcription`, and `/api/object`.
+`useTranscription({ baseURL })`, `useRerank({ baseURL })`, and
+`useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
+`/api/embedding`, `/api/image`, `/api/speech`, `/api/transcription`,
+`/api/rerank`, and `/api/object`.
 Provider, proxy, and per-request headers
 accept `HeadersInit`, so records, `Headers` instances, and `[key, value][]`
 entries all work.

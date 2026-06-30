@@ -29,6 +29,7 @@ const requiredRuntimeExports = [
   'useCompletion',
   'useEmbedding',
   'useImage',
+  'useRerank',
   'useSpeech',
   'useTranscription',
   'usePersist'

@@ -396,9 +396,23 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`                 | `AbortSignal`                | 中止信号。                                     |
 | `headers`                | `HeadersInit`                | 合并进后端请求的单次 headers。                 |
 
+### `RerankRequest`
+
+| 字段              | 类型                      | 说明                                        |
+| ----------------- | ------------------------- | ------------------------------------------- |
+| `query`           | `string`                  | 用于排序的搜索查询或用户意图。              |
+| `documents`       | `TDocument[]`             | 待重排的候选文档。                          |
+| `body`            | `Record<string, unknown>` | 应用自有后端选项使用的额外 JSON body 字段。 |
+| `model`           | `string`                  | 你的后端使用的重排模型 ID。                 |
+| `topN`            | `number`                  | 最多返回多少条已排序文档。                  |
+| `providerOptions` | `Record<string, unknown>` | 透传给后端的 Provider 专属选项。            |
+| `user`            | `string`                  | 用于 Provider 策略或风控的终端用户标识。    |
+| `signal`          | `AbortSignal`             | 中止信号。                                  |
+| `headers`         | `HeadersInit`             | 合并进后端请求的单次 headers。              |
+
 `body` 会先合并进 Provider/代理的 JSON 请求体，然后再写入 typed request 字段。
-如果 key 冲突，`messages`、`prompt`、`input`、`text`、`audio`、`model`、`stream`
-这类显式字段优先。
+如果 key 冲突，`messages`、`prompt`、`input`、`text`、`audio`、`query`、
+`documents`、`model`、`stream` 这类显式字段优先。
 
 ## 响应
 
@@ -483,6 +497,24 @@ interface TranscriptionResult {
   providerMetadata?: Record<string, unknown>
   response?: unknown
 }
+
+type RerankDocument = string | Record<string, unknown>
+
+interface RerankRankingItem<TDocument = RerankDocument> {
+  index: number
+  score: number
+  document: TDocument
+}
+
+interface RerankResult<TDocument = RerankDocument> {
+  originalDocuments: TDocument[]
+  rerankedDocuments: TDocument[]
+  ranking: Array<RerankRankingItem<TDocument>>
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
 ```
 
 `ChatChunk.messageId` 会替换当前 assistant 消息的 id。后端或 AI SDK UI message
@@ -529,8 +561,8 @@ Provider 可能会把原始上游响应体放在这里。
 
 ## 重试选项
 
-`UseChatOptions`、`UseCompletionOptions`、`UseEmbeddingOptions` 和
-`UseObjectOptions` 都包含以下重试控制：
+`UseChatOptions`、`UseCompletionOptions`、`UseEmbeddingOptions`、
+`UseRerankOptions` 和 `UseObjectOptions` 都包含以下重试控制：
 
 ```ts
 interface RetryContext {

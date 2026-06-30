@@ -7,6 +7,7 @@ type DemoHref =
   | '#chat-demo'
   | '#completion-demo'
   | '#embedding-demo'
+  | '#rerank-demo'
   | '#image-demo'
   | '#speech-demo'
   | '#transcription-demo'
@@ -14,6 +15,7 @@ type DemoHref =
   | '#chat-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
+  | '#rerank-demo-api'
   | '#image-demo-api'
   | '#speech-demo-api'
   | '#transcription-demo-api'
@@ -24,6 +26,8 @@ type DemoHref =
   | '#completion-demo-api-methods'
   | '#embedding-demo-api-props'
   | '#embedding-demo-api-methods'
+  | '#rerank-demo-api-props'
+  | '#rerank-demo-api-methods'
   | '#image-demo-api-props'
   | '#image-demo-api-methods'
   | '#speech-demo-api-props'
@@ -107,6 +111,23 @@ await embed([
   'Semantic search over documents',
   'A recipe for iced coffee'
 ])`,
+    rerank: `const { input, documents, rerankedDocuments, ranking, handleSubmit, stop, clear } = useRerank<string>({
+  api: '/api/rerank',
+  initialInput: 'Vue AI search results',
+  initialDocuments: [
+    'Streaming chat state for Vue apps',
+    'Billing workflow approval',
+    'Document reranking for search'
+  ],
+  defaultRequest: {
+    model: 'rerank-model',
+    topN: 2
+  }
+})
+
+await handleSubmit()
+
+console.log(rerankedDocuments.value, ranking.value)`,
     image: `const { image, images, input, handleSubmit, stop, clear } = useImage({
   api: '/api/image',
   defaultRequest: {
@@ -226,6 +247,23 @@ await embed([
   '文档语义检索',
   '冰咖啡配方向量化片段'
 ])`,
+    rerank: `const { input: 查询, documents: 文档列表, rerankedDocuments: 重排文档, ranking: 排名, handleSubmit, stop, clear } = useRerank<string>({
+  api: '/api/rerank',
+  initialInput: 'Vue AI 搜索结果',
+  initialDocuments: [
+    'Vue 应用的流式对话状态',
+    '账单审批流程',
+    '面向搜索的文档重排'
+  ],
+  defaultRequest: {
+    model: 'rerank-model',
+    topN: 2
+  }
+})
+
+await handleSubmit()
+
+console.log(重排文档.value, 排名.value)`,
     image: `const { image: 图片, images: 图片列表, input: 输入文本, handleSubmit, stop, clear } = useImage({
   api: '/api/image',
   defaultRequest: {
@@ -306,13 +344,14 @@ const copy = {
       { job: 'Chat UI or tool approval', pick: 'useChat' },
       { job: 'One prompt to text', pick: 'useCompletion' },
       { job: 'Similarity search', pick: 'useEmbedding' },
+      { job: 'Document reranking', pick: 'useRerank' },
       { job: 'Image generation', pick: 'useImage' },
       { job: 'Speech generation', pick: 'useSpeech' },
       { job: 'Audio transcription', pick: 'useTranscription' },
       { job: 'Typed JSON extraction', pick: 'useObject' }
     ],
     heroStats: [
-      { label: 'Composables', value: '8' },
+      { label: 'Composables', value: '9' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
@@ -320,6 +359,7 @@ const copy = {
       { label: 'Chat', href: '#chat-demo' },
       { label: 'Completion', href: '#completion-demo' },
       { label: 'Embedding', href: '#embedding-demo' },
+      { label: 'Rerank', href: '#rerank-demo' },
       { label: 'Image', href: '#image-demo' },
       { label: 'Speech', href: '#speech-demo' },
       { label: 'Transcription', href: '#transcription-demo' },
@@ -329,6 +369,7 @@ const copy = {
       { label: 'useChat API', href: '#chat-demo-api' },
       { label: 'useCompletion API', href: '#completion-demo-api' },
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
+      { label: 'useRerank API', href: '#rerank-demo-api' },
       { label: 'useImage API', href: '#image-demo-api' },
       { label: 'useSpeech API', href: '#speech-demo-api' },
       { label: 'useTranscription API', href: '#transcription-demo-api' },
@@ -567,6 +608,91 @@ const copy = {
             name: 'clear',
             type: '(): void',
             description: 'Clear embeddings, result, and current error.'
+          }
+        ]
+      }
+    },
+    rerank: {
+      title: 'Document reranking',
+      topbarTitle: 'useRerank',
+      description:
+        'A search-quality route pattern for sending query and candidate documents to an app-owned rerank backend.',
+      queryLabel: 'Query',
+      query: 'Vue AI search results',
+      documentsLabel: 'Candidates',
+      rows: [
+        'Streaming chat state for Vue apps',
+        'Document reranking for search',
+        'Billing workflow approval'
+      ],
+      resultLabel: 'Ranking',
+      badge: 'topN 2 - normalized ranking - trace ready',
+      footer: 'rerankDocuments - stop - clear',
+      apiRef: {
+        title: 'useRerank API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Rerank endpoint for the default app-owned backend route.'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: 'optional',
+            description: 'Backend origin for local proxy or deployed server routes.'
+          },
+          {
+            name: 'initialDocuments',
+            type: 'TDocument[]',
+            required: 'optional',
+            description: 'Seed the candidate documents before the first rerank request.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'RerankRequest',
+            required: 'optional',
+            description: 'Default model, topN, and provider options merged into each request.'
+          }
+        ],
+        methods: [
+          {
+            name: 'rerankDocuments',
+            type: '(query?, docs?, opts?): Promise<RerankResult>',
+            description: 'Send a query and candidates, then resolve normalized ranking results.'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<RerankResult>',
+            description: 'Wire a rerank form submit and clear query only after success.'
+          },
+          {
+            name: 'setDocuments',
+            type: '(docs: TDocument[]): void',
+            description: 'Replace the candidate document array for the next request.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active rerank request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear query, documents, ranking, result, trace, and current error.'
           }
         ]
       }
@@ -900,6 +1026,12 @@ const copy = {
         fit: 'Search, clustering, similarity scoring'
       },
       {
+        name: 'useRerank',
+        state: 'documents, rerankedDocuments, ranking, result, isLoading, error',
+        actions: 'rerankDocuments, handleSubmit, setDocuments, stop, clear',
+        fit: 'Search-result reranking through app-owned backend routes'
+      },
+      {
         name: 'useImage',
         state: 'image, images, input, result, isLoading, error',
         actions: 'generateImage, handleSubmit, stop, clear',
@@ -954,13 +1086,14 @@ const copy = {
       { job: '聊天界面或工具审批', pick: 'useChat' },
       { job: '一个提示词生成文本', pick: 'useCompletion' },
       { job: '语义相似度检索', pick: 'useEmbedding' },
+      { job: '文档重排', pick: 'useRerank' },
       { job: '图片生成', pick: 'useImage' },
       { job: '语音生成', pick: 'useSpeech' },
       { job: '音频转写', pick: 'useTranscription' },
       { job: '类型化 JSON 抽取', pick: 'useObject' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '8' },
+      { label: '组合式函数', value: '9' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
@@ -968,6 +1101,7 @@ const copy = {
       { label: '对话', href: '#chat-demo' },
       { label: '补全', href: '#completion-demo' },
       { label: '向量检索', href: '#embedding-demo' },
+      { label: '重排', href: '#rerank-demo' },
       { label: '图片', href: '#image-demo' },
       { label: '语音', href: '#speech-demo' },
       { label: '转写', href: '#transcription-demo' },
@@ -977,6 +1111,7 @@ const copy = {
       { label: 'useChat 接口', href: '#chat-demo-api' },
       { label: 'useCompletion 接口', href: '#completion-demo-api' },
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
+      { label: 'useRerank 接口', href: '#rerank-demo-api' },
       { label: 'useImage 接口', href: '#image-demo-api' },
       { label: 'useSpeech 接口', href: '#speech-demo-api' },
       { label: 'useTranscription 接口', href: '#transcription-demo-api' },
@@ -1203,6 +1338,87 @@ const copy = {
             name: 'clear',
             type: '（）：void',
             description: '清理 embeddings、结果和当前错误状态。'
+          }
+        ]
+      }
+    },
+    rerank: {
+      title: '文档重排',
+      topbarTitle: 'useRerank（文档重排）',
+      description:
+        '面向搜索质量优化的自有后端路由模式：把查询和候选文档发给重排服务，再渲染归一化后的排序结果。',
+      queryLabel: '查询',
+      query: 'Vue AI 搜索结果',
+      documentsLabel: '候选文档',
+      rows: ['Vue 应用的流式对话状态', '面向搜索的文档重排', '账单审批流程'],
+      resultLabel: '排序结果',
+      badge: 'topN 2 - 归一化排名 - trace 已就绪',
+      footer: 'rerankDocuments - 停止 - 清空',
+      apiRef: {
+        title: 'useRerank 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认自有后端路由的文档重排端点。'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: '可选',
+            description: '本地 proxy 或已部署服务端路由的后端地址。'
+          },
+          {
+            name: 'initialDocuments',
+            type: 'TDocument[]',
+            required: '可选',
+            description: '首次重排请求前的候选文档初始值。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'RerankRequest',
+            required: '可选',
+            description: '每次请求都会合并的默认模型、topN 和 provider 选项。'
+          }
+        ],
+        methods: [
+          {
+            name: 'rerankDocuments',
+            type: '（query?, docs?, opts?）：Promise<RerankResult>',
+            description: '提交查询和候选文档，并返回归一化后的排序结果。'
+          },
+          {
+            name: 'handleSubmit',
+            type: '（event?）：Promise<RerankResult>',
+            description: '接入重排表单提交，并且只在成功后清空查询。'
+          },
+          {
+            name: 'setDocuments',
+            type: '（docs: TDocument[]）：void',
+            description: '替换下一次请求使用的候选文档数组。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中断当前文档重排请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理查询、文档、ranking、result、trace 和当前错误。'
           }
         ]
       }
@@ -1535,6 +1751,14 @@ const copy = {
         fit: '搜索、聚类、相似度计算'
       },
       {
+        name: 'useRerank',
+        state:
+          'documents（文档）、rerankedDocuments（重排文档）、ranking（排序）、result（结果）、isLoading（加载中）、error（错误）',
+        actions:
+          'rerankDocuments 重排, handleSubmit 表单提交, setDocuments 设置文档, stop 停止, clear 清空',
+        fit: '通过自有后端路由优化搜索结果排序'
+      },
+      {
         name: 'useImage',
         state:
           'image（当前图片）、images（图片列表）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
@@ -1576,6 +1800,7 @@ const content = computed(() => copy[localeKey.value])
 const chatCode = computed(() => codeSamples[localeKey.value].chat)
 const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
+const rerankCode = computed(() => codeSamples[localeKey.value].rerank)
 const imageCode = computed(() => codeSamples[localeKey.value].image)
 const speechCode = computed(() => codeSamples[localeKey.value].speech)
 const transcriptionCode = computed(() => codeSamples[localeKey.value].transcription)
@@ -1585,6 +1810,7 @@ const sectionIds: DemoHref[] = [
   '#chat-demo',
   '#completion-demo',
   '#embedding-demo',
+  '#rerank-demo',
   '#image-demo',
   '#speech-demo',
   '#transcription-demo',
@@ -1592,6 +1818,7 @@ const sectionIds: DemoHref[] = [
   '#chat-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
+  '#rerank-demo-api',
   '#image-demo-api',
   '#speech-demo-api',
   '#transcription-demo-api',
@@ -1602,6 +1829,8 @@ const sectionIds: DemoHref[] = [
   '#completion-demo-api-methods',
   '#embedding-demo-api-props',
   '#embedding-demo-api-methods',
+  '#rerank-demo-api-props',
+  '#rerank-demo-api-methods',
   '#image-demo-api-props',
   '#image-demo-api-methods',
   '#speech-demo-api-props',
@@ -1907,6 +2136,52 @@ onUnmounted(() => {
             </table>
             <footer class="preview-footer">
               <span>{{ content.embedding.usage }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="rerank-demo"
+          api-title-id="rerank-demo-api"
+          api-props-section-id="rerank-demo-api-props"
+          api-methods-section-id="rerank-demo-api-methods"
+          :title="content.rerank.title"
+          :description="content.rerank.description"
+          :code="rerankCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.rerank.apiRef"
+        >
+          <div class="embedding-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-green" />
+              <span>{{ content.rerank.topbarTitle }}</span>
+            </div>
+            <div class="completion-editor">
+              <span class="field-label">{{ content.rerank.queryLabel }}</span>
+              <p>{{ content.rerank.query }}</p>
+            </div>
+            <div class="embedding-list">
+              <span class="field-label">{{ content.rerank.documentsLabel }}</span>
+              <div v-for="(row, index) in content.rerank.rows" :key="row" class="embedding-row">
+                <span>{{ index + 1 }}. {{ row }}</span>
+                <span class="vector-bars">
+                  <i class="is-wide" />
+                  <i />
+                  <i class="is-mid" />
+                  <i class="is-short" />
+                </span>
+              </div>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.rerank.badge }}</span>
+              <span>{{ content.rerank.footer }}</span>
             </footer>
           </div>
         </DemoBlock>

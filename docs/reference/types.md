@@ -408,9 +408,24 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`                 | `AbortSignal`                | Abort signal.                                            |
 | `headers`                | `HeadersInit`                | Per-request headers merged into the backend request.     |
 
+### `RerankRequest`
+
+| Field             | Type                      | Description                                             |
+| ----------------- | ------------------------- | ------------------------------------------------------- |
+| `query`           | `string`                  | Search query or user intent used for ranking.           |
+| `documents`       | `TDocument[]`             | Candidate documents to rerank.                          |
+| `body`            | `Record<string, unknown>` | Extra JSON body fields for app-owned backend options.   |
+| `model`           | `string`                  | Rerank model id used by your backend.                   |
+| `topN`            | `number`                  | Maximum number of ranked documents to return.           |
+| `providerOptions` | `Record<string, unknown>` | Provider-specific options passed through your backend.  |
+| `user`            | `string`                  | End-user identifier for provider policy/abuse tracking. |
+| `signal`          | `AbortSignal`             | Abort signal.                                           |
+| `headers`         | `HeadersInit`             | Per-request headers merged into the backend request.    |
+
 `body` is merged into provider/proxy JSON request bodies before the typed
 request fields. If keys conflict, explicit typed fields such as `messages`,
-`prompt`, `input`, `text`, `audio`, `model`, and `stream` win.
+`prompt`, `input`, `text`, `audio`, `query`, `documents`, `model`, and `stream`
+win.
 
 ## Responses
 
@@ -495,6 +510,24 @@ interface TranscriptionResult {
   providerMetadata?: Record<string, unknown>
   response?: unknown
 }
+
+type RerankDocument = string | Record<string, unknown>
+
+interface RerankRankingItem<TDocument = RerankDocument> {
+  index: number
+  score: number
+  document: TDocument
+}
+
+interface RerankResult<TDocument = RerankDocument> {
+  originalDocuments: TDocument[]
+  rerankedDocuments: TDocument[]
+  ranking: Array<RerankRankingItem<TDocument>>
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
 ```
 
 `ChatChunk.messageId` replaces the id of the current assistant message. This is
@@ -546,8 +579,8 @@ for diagnostics because providers may store raw upstream response bodies there.
 
 ## Retry options
 
-`UseChatOptions`, `UseCompletionOptions`, `UseEmbeddingOptions`, and
-`UseObjectOptions` all include these retry controls:
+`UseChatOptions`, `UseCompletionOptions`, `UseEmbeddingOptions`,
+`UseRerankOptions`, and `UseObjectOptions` all include these retry controls:
 
 ```ts
 interface RetryContext {

@@ -398,6 +398,38 @@ export interface TranscriptionResult {
   response?: unknown
 }
 
+export type RerankDocument = string | Record<string, unknown>
+
+export interface RerankRankingItem<TDocument = RerankDocument> {
+  index: number
+  score: number
+  document: TDocument
+}
+
+/** Request payload for document reranking through an app-owned backend. */
+export interface RerankRequest<TDocument = RerankDocument> {
+  query: string
+  documents: TDocument[]
+  /** Extra JSON body fields for proxy-specific request options. */
+  body?: Record<string, unknown>
+  model?: string
+  topN?: number
+  providerOptions?: Record<string, unknown>
+  user?: string
+  signal?: AbortSignal
+  headers?: HeadersInit
+}
+
+export interface RerankResult<TDocument = RerankDocument> {
+  originalDocuments: TDocument[]
+  rerankedDocuments: TDocument[]
+  ranking: Array<RerankRankingItem<TDocument>>
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
 export interface RetryContext {
   /** 1-based retry attempt number. */
   attempt: number

@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, image generation, speech generation, transcription, backend proxying, and structured output.
+description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, reranking, image generation, speech generation, transcription, backend proxying, and structured output.
 aside: false
 pageClass: demo-page
 ---
@@ -28,9 +28,10 @@ the deterministic `local-tools` provider, streams a reply, pauses on a
 to verify the UI before wiring real provider keys or a backend proxy.
 
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
-default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`,
-`/api/speech`, `/api/transcription`, and `/api/object` routes, plus the explicit
-`proxyProvider` `/api/ai/*` routes used by the browser examples.
+default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/rerank`,
+`/api/image`, `/api/speech`, `/api/transcription`, and `/api/object` routes,
+plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
+examples.
 
 For a no-key image generation flow, run `pnpm example:image`. It renders a
 deterministic local SVG by default, then switches to the proxy `/api/image`
@@ -43,6 +44,10 @@ route when `VITE_PROXY_BASE_URL` is set.
 For a no-key transcription flow, run `pnpm example:transcription`. It returns a
 deterministic local transcript by default, then switches to the proxy
 `/api/transcription` route when `VITE_PROXY_BASE_URL` is set.
+
+For a no-key rerank flow, run `pnpm example:rerank`. It returns deterministic
+local ranking by default, then switches to the proxy `/api/rerank` route when
+`VITE_PROXY_BASE_URL` is set.
 
 For a no-key structured JSON flow, run `pnpm example:object`. It uses the local
 `local-object` provider by default, then can switch to `proxy` or a real provider
@@ -58,6 +63,7 @@ through the same environment variables as the other browser examples.
 | Generate an image through an app route                   | [Image generation](#image-demo)            |
 | Generate speech through an app route                     | [Speech generation](#speech-demo)          |
 | Turn audio into text through an app route                | [Audio transcription](#transcription-demo) |
+| Rerank search results through an app route               | [Document reranking](#rerank-demo)         |
 | Extract typed JSON from a prompt                         | [Structured object output](#object-demo)   |
 
 <DemoShowcase locale="en" />

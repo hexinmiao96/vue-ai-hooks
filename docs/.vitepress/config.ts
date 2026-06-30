@@ -41,6 +41,7 @@ const rootSidebar = {
         { text: 'useImage', link: '/reference/use-image' },
         { text: 'useSpeech', link: '/reference/use-speech' },
         { text: 'useTranscription', link: '/reference/use-transcription' },
+        { text: 'useRerank', link: '/reference/use-rerank' },
         { text: 'useObject', link: '/reference/use-object' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
@@ -96,6 +97,7 @@ const zhSidebar = {
         { text: 'useImage', link: '/zh/reference/use-image' },
         { text: 'useSpeech', link: '/zh/reference/use-speech' },
         { text: 'useTranscription', link: '/zh/reference/use-transcription' },
+        { text: 'useRerank', link: '/zh/reference/use-rerank' },
         { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]

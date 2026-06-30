@@ -15,6 +15,7 @@ try {
   await checkImageRoute()
   await checkSpeechRoute()
   await checkTranscriptionRoute()
+  await checkRerankRoute()
   await checkObjectRoute()
   console.log('Proxy example check passed for default and legacy routes.')
 } finally {
@@ -144,6 +145,30 @@ async function checkTranscriptionRoute() {
   expect(
     legacy.text?.includes('legacy-audio-url'),
     '/api/ai/transcription should return deterministic transcript text'
+  )
+}
+
+async function checkRerankRoute() {
+  const response = await postJson('/api/rerank', {
+    query: 'Vue document ranking',
+    documents: ['Billing workflow', 'Vue document ranking with composables', 'Audio output'],
+    model: 'proxy-rerank-model',
+    topN: 2
+  })
+  expect(response.ranking?.length === 2, '/api/rerank should respect topN')
+  expect(
+    response.rerankedDocuments?.[0] === 'Vue document ranking with composables',
+    '/api/rerank should rank the most relevant document first'
+  )
+  expect(response.model === 'proxy-rerank-model', '/api/rerank should preserve the requested model')
+
+  const legacy = await postJson('/api/ai/rerank', {
+    query: 'legacy route',
+    documents: ['legacy route document', 'unrelated']
+  })
+  expect(
+    legacy.rerankedDocuments?.[0] === 'legacy route document',
+    '/api/ai/rerank should return deterministic reranked documents'
   )
 }
 

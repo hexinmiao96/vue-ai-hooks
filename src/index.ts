@@ -105,6 +105,13 @@ export {
   type UseTranscriptionReturn
 } from './composables/useTranscription'
 export {
+  useRerank,
+  type RerankRequestInfo,
+  type RerankResponseInfo,
+  type UseRerankOptions,
+  type UseRerankReturn
+} from './composables/useRerank'
+export {
   useObject as experimental_useObject,
   useObject,
   type DeepPartial,
@@ -181,6 +188,10 @@ export type {
   TranscriptionRequest,
   TranscriptionResult,
   TranscriptionSegment,
+  RerankDocument,
+  RerankRankingItem,
+  RerankRequest,
+  RerankResult,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions

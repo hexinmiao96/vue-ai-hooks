@@ -60,6 +60,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   helpers.
 - Added a runnable no-key `useTranscription` example with deterministic local
   transcript output and proxy `/api/transcription` route coverage.
+- Added `useRerank` for app-owned document reranking routes with normalized
+  `originalDocuments`/`rerankedDocuments`/`ranking` state, retries, aborts,
+  trace refs, and form helpers.
+- Added a runnable no-key `useRerank` example with deterministic local ranking
+  output and proxy `/api/rerank` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.
@@ -69,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for choosing the right demo first.
 - Added a proxy example contract check that verifies default `/api/*` routes,
   legacy `/api/ai/*` routes, chat resume, completion, embedding, image, speech,
-  transcription, and object endpoints.
+  transcription, rerank, and object endpoints.
 
 ### Changed
 

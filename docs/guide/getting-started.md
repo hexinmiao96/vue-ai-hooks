@@ -108,9 +108,9 @@ before calling `setMessages()`.
 
 The proxy example supports both the default composable endpoints (`/api/chat`,
 `/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
-`/api/transcription`, `/api/object`) and the explicit `proxyProvider` endpoints
+`/api/transcription`, `/api/rerank`, `/api/object`) and the explicit `proxyProvider` endpoints
 (`/api/ai/*`). It streams deterministic chunks, structured JSON, image data
-URLs, audio data URLs, transcripts, and embeddings without any third-party API
+URLs, audio data URLs, transcripts, reranked documents, and embeddings without any third-party API
 key:
 
 ```bash
@@ -128,12 +128,13 @@ useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
 useImage({ baseURL: 'http://127.0.0.1:8787' })
 useSpeech({ baseURL: 'http://127.0.0.1:8787' })
 useTranscription({ baseURL: 'http://127.0.0.1:8787' })
+useRerank({ baseURL: 'http://127.0.0.1:8787' })
 useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 ```
 
 When this works, replace the template server with your own `/api/chat`,
 `/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
-`/api/transcription`, and `/api/object` routes.
+`/api/transcription`, `/api/rerank`, and `/api/object` routes.
 
 ## Using a different provider
 
@@ -199,4 +200,5 @@ const { messages: messages6, append: append6 } = useChat({
 - [useImage reference](/reference/use-image)
 - [useSpeech reference](/reference/use-speech)
 - [useTranscription reference](/reference/use-transcription)
+- [useRerank reference](/reference/use-rerank)
 - [useObject reference](/reference/use-object)
