@@ -168,11 +168,19 @@ export { type ChatProvider } from './providers/types'
 // Stream utilities
 export {
   createUIMessageStreamParser,
+  createUIMessageStreamResponse,
+  formatSSEData,
   parseSSE,
+  pipeUIMessageStreamToResponse,
   readUIMessageStream,
   toChatChunks,
+  type CreateUIMessageStreamResponseOptions,
+  type PipeUIMessageStreamToResponseOptions,
   type ReadUIMessageStreamOptions,
-  type UIMessageStreamParser
+  type ServerResponseLike,
+  type UIMessageStreamPart,
+  type UIMessageStreamParser,
+  type UIMessageStreamSource
 } from './utils/stream'
 
 // Persistence

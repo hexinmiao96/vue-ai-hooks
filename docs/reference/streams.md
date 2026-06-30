@@ -1,12 +1,88 @@
 # Stream utilities
 
 `vue-ai-hooks` exposes small stream helpers for custom proxy routes, tests, and
-advanced transports that need to consume AI SDK UI message streams without using
-`proxyProvider`.
+advanced transports that need to produce or consume AI SDK UI message streams
+without using `proxyProvider`.
 
 Public exports: `parseSSE`, `readUIMessageStream`, `toChatChunks`,
-`createUIMessageStreamParser`, `ReadUIMessageStreamOptions`, and
+`createUIMessageStreamParser`, `createUIMessageStreamResponse`,
+`pipeUIMessageStreamToResponse`, `formatSSEData`, `ReadUIMessageStreamOptions`,
+`CreateUIMessageStreamResponseOptions`, `PipeUIMessageStreamToResponseOptions`,
+`ServerResponseLike`, `UIMessageStreamPart`, `UIMessageStreamSource`, and
 `UIMessageStreamParser`.
+
+## `createUIMessageStreamResponse()`
+
+Create a Fetch API `Response` from already-produced AI SDK UI message stream
+parts:
+
+```ts
+import { createUIMessageStreamResponse } from 'vue-ai-hooks'
+
+export async function POST() {
+  return createUIMessageStreamResponse({
+    stream: [
+      { type: 'text-delta', delta: 'Hello' },
+      { type: 'finish', finishReason: 'stop' }
+    ]
+  })
+}
+```
+
+`CreateUIMessageStreamResponseOptions` accepts:
+
+| Option        | Type                    | Default  | Description                                             |
+| ------------- | ----------------------- | -------- | ------------------------------------------------------- |
+| `stream`      | `UIMessageStreamSource` | required | Iterable, async iterable, or `ReadableStream` of parts. |
+| `status`      | `number`                | `200`    | Response status.                                        |
+| `statusText`  | `string`                | -        | Optional response status text.                          |
+| `headers`     | `HeadersInit`           | -        | Extra response headers.                                 |
+| `includeDone` | `boolean`               | `true`   | Append the `data: [DONE]` sentinel.                     |
+
+The response automatically sets `content-type: text/event-stream; charset=utf-8`,
+`cache-control: no-cache`, and `x-vercel-ai-ui-message-stream: v1` unless those
+headers are already provided.
+
+## `pipeUIMessageStreamToResponse()`
+
+Pipe the same stream parts to a Node-like HTTP response object:
+
+```ts
+import { pipeUIMessageStreamToResponse } from 'vue-ai-hooks'
+
+await pipeUIMessageStreamToResponse({
+  response: nodeResponse,
+  stream: async function* () {
+    yield { type: 'text-delta', delta: 'Hello' }
+    yield { type: 'finish', finishReason: 'stop' }
+  }
+})
+```
+
+`PipeUIMessageStreamToResponseOptions` extends
+`CreateUIMessageStreamResponseOptions` with:
+
+| Option             | Type                                                                     | Description                                    |
+| ------------------ | ------------------------------------------------------------------------ | ---------------------------------------------- |
+| `response`         | `ServerResponseLike`                                                     | Node-like response with `write()` and `end()`. |
+| `consumeSseStream` | `(options: { stream: ReadableStream<string> }) => void \| Promise<void>` | Optional tee for logging or persistence.       |
+
+`ServerResponseLike` intentionally models only the minimal methods needed by
+Node-style responses: `write()`, `end()`, optional `setHeader()`,
+`writeHead()`, `once('drain')`, `statusCode`, and `statusMessage`.
+
+## `formatSSEData()`
+
+Format one value as an SSE `data:` event:
+
+```ts
+import { formatSSEData } from 'vue-ai-hooks'
+
+const line = formatSSEData({ type: 'text-delta', delta: 'Hello' })
+```
+
+Pass the string `"[DONE]"` to format the stream terminator. Non-JSON-serializable
+values throw before anything is written.
 
 ## `readUIMessageStream()`
 

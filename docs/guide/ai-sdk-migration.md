@@ -21,32 +21,32 @@ refs and provider objects instead of a full-stack framework integration layer.
 
 ## Quick mapping
 
-| AI SDK UI concept                                | vue-ai-hooks equivalent                                                     |
-| ------------------------------------------------ | --------------------------------------------------------------------------- |
-| `useChat()`                                      | `useChat()`                                                                 |
-| `transport`                                      | `transport` or `provider`                                                   |
-| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`                 |
-| `messages` initial option                        | `messages` or `initialMessages`                                             |
-| `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields             |
-| `generateId()` / `createIdGenerator()`           | `generateId()` and `createIdGenerator()` for composable id overrides        |
-| Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included                   |
-| `sendMessage()`                                  | `sendMessage()`                                                             |
-| `stop()`                                         | `stop()`                                                                    |
-| `resumeStream()`                                 | `resumeStream()` with a provider that supports `resumeChat`                 |
-| `addToolOutput()` / deprecated `addToolResult()` | `addToolOutput()` or `addToolResult({ toolCallId, output })`                |
-| `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()`        |
-| `tool()` / `dynamicTool()`                       | `tool()`, `dynamicTool()`, and `jsonSchema()` with `useChat({ tools })`     |
-| `stopWhen`                                       | `stopWhen`                                                                  |
-| `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                           |
-| Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`           |
-| `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`                 |
-| AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route                      |
-| AI SDK Core video generation                     | `useVideo()` calling your app-owned `/api/video` route                      |
-| AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route                    |
-| AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route      |
-| AI SDK Core reranking                            | `useRerank()` calling your app-owned `/api/rerank` route                    |
-| AI SDK Core `cosineSimilarity()`                 | `cosineSimilarity()` for comparing embedding vectors                        |
-| UI message stream protocol                       | Supported by `proxyProvider`, `readUIMessageStream()`, and `toChatChunks()` |
+| AI SDK UI concept                                | vue-ai-hooks equivalent                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `useChat()`                                      | `useChat()`                                                                                                                          |
+| `transport`                                      | `transport` or `provider`                                                                                                            |
+| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`                                                                          |
+| `messages` initial option                        | `messages` or `initialMessages`                                                                                                      |
+| `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields                                                                      |
+| `generateId()` / `createIdGenerator()`           | `generateId()` and `createIdGenerator()` for composable id overrides                                                                 |
+| Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included                                                                            |
+| `sendMessage()`                                  | `sendMessage()`                                                                                                                      |
+| `stop()`                                         | `stop()`                                                                                                                             |
+| `resumeStream()`                                 | `resumeStream()` with a provider that supports `resumeChat`                                                                          |
+| `addToolOutput()` / deprecated `addToolResult()` | `addToolOutput()` or `addToolResult({ toolCallId, output })`                                                                         |
+| `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()`                                                                 |
+| `tool()` / `dynamicTool()`                       | `tool()`, `dynamicTool()`, and `jsonSchema()` with `useChat({ tools })`                                                              |
+| `stopWhen`                                       | `stopWhen`                                                                                                                           |
+| `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                                                                                    |
+| Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`                                                                    |
+| `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`                                                                          |
+| AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route                                                                               |
+| AI SDK Core video generation                     | `useVideo()` calling your app-owned `/api/video` route                                                                               |
+| AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route                                                                             |
+| AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route                                                               |
+| AI SDK Core reranking                            | `useRerank()` calling your app-owned `/api/rerank` route                                                                             |
+| AI SDK Core `cosineSimilarity()`                 | `cosineSimilarity()` for comparing embedding vectors                                                                                 |
+| UI message stream protocol                       | `proxyProvider`, `createUIMessageStreamResponse()`, `pipeUIMessageStreamToResponse()`, `readUIMessageStream()`, and `toChatChunks()` |
 
 ## Transport
 

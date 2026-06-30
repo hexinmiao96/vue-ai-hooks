@@ -7,10 +7,12 @@ import {
   cosineSimilarity,
   createIdGenerator,
   createUIMessageStreamParser,
+  createUIMessageStreamResponse,
   deepseek,
   deserializeMessages,
   dynamicTool,
   fallbackProvider,
+  formatSSEData,
   gemini,
   generateId,
   hasToolCall,
@@ -22,6 +24,7 @@ import {
   openaiCompatible,
   openrouter,
   parseSSE,
+  pipeUIMessageStreamToResponse,
   pruneMessages,
   proxyProvider,
   readUIMessageStream,
@@ -127,6 +130,8 @@ import type {
   ProxyRequestKind,
   ProxyRequestOverride,
   ProxyProviderConfig,
+  CreateUIMessageStreamResponseOptions,
+  PipeUIMessageStreamToResponseOptions,
   RegenerateChatOptions,
   ReadUIMessageStreamOptions,
   RerankDocument,
@@ -181,7 +186,10 @@ import type {
   ToolCallHandler,
   ToolCallHandlerContext,
   ToolResultHandlerContext,
+  ServerResponseLike,
+  UIMessageStreamPart,
   UIMessageStreamParser,
+  UIMessageStreamSource,
   UseChatOptions,
   UseChatReturn,
   UseCompletionOptions,
@@ -296,6 +304,12 @@ describe('public API types', () => {
       .parameter(0)
       .toEqualTypeOf<Record<string, unknown>>()
     expectTypeOf<UIMessageStreamParser['toChatChunks']>().returns.toEqualTypeOf<ChatChunk[]>()
+    expectTypeOf<UIMessageStreamPart>().toEqualTypeOf<Record<string, unknown>>()
+    expectTypeOf<UIMessageStreamSource>().toEqualTypeOf<
+      | Iterable<UIMessageStreamPart>
+      | AsyncIterable<UIMessageStreamPart>
+      | ReadableStream<UIMessageStreamPart>
+    >()
     expectTypeOf(toChatChunks).parameter(0).toEqualTypeOf<Record<string, unknown>>()
     expectTypeOf(toChatChunks).parameter(1).toEqualTypeOf<UIMessageStreamParser | undefined>()
     expectTypeOf(toChatChunks).returns.toEqualTypeOf<ChatChunk[]>()
@@ -303,6 +317,26 @@ describe('public API types', () => {
       .parameter(0)
       .toEqualTypeOf<ReadUIMessageStreamOptions & { response: Response }>()
     expectTypeOf(readUIMessageStream).returns.toEqualTypeOf<AsyncGenerator<ChatChunk>>()
+    expectTypeOf(createUIMessageStreamResponse)
+      .parameter(0)
+      .toEqualTypeOf<CreateUIMessageStreamResponseOptions>()
+    expectTypeOf(createUIMessageStreamResponse).returns.toEqualTypeOf<Response>()
+    expectTypeOf(pipeUIMessageStreamToResponse)
+      .parameter(0)
+      .toEqualTypeOf<PipeUIMessageStreamToResponseOptions>()
+    expectTypeOf(pipeUIMessageStreamToResponse).returns.toEqualTypeOf<Promise<void>>()
+    expectTypeOf(formatSSEData).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(formatSSEData).returns.toEqualTypeOf<string>()
+    expectTypeOf<CreateUIMessageStreamResponseOptions>().toMatchTypeOf<{
+      stream: UIMessageStreamSource
+      status?: number
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<PipeUIMessageStreamToResponseOptions>().toMatchTypeOf<{
+      response: ServerResponseLike
+      consumeSseStream?: (options: { stream: ReadableStream<string> }) => void | Promise<void>
+    }>()
+    expectTypeOf<ServerResponseLike['write']>().toEqualTypeOf<(chunk: string) => boolean | void>()
     expectTypeOf(parseSSE).parameter(0).toEqualTypeOf<Response>()
     expectTypeOf(parseSSE).parameter(1).toEqualTypeOf<AbortSignal | undefined>()
     expectTypeOf(parseSSE).returns.toEqualTypeOf<AsyncGenerator<Record<string, unknown>>>()

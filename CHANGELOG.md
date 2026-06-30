@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a runnable no-key `useVideo` example with deterministic local storyboard
   output and proxy `/api/video` route coverage.
 - Added public AI SDK UI message stream utilities for custom transports:
-  `readUIMessageStream`, `createUIMessageStreamParser`, `toChatChunks`, and
-  `parseSSE`.
+  `readUIMessageStream`, `createUIMessageStreamParser`, `toChatChunks`,
+  `createUIMessageStreamResponse`, `pipeUIMessageStreamToResponse`,
+  `formatSSEData`, and `parseSSE`.
 
 ## [0.3.0] - 2026-06-30
 

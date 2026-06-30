@@ -371,9 +371,11 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息；
 `ChatRequest.messages` 可直接接收这些 `ChatRequestMessage[]` payload。
 
-自定义 transport 或测试工具需要在 `proxyProvider` 之外消费 AI SDK UI message stream 时，
-可以使用 `readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
-`createUIMessageStreamParser()`、`toChatChunks()` 和 `parseSSE()`。
+自有后端路由需要从已经产出的 parts 发出 AI SDK UI message stream 时，可以使用
+`createUIMessageStreamResponse()` 或 `pipeUIMessageStreamToResponse()`。自定义 transport
+或测试工具需要在 `proxyProvider` 之外消费这些 stream 时，可以使用
+`readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
+`createUIMessageStreamParser()`、`toChatChunks()`、`formatSSEData()` 和 `parseSSE()`。
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

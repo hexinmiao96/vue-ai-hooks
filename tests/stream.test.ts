@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
   createUIMessageStreamParser,
+  createUIMessageStreamResponse,
+  formatSSEData,
   parseSSE,
+  pipeUIMessageStreamToResponse,
   readUIMessageStream,
   toChatChunks
 } from '../src/utils/stream'
@@ -111,6 +114,210 @@ describe('parseSSE', () => {
 })
 
 describe('AI SDK UI message stream helpers', () => {
+  it('formats JSON values as SSE data events', () => {
+    expect(formatSSEData({ type: 'text-delta', delta: 'Hi' })).toBe(
+      'data: {"type":"text-delta","delta":"Hi"}\n\n'
+    )
+    expect(formatSSEData('[DONE]')).toBe('data: [DONE]\n\n')
+    expect(() => formatSSEData(undefined)).toThrow('SSE data must be JSON serializable')
+  })
+
+  it('creates fetch responses for AI SDK UI message stream parts', async () => {
+    const response = createUIMessageStreamResponse({
+      stream: [
+        { type: 'text-delta', delta: 'Hel' },
+        { type: 'text-delta', delta: 'lo' },
+        { type: 'finish', finishReason: 'stop' }
+      ],
+      headers: { 'X-Trace': 'trace_1' }
+    })
+    const chunks: unknown[] = []
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/event-stream; charset=utf-8')
+    expect(response.headers.get('cache-control')).toBe('no-cache')
+    expect(response.headers.get('x-vercel-ai-ui-message-stream')).toBe('v1')
+    expect(response.headers.get('x-trace')).toBe('trace_1')
+
+    for await (const chunk of readUIMessageStream({ response })) {
+      chunks.push(chunk)
+    }
+
+    expect(chunks).toEqual([{ content: 'Hel' }, { content: 'lo' }, { finishReason: 'stop' }])
+  })
+
+  it('propagates serialization failures from fetch stream responses', async () => {
+    const response = createUIMessageStreamResponse({
+      stream: [undefined as unknown as Record<string, unknown>]
+    })
+
+    await expect(response.text()).rejects.toThrow('SSE data must be JSON serializable')
+  })
+
+  it('pipes AI SDK UI message stream parts to a Node-like response', async () => {
+    const writes: string[] = []
+    const headers: Record<string, string> = {}
+    const consumed: string[] = []
+    const response = {
+      statusCode: 0,
+      statusMessage: '',
+      setHeader(name: string, value: string) {
+        headers[name] = value
+      },
+      write(chunk: string) {
+        writes.push(chunk)
+        return true
+      },
+      end(chunk?: string) {
+        if (chunk) writes.push(chunk)
+      }
+    }
+
+    await pipeUIMessageStreamToResponse({
+      response,
+      status: 201,
+      statusText: 'Created',
+      headers: { 'X-Trace': 'trace_2' },
+      stream: (async function* () {
+        yield { type: 'start', messageId: 'msg_1' }
+        yield { type: 'text-delta', delta: 'done' }
+      })(),
+      async consumeSseStream({ stream }) {
+        const reader = stream.getReader()
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            consumed.push(value)
+          }
+        } finally {
+          reader.releaseLock()
+        }
+      }
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.statusMessage).toBe('Created')
+    expect(headers).toMatchObject({
+      'cache-control': 'no-cache',
+      'content-type': 'text/event-stream; charset=utf-8',
+      'x-trace': 'trace_2',
+      'x-vercel-ai-ui-message-stream': 'v1'
+    })
+    expect(writes.join('')).toBe(
+      'data: {"type":"start","messageId":"msg_1"}\n\ndata: {"type":"text-delta","delta":"done"}\n\ndata: [DONE]\n\n'
+    )
+    expect(consumed.join('')).toBe(writes.join(''))
+  })
+
+  it('supports writeHead without status text', async () => {
+    const headersSeen: Record<string, string>[] = []
+    const writes: string[] = []
+    const response = {
+      writeHead(
+        status: number,
+        statusTextOrHeaders?: string | Record<string, string>,
+        headers?: Record<string, string>
+      ) {
+        headersSeen.push({
+          status: String(status),
+          ...(typeof statusTextOrHeaders === 'object' ? statusTextOrHeaders : {}),
+          ...(headers ?? {})
+        })
+      },
+      write(chunk: string) {
+        writes.push(chunk)
+      },
+      end() {
+        writes.push('END')
+      }
+    }
+
+    await pipeUIMessageStreamToResponse({
+      response,
+      status: 204,
+      includeDone: false,
+      stream: []
+    })
+
+    expect(headersSeen[0]).toMatchObject({
+      status: '204',
+      'content-type': 'text/event-stream; charset=utf-8'
+    })
+    expect(writes).toEqual(['END'])
+  })
+
+  it('ends the response and rethrows when piping fails', async () => {
+    const writes: string[] = []
+    const response = {
+      write() {
+        throw new Error('write failed')
+      },
+      end() {
+        writes.push('END')
+      }
+    }
+
+    await expect(
+      pipeUIMessageStreamToResponse({
+        response,
+        stream: [{ type: 'text-delta', delta: 'fail' }]
+      })
+    ).rejects.toThrow('write failed')
+    expect(writes).toEqual(['END'])
+  })
+
+  it('supports writeHead and backpressure when piping to a Node-like response', async () => {
+    const headersSeen: Record<string, string>[] = []
+    const writes: string[] = []
+    let drain: (() => void) | undefined
+    const response = {
+      writeHead(
+        status: number,
+        statusTextOrHeaders?: string | Record<string, string>,
+        headers?: Record<string, string>
+      ) {
+        headersSeen.push({
+          status: String(status),
+          ...(typeof statusTextOrHeaders === 'string' ? { statusText: statusTextOrHeaders } : {}),
+          ...(typeof statusTextOrHeaders === 'object' ? statusTextOrHeaders : {}),
+          ...(headers ?? {})
+        })
+      },
+      write(chunk: string) {
+        writes.push(chunk)
+        queueMicrotask(() => drain?.())
+        return false
+      },
+      once(event: 'drain', listener: () => void) {
+        if (event === 'drain') drain = listener
+      },
+      end() {
+        writes.push('END')
+      }
+    }
+
+    await pipeUIMessageStreamToResponse({
+      response,
+      status: 202,
+      statusText: 'Accepted',
+      includeDone: false,
+      stream: new ReadableStream({
+        start(controller) {
+          controller.enqueue({ type: 'text-delta', delta: 'queued' })
+          controller.close()
+        }
+      })
+    })
+
+    expect(headersSeen[0]).toMatchObject({
+      status: '202',
+      statusText: 'Accepted',
+      'content-type': 'text/event-stream; charset=utf-8'
+    })
+    expect(writes).toEqual(['data: {"type":"text-delta","delta":"queued"}\n\n', 'END'])
+  })
+
   it('reads AI SDK UI message stream responses as ChatChunk values', async () => {
     const response = makeResponse([
       'data: {"type":"start","messageId":"msg_1","messageMetadata":{"model":"test"}}\n\n',

@@ -7,6 +7,13 @@ interface UiStreamState {
   reasoningDeltas: Map<string, string>
 }
 
+export type UIMessageStreamPart = Record<string, unknown>
+
+export type UIMessageStreamSource =
+  | Iterable<UIMessageStreamPart>
+  | AsyncIterable<UIMessageStreamPart>
+  | ReadableStream<UIMessageStreamPart>
+
 export interface UIMessageStreamParser {
   toChatChunks(raw: Record<string, unknown>): ChatChunk[]
 }
@@ -14,6 +21,33 @@ export interface UIMessageStreamParser {
 export interface ReadUIMessageStreamOptions {
   signal?: AbortSignal
   parser?: UIMessageStreamParser
+}
+
+export interface CreateUIMessageStreamResponseOptions {
+  stream: UIMessageStreamSource
+  status?: number
+  statusText?: string
+  headers?: HeadersInit
+  includeDone?: boolean
+}
+
+export interface ServerResponseLike {
+  statusCode?: number
+  statusMessage?: string
+  setHeader?: (name: string, value: string) => void
+  writeHead?: (
+    statusCode: number,
+    statusMessageOrHeaders?: string | Record<string, string>,
+    headers?: Record<string, string>
+  ) => unknown
+  write: (chunk: string) => boolean | void
+  end: (chunk?: string) => unknown
+  once?: (event: 'drain', listener: () => void) => unknown
+}
+
+export interface PipeUIMessageStreamToResponseOptions extends CreateUIMessageStreamResponseOptions {
+  response: ServerResponseLike
+  consumeSseStream?: (options: { stream: ReadableStream<string> }) => void | Promise<void>
 }
 
 /**
@@ -100,6 +134,71 @@ export async function* readUIMessageStream({
 }
 
 /**
+ * Format one value as an SSE `data:` event.
+ */
+export function formatSSEData(value: unknown): string {
+  if (value === '[DONE]') return 'data: [DONE]\n\n'
+  const payload = JSON.stringify(value)
+  if (payload === undefined) {
+    throw new Error('SSE data must be JSON serializable')
+  }
+  return `data: ${payload}\n\n`
+}
+
+/**
+ * Create a Fetch API response that streams AI SDK UI message stream parts.
+ */
+export function createUIMessageStreamResponse({
+  stream,
+  status = 200,
+  statusText,
+  headers,
+  includeDone = true
+}: CreateUIMessageStreamResponseOptions): Response {
+  return new Response(encodeTextStream(createSSETextStream(stream, includeDone)), {
+    status,
+    statusText,
+    headers: uiMessageStreamHeaders(headers)
+  })
+}
+
+/**
+ * Pipe AI SDK UI message stream parts to a Node-like HTTP response.
+ */
+export async function pipeUIMessageStreamToResponse({
+  response,
+  stream,
+  status = 200,
+  statusText,
+  headers,
+  includeDone = true,
+  consumeSseStream
+}: PipeUIMessageStreamToResponseOptions): Promise<void> {
+  const headerRecord = Object.fromEntries(uiMessageStreamHeaders(headers))
+  writeResponseHead(response, status, statusText, headerRecord)
+
+  const textStream = createSSETextStream(stream, includeDone)
+  let responseStream = textStream
+  let consumePromise: void | Promise<void> | undefined
+  if (consumeSseStream) {
+    const [writeStream, inspectStream] = textStream.tee()
+    responseStream = writeStream
+    consumePromise = consumeSseStream({ stream: inspectStream })
+  }
+
+  try {
+    for await (const chunk of readTextStream(responseStream)) {
+      await writeResponseChunk(response, chunk)
+    }
+    response.end()
+    await consumePromise
+  } catch (error) {
+    response.end()
+    throw error
+  }
+}
+
+/**
  * Convert one AI SDK UI message stream part to chat chunks.
  *
  * Pass a parser from `createUIMessageStreamParser()` when decoding a multi-part
@@ -110,6 +209,127 @@ export function toChatChunks(
   parser = createUIMessageStreamParser()
 ): ChatChunk[] {
   return parser.toChatChunks(raw)
+}
+
+function createSSETextStream(
+  source: UIMessageStreamSource,
+  includeDone: boolean
+): ReadableStream<string> {
+  return new ReadableStream<string>({
+    async start(controller) {
+      try {
+        for await (const part of streamParts(source)) {
+          controller.enqueue(formatSSEData(part))
+        }
+        if (includeDone) {
+          controller.enqueue(formatSSEData('[DONE]'))
+        }
+        controller.close()
+      } catch (error) {
+        controller.error(error)
+      }
+    }
+  })
+}
+
+async function* streamParts(source: UIMessageStreamSource): AsyncGenerator<UIMessageStreamPart> {
+  if (isReadableStream(source)) {
+    const reader = source.getReader()
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        yield value
+      }
+    } finally {
+      reader.releaseLock()
+    }
+    return
+  }
+
+  yield* source
+}
+
+function isReadableStream(
+  source: UIMessageStreamSource
+): source is ReadableStream<UIMessageStreamPart> {
+  return typeof (source as ReadableStream<UIMessageStreamPart>).getReader === 'function'
+}
+
+function encodeTextStream(stream: ReadableStream<string>): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder()
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const chunk of readTextStream(stream)) {
+          controller.enqueue(encoder.encode(chunk))
+        }
+        controller.close()
+      } catch (error) {
+        controller.error(error)
+      }
+    }
+  })
+}
+
+async function* readTextStream(stream: ReadableStream<string>): AsyncGenerator<string> {
+  const reader = stream.getReader()
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      yield value
+    }
+  } finally {
+    reader.releaseLock()
+  }
+}
+
+function uiMessageStreamHeaders(headers?: HeadersInit): Headers {
+  const next = new Headers(headers)
+  if (!next.has('content-type')) {
+    next.set('content-type', 'text/event-stream; charset=utf-8')
+  }
+  if (!next.has('cache-control')) {
+    next.set('cache-control', 'no-cache')
+  }
+  if (!next.has('x-vercel-ai-ui-message-stream')) {
+    next.set('x-vercel-ai-ui-message-stream', 'v1')
+  }
+  return next
+}
+
+function writeResponseHead(
+  response: ServerResponseLike,
+  status: number,
+  statusText: string | undefined,
+  headers: Record<string, string>
+) {
+  if (response.writeHead) {
+    if (statusText) {
+      response.writeHead(status, statusText, headers)
+    } else {
+      response.writeHead(status, headers)
+    }
+    return
+  }
+
+  response.statusCode = status
+  if (statusText) {
+    response.statusMessage = statusText
+  }
+  for (const [name, value] of Object.entries(headers)) {
+    response.setHeader?.(name, value)
+  }
+}
+
+async function writeResponseChunk(response: ServerResponseLike, chunk: string) {
+  const shouldContinue = response.write(chunk)
+  if (shouldContinue === false && response.once) {
+    await new Promise<void>((resolve) => {
+      response.once?.('drain', resolve)
+    })
+  }
 }
 
 function decodeUIMessageStreamPart(

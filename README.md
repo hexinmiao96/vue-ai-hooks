@@ -435,10 +435,12 @@ provider adapter should receive model-facing messages without UI-only
 `Message.parts`; `ChatRequest.messages` accepts those `ChatRequestMessage[]`
 payloads directly.
 
-Use `readUIMessageStream()` when a custom transport or test harness needs to
-consume AI SDK UI message streams outside `proxyProvider`. Lower-level helpers
-`createUIMessageStreamParser()`, `toChatChunks()`, and `parseSSE()` are exported
-for already-parsed parts or custom SSE readers.
+Use `createUIMessageStreamResponse()` or `pipeUIMessageStreamToResponse()` when
+an app-owned route should emit AI SDK UI message streams from already-produced
+parts. Use `readUIMessageStream()` when a custom transport or test harness needs
+to consume those streams outside `proxyProvider`. Lower-level helpers
+`createUIMessageStreamParser()`, `toChatChunks()`, `formatSSEData()`, and
+`parseSSE()` are exported for already-parsed parts or custom SSE readers.
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 
