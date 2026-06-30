@@ -237,6 +237,7 @@ for (const snippet of [
   'transport` or `provider`',
   'input`, `setInput()`, `handleInputChange()`',
   'addToolApprovalResponse()',
+  'tool()` / `dynamicTool()`',
   'stopWhen',
   'UI message stream protocol',
   'Migration checklist'
@@ -257,6 +258,7 @@ for (const snippet of [
   'transport` 或 `provider`',
   'input`、`setInput()`、`handleInputChange()`',
   'addToolApprovalResponse()',
+  'tool()` / `dynamicTool()`',
   'stopWhen',
   'UI message stream 协议',
   '迁移清单'
@@ -735,7 +737,13 @@ expect(
   files.useChat.includes('sendAutomaticallyWhen') &&
     files.useChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
     files.useChat.includes('SendAutomaticallyWhen') &&
-    files.useChat.includes('call `sendMessage()` without content'),
+    files.useChat.includes('call `sendMessage()` without content') &&
+    files.useChat.includes('`Tool[] \\| ToolSet`') &&
+    files.useChat.includes('jsonSchema') &&
+    files.useChat.includes('dynamicTool') &&
+    files.useChat.includes(
+      'Provider requests still receive the normalized OpenAI-compatible `Tool[]`'
+    ),
   'English useChat docs must document AI SDK-style tool result auto-send control'
 )
 expect(
@@ -784,7 +792,11 @@ expect(
     files.zhUseChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
     files.zhUseChat.includes('SendAutomaticallyWhen') &&
     files.zhUseChat.includes('无参调用') &&
-    files.zhUseChat.includes('`sendMessage()`'),
+    files.zhUseChat.includes('`sendMessage()`') &&
+    files.zhUseChat.includes('`Tool[] \\| ToolSet`') &&
+    files.zhUseChat.includes('jsonSchema') &&
+    files.zhUseChat.includes('dynamicTool') &&
+    files.zhUseChat.includes('Provider 请求仍会收到归一化后的 OpenAI-compatible `Tool[]`'),
   'Chinese useChat docs must document AI SDK-style tool result auto-send control'
 )
 expect(
@@ -795,7 +807,12 @@ expect(
     files.types.includes('tool-*') &&
     files.types.includes('ChatChunk.parts') &&
     files.types.includes('ChatChunk.messageId') &&
-    files.types.includes('SendAutomaticallyWhen'),
+    files.types.includes('SendAutomaticallyWhen') &&
+    files.types.includes('interface JsonSchemaDefinition') &&
+    files.types.includes('type ToolSet') &&
+    files.types.includes('type ChatToolsInput') &&
+    files.types.includes('jsonSchema(schema)') &&
+    files.types.includes('dynamicTool()'),
   'English public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
@@ -806,7 +823,12 @@ expect(
     files.zhTypes.includes('tool-*') &&
     files.zhTypes.includes('ChatChunk.parts') &&
     files.zhTypes.includes('ChatChunk.messageId') &&
-    files.zhTypes.includes('SendAutomaticallyWhen'),
+    files.zhTypes.includes('SendAutomaticallyWhen') &&
+    files.zhTypes.includes('interface JsonSchemaDefinition') &&
+    files.zhTypes.includes('type ToolSet') &&
+    files.zhTypes.includes('type ChatToolsInput') &&
+    files.zhTypes.includes('jsonSchema(schema)') &&
+    files.zhTypes.includes('dynamicTool()'),
   'Chinese public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(

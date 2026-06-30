@@ -19,10 +19,13 @@
 `MessageMetadataSchema`、`MessageMetadataValidator`、
 `SendAutomaticallyWhen`、`SendAutomaticallyWhenOptions`、`IdGenerator`、
 `ToolCallHandlerContext`、`ToolResultHandlerContext`、`StopWhen`、
-`StopWhenOptions`、`RetryOptions` 和 `RetryContext`。
+`StopWhenOptions`、`JsonSchemaDefinition`、`ToolInputSchema`、`ToolExecute`、
+`ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
+`RetryOptions` 和 `RetryContext`。
 
 公开 helper：`pruneMessages`、`serializeMessages`、`deserializeMessages` 和
-`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`。
+`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、
+`jsonSchema`、`tool`、`dynamicTool`。
 
 ## 用法
 
@@ -92,7 +95,7 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 | `prepareStep`                     | `PrepareStep`                                                          | -           | 每个 assistant 步骤请求发出前做请求级自定义。                  |
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | -           | 发送或重新生成前，自定义最终 provider request。                |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | -           | `resumeStream()` 重连前，自定义最终恢复请求。                  |
-| `tools`                           | `Tool[]`                                                               | -           | 默认工具列表。可以在调用 `append()` 时传入 `tools` 覆盖。      |
+| `tools`                           | `Tool[] \| ToolSet`                                                    | -           | 默认工具列表，或 AI SDK 风格工具映射。                         |
 | `activeTools`                     | `string[]`                                                             | -           | 按函数名筛选本次聊天/请求真正发送给 Provider 的工具。          |
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | -           | 默认工具选择策略。                                             |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | -           | 用于自动执行工具调用的本地 handler。                           |
@@ -493,6 +496,38 @@ await append("What's the weather in Tokyo?")
 console.log(messages.value.map((m) => m.role))
 // ['user', 'assistant', 'tool', 'assistant']
 ```
+
+也可以使用 AI SDK 风格的工具 helper。`tool()` 可以把定义和 `execute` handler 放在一起；
+`dynamicTool()` 适合运行时才确定的工具形态：
+
+```ts
+import { jsonSchema, tool, dynamicTool, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  tools: {
+    getWeather: tool<{ city: string }, { temp: number }>({
+      description: '查询某个城市天气',
+      inputSchema: jsonSchema({
+        type: 'object',
+        required: ['city'],
+        properties: { city: { type: 'string' } },
+        additionalProperties: false
+      }),
+      strict: true,
+      async execute({ city }) {
+        return { temp: await weatherService.temperature(city) }
+      }
+    }),
+    runtimeLookup: dynamicTool({
+      parameters: { type: 'object', additionalProperties: true }
+    })
+  }
+})
+```
+
+Provider 请求仍会收到归一化后的 OpenAI-compatible `Tool[]`。如果同时传入
+`toolHandlers`，显式 handler 会覆盖 helper 定义里的 `execute`。
 
 浏览器本地工具需要 store、session 快照或客户端服务实例时，可以使用 `context`。它会通过
 `ToolCallHandlerContext.context` 传给 `toolHandlers`、`requiresToolApproval`、

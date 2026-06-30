@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   failover before a stream starts.
 - Added AI SDK-style chat helpers for message submission, stream resume, manual
   tool output, and approval-gated tool calls.
+- Added AI SDK-style `tool()`, `dynamicTool()`, and `jsonSchema()` helpers so
+  `useChat({ tools })` can accept object-mapped tool definitions with co-located
+  `execute` handlers.
 - Added an AI SDK-compatible object signature for `addToolResult()`.
 - Added `data` and `setData()` as AI SDK-style custom stream data helpers.
 - Added AI SDK-compatible `streamProtocol` support for default proxy

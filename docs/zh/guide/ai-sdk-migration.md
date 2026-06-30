@@ -19,27 +19,28 @@
 
 ## 快速映射
 
-| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                |
-| ---------------------------------------------- | -------------------------------------------------------------------- |
-| `useChat()`                                    | `useChat()`                                                          |
-| `transport`                                    | `transport` 或 `provider`                                            |
-| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`            |
-| `messages` 初始选项                            | `messages` 或 `initialMessages`                                      |
-| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                    |
-| `sendMessage()`                                | `sendMessage()`                                                      |
-| `stop()`                                       | `stop()`                                                             |
-| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                    |
-| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`         |
-| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()` |
-| `stopWhen`                                     | `stopWhen`                                                           |
-| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                     |
-| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`      |
-| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`            |
-| AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                          |
-| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                        |
-| AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由          |
-| AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                        |
-| UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                          |
+| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------------- |
+| `useChat()`                                    | `useChat()`                                                           |
+| `transport`                                    | `transport` 或 `provider`                                             |
+| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`             |
+| `messages` 初始选项                            | `messages` 或 `initialMessages`                                       |
+| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                     |
+| `sendMessage()`                                | `sendMessage()`                                                       |
+| `stop()`                                       | `stop()`                                                              |
+| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                     |
+| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`          |
+| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`  |
+| `tool()` / `dynamicTool()`                     | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })` |
+| `stopWhen`                                     | `stopWhen`                                                            |
+| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                      |
+| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`       |
+| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`             |
+| AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                           |
+| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                         |
+| AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由           |
+| AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                         |
+| UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                           |
 
 ## Transport
 
@@ -129,6 +130,27 @@ const chat = useChat({
 })
 ```
 
+AI SDK 风格工具定义也可以把 `execute` 和 schema 放在一起：
+
+```ts
+const chat = useChat({
+  api: '/api/chat',
+  tools: {
+    chargeCard: tool({
+      description: '扣款已保存银行卡',
+      inputSchema: jsonSchema({
+        type: 'object',
+        required: ['amount'],
+        properties: { amount: { type: 'number' } }
+      }),
+      async execute(args) {
+        return await billing.charge(args)
+      }
+    })
+  }
+})
+```
+
 如果需要用户审批，不要在 config 里传 handler，手动响应即可：
 
 ```ts
@@ -213,7 +235,9 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 11. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
     或 `openaiCompatible`。
 12. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-13. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+13. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
+    wire-format `Tool[]` 加 `toolHandlers`。
+14. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-14. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-15. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+15. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+16. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

@@ -159,6 +159,7 @@ interface Tool {
     name: string
     description?: string
     parameters: Record<string, unknown>
+    strict?: boolean
   }
 }
 
@@ -173,6 +174,40 @@ interface ToolCall {
 ```
 
 `parameters` 是 OpenAI-compatible JSON Schema 对象。`arguments` 是模型返回的原始 JSON 字符串。
+
+AI SDK 风格工具 helper 使用这些公开类型：
+
+```ts
+interface JsonSchemaDefinition<TInput = unknown> {
+  readonly kind: 'json-schema'
+  readonly schema: Record<string, unknown>
+  readonly validate?: (value: unknown) => value is TInput
+}
+
+type ToolInputSchema<TInput = unknown> = Record<string, unknown> | JsonSchemaDefinition<TInput>
+
+type ToolExecute<TInput = unknown, TOutput = unknown> = (
+  args: TInput,
+  context: ToolCallHandlerContext
+) => TOutput | Promise<TOutput>
+
+interface ToolDefinition<TInput = unknown, TOutput = unknown> {
+  description?: string
+  inputSchema?: ToolInputSchema<TInput>
+  parameters?: Record<string, unknown>
+  execute?: ToolExecute<TInput, TOutput>
+  strict?: boolean
+  dynamic?: boolean
+}
+
+type AnyToolDefinition = ToolDefinition<never, unknown>
+type ToolSet = Record<string, Tool | AnyToolDefinition>
+type ChatToolsInput = Tool[] | ToolSet
+```
+
+`jsonSchema(schema)` 会把 JSON Schema 包装给 `tool({ inputSchema })` 使用。
+`tool()` 和 `dynamicTool()` 返回的 `ToolDefinition` 会由 `useChat({ tools })`
+归一化成 Provider 侧的 `Tool[]`；其中的 `execute` 会注册成本地 handler。
 
 工具执行回调使用和 `toolHandlers` 相同的已解析参数快照：
 

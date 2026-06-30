@@ -55,8 +55,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
   pruning.
-- **Tool calling controls**: local handlers, approval gates, active tool
-  filtering, stop conditions, and per-step request preparation.
+- **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
+  approval gates, active tool filtering, stop conditions, and per-step request
+  preparation.
 - **Typed output and generation**: JSON Schema object output, embedding vectors,
   app-owned image, speech, transcription, and rerank routes, custom generation
   jobs, deterministic ids, and Date-safe persistence helpers.
@@ -381,6 +382,9 @@ Use `threadId` and `forwardedProps` when an agent backend needs a server thread
 identifier plus app context without changing the client-side shared chat id.
 Use `context` when browser-local tool handlers need stores, services, or session
 state that should not be serialized.
+Use `tool()`, `dynamicTool()`, and `jsonSchema()` when you want AI SDK-style
+tool definitions inside `useChat({ tools })`; provider requests still receive
+the normalized OpenAI-compatible `Tool[]`.
 
 Set `throttleMs` on `useChat`, `useCompletion`, or `useObject` to batch reactive
 stream updates for busy UIs. The final stream state is always flushed before the

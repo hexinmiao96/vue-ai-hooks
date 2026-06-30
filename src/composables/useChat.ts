@@ -56,6 +56,65 @@ export interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
 
+export interface JsonSchemaDefinition<TInput = unknown> {
+  readonly kind: 'json-schema'
+  readonly schema: Record<string, unknown>
+  readonly validate?: (value: unknown) => value is TInput
+}
+
+export type ToolInputSchema<TInput = unknown> =
+  | Record<string, unknown>
+  | JsonSchemaDefinition<TInput>
+
+export type ToolExecute<TInput = unknown, TOutput = unknown> = (
+  args: TInput,
+  context: ToolCallHandlerContext
+) => TOutput | Promise<TOutput>
+
+export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
+  description?: string
+  inputSchema?: ToolInputSchema<TInput>
+  parameters?: Record<string, unknown>
+  execute?: {
+    bivarianceHack(args: TInput, context: ToolCallHandlerContext): TOutput | Promise<TOutput>
+  }['bivarianceHack']
+  strict?: boolean
+  dynamic?: boolean
+}
+
+export type AnyToolDefinition = ToolDefinition<unknown, unknown>
+export type ToolSet = Record<string, Tool | AnyToolDefinition>
+export type ChatToolsInput = Tool[] | ToolSet
+
+export function jsonSchema<TInput = unknown>(
+  schema: Record<string, unknown>,
+  options: { validate?: (value: unknown) => value is TInput } = {}
+): JsonSchemaDefinition<TInput> {
+  return {
+    kind: 'json-schema',
+    schema,
+    ...(options.validate ? { validate: options.validate } : {})
+  }
+}
+
+export function tool<TInput = unknown, TOutput = unknown>(
+  definition: ToolDefinition<TInput, TOutput>
+): ToolDefinition<TInput, TOutput> {
+  return {
+    ...definition,
+    dynamic: false
+  }
+}
+
+export function dynamicTool<TInput = unknown, TOutput = unknown>(
+  definition: ToolDefinition<TInput, TOutput>
+): ToolDefinition<TInput, TOutput> {
+  return {
+    ...definition,
+    dynamic: true
+  }
+}
+
 export interface SendAutomaticallyWhenOptions {
   messages: Message[]
 }
@@ -271,7 +330,7 @@ export interface UseChatOptions<
   prepareSendMessagesRequest?: PrepareSendMessagesRequest
   prepareReconnectToStreamRequest?: PrepareReconnectToStreamRequest
   persist?: ChatPersistOptions
-  tools?: Tool[]
+  tools?: ChatToolsInput
   activeTools?: string[]
   toolChoice?: ChatRequest['toolChoice']
   toolHandlers?: Record<string, ToolCallHandler>
@@ -389,6 +448,91 @@ export function hasToolCall(...toolNames: string[]): StopWhen {
     toolNames.length
       ? toolCalls.some((call) => toolNames.includes(call.function.name))
       : toolCalls.length > 0
+}
+
+interface NormalizedChatTools {
+  tools?: Tool[]
+  toolHandlers?: Record<string, ToolCallHandler>
+}
+
+function mergeToolHandlers(
+  generatedHandlers?: Record<string, ToolCallHandler>,
+  configuredHandlers?: Record<string, ToolCallHandler>
+): Record<string, ToolCallHandler> | undefined {
+  if (configuredHandlers !== undefined) {
+    return {
+      ...(generatedHandlers ?? {}),
+      ...configuredHandlers
+    }
+  }
+  const merged = {
+    ...(generatedHandlers ?? {})
+  }
+  return Object.keys(merged).length ? merged : undefined
+}
+
+function normalizeChatTools(input?: ChatToolsInput): NormalizedChatTools {
+  if (!input) return {}
+  if (Array.isArray(input)) return { tools: input }
+
+  const tools: Tool[] = []
+  const toolHandlers: Record<string, ToolCallHandler> = {}
+
+  for (const [name, definition] of Object.entries(input)) {
+    if (isWireTool(definition)) {
+      tools.push(definition)
+      continue
+    }
+
+    const parameters =
+      definition.parameters ?? schemaToParameters(definition.inputSchema) ?? emptyObjectSchema()
+    tools.push({
+      type: 'function',
+      function: {
+        name,
+        ...(definition.description ? { description: definition.description } : {}),
+        parameters,
+        ...(definition.strict !== undefined ? { strict: definition.strict } : {})
+      }
+    })
+
+    if (definition.execute) {
+      toolHandlers[name] = (args, context) => definition.execute?.(args, context)
+    }
+  }
+
+  return {
+    ...(tools.length ? { tools } : {}),
+    ...(Object.keys(toolHandlers).length ? { toolHandlers } : {})
+  }
+}
+
+function isWireTool(value: Tool | AnyToolDefinition): value is Tool {
+  return (
+    isRecord(value) &&
+    value.type === 'function' &&
+    isRecord(value.function) &&
+    typeof value.function.name === 'string' &&
+    isRecord(value.function.parameters)
+  )
+}
+
+function schemaToParameters(schema?: ToolInputSchema): Record<string, unknown> | undefined {
+  if (!schema) return undefined
+  if (isJsonSchemaDefinition(schema)) return schema.schema
+  return schema
+}
+
+function isJsonSchemaDefinition(value: ToolInputSchema): value is JsonSchemaDefinition {
+  return isRecord(value) && value.kind === 'json-schema' && isRecord(value.schema)
+}
+
+function emptyObjectSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    properties: {},
+    additionalProperties: true
+  }
 }
 
 function serializeCreatedAt(value: unknown): string | undefined {
@@ -871,10 +1015,10 @@ export function useChat<
     onFinish,
     onError,
     persist,
-    tools: defaultTools,
+    tools: defaultToolsInput,
     activeTools: defaultActiveTools,
     toolChoice: defaultToolChoice,
-    toolHandlers,
+    toolHandlers: configuredToolHandlers,
     requiresToolApproval,
     sendAutomaticallyWhen,
     stopWhen,
@@ -888,6 +1032,12 @@ export function useChat<
     onToolCall,
     onToolResult
   } = options
+  const normalizedDefaultTools = normalizeChatTools(defaultToolsInput)
+  const defaultTools = normalizedDefaultTools.tools
+  const toolHandlers = mergeToolHandlers(
+    normalizedDefaultTools.toolHandlers,
+    configuredToolHandlers
+  )
   const provider =
     providedProvider ??
     transport ??

@@ -5,11 +5,13 @@ import {
   anthropic,
   deepseek,
   deserializeMessages,
+  dynamicTool,
   fallbackProvider,
   gemini,
   hasToolCall,
   experimental_useObject,
   isStepCount,
+  jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
   openai,
   openaiCompatible,
@@ -17,6 +19,7 @@ import {
   pruneMessages,
   proxyProvider,
   serializeMessages,
+  tool,
   useChat,
   useCompletion,
   useEmbedding,
@@ -138,6 +141,7 @@ import type {
   TranscriptionResult,
   TranscriptionSegment,
   ChatStatus,
+  ChatToolsInput,
   StopWhen,
   StopWhenOptions,
   StreamDataPart,
@@ -145,6 +149,12 @@ import type {
   TextPart,
   TokenUsage,
   Tool,
+  AnyToolDefinition,
+  JsonSchemaDefinition,
+  ToolDefinition,
+  ToolExecute,
+  ToolInputSchema,
+  ToolSet,
   ToolApprovalResponse,
   ToolApprovalPredicate,
   ToolCall,
@@ -432,7 +442,9 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseChatOptions['body']>().toEqualTypeOf<ProxyProviderConfig['body'] | undefined>()
     expectTypeOf<UseChatOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseChatOptions['tools']>().toEqualTypeOf<ChatToolsInput | undefined>()
     expectTypeOf<UseChatOptions['activeTools']>().toEqualTypeOf<string[] | undefined>()
+    expectTypeOf<ChatRequest['tools']>().toEqualTypeOf<Tool[] | undefined>()
     expectTypeOf<ChatRequest['activeTools']>().toEqualTypeOf<string[] | undefined>()
     expectTypeOf<UseChatOptions['stopWhen']>().toEqualTypeOf<
       StopWhen | readonly StopWhen[] | undefined
@@ -1125,13 +1137,54 @@ describe('public API types', () => {
       messageToolPart
     ]
     const content: MessageContent = [text, image]
-    const tool: Tool = {
+    const wireTool: Tool = {
       type: 'function',
       function: {
         name: 'lookup',
-        parameters: { type: 'object' }
+        parameters: { type: 'object' },
+        strict: true
       }
     }
+    const schema = jsonSchema<{ q: string }>({
+      type: 'object',
+      required: ['q'],
+      properties: { q: { type: 'string' } }
+    })
+    const lookupTool = tool<{ q: string }, { answer: string }>({
+      description: 'Lookup docs',
+      inputSchema: schema,
+      execute(input) {
+        expectTypeOf(input).toEqualTypeOf<{ q: string }>()
+        return { answer: input.q }
+      }
+    })
+    const runtimeTool = dynamicTool({
+      parameters: { type: 'object' }
+    })
+    const toolSet: ToolSet = {
+      lookup: lookupTool,
+      runtime: runtimeTool,
+      wire: wireTool
+    }
+    const chatTools: ChatToolsInput = toolSet
+    const wireTools: ChatToolsInput = [wireTool]
+    const schemaContract: JsonSchemaDefinition<{ q: string }> = schema
+    const lookupToolContract: ToolDefinition<{ q: string }, { answer: string }> = lookupTool
+    const runtimeToolContract: ToolDefinition<unknown, unknown> = runtimeTool
+    const schemaInput: ToolInputSchema<{ q: string }> = schema
+    const executeContract: ToolExecute<{ q: string }, { answer: string }> | undefined =
+      lookupTool.execute
+    const anyToolDefinition: AnyToolDefinition = lookupTool
+    void [
+      schemaContract,
+      lookupToolContract,
+      runtimeToolContract,
+      schemaInput,
+      executeContract,
+      anyToolDefinition,
+      chatTools,
+      wireTools
+    ]
     const toolCall: ToolCall = {
       id: 'call_1',
       type: 'function',
@@ -1153,7 +1206,7 @@ describe('public API types', () => {
       body: { providerOption: true },
       headers: new Headers({ 'X-Trace': 'trace_1' }),
       metadata: { traceId: 'trace_1' },
-      tools: [tool],
+      tools: [wireTool],
       toolChoice: { type: 'function', function: { name: 'lookup' } },
       responseFormat: {
         type: 'json_schema',

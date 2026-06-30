@@ -47,7 +47,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
   body、metadata 和请求追踪。
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
   `Message.parts`、自定义流数据和消息裁剪。
-- **工具调用控制**：本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
+- **工具调用控制**：`tool()` / `dynamicTool()` helper、本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
 - **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片、语音、转写和重排路由、
   自定义生成任务、稳定 id 和 Date-safe 持久化 helper。
 - **库级质量**：严格 TypeScript、除 Vue 外无运行时依赖、可 tree-shaking 的 ESM/CJS 构建、
@@ -336,6 +336,9 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `forwardedProps`，不用改变客户端共享 chat id。
 浏览器本地工具 handler 需要 store、服务实例或 session 状态时，可以使用 `context`，
 这些数据不会被序列化。
+如果希望按 AI SDK 风格在 `useChat({ tools })` 中定义工具，可以使用 `tool()`、
+`dynamicTool()` 和 `jsonSchema()`；Provider 请求仍会收到归一化后的 OpenAI-compatible
+`Tool[]`。
 
 `useChat`、`useCompletion`、`useEmbedding`、`useImage`、`useSpeech`、
 `useTranscription`、`useRerank` 和 `useObject` 可设置 `maxRetries`，在临时 Provider 或后端失败时重试。流式调用只会在首个 chunk 到达前重试，

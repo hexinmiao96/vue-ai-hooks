@@ -19,10 +19,13 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `MessageMetadataSchema`, `MessageMetadataValidator`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
-`StopWhenOptions`, `RetryOptions`, and `RetryContext`.
+`StopWhenOptions`, `JsonSchemaDefinition`, `ToolInputSchema`,
+`ToolExecute`, `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
+`ChatToolsInput`, `RetryOptions`, and `RetryContext`.
 
 Public helpers: `pruneMessages`, `serializeMessages`, `deserializeMessages`,
-`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, and `hasToolCall`.
+`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`,
+`jsonSchema`, `tool`, and `dynamicTool`.
 
 ## Usage
 
@@ -92,7 +95,7 @@ Use `input` with a Vue form for the common composer flow:
 | `prepareStep`                     | `PrepareStep`                                                          | —           | Customize each assistant step request before the final send hook.      |
 | `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | —           | Customize the final provider request before send/regenerate calls.     |
 | `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | —           | Customize the final resume request before `resumeStream()` reconnects. |
-| `tools`                           | `Tool[]`                                                               | —           | Default tool list. Override per-call by passing `tools` to `append()`. |
+| `tools`                           | `Tool[] \| ToolSet`                                                    | —           | Default tool list or AI SDK-style tool map.                            |
 | `activeTools`                     | `string[]`                                                             | —           | Filter the resolved tool list by function name for this chat/request.  |
 | `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | —           | Default tool choice.                                                   |
 | `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —           | Local handlers for automatic tool execution.                           |
@@ -514,6 +517,40 @@ await append("What's the weather in Tokyo?")
 console.log(messages.value.map((m) => m.role))
 // ['user', 'assistant', 'tool', 'assistant']
 ```
+
+You can also define tools with AI SDK-style helpers. `tool()` keeps the
+definition close to its `execute` handler, while `dynamicTool()` marks a
+runtime-selected tool shape:
+
+```ts
+import { jsonSchema, tool, dynamicTool, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  provider,
+  tools: {
+    getWeather: tool<{ city: string }, { temp: number }>({
+      description: 'Get the weather in a city',
+      inputSchema: jsonSchema({
+        type: 'object',
+        required: ['city'],
+        properties: { city: { type: 'string' } },
+        additionalProperties: false
+      }),
+      strict: true,
+      async execute({ city }) {
+        return { temp: await weatherService.temperature(city) }
+      }
+    }),
+    runtimeLookup: dynamicTool({
+      parameters: { type: 'object', additionalProperties: true }
+    })
+  }
+})
+```
+
+Provider requests still receive the normalized OpenAI-compatible `Tool[]`.
+If you also pass `toolHandlers`, explicit handlers override `execute` functions
+from the helper definitions.
 
 Use `context` for browser-local dependencies that tools need, such as a store,
 session snapshot, or client service handle. It is passed to `toolHandlers`,

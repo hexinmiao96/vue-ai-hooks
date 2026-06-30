@@ -2,11 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import {
   deserializeMessages,
+  dynamicTool,
   hasToolCall,
   isStepCount,
+  jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
   serializeMessages,
+  tool,
   useChat
 } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
@@ -1774,6 +1777,103 @@ describe('useChat', () => {
       toolChoice: 'auto'
     })
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('accepts AI SDK-style tool helpers and registers execute handlers', async () => {
+    const requests: ChatRequest[] = []
+    const getWeather = vi.fn((args: { city: string }) => ({ city: args.city, temp: 22 }))
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'getWeather', arguments: '{"city":"Tokyo"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Tokyo is sunny.' }, { finishReason: 'stop' }]
+      ],
+      requests
+    )
+    const { append, messages } = useChat({
+      provider,
+      tools: {
+        getWeather: tool<{ city: string }, { city: string; temp: number }>({
+          description: 'Get current weather.',
+          inputSchema: jsonSchema<{ city: string }>({
+            type: 'object',
+            required: ['city'],
+            properties: {
+              city: { type: 'string' }
+            },
+            additionalProperties: false
+          }),
+          strict: true,
+          execute: getWeather
+        }),
+        routePlanner: dynamicTool({
+          parameters: {
+            type: 'object',
+            properties: {
+              destination: { type: 'string' }
+            }
+          }
+        })
+      }
+    })
+
+    await append('weather?')
+
+    expect(requests[0].tools).toEqual([
+      {
+        type: 'function',
+        function: {
+          name: 'getWeather',
+          description: 'Get current weather.',
+          parameters: {
+            type: 'object',
+            required: ['city'],
+            properties: {
+              city: { type: 'string' }
+            },
+            additionalProperties: false
+          },
+          strict: true
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'routePlanner',
+          parameters: {
+            type: 'object',
+            properties: {
+              destination: { type: 'string' }
+            }
+          }
+        }
+      }
+    ])
+    expect(getWeather).toHaveBeenCalledWith(
+      { city: 'Tokyo' },
+      expect.objectContaining({
+        args: { city: 'Tokyo' },
+        toolCall: expect.objectContaining({ id: 'call_1' })
+      })
+    )
+    expect(messages.value.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant'
+    ])
+    expect(messages.value[2].content).toBe('{"city":"Tokyo","temp":22}')
   })
 
   it('accepts AI SDK-style sendMessage objects with files and metadata', async () => {

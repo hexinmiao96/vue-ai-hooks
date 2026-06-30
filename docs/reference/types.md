@@ -164,6 +164,7 @@ interface Tool {
     name: string
     description?: string
     parameters: Record<string, unknown>
+    strict?: boolean
   }
 }
 
@@ -179,6 +180,41 @@ interface ToolCall {
 
 `parameters` is an OpenAI-compatible JSON Schema object. `arguments` is the raw
 JSON string emitted by the model.
+
+AI SDK-style tool helpers use these public types:
+
+```ts
+interface JsonSchemaDefinition<TInput = unknown> {
+  readonly kind: 'json-schema'
+  readonly schema: Record<string, unknown>
+  readonly validate?: (value: unknown) => value is TInput
+}
+
+type ToolInputSchema<TInput = unknown> = Record<string, unknown> | JsonSchemaDefinition<TInput>
+
+type ToolExecute<TInput = unknown, TOutput = unknown> = (
+  args: TInput,
+  context: ToolCallHandlerContext
+) => TOutput | Promise<TOutput>
+
+interface ToolDefinition<TInput = unknown, TOutput = unknown> {
+  description?: string
+  inputSchema?: ToolInputSchema<TInput>
+  parameters?: Record<string, unknown>
+  execute?: ToolExecute<TInput, TOutput>
+  strict?: boolean
+  dynamic?: boolean
+}
+
+type AnyToolDefinition = ToolDefinition<never, unknown>
+type ToolSet = Record<string, Tool | AnyToolDefinition>
+type ChatToolsInput = Tool[] | ToolSet
+```
+
+`jsonSchema(schema)` wraps a JSON Schema for `tool({ inputSchema })`. `tool()`
+and `dynamicTool()` return `ToolDefinition` values that `useChat({ tools })`
+normalizes into provider-facing `Tool[]`; `execute` functions are registered as
+local handlers.
 
 Tool execution callbacks use the same parsed argument snapshot as
 `toolHandlers`:
