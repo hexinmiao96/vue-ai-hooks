@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-30
+
+### Added
+
+- Added default proxy transports for `useChat`, `useCompletion`, `useEmbedding`,
+  and `useObject`, so apps can omit a provider and target app-owned `/api/*`
+  routes.
+- Added provider request trace refs with `lastRequest`, `lastResponse`, and
+  `clearTrace()` across chat, completion, embedding, object, and generation
+  composables for UI-visible diagnostics.
+- Added AI SDK-style chat helpers for message submission, stream resume, manual
+  tool output, and approval-gated tool calls.
+- Added structured chat message parts, stream data typing, metadata handling, and
+  pruning controls for production chat surfaces.
+- Added a runnable no-key structured object example and documentation coverage
+  for choosing the right demo first.
+- Added a proxy example contract check that verifies default `/api/*` routes,
+  legacy `/api/ai/*` routes, chat resume, completion, embedding, and object
+  endpoints.
+
+### Changed
+
+- Updated docs, demo pages, and Docs UX checks so default proxy transports, trace
+  refs, object demos, and proxy compatibility remain visible.
+- `prepublishOnly` now delegates to `release:check`, which runs dependency audit
+  before the full local quality gate.
+- Coverage thresholds now require at least 98% statements, 90% branches, 96%
+  functions, and 98% lines.
+
 ## [0.2.1] - 2026-06-18
 
 ### Added
