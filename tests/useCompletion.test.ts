@@ -23,18 +23,20 @@ const fakeProvider = (text: string) =>
 
 describe('useCompletion', () => {
   it('uses a proxy transport when provider is omitted', async () => {
+    const onRequest = vi.fn()
     const fetcher = vi.fn(
       async () =>
         new Response(JSON.stringify({ completion: 'ok' }), {
           headers: { 'Content-Type': 'application/json' }
         })
     )
-    const { complete, completion } = useCompletion({
+    const { complete, completion, lastRequest } = useCompletion({
       api: '/api/completion',
       headers: { 'X-Session': 'session_1' },
       body: { tenantId: 'tenant_1' },
       credentials: 'include',
-      fetch: fetcher as unknown as typeof fetch
+      fetch: fetcher as unknown as typeof fetch,
+      onRequest
     })
 
     await expect(complete('finish this')).resolves.toBe('ok')
@@ -49,6 +51,20 @@ describe('useCompletion', () => {
       stream: true
     })
     expect(completion.value).toBe('ok')
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'proxy',
+        api: '/api/completion',
+        credentials: 'include',
+        prompt: 'finish this'
+      })
+    )
+    expect(lastRequest.value).toMatchObject({
+      providerId: 'proxy',
+      api: '/api/completion',
+      credentials: 'include',
+      prompt: 'finish this'
+    })
   })
 
   it('streams completion into ref', async () => {

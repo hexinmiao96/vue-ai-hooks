@@ -348,7 +348,8 @@ generation jobs, and structured JSON object output respectively.
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
 state and trace panels can follow one pattern across chat, text, vectors, custom
-generation jobs, and structured JSON.
+generation jobs, and structured JSON. Default proxy traces include the resolved
+proxy `api` and browser credentials mode.
 
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object.

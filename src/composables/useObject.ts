@@ -32,6 +32,8 @@ export interface ObjectRequestInfo {
   id: string
   providerId: string
   attempt: number
+  api?: string
+  credentials?: RequestCredentials
   request: ChatRequest
   messages: Message[]
   requestMetadata: unknown
@@ -136,6 +138,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     provider: providedProvider,
     transport,
     api,
+    credentials,
     id: explicitId,
     schema,
     schemaName = 'object',
@@ -160,6 +163,9 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
       id: undefined,
       chatUrl: api ?? '/api/object'
     })
+  const requestApi = providedProvider || transport ? undefined : (api ?? '/api/object')
+  const requestCredentials = providedProvider || transport ? undefined : credentials
+  const proxyRequestInfo = requestApi ? { api: requestApi, credentials: requestCredentials } : {}
 
   const id = ref(explicitId || generateId('object'))
   const initialPartialObject =
@@ -260,6 +266,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
       id: request.id ?? id.value,
       providerId: provider.id,
       attempt,
+      ...proxyRequestInfo,
       request: cloneRequestSnapshot(request),
       messages: request.messages.map(cloneMessageSnapshot),
       requestMetadata: request.metadata,

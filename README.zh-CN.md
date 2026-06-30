@@ -281,7 +281,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 
 分别用于单次流式补全、embedding 向量生成、自定义生成任务和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
 
-这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。
+这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。默认 proxy trace 会包含解析后的 proxy `api` 和浏览器 credentials 模式。
 
 `useChat` 和 `useCompletion` 还提供 `setInput()`、`handleInputChange()` 和 `handleSubmit()`，便于接入简单表单。表单提交成功后会清空 `input`；失败时会保留输入内容。两者都支持 `initialInput`。
 

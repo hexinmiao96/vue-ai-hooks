@@ -43,20 +43,22 @@ const schema = {
 
 describe('useObject', () => {
   it('uses a proxy transport when provider is omitted', async () => {
+    const onRequest = vi.fn()
     const fetcher = vi.fn(
       async () =>
         new Response(JSON.stringify([{ content: '{"title":"Proxy","priority":"high"}' }]), {
           headers: { 'Content-Type': 'application/json' }
         })
     )
-    const { object, submit } = useObject<TaskSummary>({
+    const { object, submit, lastRequest } = useObject<TaskSummary>({
       api: '/api/object',
       schema,
       schemaName: 'task_summary',
       headers: { 'X-Session': 'session_1' },
       body: { tenantId: 'tenant_1' },
       credentials: 'include',
-      fetch: fetcher as unknown as typeof fetch
+      fetch: fetcher as unknown as typeof fetch,
+      onRequest
     })
 
     await expect(submit('Extract a task.')).resolves.toEqual({
@@ -82,6 +84,19 @@ describe('useObject', () => {
       stream: true
     })
     expect(object.value).toEqual({ title: 'Proxy', priority: 'high' })
+    expect(onRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'proxy',
+        api: '/api/object',
+        credentials: 'include',
+        messages: [expect.objectContaining({ role: 'user', content: 'Extract a task.' })]
+      })
+    )
+    expect(lastRequest.value).toMatchObject({
+      providerId: 'proxy',
+      api: '/api/object',
+      credentials: 'include'
+    })
   })
 
   it('streams JSON text, parses the final object, and sends responseFormat', async () => {

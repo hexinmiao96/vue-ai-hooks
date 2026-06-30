@@ -185,11 +185,12 @@ the built-in trace refs:
 const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 ```
 
-These refs show the final provider/proxy request after defaults, per-call
-options, proxy `api`, credentials, body, headers, and retry attempt values are
-resolved. `prepareSendMessagesRequest`, `prepareStep`, and
+The same trace refs are available on `useCompletion()` and `useObject()`. They
+show the final provider/proxy request after defaults, per-call options, proxy
+`api`, credentials, body, headers, and retry attempt values are resolved.
+`prepareSendMessagesRequest`, `prepareStep`, and
 `prepareReconnectToStreamRequest` receive the same `api` and `credentials`
-fields for default proxy transports.
+fields for default chat proxy transports.
 
 ## Migration checklist
 

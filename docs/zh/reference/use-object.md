@@ -127,6 +127,8 @@ format。`openai`、`openaiCompatible`、`openrouter`、`gemini` 和 `deepseek`
 `onRequest(info)` 会在 messages 和 `responseFormat` 都解析完成后，收到最终结构化
 `ChatRequest`。`onResponse(info)` 会在 Provider 返回 stream 后执行。两者都包含从
 1 开始的 `attempt`、Provider id、request metadata、body、headers 和消息快照。
+使用默认 proxy transport 时，还会包含配置后的 proxy `api` 和浏览器
+`credentials` 模式。
 同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
 
 传入 `generateId` 可以让 `submit('...')` 自动创建的 prompt message 使用稳定 ID。

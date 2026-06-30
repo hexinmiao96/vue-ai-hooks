@@ -96,6 +96,8 @@ const { complete } = useCompletion({
 - `onRequest(info)` 会在 Provider 执行前收到最终 `CompletionRequest`。
   `onResponse(info)` 会在 Provider 返回 stream 后执行。两者都包含从 1 开始的
   `attempt`、Provider id、prompt、body、headers 和请求快照。
+  使用默认 proxy transport 时，还会包含配置后的 proxy `api` 和浏览器
+  `credentials` 模式。
   同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
 - 开启 `maxRetries` 后，流式补全只会在首个 delta 到达前失败时重试。
 - 设置 `throttleMs` 后，快速流式响应中的 `completion` 和 `onUpdate` 会批量刷新。

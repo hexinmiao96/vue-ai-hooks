@@ -136,7 +136,8 @@ event, and the final parsed object is always flushed before `submit()` resolves.
 `onRequest(info)` receives the final structured `ChatRequest` after messages and
 `responseFormat` are resolved. `onResponse(info)` runs after the provider returns
 a stream. Both include the 1-based `attempt`, provider id, request metadata,
-body, headers, and message snapshot.
+body, headers, and message snapshot. When the default proxy transport is used,
+they also include the configured proxy `api` and browser `credentials` mode.
 The same latest snapshots are available as `lastRequest` and `lastResponse` for
 rendering diagnostics in the UI.
 

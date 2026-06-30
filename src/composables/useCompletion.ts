@@ -25,6 +25,8 @@ export interface CompletionRequestInfo {
   id: string
   providerId: string
   attempt: number
+  api?: string
+  credentials?: RequestCredentials
   prompt: string
   request: CompletionRequest
   body?: Record<string, unknown>
@@ -126,6 +128,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     provider: providedProvider,
     transport,
     api,
+    credentials,
     id: explicitId,
     generateId = createId,
     initialInput = '',
@@ -145,6 +148,9 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
       id: undefined,
       completionUrl: api ?? '/api/completion'
     })
+  const requestApi = providedProvider || transport ? undefined : (api ?? '/api/completion')
+  const requestCredentials = providedProvider || transport ? undefined : credentials
+  const proxyRequestInfo = requestApi ? { api: requestApi, credentials: requestCredentials } : {}
 
   const id = ref(explicitId || generateId('completion'))
   const state = getCompletionState(id.value, initialInput, initialCompletion)
@@ -212,6 +218,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
       id: id.value,
       providerId: provider.id,
       attempt,
+      ...proxyRequestInfo,
       prompt,
       request: cloneRequestSnapshot(request),
       ...(request.body ? { body: { ...request.body } } : {}),

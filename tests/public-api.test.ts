@@ -553,6 +553,8 @@ describe('public API types', () => {
     expectTypeOf<CompletionRequestInfo>().toMatchTypeOf<{
       providerId: string
       attempt: number
+      api?: string
+      credentials?: RequestCredentials
       prompt: string
       request: CompletionRequest
     }>()
@@ -656,6 +658,8 @@ describe('public API types', () => {
     expectTypeOf<ObjectRequestInfo>().toMatchTypeOf<{
       providerId: string
       attempt: number
+      api?: string
+      credentials?: RequestCredentials
       request: ChatRequest
       messages: Message[]
     }>()

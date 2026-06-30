@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `data` and `setData()` as AI SDK-style custom stream data helpers.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
+- Added proxy `api` and `credentials` to completion and object request traces.
 - Added structured chat message parts, stream data typing, metadata handling, and
   pruning controls for production chat surfaces.
 - Added a runnable no-key structured object example and documentation coverage

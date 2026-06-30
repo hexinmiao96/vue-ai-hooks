@@ -102,6 +102,8 @@ const { complete } = useCompletion({
 - `onRequest(info)` receives the final `CompletionRequest` before the provider
   runs. `onResponse(info)` runs once the provider returns a stream. Both include
   the 1-based `attempt`, provider id, prompt, body, headers, and request snapshot.
+  When the default proxy transport is used, they also include the configured
+  proxy `api` and browser `credentials` mode.
   The same latest snapshots are available as `lastRequest` and `lastResponse`
   for rendering diagnostics in the UI.
 - When `maxRetries` is enabled, streaming completions only retry before the
