@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `execute` handlers.
 - Added `convertToModelMessages()` for turning UI chat history into
   model-facing messages without render-only `Message.parts`.
+- Added `ChatRequestMessage` and widened `ChatRequest.messages` so request
+  preparers can return `ModelMessage[]` directly.
 - Added an AI SDK-compatible object signature for `addToolResult()`.
 - Added `data` and `setData()` as AI SDK-style custom stream data helpers.
 - Added AI SDK-compatible `streamProtocol` support for default proxy

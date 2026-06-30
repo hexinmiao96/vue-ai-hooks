@@ -1,4 +1,4 @@
-import type { Message } from '../types'
+import type { ChatRequestMessage } from '../types'
 import { headersToRecord } from './headers'
 
 interface RequestSnapshot {
@@ -6,10 +6,10 @@ interface RequestSnapshot {
   forwardedProps?: Record<string, unknown>
   headers?: HeadersInit
   input?: string | string[]
-  messages?: Message[]
+  messages?: ChatRequestMessage[]
 }
 
-export function cloneMessageSnapshot(message: Message): Message {
+export function cloneMessageSnapshot<T extends ChatRequestMessage>(message: T): T {
   return {
     ...message,
     content: Array.isArray(message.content)
@@ -25,9 +25,11 @@ export function cloneMessageSnapshot(message: Message): Message {
           }))
         }
       : {}),
-    ...(message.parts ? { parts: message.parts.map((part) => ({ ...part })) } : {}),
+    ...('parts' in message && message.parts
+      ? { parts: message.parts.map((part) => ({ ...part })) }
+      : {}),
     ...(message.metadata ? { metadata: { ...message.metadata } } : {})
-  }
+  } as T
 }
 
 export function cloneRequestSnapshot<T extends RequestSnapshot>(request: T): T {

@@ -5,7 +5,7 @@ import type {
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult,
-  Message,
+  ChatRequestMessage,
   TokenUsage
 } from '../types'
 import { parseSSE } from '../utils/stream'
@@ -103,7 +103,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     return `${b}${p}`
   }
 
-  function serializeMessages(messages: Message[]) {
+  function serializeMessages(messages: ChatRequestMessage[]) {
     return messages.map((m) => {
       // Pass through ContentPart[] as-is; OpenAI's wire format is the same shape.
       const out: Record<string, unknown> = { role: m.role, content: m.content }

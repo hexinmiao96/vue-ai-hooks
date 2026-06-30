@@ -380,10 +380,10 @@ import { pruneMessages, useChat } from 'vue-ai-hooks'
 
 const { append } = useChat({
   provider,
-  prepareSendMessagesRequest({ request }) {
+  prepareSendMessagesRequest({ messages }) {
     return {
       messages: pruneMessages({
-        messages: request.messages,
+        messages,
         maxMessages: 12,
         reasoning: 'before-last-message',
         toolCalls: [{ type: 'before-last-message', tools: ['searchDocs', 'lookupAccount'] }]
@@ -419,9 +419,9 @@ import { convertToModelMessages, pruneMessages, useChat } from 'vue-ai-hooks'
 
 const { append } = useChat({
   provider,
-  prepareSendMessagesRequest({ request }) {
+  prepareSendMessagesRequest({ messages }) {
     const pruned = pruneMessages({
-      messages: request.messages,
+      messages,
       maxMessages: 12,
       reasoning: 'before-last-message'
     })
@@ -440,6 +440,11 @@ and `createdAt`, while preserving `role`, `content`, `name`, tool call fields,
 and shallow-cloned `metadata`. Pass `{ preserveIds: true }` or
 `{ preserveCreatedAt: true }` when your backend needs those fields, and
 `{ stripMetadata: true }` when metadata should stay client-side.
+`ChatRequest.messages` accepts `ChatRequestMessage[]`, so
+`prepareSendMessagesRequest` and `prepareStep` can return `ModelMessage[]` for
+provider/proxy requests while the reactive UI state remains `Message[]`. In
+request preparation hooks, use the `messages` option for the UI snapshot and
+`request.messages` when you need the already-prepared provider payload.
 
 ## Request preparation hooks
 

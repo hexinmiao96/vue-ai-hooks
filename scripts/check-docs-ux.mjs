@@ -720,6 +720,7 @@ expect(
   files.useChat.includes('## Model message conversion') &&
     files.useChat.includes('convertToModelMessages(pruned)') &&
     files.useChat.includes('ConvertToModelMessagesOptions') &&
+    files.useChat.includes('ChatRequestMessage[]') &&
     files.useChat.includes('stripMetadata') &&
     files.aiSdkMigration.includes('| `convertToModelMessages()`') &&
     files.aiSdkMigration.includes('const modelMessages = convertToModelMessages') &&
@@ -784,6 +785,7 @@ expect(
   files.zhUseChat.includes('## 模型消息转换') &&
     files.zhUseChat.includes('convertToModelMessages(pruned)') &&
     files.zhUseChat.includes('ConvertToModelMessagesOptions') &&
+    files.zhUseChat.includes('ChatRequestMessage[]') &&
     files.zhUseChat.includes('stripMetadata') &&
     files.zhAiSdkMigration.includes('| `convertToModelMessages()`') &&
     files.zhAiSdkMigration.includes('const modelMessages = convertToModelMessages') &&
@@ -833,6 +835,7 @@ expect(
     files.types.includes('type ChatToolsInput') &&
     files.types.includes('interface ModelMessage') &&
     files.types.includes('interface ConvertToModelMessagesOptions') &&
+    files.types.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.types.includes('jsonSchema(schema)') &&
     files.types.includes('dynamicTool()'),
   'English public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
@@ -851,6 +854,7 @@ expect(
     files.zhTypes.includes('type ChatToolsInput') &&
     files.zhTypes.includes('interface ModelMessage') &&
     files.zhTypes.includes('interface ConvertToModelMessagesOptions') &&
+    files.zhTypes.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.zhTypes.includes('jsonSchema(schema)') &&
     files.zhTypes.includes('dynamicTool()'),
   'Chinese public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'

@@ -46,6 +46,7 @@ import type {
   ChatProvider,
   ChatPersistOptions,
   ChatRequest,
+  ChatRequestMessage,
   ChatRequestInfo,
   ChatRequestLifecycleKind,
   ChatResumeRequest,
@@ -1065,12 +1066,16 @@ describe('public API types', () => {
     expectTypeOf(structured.submit).returns.toEqualTypeOf<Promise<{ answer: string }>>()
     expectTypeOf(structured.submit).parameter(1).toEqualTypeOf<Partial<ChatRequest> | undefined>()
     expectTypeOf<ObjectRequestInfo>().toMatchTypeOf<{
+      id: string
       providerId: string
       attempt: number
       api?: string
       credentials?: RequestCredentials
       request: ChatRequest
-      messages: Message[]
+      messages: ChatRequestMessage[]
+      requestMetadata: unknown
+      body?: Record<string, unknown>
+      headers?: Record<string, string>
     }>()
     expectTypeOf<ObjectResponseInfo>().toMatchTypeOf<ObjectRequestInfo & { hasStream: boolean }>()
     expectTypeOf<ObjectFinishInfo<{ answer: string }>>().toEqualTypeOf<{
@@ -1271,6 +1276,9 @@ describe('public API types', () => {
       expectTypeOf(options).toEqualTypeOf<PrepareSendMessagesRequestOptions>()
       return { body: options.body }
     }
+    const prepareModelMessages: PrepareSendMessagesRequest = ({ messages }) => ({
+      messages: convertToModelMessages(messages)
+    })
     const prepareStep: PrepareStep = (options) => {
       expectTypeOf(options).toEqualTypeOf<PrepareStepOptions>()
       return { body: { ...options.body, stepNumber: options.stepNumber } }
@@ -1347,6 +1355,9 @@ describe('public API types', () => {
     const serializedMessages = serializeMessages([message])
     const restoredMessages = deserializeMessages(serializedMessages)
     const modelMessages = convertToModelMessages([message])
+    const modelRequest: ChatRequest = {
+      messages: modelMessages
+    }
     const modelMessagesWithOptions = convertToModelMessages([message], {
       preserveIds: true,
       preserveCreatedAt: true,
@@ -1379,7 +1390,11 @@ describe('public API types', () => {
     }>()
     expectTypeOf<ChatAttachmentInput>().toEqualTypeOf<File | ChatFileAttachment>()
     expectTypeOf<ChatAttachmentsInput>().toEqualTypeOf<FileList | readonly ChatAttachmentInput[]>()
-    expectTypeOf(request.messages).toEqualTypeOf<Message[]>()
+    expectTypeOf<ChatRequestMessage>().toEqualTypeOf<Message | ModelMessage>()
+    expectTypeOf<ChatRequest['messages']>().toEqualTypeOf<ChatRequestMessage[]>()
+    expectTypeOf(request.messages).toEqualTypeOf<ChatRequestMessage[]>()
+    expectTypeOf(modelRequest.messages).toEqualTypeOf<ChatRequestMessage[]>()
+    expectTypeOf<PrepareSendMessagesRequestOptions['messages']>().toEqualTypeOf<Message[]>()
     expectTypeOf<ModelMessage>().toEqualTypeOf<{
       role: MessageRole
       content: MessageContent
@@ -1398,7 +1413,7 @@ describe('public API types', () => {
     expectTypeOf(modelMessages).toEqualTypeOf<ModelMessage[]>()
     expectTypeOf(modelMessagesWithOptions).toEqualTypeOf<ModelMessage[]>()
     expectTypeOf(convertOptions).toEqualTypeOf<ConvertToModelMessagesOptions>()
-    expectTypeOf(request.messages[0].parts).toEqualTypeOf<MessagePart[] | undefined>()
+    expectTypeOf(message.parts).toEqualTypeOf<MessagePart[] | undefined>()
     expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()
     expectTypeOf(request.body).toEqualTypeOf<Record<string, unknown> | undefined>()
@@ -1415,6 +1430,7 @@ describe('public API types', () => {
     expectTypeOf(prepareSend).returns.toEqualTypeOf<
       void | Partial<ChatRequest> | Promise<void | Partial<ChatRequest>>
     >()
+    expectTypeOf(prepareModelMessages).toEqualTypeOf<PrepareSendMessagesRequest>()
     expectTypeOf(prepareStep).returns.toEqualTypeOf<
       void | Partial<ChatRequest> | Promise<void | Partial<ChatRequest>>
     >()

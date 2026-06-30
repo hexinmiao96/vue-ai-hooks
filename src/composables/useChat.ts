@@ -12,6 +12,7 @@ import type {
   ChatAttachmentInput,
   ChatAttachmentsInput,
   ChatFileAttachment,
+  ChatRequestMessage,
   Message,
   MessageContent,
   ModelMessage,
@@ -150,7 +151,7 @@ export interface ChatRequestInfo {
   api?: string
   credentials?: RequestCredentials
   request: ChatRequest | ChatResumeRequest
-  messages: Message[]
+  messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
   headers?: Record<string, string>
@@ -1315,6 +1316,15 @@ export function useChat<
   function normalizeError(err: unknown): Error {
     return err instanceof Error ? err : new Error(String(err))
   }
+  function clonePrepareMessages(
+    requestMessages: ChatRequestMessage[],
+    fallback: Message[] = []
+  ): Message[] {
+    const source = requestMessages.every((message) => typeof message.id === 'string')
+      ? requestMessages
+      : fallback
+    return source.map((message) => cloneMessage(message as Message))
+  }
   function reportError(err: unknown): Error {
     const e = normalizeError(err)
     error.value = e
@@ -1800,33 +1810,35 @@ export function useChat<
       id: id.value,
       signal
     }
+    const baseMessages = clonePrepareMessages(base.messages, clonePrepareMessages(request.messages))
     const stepPrepared = await options.prepareStep?.({
       id: id.value,
       ...proxyRequestInfo,
-      messages: base.messages.map((message) => ({ ...message })),
+      messages: baseMessages,
       requestMetadata: base.metadata,
       body: base.body,
       headers: headersToRecord(base.headers),
-      request: { ...base, messages: base.messages.map((message) => ({ ...message })) },
+      request: { ...base, messages: base.messages.map(cloneMessage) },
       trigger: context.trigger,
       messageId: context.messageId,
       stepNumber: context.stepNumber,
-      toolCalls: latestAssistantToolCalls(base.messages).map((call) => ({
+      toolCalls: latestAssistantToolCalls(baseMessages).map((call) => ({
         ...call,
         function: { ...call.function }
       }))
     })
     const stepRequest = mergePreparedChatRequest(base, stepPrepared)
+    const preparedMessages = clonePrepareMessages(stepRequest.messages, baseMessages)
     const prepared = await options.prepareSendMessagesRequest?.({
       id: id.value,
       ...proxyRequestInfo,
-      messages: stepRequest.messages.map((message) => ({ ...message })),
+      messages: preparedMessages,
       requestMetadata: stepRequest.metadata,
       body: stepRequest.body,
       headers: headersToRecord(stepRequest.headers),
       request: {
         ...stepRequest,
-        messages: stepRequest.messages.map((message) => ({ ...message }))
+        messages: stepRequest.messages.map(cloneMessage)
       },
       trigger: context.trigger,
       messageId: context.messageId

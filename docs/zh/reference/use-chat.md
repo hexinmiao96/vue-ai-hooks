@@ -366,10 +366,10 @@ import { pruneMessages, useChat } from 'vue-ai-hooks'
 
 const { append } = useChat({
   provider,
-  prepareSendMessagesRequest({ request }) {
+  prepareSendMessagesRequest({ messages }) {
     return {
       messages: pruneMessages({
-        messages: request.messages,
+        messages,
         maxMessages: 12,
         reasoning: 'before-last-message',
         toolCalls: [{ type: 'before-last-message', tools: ['searchDocs', 'lookupAccount'] }]
@@ -404,9 +404,9 @@ import { convertToModelMessages, pruneMessages, useChat } from 'vue-ai-hooks'
 
 const { append } = useChat({
   provider,
-  prepareSendMessagesRequest({ request }) {
+  prepareSendMessagesRequest({ messages }) {
     const pruned = pruneMessages({
-      messages: request.messages,
+      messages,
       maxMessages: 12,
       reasoning: 'before-last-message'
     })
@@ -424,6 +424,10 @@ await append('发送精简后的模型上下文。')
 和 `createdAt`，保留 `role`、`content`、`name`、工具调用字段和浅克隆的
 `metadata`。后端需要这些字段时可以传 `{ preserveIds: true }` 或
 `{ preserveCreatedAt: true }`；metadata 只应留在客户端时传 `{ stripMetadata: true }`。
+`ChatRequest.messages` 接收 `ChatRequestMessage[]`，因此
+`prepareSendMessagesRequest` 和 `prepareStep` 可以返回面向 provider/proxy 请求的
+`ModelMessage[]`，响应式 UI 状态仍保持 `Message[]`。请求准备钩子里，使用
+`messages` 获取 UI 快照；需要已经准备好的 provider payload 时再读取 `request.messages`。
 
 ## 请求准备钩子
 

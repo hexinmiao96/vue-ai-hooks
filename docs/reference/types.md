@@ -130,7 +130,14 @@ interface ConvertToModelMessagesOptions {
   preserveCreatedAt?: boolean
   stripMetadata?: boolean
 }
+
+type ChatRequestMessage = Message | ModelMessage
 ```
+
+`ChatRequestMessage` is the message type accepted by provider and proxy
+requests. UI state still uses full `Message[]`, while
+`prepareSendMessagesRequest` can return `ModelMessage[]` from
+`convertToModelMessages()`.
 
 `append(message, { messageMetadata })` stores metadata on the user message, while
 request-level `metadata` stays on `ChatRequest`. `useChat()` can validate message
@@ -304,7 +311,7 @@ interface ChatRequestInfo {
   providerId: string
   attempt: number
   request: ChatRequest | ChatResumeRequest
-  messages: Message[]
+  messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
   headers?: Record<string, string>
@@ -373,7 +380,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | ------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
 | `id`               | `string`                                                                             | Chat/session identifier for provider or proxy layers.    |
 | `threadId`         | `string`                                                                             | Backend thread id, separate from client shared state id. |
-| `messages`         | `Message[]`                                                                          | Conversation history.                                    |
+| `messages`         | `ChatRequestMessage[]`                                                               | Provider/proxy request history.                          |
 | `forwardedProps`   | `Record<string, unknown>`                                                            | App props forwarded to proxy/agent backends.             |
 | `body`             | `Record<string, unknown>`                                                            | Extra JSON body fields for provider/proxy options.       |
 | `model`            | `string`                                                                             | Provider model id.                                       |

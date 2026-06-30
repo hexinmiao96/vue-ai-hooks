@@ -149,6 +149,9 @@ export interface ModelMessage {
   createdAt?: Date
 }
 
+/** Message shape accepted by provider and proxy chat requests. */
+export type ChatRequestMessage = Message | ModelMessage
+
 /** JSON response format controls for providers that support structured output. */
 export type ResponseFormat =
   | { type: 'json_object' }
@@ -188,7 +191,7 @@ export interface ChatRequest {
   id?: string
   /** Backend thread/session identifier that can differ from client-side shared state id. */
   threadId?: string
-  messages: Message[]
+  messages: ChatRequestMessage[]
   /** App-defined props forwarded to proxy/agent backends. */
   forwardedProps?: Record<string, unknown>
   /** Extra JSON body fields for provider/proxy-specific request options. */

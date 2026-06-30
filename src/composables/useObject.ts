@@ -5,6 +5,7 @@ import type {
   AiRequestStatus,
   ChatChunk,
   ChatRequest,
+  ChatRequestMessage,
   IdGenerator,
   Message,
   ResponseFormat,
@@ -36,7 +37,7 @@ export interface ObjectRequestInfo {
   api?: string
   credentials?: RequestCredentials
   request: ChatRequest
-  messages: Message[]
+  messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
   headers?: Record<string, string>

@@ -350,7 +350,8 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用
-`convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息。
+`convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息；
+`ChatRequest.messages` 可直接接收这些 `ChatRequestMessage[]` payload。
 
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 

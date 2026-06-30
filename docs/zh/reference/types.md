@@ -126,7 +126,13 @@ interface ConvertToModelMessagesOptions {
   preserveCreatedAt?: boolean
   stripMetadata?: boolean
 }
+
+type ChatRequestMessage = Message | ModelMessage
 ```
+
+`ChatRequestMessage` 是 provider 和 proxy 请求接收的消息类型。UI 状态仍使用完整
+`Message[]`，而 `prepareSendMessagesRequest` 可以返回
+`convertToModelMessages()` 生成的 `ModelMessage[]`。
 
 `append(message, { messageMetadata })` 会把 metadata 写到用户消息上，请求级
 `metadata` 仍然保留在 `ChatRequest`。`useChat()` 可以用 JSON Schema 子集或自定义
@@ -292,7 +298,7 @@ interface ChatRequestInfo {
   providerId: string
   attempt: number
   request: ChatRequest | ChatResumeRequest
-  messages: Message[]
+  messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
   headers?: Record<string, string>
@@ -359,7 +365,7 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | ------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | `id`               | `string`                                                                             | Provider 或代理层使用的 chat/session 标识。      |
 | `threadId`         | `string`                                                                             | 和客户端共享状态 id 分离的后端 thread id。       |
-| `messages`         | `Message[]`                                                                          | 对话历史。                                       |
+| `messages`         | `ChatRequestMessage[]`                                                               | Provider/proxy 请求历史。                        |
 | `forwardedProps`   | `Record<string, unknown>`                                                            | 转发给 proxy/agent 后端的应用上下文 props。      |
 | `body`             | `Record<string, unknown>`                                                            | 额外 JSON body 字段，用于 Provider/代理选项。    |
 | `model`            | `string`                                                                             | Provider 模型 ID。                               |

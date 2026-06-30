@@ -2,11 +2,11 @@ import type { ChatProvider } from './types'
 import type {
   ChatChunk,
   ChatRequest,
+  ChatRequestMessage,
   CompletionRequest,
   ContentPart,
   EmbeddingRequest,
   EmbeddingResult,
-  Message,
   MessageContent,
   TokenUsage,
   Tool,
@@ -156,7 +156,9 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     }
   }
 
-  function toAssistantContent(message: Message): string | Array<Record<string, unknown>> {
+  function toAssistantContent(
+    message: ChatRequestMessage
+  ): string | Array<Record<string, unknown>> {
     if (!message.toolCalls?.length) return toAnthropicContent(message.content)
     return [
       ...toAnthropicBlocks(message.content),
@@ -169,7 +171,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     ]
   }
 
-  function toToolResultContent(message: Message): Array<Record<string, unknown>> {
+  function toToolResultContent(message: ChatRequestMessage): Array<Record<string, unknown>> {
     return [
       {
         type: 'tool_result',
@@ -199,7 +201,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     return { type: 'tool', name: toolChoice.function.name }
   }
 
-  function splitMessages(messages: Message[]): {
+  function splitMessages(messages: ChatRequestMessage[]): {
     system?: string
     messages: Array<{ role: 'user' | 'assistant'; content: string | unknown[] }>
   } {

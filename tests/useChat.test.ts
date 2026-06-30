@@ -2210,6 +2210,42 @@ describe('useChat', () => {
     expect(requests[0].signal).toBeInstanceOf(AbortSignal)
   })
 
+  it('can prepare provider requests with model-facing messages', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider([[{ content: 'compact' }]], requests)
+    const { append, lastRequest, messages } = useChat({
+      provider,
+      prepareSendMessagesRequest({ messages }) {
+        return {
+          messages: convertToModelMessages(messages)
+        }
+      }
+    })
+
+    await append({
+      id: 'user_1',
+      role: 'user',
+      content: 'Use compact context.',
+      parts: [{ type: 'text', id: 'part_1', text: 'Use compact context.' }],
+      createdAt: new Date('2026-01-02T03:04:05.000Z')
+    })
+
+    expect(requests[0].messages).toEqual([{ role: 'user', content: 'Use compact context.' }])
+    expect('id' in requests[0].messages[0]).toBe(false)
+    expect('parts' in requests[0].messages[0]).toBe(false)
+    expect('createdAt' in requests[0].messages[0]).toBe(false)
+    expect(lastRequest.value?.request).toEqual(
+      expect.objectContaining({
+        messages: [{ role: 'user', content: 'Use compact context.' }]
+      })
+    )
+    expect(messages.value[0]).toMatchObject({
+      id: 'user_1',
+      role: 'user',
+      parts: [{ type: 'text', id: 'part_1', text: 'Use compact context.' }]
+    })
+  })
+
   it('passes thread id and forwarded props through chat requests', async () => {
     const requests: ChatRequest[] = []
     const prepareSendMessagesRequest = vi.fn()

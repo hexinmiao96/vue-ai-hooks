@@ -187,6 +187,7 @@ export type {
   TokenUsage,
   StreamDataPart,
   ChatRequest,
+  ChatRequestMessage,
   ChatResumeRequest,
   ChatChunk,
   CompletionRequest,
