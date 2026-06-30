@@ -109,6 +109,74 @@ describe('useEmbedding', () => {
     expect(embeddings.value).toHaveLength(2)
   })
 
+  it('manages embedding form input state', () => {
+    const { input, setInput, handleInputChange } = useEmbedding({
+      provider: fakeProvider([[0.1]]),
+      initialInput: 'seed text'
+    })
+
+    expect(input.value).toBe('seed text')
+
+    setInput('manual text')
+    expect(input.value).toBe('manual text')
+
+    handleInputChange({ target: { value: 42 } })
+    expect(input.value).toBe('42')
+
+    handleInputChange({ target: {} })
+    expect(input.value).toBe('')
+
+    handleInputChange('inline text')
+    expect(input.value).toBe('inline text')
+  })
+
+  it('submits embedding form input and clears it after success', async () => {
+    const preventDefault = vi.fn()
+    const requests: EmbeddingRequest[] = []
+    const provider = fakeEmbeddingProvider(async (request) => {
+      requests.push(request)
+      return {
+        embeddings: [[0.2, 0.3]],
+        model: 'form-model',
+        usage: { promptTokens: 2, totalTokens: 2 }
+      }
+    })
+    const { handleSubmit, input, embeddings } = useEmbedding({
+      provider,
+      initialInput: 'semantic search query'
+    })
+
+    const result = await handleSubmit(
+      { preventDefault },
+      { model: 'text-embedding-3-small', body: { tenantId: 'tenant_1' } }
+    )
+
+    expect(preventDefault).toHaveBeenCalledOnce()
+    expect(requests[0]).toMatchObject({
+      input: 'semantic search query',
+      model: 'text-embedding-3-small',
+      body: { tenantId: 'tenant_1' }
+    })
+    expect(result.model).toBe('form-model')
+    expect(embeddings.value).toEqual([[0.2, 0.3]])
+    expect(input.value).toBe('')
+  })
+
+  it('keeps embedding form input after submit errors', async () => {
+    const provider = fakeEmbeddingProvider(async () => {
+      throw new Error('form embedding failed')
+    })
+    const { handleSubmit, input, error } = useEmbedding({
+      provider,
+      initialInput: 'retry this text'
+    })
+
+    await expect(handleSubmit()).rejects.toThrow('form embedding failed')
+
+    expect(input.value).toBe('retry this text')
+    expect(error.value?.message).toBe('form embedding failed')
+  })
+
   it('merges request defaults and calls onSuccess with the final result', async () => {
     const requests: EmbeddingRequest[] = []
     const onSuccess = vi.fn()

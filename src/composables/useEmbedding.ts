@@ -36,6 +36,7 @@ export interface UseEmbeddingOptions extends RetryOptions {
   headers?: ProxyProviderConfig['headers']
   body?: ProxyProviderConfig['body']
   fetch?: typeof fetch
+  initialInput?: string
   defaultRequest?: Partial<EmbeddingRequest>
   onRequest?: (info: EmbeddingRequestInfo) => void
   onResponse?: (info: EmbeddingResponseInfo) => void
@@ -45,6 +46,7 @@ export interface UseEmbeddingOptions extends RetryOptions {
 
 export interface UseEmbeddingReturn {
   embeddings: Ref<number[][]>
+  input: Ref<string>
   status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
@@ -53,6 +55,12 @@ export interface UseEmbeddingReturn {
   lastResponse: Ref<EmbeddingResponseInfo | null>
   embed: (input: string | string[], options?: Partial<EmbeddingRequest>) => Promise<EmbeddingResult>
   stop: () => void
+  setInput: (value: string) => void
+  handleInputChange: (event: Event | { target?: { value?: unknown } } | string) => void
+  handleSubmit: (
+    event?: { preventDefault?: () => void },
+    options?: Partial<EmbeddingRequest>
+  ) => Promise<EmbeddingResult>
   clearError: () => void
   clearTrace: () => void
   clear: () => void
@@ -70,7 +78,14 @@ export interface UseEmbeddingReturn {
  * ```
  */
 export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingReturn {
-  const { defaultRequest = {}, onRequest, onResponse, onSuccess, onError } = options
+  const {
+    initialInput = '',
+    defaultRequest = {},
+    onRequest,
+    onResponse,
+    onSuccess,
+    onError
+  } = options
   const provider =
     options.provider ??
     options.transport ??
@@ -80,6 +95,7 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     })
 
   const embeddings = ref<number[][]>([])
+  const input = ref(initialInput)
   const status = ref<AiRequestStatus>('ready')
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
@@ -98,6 +114,7 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
   function clear() {
     stop()
     embeddings.value = []
+    input.value = ''
     result.value = null
     error.value = null
     clearTrace()
@@ -106,6 +123,20 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
   function clearError() {
     error.value = null
     status.value = 'ready'
+  }
+
+  function setInput(value: string) {
+    input.value = value
+  }
+
+  function handleInputChange(event: Event | { target?: { value?: unknown } } | string) {
+    if (typeof event === 'string') {
+      setInput(event)
+      return
+    }
+
+    const value = (event.target as { value?: unknown } | null | undefined)?.value
+    setInput(value == null ? '' : String(value))
   }
 
   function requestInfo(
@@ -192,8 +223,19 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     }
   }
 
+  async function handleSubmit(
+    event?: { preventDefault?: () => void },
+    requestOptions: Partial<EmbeddingRequest> = {}
+  ) {
+    event?.preventDefault?.()
+    const res = await embed(input.value, requestOptions)
+    input.value = ''
+    return res
+  }
+
   return {
     embeddings,
+    input,
     status,
     isLoading,
     error,
@@ -202,6 +244,9 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     lastResponse,
     embed,
     stop,
+    setInput,
+    handleInputChange,
+    handleSubmit,
     clearError,
     clearTrace,
     clear,

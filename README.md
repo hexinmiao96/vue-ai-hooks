@@ -366,10 +366,10 @@ field.
 `progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before
 visible output.
 
-`useChat`, `useCompletion`, and `useObject` also expose `setInput()`,
-`handleInputChange()`, and `handleSubmit()` for simple form wiring. Successful
-form submissions clear `input`; failed submissions leave it intact. All three
-accept `initialInput`.
+`useChat`, `useCompletion`, `useEmbedding`, and `useObject` also expose
+`setInput()`, `handleInputChange()`, and `handleSubmit()` for simple form
+wiring. Successful form submissions clear `input`; failed submissions leave it
+intact. All four accept `initialInput`.
 
 `useCompletion`'s `onFinish` callback keeps the final text as the first argument
 and passes the original prompt plus abort status through `CompletionFinishInfo`.

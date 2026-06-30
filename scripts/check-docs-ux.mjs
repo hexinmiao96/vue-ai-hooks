@@ -14,6 +14,8 @@ const files = {
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
+  useEmbedding: readFileSync('docs/reference/use-embedding.md', 'utf8'),
+  zhUseEmbedding: readFileSync('docs/zh/reference/use-embedding.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -409,9 +411,23 @@ expect(
     files.zhUseObject.includes('handleInputChange(e)') &&
     files.zhUseObject.includes('handleSubmit(e, opts?)') &&
     files.zhUseObject.includes('Provider 或解析失败时会保留输入') &&
-    files.readme.includes('`useChat`, `useCompletion`, and `useObject` also expose') &&
-    files.zhReadme.includes('`useChat`、`useCompletion` 和 `useObject` 还提供'),
-  'Object docs and READMEs must document structured-output form helpers'
+    files.useEmbedding.includes('initialInput') &&
+    files.useEmbedding.includes('input`') &&
+    files.useEmbedding.includes('setInput(value)') &&
+    files.useEmbedding.includes('handleInputChange(e)') &&
+    files.useEmbedding.includes('handleSubmit(e, opts?)') &&
+    files.useEmbedding.includes('Provider errors leave the text available for retry') &&
+    files.zhUseEmbedding.includes('initialInput') &&
+    files.zhUseEmbedding.includes('input`') &&
+    files.zhUseEmbedding.includes('setInput(value)') &&
+    files.zhUseEmbedding.includes('handleInputChange(e)') &&
+    files.zhUseEmbedding.includes('handleSubmit(e, opts?)') &&
+    files.zhUseEmbedding.includes('Provider 错误会保留文本') &&
+    files.readme.includes(
+      '`useChat`, `useCompletion`, `useEmbedding`, and `useObject` also expose'
+    ) &&
+    files.zhReadme.includes('`useChat`、`useCompletion`、`useEmbedding` 和 `useObject` 还提供'),
+  'Object and embedding docs plus READMEs must document form helpers'
 )
 expect(
   files.useChat.includes('## Message pruning') &&

@@ -45,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `experimental_useObject` as an AI SDK-compatible alias for `useObject`.
 - Added `initialInput`, `setInput()`, `handleInputChange()`, and
   `handleSubmit()` to `useObject` for structured-output forms.
+- Added `initialInput`, `input`, `setInput()`, `handleInputChange()`, and
+  `handleSubmit()` to `useEmbedding` for embedding forms.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.

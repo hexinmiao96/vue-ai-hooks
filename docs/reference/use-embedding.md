@@ -29,6 +29,18 @@ const { embed } = useEmbedding({
 })
 ```
 
+For form wiring, bind `input` and submit it through `handleSubmit()`:
+
+```ts
+const { input, handleInputChange, handleSubmit, embeddings } = useEmbedding({
+  provider: openai({ apiKey: '...' }),
+  initialInput: 'hello world'
+})
+
+await handleSubmit()
+console.log(embeddings.value)
+```
+
 ## Options
 
 | Name             | Type                                                                   | Default          | Description                                         |
@@ -41,6 +53,7 @@ const { embed } = useEmbedding({
 | `body`           | `Record<string, unknown> \| () => ...`                                 | —                | Extra JSON body fields for the default proxy.       |
 | `credentials`    | `RequestCredentials`                                                   | —                | Browser credentials mode for the default proxy.     |
 | `fetch`          | `typeof fetch`                                                         | global           | Custom fetch implementation for the default proxy.  |
+| `initialInput`   | `string`                                                               | `''`             | Seed the form input text.                           |
 | `defaultRequest` | `Partial<EmbeddingRequest>`                                            | `{}`             | Default options.                                    |
 | `maxRetries`     | `number`                                                               | `0`              | Retry attempts for transient failures.              |
 | `retryDelayMs`   | `number \| (context: RetryContext) => number`                          | `0`              | Delay before each retry.                            |
@@ -53,21 +66,25 @@ const { embed } = useEmbedding({
 
 ## Return value
 
-| Property              | Type                                                                          | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `embeddings`          | `Ref<number[][]>`                                                             | The most recent embedding vectors.                                      |
-| `status`              | `Ref<AiRequestStatus>`                                                        | Request lifecycle: `ready`, `submitted`, or `error`.                    |
-| `isLoading`           | `Ref<boolean>`                                                                | True while a request is in flight.                                      |
-| `error`               | `Ref<Error \| null>`                                                          | Last error.                                                             |
-| `result`              | `Ref<EmbeddingResult \| null>`                                                | The most recent full result, including usage stats.                     |
-| `lastRequest`         | `Ref<EmbeddingRequestInfo \| null>`                                           | Last prepared embedding request snapshot.                               |
-| `lastResponse`        | `Ref<EmbeddingResponseInfo \| null>`                                          | Last provider response snapshot, including the full result.             |
-| `embed(input, opts?)` | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>` | Generate embeddings.                                                    |
-| `stop()`              | `() => void`                                                                  | Abort the in-flight request.                                            |
-| `clearError()`        | `() => void`                                                                  | Clear `error` and move `status` back to `ready`.                        |
-| `clearTrace()`        | `() => void`                                                                  | Clear `lastRequest` and `lastResponse` without changing embeddings.     |
-| `clear()`             | `() => void`                                                                  | Reset embeddings, result, and error. Also aborts the in-flight request. |
-| `abortController`     | `Ref<AbortController \| null>`                                                | Exposed for advanced use cases.                                         |
+| Property                 | Type                                                                                         | Description                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `embeddings`             | `Ref<number[][]>`                                                                            | The most recent embedding vectors.                                      |
+| `input`                  | `Ref<string>`                                                                                | Text binding for embedding forms.                                       |
+| `status`                 | `Ref<AiRequestStatus>`                                                                       | Request lifecycle: `ready`, `submitted`, or `error`.                    |
+| `isLoading`              | `Ref<boolean>`                                                                               | True while a request is in flight.                                      |
+| `error`                  | `Ref<Error \| null>`                                                                         | Last error.                                                             |
+| `result`                 | `Ref<EmbeddingResult \| null>`                                                               | The most recent full result, including usage stats.                     |
+| `lastRequest`            | `Ref<EmbeddingRequestInfo \| null>`                                                          | Last prepared embedding request snapshot.                               |
+| `lastResponse`           | `Ref<EmbeddingResponseInfo \| null>`                                                         | Last provider response snapshot, including the full result.             |
+| `embed(input, opts?)`    | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>`                | Generate embeddings.                                                    |
+| `stop()`                 | `() => void`                                                                                 | Abort the in-flight request.                                            |
+| `setInput(value)`        | `(string) => void`                                                                           | Replace form input manually.                                            |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                                    | Wire custom inputs without `v-model`.                                   |
+| `handleSubmit(e, opts?)` | `({ preventDefault?: () => void }?, Partial<EmbeddingRequest>?) => Promise<EmbeddingResult>` | Submit `input.value`; clears input after success.                       |
+| `clearError()`           | `() => void`                                                                                 | Clear `error` and move `status` back to `ready`.                        |
+| `clearTrace()`           | `() => void`                                                                                 | Clear `lastRequest` and `lastResponse` without changing embeddings.     |
+| `clear()`                | `() => void`                                                                                 | Reset embeddings, result, and error. Also aborts the in-flight request. |
+| `abortController`        | `Ref<AbortController \| null>`                                                               | Exposed for advanced use cases.                                         |
 
 ## Notes
 
@@ -77,9 +94,13 @@ const { embed } = useEmbedding({
   `/api/embedding` through the built-in proxy transport. Pass `api`, `baseURL`,
   `headers`, `body`, `credentials`, or `fetch` to configure that request.
 - Input can be a single string or an array of strings (batched into one request).
+  Form helpers manage a single text input; call `embed([...])` directly for
+  batched embedding requests.
 - Use `defaultRequest.body` or `embed(input, { body })` for provider-specific
   JSON request fields. Typed fields such as `input`, `model`, and `user` win if
   keys conflict.
+- `handleSubmit()` clears `input` only after a successful embedding request.
+  Provider errors leave the text available for retry.
 - `onRequest(info)` receives the final `EmbeddingRequest` before the provider
   runs. `onResponse(info)` receives the final result after the provider returns.
   Both include the 1-based `attempt`, provider id, input, body, headers, and
