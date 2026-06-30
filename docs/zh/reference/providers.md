@@ -249,7 +249,8 @@ const provider = proxyProvider({
 
 - `chat()` 会把 `ChatRequest` JSON POST 到 `chatUrl`。后端可以返回
   `text/event-stream`，每个 `data:` payload 是一个 `ChatChunk`；也可以返回 JSON：
-  `ChatChunk`、`ChatChunk[]` 或 `{ chunks: ChatChunk[] }`。
+  `ChatChunk`、`ChatChunk[]` 或 `{ chunks: ChatChunk[] }`。`text/plain` chunks 会映射为
+  chat `content`，适合兼容流式返回原始 JSON 文本的 AI SDK object 路由。
   `ChatChunk` payload 可以包含 `metadata`、`data`、`dataId`、`dataType` 和
   `transient`，供 `useChat().streamData` 消费自定义流数据。
 - SSE 流也可以使用 AI SDK UI message stream 协议。此时 `text-delta` 会转换成

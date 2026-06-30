@@ -354,7 +354,8 @@ generation jobs, and structured JSON. Default proxy traces include the resolved
 proxy `api` and browser credentials mode.
 
 `useObject` supports `id` for shared structured-output state across components
-and `initialValue` for seeding the first partial object.
+and `initialValue` for seeding the first partial object. Default proxy object
+routes may return either chat chunks or `text/plain` JSON streams.
 
 `useGeneration` accepts a custom `fetcher` and provides typed `result`,
 `progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before

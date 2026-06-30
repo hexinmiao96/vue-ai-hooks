@@ -114,6 +114,8 @@ format. `openai`, `openaiCompatible`, `openrouter`, `gemini`, and `deepseek`
 serialize it to OpenAI-compatible `response_format`; `proxyProvider` forwards it to your backend
 unchanged. When `provider` and `transport` are omitted, `useObject` uses the
 built-in proxy transport and calls `api` or `/api/object`.
+That proxy endpoint may return SSE/JSON chat chunks or a `text/plain` stream of
+JSON text; plain text chunks are treated as streamed object content.
 
 Providers that do not enforce structured output may still return valid JSON if
 prompted carefully. The client validates the final parsed JSON against common

@@ -288,6 +288,14 @@ async function readTextChunks(response: Response, signal?: AbortSignal) {
 }
 
 async function readChatChunks(response: Response, signal?: AbortSignal) {
+  if (isTextResponse(response)) {
+    return (async function* () {
+      for await (const content of await readTextChunks(response, signal)) {
+        yield { content }
+      }
+    })()
+  }
+
   if (isEventStream(response)) {
     return (async function* () {
       const uiState: UiStreamState = {

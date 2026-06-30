@@ -185,11 +185,13 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 2. 将 `DefaultChatTransport` 选项映射到 `api`、`baseURL`、`headers`、`body`、
    `credentials` 和 `fetch`。
 3. 已有 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。
-4. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-5. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+4. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
+   `text/plain` JSON 文本流。
+5. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+6. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-6. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-7. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+7. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+8. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
    `addToolApprovalResponse()`。
-8. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-9. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+9. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+10. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

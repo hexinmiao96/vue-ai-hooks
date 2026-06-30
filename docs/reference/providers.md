@@ -257,7 +257,9 @@ Protocol:
 
 - `chat()` posts `ChatRequest` JSON to `chatUrl`. The backend may return
   `text/event-stream` SSE where each `data:` payload is a `ChatChunk`, or JSON
-  as `ChatChunk`, `ChatChunk[]`, or `{ chunks: ChatChunk[] }`.
+  as `ChatChunk`, `ChatChunk[]`, or `{ chunks: ChatChunk[] }`. `text/plain`
+  chunks are mapped to chat `content`, which is useful for AI SDK-compatible
+  object routes that stream raw JSON text.
   `ChatChunk` payloads may include `metadata`, `data`, `dataId`, `dataType`, and
   `transient` for custom stream data consumed by `useChat().streamData`.
   The SSE stream may also use the AI SDK UI message stream protocol. In that

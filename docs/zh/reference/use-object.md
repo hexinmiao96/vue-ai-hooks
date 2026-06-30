@@ -111,6 +111,8 @@ format。`openai`、`openaiCompatible`、`openrouter`、`gemini` 和 `deepseek`
 会把它序列化为 OpenAI-compatible 的 `response_format`；`proxyProvider`
 会把它原样转发给你的后端。省略 `provider` 和 `transport` 时，`useObject` 会使用内置 proxy transport 并调用
 `api` 或 `/api/object`。
+这个 proxy 端点可以返回 SSE/JSON chat chunks，也可以返回 `text/plain` JSON 文本流；
+纯文本 chunk 会作为结构化对象内容累积和解析。
 
 不强制结构化输出的 Provider 仍然可能在提示词约束下返回合法 JSON。客户端会对最终解析后的 JSON 校验常见 schema 关键字：`type`、`required`、`enum`、`properties`、`items` 和 `additionalProperties`。如果返回内容不是合法 JSON，或最终对象不符合 schema，`submit()` 会以 `AiHooksError` reject。
 

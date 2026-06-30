@@ -104,6 +104,19 @@ describe('proxyProvider', () => {
     expect(chunks).toEqual([{ content: 'done' }])
   })
 
+  it('reads plain text chat proxy responses as content chunks', async () => {
+    const fetcher = vi.fn(async () => textResponse(['Hel', 'lo']))
+    const provider = proxyProvider({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await provider.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks: unknown[] = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    expect(chunks).toEqual([{ content: 'Hel' }, { content: 'lo' }])
+  })
+
   it('maps AI SDK UI message stream parts to ChatChunk values', async () => {
     const fetcher = vi.fn(async () =>
       sseResponse([

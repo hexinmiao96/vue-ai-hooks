@@ -41,6 +41,22 @@ const schema = {
   additionalProperties: false
 }
 
+function textResponse(chunks: string[]): Response {
+  const encoder = new TextEncoder()
+  const body = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk))
+      }
+      controller.close()
+    }
+  })
+  return new Response(body, {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  })
+}
+
 describe('useObject', () => {
   it('uses a proxy transport when provider is omitted', async () => {
     const onRequest = vi.fn()
@@ -97,6 +113,34 @@ describe('useObject', () => {
       api: '/api/object',
       credentials: 'include'
     })
+  })
+
+  it('parses plain text JSON streams from the default proxy transport', async () => {
+    const fetcher = vi.fn(async () => textResponse(['{"title":"Plain"', ',"priority":"high"}']))
+    const { object, partialObject, submit, text } = useObject<TaskSummary>({
+      api: '/api/object',
+      schema,
+      schemaName: 'task_summary',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(submit('Extract a task.')).resolves.toEqual({
+      title: 'Plain',
+      priority: 'high'
+    })
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      messages: [{ role: 'user', content: 'Extract a task.' }],
+      responseFormat: {
+        type: 'json_schema',
+        json_schema: { name: 'task_summary', schema, strict: true }
+      },
+      stream: true
+    })
+    expect(text.value).toBe('{"title":"Plain","priority":"high"}')
+    expect(partialObject.value).toEqual({ title: 'Plain', priority: 'high' })
+    expect(object.value).toEqual({ title: 'Plain', priority: 'high' })
   })
 
   it('streams JSON text, parses the final object, and sends responseFormat', async () => {
