@@ -118,9 +118,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 ```
 
 同一个模板也支持默认组合式函数 URL（`/api/chat`、`/api/completion`、
-`/api/embedding`、`/api/image`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object`）。当你省略
+`/api/embedding`、`/api/image`、`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object`）。当你省略
 `provider`，直接在 `useChat`、`useCompletion`、`useEmbedding`、`useImage`、
-`useSpeech`、`useTranscription`、`useRerank` 或 `useObject` 上配置 `api` / `baseURL` 时，用这些路径。
+`useVideo`、`useSpeech`、`useTranscription`、`useRerank` 或 `useObject` 上配置 `api` / `baseURL` 时，用这些路径。
 
 `proxyProvider` 既能消费本项目的 `ChatChunk` SSE payload，也能直接消费已有后端返回的
 AI SDK UI message stream。如果你的服务端已经输出 `text-delta`、`finish`、`data-*`、

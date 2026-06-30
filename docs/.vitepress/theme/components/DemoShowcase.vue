@@ -9,6 +9,7 @@ type DemoHref =
   | '#embedding-demo'
   | '#rerank-demo'
   | '#image-demo'
+  | '#video-demo'
   | '#speech-demo'
   | '#transcription-demo'
   | '#object-demo'
@@ -17,6 +18,7 @@ type DemoHref =
   | '#embedding-demo-api'
   | '#rerank-demo-api'
   | '#image-demo-api'
+  | '#video-demo-api'
   | '#speech-demo-api'
   | '#transcription-demo-api'
   | '#object-demo-api'
@@ -30,6 +32,8 @@ type DemoHref =
   | '#rerank-demo-api-methods'
   | '#image-demo-api-props'
   | '#image-demo-api-methods'
+  | '#video-demo-api-props'
+  | '#video-demo-api-methods'
   | '#speech-demo-api-props'
   | '#speech-demo-api-methods'
   | '#transcription-demo-api-props'
@@ -142,6 +146,21 @@ input.value = 'A clean Vue composable dashboard hero image'
 await handleSubmit()
 
 console.log(image.value?.url, images.value.length)`,
+    video: `const { video, videos, input, handleSubmit, stop, clear } = useVideo({
+  api: '/api/video',
+  defaultRequest: {
+    model: 'video-model',
+    aspectRatio: '16:9',
+    resolution: '1280x720',
+    duration: 6
+  }
+})
+
+input.value = 'A concise Vue product walkthrough video'
+
+await handleSubmit()
+
+console.log(video.value?.url, videos.value.length)`,
     speech: `const { audio, input, handleSubmit, generateSpeech, stop, clear } = useSpeech({
   api: '/api/speech',
   defaultRequest: {
@@ -278,6 +297,21 @@ console.log(重排文档.value, 排名.value)`,
 await handleSubmit()
 
 console.log(图片.value?.url, 图片列表.value.length)`,
+    video: `const { video: 视频, videos: 视频列表, input: 输入文本, handleSubmit, stop, clear } = useVideo({
+  api: '/api/video',
+  defaultRequest: {
+    model: 'video-model',
+    aspectRatio: '16:9',
+    resolution: '1280x720',
+    duration: 6
+  }
+})
+
+输入文本.value = '一段简短的 Vue 产品演示视频'
+
+await handleSubmit()
+
+console.log(视频.value?.url, 视频列表.value.length)`,
     speech: `const { audio: 音频, input: 输入文本, handleSubmit, generateSpeech, stop, clear } = useSpeech({
   api: '/api/speech',
   defaultRequest: {
@@ -346,12 +380,13 @@ const copy = {
       { job: 'Similarity search', pick: 'useEmbedding' },
       { job: 'Document reranking', pick: 'useRerank' },
       { job: 'Image generation', pick: 'useImage' },
+      { job: 'Video generation', pick: 'useVideo' },
       { job: 'Speech generation', pick: 'useSpeech' },
       { job: 'Audio transcription', pick: 'useTranscription' },
       { job: 'Typed JSON extraction', pick: 'useObject' }
     ],
     heroStats: [
-      { label: 'Composables', value: '9' },
+      { label: 'Composables', value: '10' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
@@ -361,6 +396,7 @@ const copy = {
       { label: 'Embedding', href: '#embedding-demo' },
       { label: 'Rerank', href: '#rerank-demo' },
       { label: 'Image', href: '#image-demo' },
+      { label: 'Video', href: '#video-demo' },
       { label: 'Speech', href: '#speech-demo' },
       { label: 'Transcription', href: '#transcription-demo' },
       { label: 'Object', href: '#object-demo' }
@@ -371,6 +407,7 @@ const copy = {
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
       { label: 'useRerank API', href: '#rerank-demo-api' },
       { label: 'useImage API', href: '#image-demo-api' },
+      { label: 'useVideo API', href: '#video-demo-api' },
       { label: 'useSpeech API', href: '#speech-demo-api' },
       { label: 'useTranscription API', href: '#transcription-demo-api' },
       { label: 'useObject API', href: '#object-demo-api' }
@@ -771,6 +808,81 @@ const copy = {
         ]
       }
     },
+    video: {
+      title: 'Video generation',
+      topbarTitle: 'useVideo',
+      description:
+        'A backend-owned video route pattern with prompt input, generated video refs, trace visibility, and stop/reset controls.',
+      promptLabel: 'Prompt',
+      prompt: 'A concise Vue product walkthrough video',
+      resultLabel: 'Generated video',
+      badge: '1 video - storyboard fallback - trace ready',
+      footer: 'generateVideo - stop - clear',
+      apiRef: {
+        title: 'useVideo API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Video endpoint for the default app-owned backend route.'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: 'optional',
+            description: 'Backend origin for local proxy or deployed server routes.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'VideoGenerationRequest',
+            required: 'optional',
+            description:
+              'Default model, resolution, duration, and provider options merged into each request.'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: VideoGenerationResult) => void',
+            required: 'optional',
+            description: 'Callback invoked after the backend returns normalized videos.'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateVideo',
+            type: '(prompt?: string): Promise<VideoGenerationResult>',
+            description: 'Send a prompt and resolve with normalized video results.'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<VideoGenerationResult>',
+            description: 'Wire a video form submit and clear input only after success.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active video request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear videos, result, trace, input, and current error.'
+          }
+        ]
+      }
+    },
     speech: {
       title: 'Speech generation',
       topbarTitle: 'useSpeech',
@@ -1088,12 +1200,13 @@ const copy = {
       { job: '语义相似度检索', pick: 'useEmbedding' },
       { job: '文档重排', pick: 'useRerank' },
       { job: '图片生成', pick: 'useImage' },
+      { job: '视频生成', pick: 'useVideo' },
       { job: '语音生成', pick: 'useSpeech' },
       { job: '音频转写', pick: 'useTranscription' },
       { job: '类型化 JSON 抽取', pick: 'useObject' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '9' },
+      { label: '组合式函数', value: '10' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
@@ -1103,6 +1216,7 @@ const copy = {
       { label: '向量检索', href: '#embedding-demo' },
       { label: '重排', href: '#rerank-demo' },
       { label: '图片', href: '#image-demo' },
+      { label: '视频', href: '#video-demo' },
       { label: '语音', href: '#speech-demo' },
       { label: '转写', href: '#transcription-demo' },
       { label: '结构化对象', href: '#object-demo' }
@@ -1113,6 +1227,7 @@ const copy = {
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
       { label: 'useRerank 接口', href: '#rerank-demo-api' },
       { label: 'useImage 接口', href: '#image-demo-api' },
+      { label: 'useVideo 接口', href: '#video-demo-api' },
       { label: 'useSpeech 接口', href: '#speech-demo-api' },
       { label: 'useTranscription 接口', href: '#transcription-demo-api' },
       { label: 'useObject 接口', href: '#object-demo-api' }
@@ -1497,6 +1612,80 @@ const copy = {
         ]
       }
     },
+    video: {
+      title: '视频生成',
+      topbarTitle: 'useVideo（视频生成）',
+      description:
+        '面向自有后端视频路由的表单模式：提示词输入、生成视频 refs、请求 trace，以及停止和清空控制。',
+      promptLabel: '提示词',
+      prompt: '一段简短的 Vue 产品演示视频',
+      resultLabel: '生成视频',
+      badge: '1 段视频 - storyboard fallback - trace 已就绪',
+      footer: 'generateVideo - stop - clear',
+      apiRef: {
+        title: 'useVideo 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '名称',
+          type: '类型',
+          required: '必填',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认自有后端路由的视频生成端点。'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: '可选',
+            description: '本地代理或已部署后端的 origin。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'VideoGenerationRequest',
+            required: '可选',
+            description: '合并到每次请求中的默认模型、分辨率、时长和 provider 选项。'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: VideoGenerationResult) => void',
+            required: '可选',
+            description: '后端返回并归一化视频结果后触发。'
+          }
+        ],
+        methods: [
+          {
+            name: 'generateVideo',
+            type: '(prompt?: string): Promise<VideoGenerationResult>',
+            description: '提交提示词并返回归一化后的视频结果。'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<VideoGenerationResult>',
+            description: '接入视频表单提交，并且只在成功后清空输入。'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: '中断当前视频生成请求。'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: '清理视频、结果、trace、输入和当前错误。'
+          }
+        ]
+      }
+    },
     speech: {
       title: '语音生成',
       topbarTitle: 'useSpeech（语音生成）',
@@ -1766,6 +1955,13 @@ const copy = {
         fit: '通过自有后端路由构建图片工具'
       },
       {
+        name: 'useVideo',
+        state:
+          'video（当前视频）、videos（视频列表）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
+        actions: 'generateVideo 生成视频, handleSubmit 表单提交, stop 停止, clear 清空',
+        fit: '通过自有后端路由构建视频工具'
+      },
+      {
         name: 'useSpeech',
         state:
           'audio（当前音频）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
@@ -1802,6 +1998,7 @@ const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
 const rerankCode = computed(() => codeSamples[localeKey.value].rerank)
 const imageCode = computed(() => codeSamples[localeKey.value].image)
+const videoCode = computed(() => codeSamples[localeKey.value].video)
 const speechCode = computed(() => codeSamples[localeKey.value].speech)
 const transcriptionCode = computed(() => codeSamples[localeKey.value].transcription)
 const objectCode = computed(() => codeSamples[localeKey.value].object)
@@ -1812,6 +2009,7 @@ const sectionIds: DemoHref[] = [
   '#embedding-demo',
   '#rerank-demo',
   '#image-demo',
+  '#video-demo',
   '#speech-demo',
   '#transcription-demo',
   '#object-demo',
@@ -1820,6 +2018,7 @@ const sectionIds: DemoHref[] = [
   '#embedding-demo-api',
   '#rerank-demo-api',
   '#image-demo-api',
+  '#video-demo-api',
   '#speech-demo-api',
   '#transcription-demo-api',
   '#object-demo-api',
@@ -1833,6 +2032,8 @@ const sectionIds: DemoHref[] = [
   '#rerank-demo-api-methods',
   '#image-demo-api-props',
   '#image-demo-api-methods',
+  '#video-demo-api-props',
+  '#video-demo-api-methods',
   '#speech-demo-api-props',
   '#speech-demo-api-methods',
   '#transcription-demo-api-props',
@@ -2224,6 +2425,48 @@ onUnmounted(() => {
             </div>
             <footer class="preview-footer">
               <span>{{ content.image.footer }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
+          id="video-demo"
+          api-title-id="video-demo-api"
+          api-props-section-id="video-demo-api-props"
+          api-methods-section-id="video-demo-api-methods"
+          :title="content.video.title"
+          :description="content.video.description"
+          :code="videoCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.video.apiRef"
+        >
+          <div class="image-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-violet" />
+              <span>{{ content.video.topbarTitle }}</span>
+            </div>
+            <div class="image-preview__grid">
+              <article class="image-prompt">
+                <span class="field-label">{{ content.video.promptLabel }}</span>
+                <p>{{ content.video.prompt }}</p>
+                <span class="image-badge">{{ content.video.badge }}</span>
+              </article>
+              <article class="image-card">
+                <span class="field-label">{{ content.video.resultLabel }}</span>
+                <div class="image-card__art">
+                  <span />
+                </div>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.video.footer }}</span>
             </footer>
           </div>
         </DemoBlock>

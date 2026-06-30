@@ -20,8 +20,8 @@ hero:
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
 features:
-  - title: 九个组合式函数，一套心智模型
-    details: useChat、useCompletion、useEmbedding、useGeneration、useImage、useSpeech、useTranscription、useRerank 和 useObject 覆盖对话、文本、向量、自定义生成任务、自有后端图片、语音、转写和重排路由，以及结构化 JSON。可插拔 Provider 让你切换模型时不需要重写应用。
+  - title: 十个组合式函数，一套心智模型
+    details: useChat、useCompletion、useEmbedding、useGeneration、useImage、useVideo、useSpeech、useTranscription、useRerank 和 useObject 覆盖对话、文本、向量、自定义生成任务、自有后端图片、视频、语音、转写和重排路由，以及结构化 JSON。可插拔 Provider 让你切换模型时不需要重写应用。
   - title: 可以先不配置 API key
     details: 聊天示例内置确定性的本地 Provider，可直接体验工具审批；proxy 模板也能在本地返回模拟流式片段。先跑通 UI，再接真实模型。
   - title: 默认支持流式响应

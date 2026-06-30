@@ -126,6 +126,7 @@ const requiredPackageKeywords = [
   'typescript',
   'embedding',
   'image',
+  'video',
   'rerank',
   'speech',
   'transcription'

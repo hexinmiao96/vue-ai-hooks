@@ -32,6 +32,7 @@ import {
   useObject,
   useRerank,
   useSpeech,
+  useVideo,
   useTranscription,
   usePersist
 } from 'vue-ai-hooks'
@@ -83,6 +84,7 @@ import type {
   IdGenerator,
   GeneratedAudio,
   GeneratedImage,
+  GeneratedVideo,
   ImageGenerationRequest,
   ImageGenerationRequestInfo,
   ImageGenerationResponseInfo,
@@ -143,6 +145,11 @@ import type {
   SpeechGenerationRequestInfo,
   SpeechGenerationResponseInfo,
   SpeechGenerationResult,
+  VideoFrameImage,
+  VideoGenerationRequest,
+  VideoGenerationRequestInfo,
+  VideoGenerationResponseInfo,
+  VideoGenerationResult,
   TranscriptionRequest,
   TranscriptionRequestInfo,
   TranscriptionResponseInfo,
@@ -185,6 +192,8 @@ import type {
   UseRerankReturn,
   UseSpeechOptions,
   UseSpeechReturn,
+  UseVideoOptions,
+  UseVideoReturn,
   UseTranscriptionOptions,
   UseTranscriptionReturn,
   UsePersistOptions
@@ -331,6 +340,9 @@ describe('public API types', () => {
     const imageGeneration = useImage({
       api: '/api/image'
     } satisfies UseImageOptions)
+    const videoGeneration = useVideo({
+      api: '/api/video'
+    } satisfies UseVideoOptions)
     const speechGeneration = useSpeech({
       api: '/api/speech'
     } satisfies UseSpeechOptions)
@@ -505,6 +517,16 @@ describe('public API types', () => {
     expectTypeOf<UseImageOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseImageOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
     expectTypeOf<UseImageOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseVideoOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseVideoOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseVideoOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseVideoOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
+    expectTypeOf<UseVideoOptions['headers']>().toMatchTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
+    expectTypeOf<UseVideoOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseVideoOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<UseVideoOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseSpeechOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseSpeechOptions['api']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseSpeechOptions['baseURL']>().toEqualTypeOf<string | undefined>()
@@ -816,6 +838,76 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseImageOptions['onResponse']>().toEqualTypeOf<
       ((info: ImageGenerationResponseInfo) => void) | undefined
+    >()
+
+    expectTypeOf(videoGeneration).toEqualTypeOf<UseVideoReturn>()
+    expectTypeOf(videoGeneration.input).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(videoGeneration.video).toEqualTypeOf<Ref<GeneratedVideo | null>>()
+    expectTypeOf(videoGeneration.videos).toEqualTypeOf<Ref<GeneratedVideo[]>>()
+    expectTypeOf(videoGeneration.result).toEqualTypeOf<Ref<VideoGenerationResult | null>>()
+    expectTypeOf(videoGeneration.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(videoGeneration.generate).returns.toEqualTypeOf<Promise<VideoGenerationResult>>()
+    expectTypeOf(videoGeneration.generate)
+      .parameter(1)
+      .toEqualTypeOf<Partial<VideoGenerationRequest> | undefined>()
+    expectTypeOf(videoGeneration.generateVideo).returns.toEqualTypeOf<
+      Promise<VideoGenerationResult>
+    >()
+    expectTypeOf(videoGeneration.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(videoGeneration.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(videoGeneration.handleSubmit).returns.toEqualTypeOf<
+      Promise<VideoGenerationResult>
+    >()
+    expectTypeOf(videoGeneration.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<VideoGenerationRequest> | undefined>()
+    expectTypeOf(videoGeneration.lastRequest).toEqualTypeOf<
+      Ref<VideoGenerationRequestInfo | null>
+    >()
+    expectTypeOf(videoGeneration.lastResponse).toEqualTypeOf<
+      Ref<VideoGenerationResponseInfo | null>
+    >()
+    expectTypeOf<VideoFrameImage>().toMatchTypeOf<{
+      image: string
+      frameType: string
+    }>()
+    expectTypeOf<VideoGenerationRequest>().toMatchTypeOf<{
+      prompt: string
+      body?: Record<string, unknown>
+      model?: string
+      n?: number
+      aspectRatio?: string
+      resolution?: string
+      duration?: number
+      fps?: number
+      frameImages?: VideoFrameImage[]
+      inputReferences?: string[]
+      generateAudio?: boolean
+      providerOptions?: Record<string, unknown>
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<VideoGenerationResult>().toMatchTypeOf<{
+      video?: GeneratedVideo
+      videos: GeneratedVideo[]
+      model?: string
+    }>()
+    expectTypeOf<VideoGenerationRequestInfo>().toMatchTypeOf<{
+      providerId: 'proxy'
+      attempt: number
+      api: string
+      prompt: string
+      request: VideoGenerationRequest
+    }>()
+    expectTypeOf<VideoGenerationResponseInfo>().toMatchTypeOf<
+      VideoGenerationRequestInfo & { result: VideoGenerationResult }
+    >()
+    expectTypeOf<UseVideoOptions['onRequest']>().toEqualTypeOf<
+      ((info: VideoGenerationRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseVideoOptions['onResponse']>().toEqualTypeOf<
+      ((info: VideoGenerationResponseInfo) => void) | undefined
     >()
 
     expectTypeOf(speechGeneration).toEqualTypeOf<UseSpeechReturn>()

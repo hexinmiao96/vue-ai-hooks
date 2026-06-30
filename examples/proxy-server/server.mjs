@@ -8,6 +8,7 @@ const routes = {
   completion: new Set(['/api/completion', '/api/ai/completion']),
   embedding: new Set(['/api/embedding', '/api/ai/embedding']),
   image: new Set(['/api/image', '/api/ai/image']),
+  video: new Set(['/api/video', '/api/ai/video']),
   speech: new Set(['/api/speech', '/api/ai/speech']),
   transcription: new Set(['/api/transcription', '/api/ai/transcription']),
   rerank: new Set(['/api/rerank', '/api/ai/rerank']),
@@ -48,6 +49,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.image.has(url.pathname)) {
       await handleImage(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.video.has(url.pathname)) {
+      await handleVideo(request, response)
       return
     }
 
@@ -157,6 +163,29 @@ async function handleImage(request, response) {
     image,
     images: [image],
     model: body.model || 'proxy-example-image',
+    providerMetadata: {
+      provider: 'proxy-server-example'
+    }
+  })
+}
+
+async function handleVideo(request, response) {
+  const body = await readJson(request)
+  const prompt = typeof body.prompt === 'string' ? body.prompt : 'Vue AI Hooks video demo'
+  const durationInSeconds = Number(body.duration) > 0 ? Number(body.duration) : 6
+  const video = {
+    url: videoStoryboardDataUrl(prompt),
+    mediaType: 'image/svg+xml',
+    durationInSeconds,
+    metadata: {
+      seed: deterministicSeed(prompt),
+      localPreview: 'storyboard'
+    }
+  }
+  sendJson(response, 200, {
+    video,
+    videos: [video],
+    model: body.model || 'proxy-example-video',
     providerMetadata: {
       provider: 'proxy-server-example'
     }
@@ -340,6 +369,40 @@ function imageSvgDataUrl(prompt) {
   <rect x="144" y="520" width="420" height="34" rx="17" fill="#0f172a"/>
   <rect x="144" y="590" width="560" height="26" rx="13" fill="#475569"/>
   <rect x="144" y="650" width="480" height="26" rx="13" fill="#64748b"/>
+</svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+function videoStoryboardDataUrl(prompt) {
+  const normalized = String(prompt || 'Vue AI Hooks video demo')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const shortPrompt = normalized.length > 76 ? `${normalized.slice(0, 73)}...` : normalized
+  const hue = deterministicSeed(normalized) % 360
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <rect width="1280" height="720" rx="36" fill="#0f172a"/>
+  <rect x="52" y="52" width="1176" height="616" rx="30" fill="#f8fafc"/>
+  <text x="88" y="124" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="700">Proxy video route</text>
+  <text x="88" y="182" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="24">${escapeSvg(shortPrompt)}</text>
+  <g transform="translate(88 248)">
+    <rect width="310" height="232" rx="22" fill="hsl(${hue} 76% 45%)"/>
+    <rect x="32" y="42" width="182" height="22" rx="11" fill="#ffffff"/>
+    <rect x="32" y="92" width="236" height="16" rx="8" fill="rgba(255,255,255,0.72)"/>
+    <circle cx="238" cy="164" r="42" fill="hsl(${(hue + 150) % 360} 82% 52%)"/>
+  </g>
+  <g transform="translate(486 248)">
+    <rect width="310" height="232" rx="22" fill="hsl(${(hue + 42) % 360} 72% 45%)"/>
+    <path d="M116 68 L226 116 L116 164 Z" fill="#ffffff"/>
+    <rect x="42" y="184" width="226" height="14" rx="7" fill="rgba(255,255,255,0.78)"/>
+  </g>
+  <g transform="translate(884 248)">
+    <rect width="310" height="232" rx="22" fill="hsl(${(hue + 92) % 360} 68% 42%)"/>
+    <rect x="40" y="54" width="230" height="24" rx="12" fill="#ffffff"/>
+    <rect x="40" y="112" width="170" height="18" rx="9" fill="rgba(255,255,255,0.72)"/>
+    <rect x="40" y="160" width="210" height="18" rx="9" fill="rgba(255,255,255,0.58)"/>
+  </g>
+  <rect x="88" y="560" width="820" height="20" rx="10" fill="#cbd5e1"/>
+  <rect x="88" y="560" width="420" height="20" rx="10" fill="#0f172a"/>
 </svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }

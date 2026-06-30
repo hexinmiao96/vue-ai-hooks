@@ -20,8 +20,8 @@ hero:
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
 features:
-  - title: Nine composables, one mental model
-    details: useChat, useCompletion, useEmbedding, useGeneration, useImage, useSpeech, useTranscription, useRerank, and useObject cover chat, text, vectors, custom generation jobs, app-owned image, speech, transcription, and rerank routes, and structured JSON. Pluggable providers let you swap models without rewriting your app.
+  - title: Ten composables, one mental model
+    details: useChat, useCompletion, useEmbedding, useGeneration, useImage, useVideo, useSpeech, useTranscription, useRerank, and useObject cover chat, text, vectors, custom generation jobs, app-owned image, video, speech, transcription, and rerank routes, and structured JSON. Pluggable providers let you swap models without rewriting your app.
   - title: Start without an API key
     details: The chat demo includes a deterministic local provider for tool approvals, and the proxy template streams fake chunks locally. Try the UI first, wire real providers later.
   - title: Streaming by default

@@ -426,6 +426,36 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`  | `AbortSignal`             | 中止信号。                                    |
 | `headers` | `HeadersInit`             | Provider 合并的单次请求 headers。             |
 
+### `VideoGenerationRequest`
+
+| 字段              | 类型                      | 说明                                         |
+| ----------------- | ------------------------- | -------------------------------------------- |
+| `prompt`          | `string`                  | 视频生成提示词。                             |
+| `body`            | `Record<string, unknown>` | 传给应用自有后端选项的额外 JSON body 字段。  |
+| `model`           | `string`                  | 后端使用的视频模型 id。                      |
+| `n`               | `number`                  | 要生成的视频数量。                           |
+| `aspectRatio`     | `string`                  | 宽高比提示，例如 `16:9` 或 `9:16`。          |
+| `resolution`      | `string`                  | 分辨率提示，例如 `1280x720`。                |
+| `size`            | `string`                  | provider 使用 size 命名时的后端特定别名。    |
+| `duration`        | `number`                  | 请求的视频时长，单位秒。                     |
+| `fps`             | `number`                  | 请求的每秒帧数。                             |
+| `seed`            | `number`                  | provider 支持时的确定性生成 seed。           |
+| `image`           | `string`                  | 可选起始图像 URL、data URL 或 base64。       |
+| `frameImages`     | `VideoFrameImage[]`       | 带角色的图像输入，例如首帧或尾帧。           |
+| `inputReferences` | `string[]`                | 支持参考图的 provider 使用的参考图像。       |
+| `generateAudio`   | `boolean`                 | provider 支持时是否同时生成音频。            |
+| `providerOptions` | `Record<string, unknown>` | 透传给后端的 provider 特定选项。             |
+| `user`            | `string`                  | 传给 provider 用于策略或风控的终端用户标识。 |
+| `signal`          | `AbortSignal`             | 中止信号。                                   |
+| `headers`         | `HeadersInit`             | 合并到后端请求中的单次请求 headers。         |
+
+```ts
+interface VideoFrameImage {
+  image: string
+  frameType: string
+}
+```
+
 ### `SpeechGenerationRequest`
 
 | 字段              | 类型                      | 说明                                        |
@@ -474,8 +504,8 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `headers`         | `HeadersInit`             | 合并进后端请求的单次 headers。              |
 
 `body` 会先合并进 Provider/代理的 JSON 请求体，然后再写入 typed request 字段。
-如果 key 冲突，`messages`、`prompt`、`input`、`text`、`audio`、`query`、
-`documents`、`model`、`stream` 这类显式字段优先。
+如果 key 冲突，`messages`、`prompt`、`input`、`text`、`audio`、`frameImages`、
+`query`、`documents`、`model`、`stream` 这类显式字段优先。
 
 ## 响应
 
@@ -540,6 +570,25 @@ interface SpeechGenerationResult {
   audio?: GeneratedAudio
   model?: string
   warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
+interface GeneratedVideo {
+  url?: string
+  base64?: string
+  uint8Array?: Uint8Array
+  mediaType?: string
+  durationInSeconds?: number
+  metadata?: Record<string, unknown>
+}
+
+interface VideoGenerationResult {
+  video?: GeneratedVideo
+  videos: GeneratedVideo[]
+  model?: string
+  warnings?: unknown[]
+  responses?: unknown[]
   providerMetadata?: Record<string, unknown>
   response?: unknown
 }

@@ -14,7 +14,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Nine composables, pluggable
+[Axios](https://axios-http.com) to the LLM world. Ten composables, pluggable
 providers, Server-Sent Events streaming handled for you. Works with OpenAI and any
 OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
 vLLM, Gemini's OpenAI-compatible endpoint, etc.).
@@ -40,9 +40,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 
 ## Features
 
-- **Nine composables, one mental model**: `useChat`, `useCompletion`,
-  `useEmbedding`, `useGeneration`, `useImage`, `useSpeech`, `useTranscription`,
-  `useRerank`, and `useObject`.
+- **Ten composables, one mental model**: `useChat`, `useCompletion`,
+  `useEmbedding`, `useGeneration`, `useImage`, `useVideo`, `useSpeech`,
+  `useTranscription`, `useRerank`, and `useObject`.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -59,7 +59,7 @@ The AI-in-Vue story is currently fragmented. Options today:
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.
 - **Typed output and generation**: JSON Schema object output, embedding vectors,
-  app-owned image, speech, transcription, and rerank routes, custom generation
+  app-owned image, video, speech, transcription, and rerank routes, custom generation
   jobs, deterministic ids, and Date-safe persistence helpers.
 - **Library quality**: strict TypeScript, no runtime dependencies beyond Vue,
   tree-shakable ESM/CJS builds, and Vitest coverage.
@@ -177,6 +177,23 @@ await generateImage('A Vue workspace hero image', {
   size: '1024x1024'
 })
 console.log(image.value?.url)
+```
+
+### Video generation
+
+```ts
+import { useVideo } from 'vue-ai-hooks'
+
+const { video, generateVideo } = useVideo({
+  api: '/api/video'
+})
+
+await generateVideo('A concise Vue product walkthrough video', {
+  aspectRatio: '16:9',
+  resolution: '1280x720',
+  duration: 6
+})
+console.log(video.value?.url)
 ```
 
 ### Speech generation
@@ -365,7 +382,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `abortController`               | `Ref<AbortController \| null>`                                                                 | Exposed for advanced use cases                                    |
 
 Set `maxRetries` on `useChat`, `useCompletion`, `useEmbedding`, `useImage`,
-`useSpeech`, `useTranscription`, `useRerank`, or `useObject` to retry transient
+`useVideo`, `useSpeech`, `useTranscription`, `useRerank`, or `useObject` to retry transient
 provider or backend failures. Streaming calls only retry when the failure happens
 before the first chunk arrives, so partial text is never duplicated.
 
@@ -418,18 +435,18 @@ provider adapter should receive model-facing messages without UI-only
 `Message.parts`; `ChatRequest.messages` accepts those `ChatRequestMessage[]`
 payloads directly.
 
-### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
+### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 
 Same shape, scoped to single-shot completions, embedding vectors, custom
-generation jobs, app-owned image generation routes, app-owned speech generation
-routes, app-owned transcription routes, app-owned rerank routes, and structured
-JSON object output respectively.
+generation jobs, app-owned image generation routes, app-owned video generation
+routes, app-owned speech generation routes, app-owned transcription routes,
+app-owned rerank routes, and structured JSON object output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
 state and trace panels can follow one pattern across chat, text, vectors, custom
-generation jobs, image generation, speech generation, transcription, reranking,
-and structured JSON. Default proxy traces include the resolved proxy `api` and
+generation jobs, image generation, video generation, speech generation,
+transcription, reranking, and structured JSON. Default proxy traces include the resolved proxy `api` and
 browser credentials mode.
 
 `useObject` supports `id` for shared structured-output state across components
@@ -449,6 +466,10 @@ visible output.
 `result`, `generateImage()`, lifecycle trace refs, aborts, retries, and form
 helpers while keeping provider credentials server-side.
 
+`useVideo` targets your own `/api/video` route and provides `video`, `videos`,
+`result`, `generateVideo()`, lifecycle trace refs, aborts, retries, and form
+helpers while keeping video model credentials server-side.
+
 `useSpeech` targets your own `/api/speech` route and provides `audio`, `result`,
 `generateSpeech()`, `speak()`, lifecycle trace refs, aborts, retries, and form
 helpers while keeping text-to-speech credentials server-side.
@@ -462,10 +483,10 @@ server-side.
 `ranking`, `rerankedDocuments`, `rerankDocuments()`, lifecycle trace refs,
 aborts, retries, and form helpers while keeping rerank credentials server-side.
 
-`useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useSpeech`,
-`useTranscription`, `useRerank`, and `useObject` also expose `setInput()`,
+`useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useVideo`,
+`useSpeech`, `useTranscription`, `useRerank`, and `useObject` also expose `setInput()`,
 `handleInputChange()`, and `handleSubmit()` for simple form wiring. Successful
-form submissions clear `input`; failed submissions leave it intact. All nine
+form submissions clear `input`; failed submissions leave it intact. All ten
 accept `initialInput`.
 
 `useCompletion`'s `onFinish` callback keeps the final text as the first argument
@@ -493,13 +514,14 @@ If you are porting an AI SDK UI surface, use the
 
 ## Examples
 
-Nine runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Ten runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes and the explicit `/api/ai/*` contract
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
 - `examples/image` — no-key image generation form with a deterministic local SVG fallback
+- `examples/video` — no-key video generation form with a deterministic local storyboard fallback
 - `examples/speech` — no-key speech generation form with a deterministic local WAV fallback
 - `examples/transcription` — no-key audio transcription form with a deterministic local transcript
 - `examples/rerank` — no-key document reranking form with deterministic local ranking
@@ -526,10 +548,10 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 The same proxy template also accepts `useChat({ baseURL })`,
 `useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
-`useImage({ baseURL })`, `useSpeech({ baseURL })`,
+`useImage({ baseURL })`, `useVideo({ baseURL })`, `useSpeech({ baseURL })`,
 `useTranscription({ baseURL })`, `useRerank({ baseURL })`, and
 `useObject({ baseURL, schema })` through `/api/chat`, `/api/completion`,
-`/api/embedding`, `/api/image`, `/api/speech`, `/api/transcription`,
+`/api/embedding`, `/api/image`, `/api/video`, `/api/speech`, `/api/transcription`,
 `/api/rerank`, and `/api/object`.
 Provider, proxy, and per-request headers
 accept `HeadersInit`, so records, `Headers` instances, and `[key, value][]`

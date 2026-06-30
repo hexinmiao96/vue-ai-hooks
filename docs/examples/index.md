@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, reranking, image generation, speech generation, transcription, backend proxying, and structured output.
+description: Polished vue-ai-hooks demos for chat, tool approvals, completions, embeddings, reranking, image generation, video generation, speech generation, transcription, backend proxying, and structured output.
 aside: false
 pageClass: demo-page
 ---
@@ -29,13 +29,17 @@ to verify the UI before wiring real provider keys or a backend proxy.
 
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
 default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/rerank`,
-`/api/image`, `/api/speech`, `/api/transcription`, and `/api/object` routes,
+`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, and `/api/object` routes,
 plus the explicit `proxyProvider` `/api/ai/*` routes used by the browser
 examples.
 
 For a no-key image generation flow, run `pnpm example:image`. It renders a
 deterministic local SVG by default, then switches to the proxy `/api/image`
 route when `VITE_PROXY_BASE_URL` is set.
+
+For a no-key video generation flow, run `pnpm example:video`. It renders a
+deterministic local storyboard by default, then switches to the proxy
+`/api/video` route when `VITE_PROXY_BASE_URL` is set.
 
 For a no-key speech generation flow, run `pnpm example:speech`. It returns a
 deterministic local WAV by default, then switches to the proxy `/api/speech`
@@ -61,6 +65,7 @@ through the same environment variables as the other browser examples.
 | Turn one prompt into text                                | [Text completion](#completion-demo)        |
 | Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)    |
 | Generate an image through an app route                   | [Image generation](#image-demo)            |
+| Generate a video through an app route                    | [Video generation](#video-demo)            |
 | Generate speech through an app route                     | [Speech generation](#speech-demo)          |
 | Turn audio into text through an app route                | [Audio transcription](#transcription-demo) |
 | Rerank search results through an app route               | [Document reranking](#rerank-demo)         |

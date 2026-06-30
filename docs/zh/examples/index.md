@@ -1,6 +1,6 @@
 ---
 title: 示例
-description: 面向对话、工具审批、文本补全、向量嵌入、文档重排、图片生成、语音生成、音频转写、后端代理和结构化输出的精致 vue-ai-hooks 示例页。
+description: 面向对话、工具审批、文本补全、向量嵌入、文档重排、图片生成、视频生成、语音生成、音频转写、后端代理和结构化输出的精致 vue-ai-hooks 示例页。
 aside: false
 pageClass: demo-page
 ---
@@ -25,12 +25,15 @@ pnpm example:chat
 先用这条路径确认 UI，再接真实 Provider key 或后端代理。
 
 要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
-`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/speech`、
-`/api/rerank`、`/api/transcription`、`/api/object` 路由，以及浏览器示例通过
+`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/video`、
+`/api/speech`、`/api/rerank`、`/api/transcription`、`/api/object` 路由，以及浏览器示例通过
 `proxyProvider` 使用的 `/api/ai/*` 路由。
 
 如果要试不需要 key 的图片生成流程，运行 `pnpm example:image`。它默认渲染确定性的本地
 SVG；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/image` 路由。
+
+如果要试不需要 key 的视频生成流程，运行 `pnpm example:video`。它默认渲染确定性的本地
+storyboard；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/video` 路由。
 
 如果要试不需要 key 的语音生成流程，运行 `pnpm example:speech`。它默认返回确定性的本地
 WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
@@ -51,6 +54,7 @@ WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 | 一个提示词生成一段文本           | [文本补全](#completion-demo)    |
 | 做语义相似度比较                 | [向量相似度](#embedding-demo)   |
 | 通过应用后端生成图片             | [图片生成](#image-demo)         |
+| 通过应用后端生成视频             | [视频生成](#video-demo)         |
 | 通过应用后端生成语音             | [语音生成](#speech-demo)        |
 | 通过应用后端把音频转成文本       | [音频转写](#transcription-demo) |
 | 通过应用后端重排搜索结果         | [文档重排](#rerank-demo)        |

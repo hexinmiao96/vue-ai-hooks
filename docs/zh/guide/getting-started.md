@@ -97,8 +97,8 @@ const { messages, append, clear } = useChat({
 ## 本地试用后端代理模板
 
 proxy 示例同时支持默认组合式函数端点（`/api/chat`、`/api/completion`、
-`/api/embedding`、`/api/image`、`/api/speech`、`/api/transcription`、`/api/rerank`、`/api/object`）和显式
-`proxyProvider` 端点（`/api/ai/*`）。它会返回确定性的流式片段、结构化 JSON、图片 data URL、音频 data URL、转写文本、重排文档和 embedding，不需要任何第三方 API key：
+`/api/embedding`、`/api/image`、`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank`、`/api/object`）和显式
+`proxyProvider` 端点（`/api/ai/*`）。它会返回确定性的流式片段、结构化 JSON、图片 data URL、视频 storyboard、音频 data URL、转写文本、重排文档和 embedding，不需要任何第三方 API key：
 
 ```bash
 pnpm example:proxy-server
@@ -113,6 +113,7 @@ useChat({ baseURL: 'http://127.0.0.1:8787' })
 useCompletion({ baseURL: 'http://127.0.0.1:8787' })
 useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
 useImage({ baseURL: 'http://127.0.0.1:8787' })
+useVideo({ baseURL: 'http://127.0.0.1:8787' })
 useSpeech({ baseURL: 'http://127.0.0.1:8787' })
 useTranscription({ baseURL: 'http://127.0.0.1:8787' })
 useRerank({ baseURL: 'http://127.0.0.1:8787' })
@@ -120,7 +121,7 @@ useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 ```
 
 这一步跑通后，把模板服务替换成你自己的 `/api/chat`、`/api/completion`、
-`/api/embedding`、`/api/image`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object` 路由即可。
+`/api/embedding`、`/api/image`、`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object` 路由即可。
 
 ## 使用不同 Provider
 
@@ -183,6 +184,7 @@ const { messages: messages6, append: append6 } = useChat({
 - [useCompletion 参考](/zh/reference/use-completion)
 - [useEmbedding 参考](/zh/reference/use-embedding)
 - [useImage 参考](/zh/reference/use-image)
+- [useVideo 参考](/zh/reference/use-video)
 - [useSpeech 参考](/zh/reference/use-speech)
 - [useTranscription 参考](/zh/reference/use-transcription)
 - [useRerank 参考](/zh/reference/use-rerank)

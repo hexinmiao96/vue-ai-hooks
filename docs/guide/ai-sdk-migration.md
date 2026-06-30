@@ -41,6 +41,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`       |
 | `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`             |
 | AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route                  |
+| AI SDK Core video generation                     | `useVideo()` calling your app-owned `/api/video` route                  |
 | AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route                |
 | AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route  |
 | AI SDK Core reranking                            | `useRerank()` calling your app-owned `/api/rerank` route                |
@@ -260,20 +261,22 @@ fields for default chat proxy transports.
    porting an existing AI SDK object endpoint.
 6. Map image generation calls to `useImage({ api: '/api/image' })` and keep
    image model credentials server-side.
-7. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep
+7. Map video generation calls to `useVideo({ api: '/api/video' })` and keep
+   video model credentials server-side.
+8. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep
    text-to-speech credentials server-side.
-8. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
+9. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
    and keep transcription credentials server-side.
-9. Map reranking calls to `useRerank({ api: '/api/rerank' })` and keep rerank
-   model credentials server-side.
-10. Keep existing initial messages by passing `messages` or `initialMessages`.
-11. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+10. Map reranking calls to `useRerank({ api: '/api/rerank' })` and keep rerank
+    model credentials server-side.
+11. Keep existing initial messages by passing `messages` or `initialMessages`.
+12. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
     `gemini`, `anthropic`, or `openaiCompatible`.
-12. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-13. Move AI SDK `tool()` definitions directly into `useChat({ tools })`, or keep
+13. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+14. Move AI SDK `tool()` definitions directly into `useChat({ tools })`, or keep
     existing wire-format `Tool[]` plus `toolHandlers`.
-14. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+15. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
     `addToolApprovalResponse()`.
-15. Add `lastRequest` and `lastResponse` to your debug view before swapping
+16. Add `lastRequest` and `lastResponse` to your debug view before swapping
     production traffic.
-16. Run `pnpm release:check` or your app's equivalent gate before shipping.
+17. Run `pnpm release:check` or your app's equivalent gate before shipping.

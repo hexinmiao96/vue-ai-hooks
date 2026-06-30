@@ -39,6 +39,7 @@
 | 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`          |
 | `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`                |
 | AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                              |
+| AI SDK Core 视频生成                           | `useVideo()` 调用你的自有 `/api/video` 路由                              |
 | AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                            |
 | AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由              |
 | AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                            |
@@ -241,16 +242,17 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 5. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。
 6. 将图片生成调用迁移到 `useImage({ api: '/api/image' })`，并把图片模型凭据保留在服务端。
-7. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
-8. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。
-9. 将文档重排调用迁移到 `useRerank({ api: '/api/rerank' })`，并把重排模型凭据保留在服务端。
-10. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-11. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+7. 将视频生成调用迁移到 `useVideo({ api: '/api/video' })`，并把视频模型凭据保留在服务端。
+8. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
+9. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。
+10. 将文档重排调用迁移到 `useRerank({ api: '/api/rerank' })`，并把重排模型凭据保留在服务端。
+11. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
+12. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
     或 `openaiCompatible`。
-12. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-13. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
+13. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+14. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
     wire-format `Tool[]` 加 `toolHandlers`。
-14. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+15. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-15. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-16. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+16. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+17. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

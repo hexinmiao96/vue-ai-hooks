@@ -13,6 +13,7 @@ try {
   await checkCompletionRoute()
   await checkEmbeddingRoute()
   await checkImageRoute()
+  await checkVideoRoute()
   await checkSpeechRoute()
   await checkTranscriptionRoute()
   await checkRerankRoute()
@@ -106,6 +107,27 @@ async function checkImageRoute() {
   expect(
     legacy.image?.metadata?.seed !== undefined,
     '/api/ai/image should return deterministic image metadata'
+  )
+}
+
+async function checkVideoRoute() {
+  const response = await postJson('/api/video', {
+    prompt: 'A Vue composable product walkthrough',
+    model: 'proxy-video-model',
+    duration: 6
+  })
+  expect(response.video?.url?.startsWith('data:image/svg+xml'), '/api/video should return an SVG')
+  expect(response.videos?.length === 1, '/api/video should return one normalized video')
+  expect(
+    response.video?.durationInSeconds === 6,
+    '/api/video should preserve the requested duration'
+  )
+  expect(response.model === 'proxy-video-model', '/api/video should preserve the requested model')
+
+  const legacy = await postJson('/api/ai/video', { prompt: 'legacy video route' })
+  expect(
+    legacy.video?.metadata?.seed !== undefined,
+    '/api/ai/video should return deterministic video metadata'
   )
 }
 

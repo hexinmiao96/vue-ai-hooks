@@ -39,6 +39,7 @@ const requiredRuntimeExports = [
   'useRerank',
   'useSpeech',
   'useTranscription',
+  'useVideo',
   'usePersist'
 ]
 const publicExports = extractExports(readFileSync(fromRoot('src/index.ts'), 'utf8'))

@@ -386,6 +386,61 @@ export interface ImageGenerationResult {
   response?: unknown
 }
 
+export interface VideoFrameImage {
+  /** Image URL, data URL, or base64 payload understood by your backend. */
+  image: string
+  /** Frame role used by image-to-video providers, such as `first_frame` or `last_frame`. */
+  frameType: string
+}
+
+export interface GeneratedVideo {
+  /** Public URL, blob URL, or data URL for the generated video. */
+  url?: string
+  /** Base64-encoded video payload when your backend returns inline video data. */
+  base64?: string
+  /** Binary video payload for advanced runtimes that pass files directly. */
+  uint8Array?: Uint8Array
+  /** MIME type such as `video/mp4` or `video/webm`. */
+  mediaType?: string
+  /** Video duration in seconds when the backend can report it. */
+  durationInSeconds?: number
+  /** Provider-specific metadata for this video. */
+  metadata?: Record<string, unknown>
+}
+
+/** Request payload for video generation through an app-owned backend. */
+export interface VideoGenerationRequest {
+  prompt: string
+  /** Extra JSON body fields for proxy-specific request options. */
+  body?: Record<string, unknown>
+  model?: string
+  n?: number
+  aspectRatio?: string
+  resolution?: string
+  size?: string
+  duration?: number
+  fps?: number
+  seed?: number
+  image?: string
+  frameImages?: VideoFrameImage[]
+  inputReferences?: string[]
+  generateAudio?: boolean
+  providerOptions?: Record<string, unknown>
+  user?: string
+  signal?: AbortSignal
+  headers?: HeadersInit
+}
+
+export interface VideoGenerationResult {
+  video?: GeneratedVideo
+  videos: GeneratedVideo[]
+  model?: string
+  warnings?: unknown[]
+  responses?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
 export interface GeneratedAudio {
   /** Public URL, blob URL, or data URL for the generated audio. */
   url?: string

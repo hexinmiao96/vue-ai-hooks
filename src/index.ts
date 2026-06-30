@@ -104,6 +104,13 @@ export {
   type UseImageReturn
 } from './composables/useImage'
 export {
+  useVideo,
+  type UseVideoOptions,
+  type UseVideoReturn,
+  type VideoGenerationRequestInfo,
+  type VideoGenerationResponseInfo
+} from './composables/useVideo'
+export {
   useSpeech,
   type SpeechGenerationRequestInfo,
   type SpeechGenerationResponseInfo,
@@ -198,6 +205,10 @@ export type {
   GeneratedImage,
   ImageGenerationRequest,
   ImageGenerationResult,
+  GeneratedVideo,
+  VideoFrameImage,
+  VideoGenerationRequest,
+  VideoGenerationResult,
   GeneratedAudio,
   SpeechGenerationRequest,
   SpeechGenerationResult,

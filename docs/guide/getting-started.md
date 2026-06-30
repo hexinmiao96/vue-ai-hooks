@@ -107,10 +107,10 @@ before calling `setMessages()`.
 ## Try the backend proxy template locally
 
 The proxy example supports both the default composable endpoints (`/api/chat`,
-`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
+`/api/completion`, `/api/embedding`, `/api/image`, `/api/video`, `/api/speech`,
 `/api/transcription`, `/api/rerank`, `/api/object`) and the explicit `proxyProvider` endpoints
 (`/api/ai/*`). It streams deterministic chunks, structured JSON, image data
-URLs, audio data URLs, transcripts, reranked documents, and embeddings without any third-party API
+URLs, video storyboards, audio data URLs, transcripts, reranked documents, and embeddings without any third-party API
 key:
 
 ```bash
@@ -126,6 +126,7 @@ useChat({ baseURL: 'http://127.0.0.1:8787' })
 useCompletion({ baseURL: 'http://127.0.0.1:8787' })
 useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
 useImage({ baseURL: 'http://127.0.0.1:8787' })
+useVideo({ baseURL: 'http://127.0.0.1:8787' })
 useSpeech({ baseURL: 'http://127.0.0.1:8787' })
 useTranscription({ baseURL: 'http://127.0.0.1:8787' })
 useRerank({ baseURL: 'http://127.0.0.1:8787' })
@@ -133,7 +134,7 @@ useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 ```
 
 When this works, replace the template server with your own `/api/chat`,
-`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
+`/api/completion`, `/api/embedding`, `/api/image`, `/api/video`, `/api/speech`,
 `/api/transcription`, `/api/rerank`, and `/api/object` routes.
 
 ## Using a different provider
@@ -198,6 +199,7 @@ const { messages: messages6, append: append6 } = useChat({
 - [useCompletion reference](/reference/use-completion)
 - [useEmbedding reference](/reference/use-embedding)
 - [useImage reference](/reference/use-image)
+- [useVideo reference](/reference/use-video)
 - [useSpeech reference](/reference/use-speech)
 - [useTranscription reference](/reference/use-transcription)
 - [useRerank reference](/reference/use-rerank)

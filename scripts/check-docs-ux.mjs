@@ -18,6 +18,8 @@ const files = {
   zhUseEmbedding: readFileSync('docs/zh/reference/use-embedding.md', 'utf8'),
   useImage: readFileSync('docs/reference/use-image.md', 'utf8'),
   zhUseImage: readFileSync('docs/zh/reference/use-image.md', 'utf8'),
+  useVideo: readFileSync('docs/reference/use-video.md', 'utf8'),
+  zhUseVideo: readFileSync('docs/zh/reference/use-video.md', 'utf8'),
   useSpeech: readFileSync('docs/reference/use-speech.md', 'utf8'),
   zhUseSpeech: readFileSync('docs/zh/reference/use-speech.md', 'utf8'),
   useTranscription: readFileSync('docs/reference/use-transcription.md', 'utf8'),
@@ -40,6 +42,7 @@ const files = {
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
+  videoExample: readFileSync('examples/video/App.vue', 'utf8'),
   speechExample: readFileSync('examples/speech/App.vue', 'utf8'),
   transcriptionExample: readFileSync('examples/transcription/App.vue', 'utf8'),
   rerankExample: readFileSync('examples/rerank/App.vue', 'utf8'),
@@ -89,6 +92,7 @@ for (const snippet of [
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   'The browser sends provider-agnostic JSON to your own `/api/chat` route',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
+  "useVideo({ baseURL: 'http://127.0.0.1:8787' })",
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
@@ -108,6 +112,7 @@ for (const snippet of [
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
+  "useVideo({ baseURL: 'http://127.0.0.1:8787' })",
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
@@ -131,13 +136,15 @@ expect(
     files.envExample.includes('VITE_CHAT_PROVIDER=local-tools') &&
     files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&
     files.envExample.includes('VITE_PROXY_IMAGE_URL=/api/ai/image') &&
+    files.envExample.includes('VITE_PROXY_VIDEO_URL=/api/ai/video') &&
     files.envExample.includes('VITE_PROXY_SPEECH_URL=/api/ai/speech') &&
     files.envExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription') &&
     files.envExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
     files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object') &&
+    files.examplesEnvExample.includes('VITE_PROXY_VIDEO_URL=/api/ai/video') &&
     files.examplesEnvExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
     files.examplesEnvExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription'),
-  '.env.example files must make the chat, image, speech, transcription, rerank, and object examples runnable without provider keys by default'
+  '.env.example files must make the chat, image, video, speech, transcription, rerank, and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -150,6 +157,8 @@ expect(
     files.zhReadme.includes('默认使用不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`examples/image`') &&
     files.zhReadme.includes('`examples/image`') &&
+    files.readme.includes('`examples/video`') &&
+    files.zhReadme.includes('`examples/video`') &&
     files.readme.includes('`examples/speech`') &&
     files.zhReadme.includes('`examples/speech`') &&
     files.readme.includes('`examples/rerank`') &&
@@ -162,7 +171,7 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md'),
-  'Readmes must explain no-key chat defaults, list image/object examples, and link upgrade/migration guidance'
+  'Readmes must explain no-key chat defaults, list image/video/object examples, and link upgrade/migration guidance'
 )
 
 for (const snippet of [
@@ -232,6 +241,7 @@ for (const snippet of [
   '# AI SDK migration',
   'AI SDK `useChat` reference',
   'Quick mapping',
+  'AI SDK Core video generation',
   'AI SDK Core transcription',
   'AI SDK Core reranking',
   'DefaultChatTransport',
@@ -253,6 +263,7 @@ for (const snippet of [
   '# AI SDK 迁移',
   'AI SDK `useChat` 参考',
   '快速映射',
+  'AI SDK Core 视频生成',
   'AI SDK Core 音频转写',
   'AI SDK Core 文档重排',
   'DefaultChatTransport',
@@ -273,6 +284,9 @@ expect(
   files.packageJson.includes('"example:image"') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&
+    files.packageJson.includes('"example:video"') &&
+    files.packageJson.includes('"example:video:build"') &&
+    files.packageJson.includes('pnpm example:video:build') &&
     files.packageJson.includes('"example:speech"') &&
     files.packageJson.includes('"example:speech:build"') &&
     files.packageJson.includes('pnpm example:speech:build') &&
@@ -285,7 +299,7 @@ expect(
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the image, speech, transcription, rerank, and object examples'
+  'package scripts must expose and build the image, video, speech, transcription, rerank, and object examples'
 )
 
 expect(
@@ -302,11 +316,14 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  '`/api/image`, `/api/speech`, `/api/transcription`, and `/api/object` routes',
+  '`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, and `/api/object` routes',
   '`/api/rerank`',
   'pnpm example:image',
   'deterministic local SVG',
   'proxy `/api/image`',
+  'pnpm example:video',
+  'deterministic local storyboard',
+  '`/api/video` route',
   'pnpm example:speech',
   'deterministic local WAV',
   'proxy `/api/speech`',
@@ -322,6 +339,8 @@ for (const snippet of [
   '[Streaming chat](#chat-demo)',
   'Generate an image through an app route',
   '[Image generation](#image-demo)',
+  'Generate a video through an app route',
+  '[Video generation](#video-demo)',
   'Generate speech through an app route',
   '[Speech generation](#speech-demo)',
   'Turn audio into text through an app route',
@@ -340,11 +359,15 @@ for (const snippet of [
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
+  '`/api/video`',
   '`/api/transcription`、`/api/object` 路由',
   '`/api/rerank`',
   'pnpm example:image',
   '确定性的本地',
   'proxy `/api/image`',
+  'pnpm example:video',
+  'storyboard',
+  'proxy `/api/video`',
   'pnpm example:speech',
   '确定性的本地',
   'proxy `/api/speech`',
@@ -360,6 +383,8 @@ for (const snippet of [
   '[流式对话](#chat-demo)',
   '通过应用后端生成图片',
   '[图片生成](#image-demo)',
+  '通过应用后端生成视频',
+  '[视频生成](#video-demo)',
   '通过应用后端生成语音',
   '[语音生成](#speech-demo)',
   '通过应用后端把音频转成文本',
@@ -383,6 +408,14 @@ expect(
     files.imageExample.includes('VITE_PROXY_BASE_URL') &&
     files.imageExample.includes('previewUrl'),
   'Image example must run without keys and switch to the proxy image route when configured'
+)
+expect(
+  files.videoExample.includes('useVideo') &&
+    files.videoExample.includes('localVideoFetch') &&
+    files.videoExample.includes('VITE_PROXY_VIDEO_URL') &&
+    files.videoExample.includes('VITE_PROXY_BASE_URL') &&
+    files.videoExample.includes('previewUrl'),
+  'Video example must run without keys and switch to the proxy video route when configured'
 )
 expect(
   files.speechExample.includes('useSpeech') &&
@@ -427,11 +460,13 @@ expect(
 )
 expect(
   files.demoShowcase.includes("{ job: 'Image generation', pick: 'useImage' }") &&
+    files.demoShowcase.includes("{ job: 'Video generation', pick: 'useVideo' }") &&
     files.demoShowcase.includes("{ job: 'Speech generation', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: 'Audio transcription', pick: 'useTranscription' }") &&
     files.demoShowcase.includes("{ job: 'Document reranking', pick: 'useRerank' }") &&
-    files.demoShowcase.includes("{ label: 'Composables', value: '9' }") &&
+    files.demoShowcase.includes("{ label: 'Composables', value: '10' }") &&
     files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Video', href: '#video-demo' }") &&
     files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: 'Transcription', href: '#transcription-demo' }") &&
     files.demoShowcase.includes("{ label: 'Rerank', href: '#rerank-demo' }") &&
@@ -442,33 +477,39 @@ expect(
     ) &&
     files.demoShowcase.includes("{ label: 'useRerank API', href: '#rerank-demo-api' }") &&
     files.demoShowcase.includes('const imageCode = computed') &&
+    files.demoShowcase.includes("{ label: 'useVideo API', href: '#video-demo-api' }") &&
+    files.demoShowcase.includes('const videoCode = computed') &&
     files.demoShowcase.includes('const speechCode = computed') &&
     files.demoShowcase.includes('const transcriptionCode = computed') &&
     files.demoShowcase.includes('const rerankCode = computed') &&
     files.demoShowcase.includes('id="image-demo"') &&
+    files.demoShowcase.includes('id="video-demo"') &&
     files.demoShowcase.includes('id="speech-demo"') &&
     files.demoShowcase.includes('id="transcription-demo"') &&
     files.demoShowcase.includes('id="rerank-demo"'),
-  'DemoShowcase must include the image, speech, transcription, and rerank demos and API shortcuts'
+  'DemoShowcase must include the image, video, speech, transcription, and rerank demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),
   'DemoShowcase must include a Chinese job-based chooser'
 )
 expect(
-  files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
+  files.demoShowcase.includes("{ job: '视频生成', pick: 'useVideo' }") &&
+    files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: '音频转写', pick: 'useTranscription' }") &&
     files.demoShowcase.includes("{ job: '文档重排', pick: 'useRerank' }") &&
-    files.demoShowcase.includes("{ label: '组合式函数', value: '9' }") &&
+    files.demoShowcase.includes("{ label: '组合式函数', value: '10' }") &&
+    files.demoShowcase.includes("{ label: '视频', href: '#video-demo' }") &&
     files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: '转写', href: '#transcription-demo' }") &&
     files.demoShowcase.includes("{ label: '重排', href: '#rerank-demo' }") &&
+    files.demoShowcase.includes("{ label: 'useVideo 接口', href: '#video-demo-api' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }") &&
     files.demoShowcase.includes(
       "{ label: 'useTranscription 接口', href: '#transcription-demo-api' }"
     ) &&
     files.demoShowcase.includes("{ label: 'useRerank 接口', href: '#rerank-demo-api' }"),
-  'DemoShowcase must include the Chinese speech, transcription, and rerank demos and API shortcuts'
+  'DemoShowcase must include the Chinese video, speech, transcription, and rerank demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes('const attachments = fileInput.value?.files ?? undefined'),
@@ -592,6 +633,18 @@ expect(
     files.zhUseEmbedding.includes('Provider 错误会保留文本') &&
     files.zhUseEmbedding.includes('## 向量相似度') &&
     files.zhUseEmbedding.includes('cosineSimilarity(vectorA, vectorB)') &&
+    files.useVideo.includes('initialInput') &&
+    files.useVideo.includes('video`') &&
+    files.useVideo.includes('setInput(value)') &&
+    files.useVideo.includes('handleInputChange(e)') &&
+    files.useVideo.includes('handleSubmit(e, opts?)') &&
+    files.useVideo.includes('Backend errors leave the prompt available for retry') &&
+    files.zhUseVideo.includes('initialInput') &&
+    files.zhUseVideo.includes('video`') &&
+    files.zhUseVideo.includes('setInput(value)') &&
+    files.zhUseVideo.includes('handleInputChange(e)') &&
+    files.zhUseVideo.includes('handleSubmit(e, opts?)') &&
+    files.zhUseVideo.includes('后端错误会保留提示词') &&
     files.useSpeech.includes('initialInput') &&
     files.useSpeech.includes('audio`') &&
     files.useSpeech.includes('setInput(value)') &&
@@ -636,11 +689,11 @@ expect(
     files.zhUseRerank.includes('handleInputChange(e)') &&
     files.zhUseRerank.includes('handleSubmit(e, opts?)') &&
     files.zhUseRerank.includes('后端错误会保留查询和文档') &&
-    files.readme.includes('`useTranscription`, `useRerank`, and `useObject` also expose') &&
-    files.readme.includes('All nine') &&
+    files.readme.includes('`useSpeech`, `useTranscription`, `useRerank`, and `useObject`') &&
+    files.readme.includes('All ten') &&
     files.readme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
-    files.zhReadme.includes('`useTranscription`、`useRerank` 和 `useObject`') &&
-    files.zhReadme.includes('九者都支持 `initialInput`') &&
+    files.zhReadme.includes('`useVideo`、`useSpeech`、`useTranscription`、`useRerank` 和') &&
+    files.zhReadme.includes('十者都支持 `initialInput`') &&
     files.zhReadme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
     files.embeddingExample.includes('cosineSimilarity') &&
     files.aiSdkMigration.includes('AI SDK Core `cosineSimilarity()`') &&
@@ -663,6 +716,23 @@ expect(
     files.readme.includes('`useImage`') &&
     files.zhReadme.includes('`useImage`'),
   'Image generation docs and navigation must document the app-owned proxy hook'
+)
+expect(
+  files.config.includes("{ text: 'useVideo', link: '/reference/use-video' }") &&
+    files.config.includes("{ text: 'useVideo', link: '/zh/reference/use-video' }") &&
+    files.useVideo.includes('# useVideo') &&
+    files.useVideo.includes('app-owned backend') &&
+    files.useVideo.includes('generateVideo(prompt?, opts?)') &&
+    files.useVideo.includes('handleSubmit(e, opts?)') &&
+    files.useVideo.includes('Backend errors leave the prompt available for retry') &&
+    files.zhUseVideo.includes('# useVideo') &&
+    files.zhUseVideo.includes('应用自有后端') &&
+    files.zhUseVideo.includes('generateVideo(prompt?, opts?)') &&
+    files.zhUseVideo.includes('handleSubmit(e, opts?)') &&
+    files.zhUseVideo.includes('后端错误会保留提示词') &&
+    files.readme.includes('`useVideo`') &&
+    files.zhReadme.includes('`useVideo`'),
+  'Video generation docs and navigation must document the app-owned proxy hook'
 )
 expect(
   files.config.includes("{ text: 'useSpeech', link: '/reference/use-speech' }") &&
@@ -889,7 +959,11 @@ expect(
     files.types.includes('interface RerankRankingItem') &&
     files.types.includes('interface RerankResult') &&
     files.types.includes('rerankedDocuments: TDocument[]') &&
-    files.types.includes('`query`, `documents`, `model`, and `stream`') &&
+    files.types.includes('### `VideoGenerationRequest`') &&
+    files.types.includes('interface VideoFrameImage') &&
+    files.types.includes('interface VideoGenerationResult') &&
+    files.types.includes('videos: GeneratedVideo[]') &&
+    files.types.includes('`frameImages`, `query`, `documents`') &&
     files.zhTypes.includes('### `TranscriptionRequest`') &&
     files.zhTypes.includes('`audio`') &&
     files.zhTypes.includes('timestampGranularities') &&
@@ -903,8 +977,12 @@ expect(
     files.zhTypes.includes('interface RerankRankingItem') &&
     files.zhTypes.includes('interface RerankResult') &&
     files.zhTypes.includes('rerankedDocuments: TDocument[]') &&
-    files.zhTypes.includes('`documents`、`model`、`stream`'),
-  'Public type docs must expose transcription and rerank request/result contracts'
+    files.zhTypes.includes('### `VideoGenerationRequest`') &&
+    files.zhTypes.includes('interface VideoFrameImage') &&
+    files.zhTypes.includes('interface VideoGenerationResult') &&
+    files.zhTypes.includes('videos: GeneratedVideo[]') &&
+    files.zhTypes.includes('`query`、`documents`、`model`'),
+  'Public type docs must expose video, transcription, and rerank request/result contracts'
 )
 expect(
   files.chatExample.includes('visibleMessageParts(message.parts)') &&

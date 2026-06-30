@@ -8,8 +8,8 @@ AI feature. It compares product fit rather than trying to rank libraries.
 Choose `vue-ai-hooks` when you want:
 
 - Vue 3 refs and composables as the primary API.
-- Streaming chat, completions, embeddings, reranking, image generation, speech
-  generation, transcription, structured objects, and custom generation jobs in
+- Streaming chat, completions, embeddings, reranking, image generation, video
+  generation, speech generation, transcription, structured objects, and custom generation jobs in
   one package.
 - App-owned proxy routes by default for browser production safety.
 - Direct provider helpers for local demos, prototypes, and restricted keys.
@@ -26,6 +26,7 @@ server-only calls, or a multi-agent orchestration framework.
 | Build a Vue chat UI with streaming state              | `useChat`                                       |
 | Use your own backend or edge route                    | default proxy transport or `proxyProvider`      |
 | Generate images through an app-owned backend          | `useImage`                                      |
+| Generate videos through an app-owned backend          | `useVideo`                                      |
 | Generate speech through an app-owned backend          | `useSpeech`                                     |
 | Transcribe audio through an app-owned backend         | `useTranscription`                              |
 | Rerank search results through an app-owned backend    | `useRerank`                                     |

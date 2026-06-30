@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added `useVideo` for app-owned video generation routes with normalized
+  `video`/`videos` state, retries, aborts, trace refs, and form helpers.
+- Added a runnable no-key `useVideo` example with deterministic local storyboard
+  output and proxy `/api/video` route coverage.
+
 ## [0.3.0] - 2026-06-30
 
 ### Added

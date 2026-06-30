@@ -441,6 +441,36 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`  | `AbortSignal`             | Abort signal.                                           |
 | `headers` | `HeadersInit`             | Per-request headers merged by the provider.             |
 
+### `VideoGenerationRequest`
+
+| Field             | Type                      | Description                                             |
+| ----------------- | ------------------------- | ------------------------------------------------------- |
+| `prompt`          | `string`                  | Prompt text for the generated video.                    |
+| `body`            | `Record<string, unknown>` | Extra JSON body fields for app-owned backend options.   |
+| `model`           | `string`                  | Video model id used by your backend.                    |
+| `n`               | `number`                  | Number of videos to generate.                           |
+| `aspectRatio`     | `string`                  | Aspect ratio hint such as `16:9` or `9:16`.             |
+| `resolution`      | `string`                  | Resolution hint such as `1280x720`.                     |
+| `size`            | `string`                  | Backend-specific size alias when a provider uses it.    |
+| `duration`        | `number`                  | Requested video duration in seconds.                    |
+| `fps`             | `number`                  | Requested frames per second.                            |
+| `seed`            | `number`                  | Deterministic generation seed when supported.           |
+| `image`           | `string`                  | Optional start image URL, data URL, or base64 payload.  |
+| `frameImages`     | `VideoFrameImage[]`       | Role-tagged image inputs such as first or last frame.   |
+| `inputReferences` | `string[]`                | Reference images used by providers that support them.   |
+| `generateAudio`   | `boolean`                 | Whether the model should generate audio when supported. |
+| `providerOptions` | `Record<string, unknown>` | Provider-specific options passed through your backend.  |
+| `user`            | `string`                  | End-user identifier for provider policy/abuse tracking. |
+| `signal`          | `AbortSignal`             | Abort signal.                                           |
+| `headers`         | `HeadersInit`             | Per-request headers merged into the backend request.    |
+
+```ts
+interface VideoFrameImage {
+  image: string
+  frameType: string
+}
+```
+
 ### `SpeechGenerationRequest`
 
 | Field             | Type                      | Description                                             |
@@ -490,8 +520,8 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 
 `body` is merged into provider/proxy JSON request bodies before the typed
 request fields. If keys conflict, explicit typed fields such as `messages`,
-`prompt`, `input`, `text`, `audio`, `query`, `documents`, `model`, and `stream`
-win.
+`prompt`, `input`, `text`, `audio`, `frameImages`, `query`, `documents`,
+`model`, and `stream` win.
 
 ## Responses
 
@@ -556,6 +586,25 @@ interface SpeechGenerationResult {
   audio?: GeneratedAudio
   model?: string
   warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
+interface GeneratedVideo {
+  url?: string
+  base64?: string
+  uint8Array?: Uint8Array
+  mediaType?: string
+  durationInSeconds?: number
+  metadata?: Record<string, unknown>
+}
+
+interface VideoGenerationResult {
+  video?: GeneratedVideo
+  videos: GeneratedVideo[]
+  model?: string
+  warnings?: unknown[]
+  responses?: unknown[]
   providerMetadata?: Record<string, unknown>
   response?: unknown
 }
