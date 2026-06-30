@@ -35,7 +35,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()` |
 | `stopWhen`                                       | `stopWhen`                                                           |
 | `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                    |
-| Custom stream data                               | `streamData`, `onData`, and `ChatChunk.data`                         |
+| Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`    |
 | UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport               |
 
 ## Transport
@@ -196,8 +196,9 @@ options, body, headers, and retry attempt values are resolved.
 3. Keep existing initial messages by passing `messages` or `initialMessages`.
 4. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
    `gemini`, `anthropic`, or `openaiCompatible`.
-5. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+5. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+6. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
    `addToolApprovalResponse()`.
-6. Add `lastRequest` and `lastResponse` to your debug view before swapping
+7. Add `lastRequest` and `lastResponse` to your debug view before swapping
    production traffic.
-7. Run `pnpm release:check` or your app's equivalent gate before shipping.
+8. Run `pnpm release:check` or your app's equivalent gate before shipping.

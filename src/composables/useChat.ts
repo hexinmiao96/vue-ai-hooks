@@ -185,6 +185,9 @@ export interface ToolApprovalResponse {
 }
 
 export type SetMessagesInput = Message[] | ((messages: Message[]) => Message[])
+export type SetDataInput<TData = unknown> =
+  | StreamDataPart<TData>[]
+  | ((data: StreamDataPart<TData>[]) => StreamDataPart<TData>[])
 
 export type PruneToolCallsStrategy =
   | 'none'
@@ -291,6 +294,7 @@ export interface UseChatReturn<
   input: Ref<string>
   status: Ref<ChatStatus>
   usage: Ref<TokenUsage | null>
+  data: Ref<StreamDataPart<TData>[]>
   streamData: Ref<StreamDataPart<TData>[]>
   pendingToolCalls: Ref<ToolCall[]>
   isLoading: Ref<boolean>
@@ -325,6 +329,7 @@ export interface UseChatReturn<
     options?: AppendChatOptions<TMessageMetadata>
   ) => Promise<void>
   setMessages: (m: SetMessagesInput) => void
+  setData: (data: SetDataInput<TData>) => void
   clearError: () => void
   clearTrace: () => void
   clear: () => void
@@ -929,6 +934,12 @@ export function useChat<
     messages.value = [...resolved]
     resetTurnState()
     clearPendingToolCalls()
+  }
+  function setData(next: SetDataInput<TData>) {
+    const resolved =
+      typeof next === 'function' ? next(streamData.value.map((part) => ({ ...part }))) : next
+    resolved.forEach(validateDataPart)
+    streamData.value = state.bufferedStreamData = [...resolved]
   }
   function setId(next: string) {
     id.value = next
@@ -2033,6 +2044,7 @@ export function useChat<
     input,
     status,
     usage,
+    data: streamData,
     streamData,
     pendingToolCalls,
     isLoading,
@@ -2055,6 +2067,7 @@ export function useChat<
     handleInputChange,
     handleSubmit,
     setMessages,
+    setData,
     clearError,
     clearTrace,
     clear,

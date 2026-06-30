@@ -267,6 +267,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `input`                         | `Ref<string>`                                                                                  | Bound to your composer; `handleSubmit()` clears it                |
 | `status`                        | `Ref<ChatStatus>`                                                                              | `ready`, `submitted`, `streaming`, or `error`                     |
 | `usage`                         | `Ref<TokenUsage \| null>`                                                                      | Latest normalized token usage                                     |
+| `data`                          | `Ref<StreamDataPart<TData>[]>`                                                                 | AI SDK-style alias for custom stream data                         |
 | `streamData`                    | `Ref<StreamDataPart<TData>[]>`                                                                 | Custom stream data from the current assistant turn                |
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                                              | Tool calls waiting for manual results                             |
 | `isLoading`                     | `Ref<boolean>`                                                                                 | True while a stream is in flight                                  |
@@ -289,6 +290,7 @@ Returns a reactive bundle for managing a streaming chat conversation.
 | `handleInputChange(event)`      | `(Event \| { target } \| string) => void`                                                      | Wire custom inputs without `v-model`                              |
 | `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                                                | Wire a form submit; clears input after success                    |
 | `setMessages(messages)`         | `(SetMessagesInput) => void`                                                                   | Replace or functionally update history                            |
+| `setData(data)`                 | `(SetDataInput<TData>) => void`                                                                | Replace or functionally update custom stream data                 |
 | `clearError()`                  | `() => void`                                                                                   | Clear error state                                                 |
 | `clearTrace()`                  | `() => void`                                                                                   | Clear `lastRequest` and `lastResponse`                            |
 | `clear()`                       | `() => void`                                                                                   | Reset to empty state                                              |

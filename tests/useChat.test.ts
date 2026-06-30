@@ -1090,6 +1090,47 @@ describe('useChat', () => {
     ])
   })
 
+  it('aliases streamData as data and supports manual setData updates', async () => {
+    const { append, data, setData, streamData } = useChat<{ step: number }>({
+      provider: fakeProvider([{ dataId: 'progress', dataType: 'progress', data: { step: 1 } }]),
+      dataPartSchemas: {
+        progress: {
+          type: 'object',
+          required: ['step'],
+          properties: {
+            step: { type: 'number' }
+          },
+          additionalProperties: false
+        }
+      }
+    })
+
+    expect(data).toBe(streamData)
+
+    await append('with manual data')
+
+    expect(data.value).toMatchObject([{ id: 'progress', type: 'progress', data: { step: 1 } }])
+
+    const previous = data.value
+    let updaterInput: typeof data.value | undefined
+    setData((current) => {
+      updaterInput = current
+      current.push({ id: 'manual', type: 'progress', data: { step: 2 } })
+      return current
+    })
+
+    expect(updaterInput).not.toBe(previous)
+    expect(data.value.map((part) => part.id)).toEqual(['progress', 'manual'])
+
+    expect(() =>
+      setData([{ id: 'bad', type: 'progress', data: { step: 'bad' as unknown as number } }])
+    ).toThrow(/Stream data part "progress" did not match schema/)
+    expect(data.value.map((part) => part.id)).toEqual(['progress', 'manual'])
+
+    setData([{ id: 'override', data: { step: 3 } }])
+    expect(streamData.value).toEqual([{ id: 'override', data: { step: 3 } }])
+  })
+
   it('rejects custom stream data that fails dataPartSchemas', async () => {
     const onData = vi.fn()
     const onError = vi.fn()

@@ -9,7 +9,7 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `PrepareSendMessagesRequest`, `PrepareSendMessagesRequestOptions`,
 `PrepareStep`, `PrepareStepOptions`,
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
-`SendChatTrigger`, `SetMessagesInput`, `PruneMessagesOptions`,
+`SendChatTrigger`, `SetMessagesInput`, `SetDataInput`, `PruneMessagesOptions`,
 `PruneToolCallsStrategy`, `PruneToolCallsRule`, `PruneToolCallsOption`,
 `ChatPersistOptions`, `SerializedMessage`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
@@ -248,6 +248,7 @@ state.
 | `input`                         | `Ref<string>`                                                                                  | Bound to your composer; `handleSubmit()` clears it after success.      |
 | `status`                        | `Ref<ChatStatus>`                                                                              | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.      |
 | `usage`                         | `Ref<TokenUsage \| null>`                                                                      | Latest normalized token usage from provider chunks.                    |
+| `data`                          | `Ref<StreamDataPart<TData>[]>`                                                                 | AI SDK-style alias for `streamData`.                                   |
 | `streamData`                    | `Ref<StreamDataPart<TData>[]>`                                                                 | Custom stream data collected during the current assistant turn.        |
 | `pendingToolCalls`              | `Ref<ToolCall[]>`                                                                              | Tool calls waiting for manual results.                                 |
 | `isLoading`                     | `Ref<boolean>`                                                                                 | True while a stream is in flight.                                      |
@@ -270,6 +271,7 @@ state.
 | `handleInputChange(event)`      | `(Event \| { target } \| string) => void`                                                      | Wire custom inputs without `v-model`.                                  |
 | `handleSubmit(event, opts?)`    | `(Event?, AppendChatOptions?) => Promise<void>`                                                | Wire form submits; ignores empty text without attachments.             |
 | `setMessages(messages)`         | `(SetMessagesInput) => void`                                                                   | Replace history or update it with a function.                          |
+| `setData(data)`                 | `(SetDataInput<TData>) => void`                                                                | Replace custom stream data or update it with a function.               |
 | `clearError()`                  | `() => void`                                                                                   | Clear `error` and move `status` back to `ready`.                       |
 | `clearTrace()`                  | `() => void`                                                                                   | Clear `lastRequest` and `lastResponse` without changing messages.      |
 | `clear()`                       | `() => void`                                                                                   | Reset to empty state. With `persist`, also removes the storage entry.  |
@@ -789,15 +791,19 @@ owned by your app.
 
 Providers and proxy endpoints can yield `ChatChunk` objects with `metadata` and
 custom `data`. Metadata is merged into the current assistant message. Data parts
-are exposed through `streamData` and `onData`:
+are exposed through `streamData` and `onData`. `data` points at the same ref as
+`streamData`, and `setData()` can replace or functionally update the stored
+parts:
 
 ```ts
-const { messages, streamData } = useChat<{ title: string; url?: string }>({
+const { data, messages, setData, streamData } = useChat<{ title: string; url?: string }>({
   provider,
   onData(part) {
     console.debug(part.type, part.data.title)
   }
 })
+
+setData((parts) => parts.filter((part) => part.type !== 'debug'))
 
 // Example provider chunk:
 // { dataId: 'doc-1', dataType: 'source', data: { title: 'Vue docs' } }
@@ -810,8 +816,9 @@ same assistant `metadata` field.
 When a later chunk uses the same `dataId`, it replaces the earlier stored part.
 Set `transient: true` for progress ticks or debug events that should call
 `onData` without being stored in `streamData` or `Message.parts`.
-The `useChat<TData>()` generic only types `streamData` and `onData`; persisted
-`Message.parts` stay provider-agnostic and keep `unknown` data payloads.
+The `useChat<TData>()` generic only types `data`, `streamData`, `setData()`, and
+`onData`; persisted `Message.parts` stay provider-agnostic and keep `unknown`
+data payloads.
 
 Use `dataPartSchemas` when proxy or provider chunks should be validated before
 your UI consumes them:

@@ -33,7 +33,7 @@
 | `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()` |
 | `stopWhen`                                     | `stopWhen`                                                           |
 | `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                     |
-| 自定义 stream data                             | `streamData`、`onData` 和 `ChatChunk.data`                           |
+| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`      |
 | UI message stream 协议                         | `proxyProvider` / 默认 proxy transport 支持                          |
 
 ## Transport
@@ -188,7 +188,8 @@ provider/proxy 请求。
 3. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
 4. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
    或 `openaiCompatible`。
-5. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+5. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+6. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
    `addToolApprovalResponse()`。
-6. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-7. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+7. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+8. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

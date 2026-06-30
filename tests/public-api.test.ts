@@ -105,6 +105,7 @@ import type {
   SendAutomaticallyWhen,
   SendAutomaticallyWhenOptions,
   SendChatMessageInput,
+  SetDataInput,
   SetMessagesInput,
   SendChatTrigger,
   SerializedMessage,
@@ -284,8 +285,12 @@ describe('public API types', () => {
     expectTypeOf(chat.status).toEqualTypeOf<Ref<ChatStatus>>()
     expectTypeOf<ChatStatus>().toEqualTypeOf<AiRequestStatus>()
     expectTypeOf(chat.usage).toEqualTypeOf<Ref<TokenUsage | null>>()
+    expectTypeOf(chat.data).toEqualTypeOf<Ref<StreamDataPart[]>>()
     expectTypeOf(chat.streamData).toEqualTypeOf<Ref<StreamDataPart[]>>()
     expectTypeOf(typedChat).toEqualTypeOf<UseChatReturn<{ progress: number; label?: string }>>()
+    expectTypeOf(typedChat.data).toEqualTypeOf<
+      Ref<StreamDataPart<{ progress: number; label?: string }>[]>
+    >()
     expectTypeOf(typedChat.streamData).toEqualTypeOf<
       Ref<StreamDataPart<{ progress: number; label?: string }>[]>
     >()
@@ -345,6 +350,9 @@ describe('public API types', () => {
       .toEqualTypeOf<{ preventDefault?: () => void } | undefined>()
     expectTypeOf(chat.handleSubmit).parameter(1).toEqualTypeOf<AppendChatOptions | undefined>()
     expectTypeOf(chat.setMessages).parameter(0).toEqualTypeOf<SetMessagesInput>()
+    expectTypeOf(typedChat.setData)
+      .parameter(0)
+      .toEqualTypeOf<SetDataInput<{ progress: number; label?: string }>>()
     expectTypeOf(chat.clearError).toEqualTypeOf<() => void>()
     expectTypeOf(chat.clearTrace).toEqualTypeOf<() => void>()
     expectTypeOf(chat.lastRequest).toEqualTypeOf<Ref<ChatRequestInfo | null>>()

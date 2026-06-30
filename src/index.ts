@@ -45,6 +45,7 @@ export {
   type SendChatMessageInput,
   type SendChatTrigger,
   type SerializedMessage,
+  type SetDataInput,
   type SetMessagesInput,
   type StopWhen,
   type StopWhenOptions,
