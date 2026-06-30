@@ -97,8 +97,8 @@ const { messages, append, clear } = useChat({
 ## 本地试用后端代理模板
 
 proxy 示例同时支持默认组合式函数端点（`/api/chat`、`/api/completion`、
-`/api/embedding`、`/api/image`、`/api/speech`、`/api/object`）和显式 `proxyProvider`
-端点（`/api/ai/*`）。它会返回确定性的流式片段、结构化 JSON、图片 data URL、音频 data URL 和 embedding，不需要任何第三方 API key：
+`/api/embedding`、`/api/image`、`/api/speech`、`/api/transcription`、`/api/object`）和显式
+`proxyProvider` 端点（`/api/ai/*`）。它会返回确定性的流式片段、结构化 JSON、图片 data URL、音频 data URL、转写文本和 embedding，不需要任何第三方 API key：
 
 ```bash
 pnpm example:proxy-server
@@ -114,11 +114,12 @@ useCompletion({ baseURL: 'http://127.0.0.1:8787' })
 useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
 useImage({ baseURL: 'http://127.0.0.1:8787' })
 useSpeech({ baseURL: 'http://127.0.0.1:8787' })
+useTranscription({ baseURL: 'http://127.0.0.1:8787' })
 useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 ```
 
 这一步跑通后，把模板服务替换成你自己的 `/api/chat`、`/api/completion`、
-`/api/embedding`、`/api/image`、`/api/speech` 和 `/api/object` 路由即可。
+`/api/embedding`、`/api/image`、`/api/speech`、`/api/transcription` 和 `/api/object` 路由即可。
 
 ## 使用不同 Provider
 
@@ -182,4 +183,5 @@ const { messages: messages6, append: append6 } = useChat({
 - [useEmbedding 参考](/zh/reference/use-embedding)
 - [useImage 参考](/zh/reference/use-image)
 - [useSpeech 参考](/zh/reference/use-speech)
+- [useTranscription 参考](/zh/reference/use-transcription)
 - [useObject 参考](/zh/reference/use-object)

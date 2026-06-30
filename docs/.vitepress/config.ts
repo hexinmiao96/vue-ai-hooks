@@ -40,6 +40,7 @@ const rootSidebar = {
         { text: 'useGeneration', link: '/reference/use-generation' },
         { text: 'useImage', link: '/reference/use-image' },
         { text: 'useSpeech', link: '/reference/use-speech' },
+        { text: 'useTranscription', link: '/reference/use-transcription' },
         { text: 'useObject', link: '/reference/use-object' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
@@ -94,6 +95,7 @@ const zhSidebar = {
         { text: 'useGeneration', link: '/zh/reference/use-generation' },
         { text: 'useImage', link: '/zh/reference/use-image' },
         { text: 'useSpeech', link: '/zh/reference/use-speech' },
+        { text: 'useTranscription', link: '/zh/reference/use-transcription' },
         { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]

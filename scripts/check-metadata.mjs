@@ -126,7 +126,8 @@ const requiredPackageKeywords = [
   'typescript',
   'embedding',
   'image',
-  'speech'
+  'speech',
+  'transcription'
 ]
 const requiredReadmeBadgeSnippets = [
   'actions/workflows/ci.yml/badge.svg',

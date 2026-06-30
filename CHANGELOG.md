@@ -55,6 +55,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   state, retries, aborts, trace refs, and form helpers.
 - Added a runnable no-key `useSpeech` example with deterministic local WAV
   output and proxy `/api/speech` route coverage.
+- Added `useTranscription` for app-owned audio transcription routes with
+  normalized `transcription`/`text` state, retries, aborts, trace refs, and form
+  helpers.
+- Added a runnable no-key `useTranscription` example with deterministic local
+  transcript output and proxy `/api/transcription` route coverage.
 - Added proxy `api` and `credentials` to chat prepare callbacks and request
   traces.
 - Added proxy `api` and `credentials` to completion and object request traces.
@@ -64,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for choosing the right demo first.
 - Added a proxy example contract check that verifies default `/api/*` routes,
   legacy `/api/ai/*` routes, chat resume, completion, embedding, image, speech,
-  and object endpoints.
+  transcription, and object endpoints.
 
 ### Changed
 

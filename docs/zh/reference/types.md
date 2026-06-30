@@ -380,8 +380,25 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`          | `AbortSignal`             | 中止信号。                                  |
 | `headers`         | `HeadersInit`             | 合并进后端请求的单次 headers。              |
 
+### `TranscriptionRequest`
+
+| 字段                     | 类型                         | 说明                                           |
+| ------------------------ | ---------------------------- | ---------------------------------------------- |
+| `audio`                  | `string`                     | 你的后端可理解的音频 URL、data URL 或 base64。 |
+| `body`                   | `Record<string, unknown>`    | 应用自有后端选项使用的额外 JSON body 字段。    |
+| `model`                  | `string`                     | 你的后端使用的转写模型 ID。                    |
+| `language`               | `string`                     | Provider 支持时的语言提示。                    |
+| `prompt`                 | `string`                     | 可选的提示词或专有词汇提示。                   |
+| `temperature`            | `number`                     | Provider 支持时的采样温度。                    |
+| `timestampGranularities` | `Array<'word' \| 'segment'>` | 时间戳粒度提示。                               |
+| `providerOptions`        | `Record<string, unknown>`    | 透传给后端的 Provider 专属选项。               |
+| `user`                   | `string`                     | 用于 Provider 策略或风控的终端用户标识。       |
+| `signal`                 | `AbortSignal`                | 中止信号。                                     |
+| `headers`                | `HeadersInit`                | 合并进后端请求的单次 headers。                 |
+
 `body` 会先合并进 Provider/代理的 JSON 请求体，然后再写入 typed request 字段。
-如果 key 冲突，`messages`、`prompt`、`input`、`text`、`model`、`stream` 这类显式字段优先。
+如果 key 冲突，`messages`、`prompt`、`input`、`text`、`audio`、`model`、`stream`
+这类显式字段优先。
 
 ## 响应
 
@@ -444,6 +461,23 @@ interface GeneratedAudio {
 
 interface SpeechGenerationResult {
   audio?: GeneratedAudio
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
+interface TranscriptionSegment {
+  text: string
+  start?: number
+  end?: number
+}
+
+interface TranscriptionResult {
+  text: string
+  segments?: TranscriptionSegment[]
+  language?: string
+  durationInSeconds?: number
   model?: string
   warnings?: unknown[]
   providerMetadata?: Record<string, unknown>

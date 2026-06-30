@@ -24,6 +24,7 @@ import {
   useImage,
   useObject,
   useSpeech,
+  useTranscription,
   usePersist
 } from 'vue-ai-hooks'
 import type {
@@ -124,6 +125,11 @@ import type {
   SpeechGenerationRequestInfo,
   SpeechGenerationResponseInfo,
   SpeechGenerationResult,
+  TranscriptionRequest,
+  TranscriptionRequestInfo,
+  TranscriptionResponseInfo,
+  TranscriptionResult,
+  TranscriptionSegment,
   ChatStatus,
   StopWhen,
   StopWhenOptions,
@@ -152,6 +158,8 @@ import type {
   UseObjectReturn,
   UseSpeechOptions,
   UseSpeechReturn,
+  UseTranscriptionOptions,
+  UseTranscriptionReturn,
   UsePersistOptions
 } from 'vue-ai-hooks'
 
@@ -299,6 +307,9 @@ describe('public API types', () => {
     const speechGeneration = useSpeech({
       api: '/api/speech'
     } satisfies UseSpeechOptions)
+    const transcriptionGeneration = useTranscription({
+      api: '/api/transcription'
+    } satisfies UseTranscriptionOptions)
     const structured = useObject<{ answer: string }>({
       provider,
       schema: { type: 'object' }
@@ -469,6 +480,18 @@ describe('public API types', () => {
     expectTypeOf<UseSpeechOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
     expectTypeOf<UseSpeechOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
     expectTypeOf<UseSpeechOptions['initialInput']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseTranscriptionOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseTranscriptionOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseTranscriptionOptions['baseURL']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<UseTranscriptionOptions['credentials']>().toEqualTypeOf<
+      RequestCredentials | undefined
+    >()
+    expectTypeOf<UseTranscriptionOptions['headers']>().toMatchTypeOf<
+      HeadersInit | (() => HeadersInit | Promise<HeadersInit>) | undefined
+    >()
+    expectTypeOf<UseTranscriptionOptions['fetch']>().toEqualTypeOf<typeof fetch | undefined>()
+    expectTypeOf<UseTranscriptionOptions['timeoutMs']>().toEqualTypeOf<number | undefined>()
+    expectTypeOf<UseTranscriptionOptions['initialInput']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseObjectOptions>().toMatchTypeOf<RetryOptions>()
     expectTypeOf<UseObjectOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseObjectOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
@@ -796,6 +819,75 @@ describe('public API types', () => {
     >()
     expectTypeOf<UseSpeechOptions['onResponse']>().toEqualTypeOf<
       ((info: SpeechGenerationResponseInfo) => void) | undefined
+    >()
+
+    expectTypeOf(transcriptionGeneration).toEqualTypeOf<UseTranscriptionReturn>()
+    expectTypeOf(transcriptionGeneration.input).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(transcriptionGeneration.transcription).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(transcriptionGeneration.text).toEqualTypeOf<Ref<string>>()
+    expectTypeOf(transcriptionGeneration.result).toEqualTypeOf<Ref<TranscriptionResult | null>>()
+    expectTypeOf(transcriptionGeneration.status).toEqualTypeOf<Ref<AiRequestStatus>>()
+    expectTypeOf(transcriptionGeneration.transcribe).returns.toEqualTypeOf<
+      Promise<TranscriptionResult>
+    >()
+    expectTypeOf(transcriptionGeneration.transcribe)
+      .parameter(1)
+      .toEqualTypeOf<Partial<TranscriptionRequest> | undefined>()
+    expectTypeOf(transcriptionGeneration.transcribeAudio).toEqualTypeOf<
+      typeof transcriptionGeneration.transcribe
+    >()
+    expectTypeOf(transcriptionGeneration.setInput).toEqualTypeOf<(value: string) => void>()
+    expectTypeOf(transcriptionGeneration.handleInputChange)
+      .parameter(0)
+      .toEqualTypeOf<Event | { target?: { value?: unknown } } | string>()
+    expectTypeOf(transcriptionGeneration.handleSubmit).returns.toEqualTypeOf<
+      Promise<TranscriptionResult>
+    >()
+    expectTypeOf(transcriptionGeneration.handleSubmit)
+      .parameter(1)
+      .toEqualTypeOf<Partial<TranscriptionRequest> | undefined>()
+    expectTypeOf(transcriptionGeneration.lastRequest).toEqualTypeOf<
+      Ref<TranscriptionRequestInfo | null>
+    >()
+    expectTypeOf(transcriptionGeneration.lastResponse).toEqualTypeOf<
+      Ref<TranscriptionResponseInfo | null>
+    >()
+    expectTypeOf<TranscriptionSegment>().toMatchTypeOf<{
+      text: string
+      start?: number
+      end?: number
+    }>()
+    expectTypeOf<TranscriptionRequest>().toMatchTypeOf<{
+      audio: string
+      body?: Record<string, unknown>
+      model?: string
+      language?: string
+      prompt?: string
+      temperature?: number
+      timestampGranularities?: Array<'word' | 'segment'>
+      providerOptions?: Record<string, unknown>
+      headers?: HeadersInit
+    }>()
+    expectTypeOf<TranscriptionResult>().toMatchTypeOf<{
+      text: string
+      segments?: TranscriptionSegment[]
+      model?: string
+    }>()
+    expectTypeOf<TranscriptionRequestInfo>().toMatchTypeOf<{
+      providerId: 'proxy'
+      attempt: number
+      api: string
+      audio: string
+      request: TranscriptionRequest
+    }>()
+    expectTypeOf<TranscriptionResponseInfo>().toMatchTypeOf<
+      TranscriptionRequestInfo & { result: TranscriptionResult }
+    >()
+    expectTypeOf<UseTranscriptionOptions['onRequest']>().toEqualTypeOf<
+      ((info: TranscriptionRequestInfo) => void) | undefined
+    >()
+    expectTypeOf<UseTranscriptionOptions['onResponse']>().toEqualTypeOf<
+      ((info: TranscriptionResponseInfo) => void) | undefined
     >()
 
     expectTypeOf(embedding).toEqualTypeOf<UseEmbeddingReturn>()

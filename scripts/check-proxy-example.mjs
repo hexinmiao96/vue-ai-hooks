@@ -14,6 +14,7 @@ try {
   await checkEmbeddingRoute()
   await checkImageRoute()
   await checkSpeechRoute()
+  await checkTranscriptionRoute()
   await checkObjectRoute()
   console.log('Proxy example check passed for default and legacy routes.')
 } finally {
@@ -120,6 +121,29 @@ async function checkSpeechRoute() {
   expect(
     legacy.audio?.metadata?.seed !== undefined,
     '/api/ai/speech should return deterministic audio metadata'
+  )
+}
+
+async function checkTranscriptionRoute() {
+  const response = await postJson('/api/transcription', {
+    audio: 'data:audio/wav;base64,UklGRg==',
+    language: 'en',
+    model: 'proxy-transcription-model'
+  })
+  expect(
+    response.text?.includes('inline audio payload'),
+    '/api/transcription should return transcript text'
+  )
+  expect(response.language === 'en', '/api/transcription should preserve the requested language')
+  expect(
+    response.model === 'proxy-transcription-model',
+    '/api/transcription should preserve the requested model'
+  )
+
+  const legacy = await postJson('/api/ai/transcription', { audio: 'legacy-audio-url' })
+  expect(
+    legacy.text?.includes('legacy-audio-url'),
+    '/api/ai/transcription should return deterministic transcript text'
   )
 }
 

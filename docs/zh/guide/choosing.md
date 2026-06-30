@@ -7,7 +7,7 @@
 当你需要这些能力时，选择 `vue-ai-hooks`：
 
 - 以 Vue 3 refs 和 composables 作为主要 API。
-- 一个包里覆盖流式聊天、补全、embedding、图片生成、语音生成、结构化对象和自定义生成任务。
+- 一个包里覆盖流式聊天、补全、embedding、图片生成、语音生成、音频转写、结构化对象和自定义生成任务。
 - 生产浏览器应用默认走自有 proxy 路由，避免暴露上游 key。
 - 本地 demo、原型或受限 key 场景可以直连 Provider helper。
 - 不引入完整 agent 框架，也能获得工具调用、工具审批、stream data、重试、持久化和请求检查。
@@ -22,6 +22,7 @@
 | 调用自己的后端或边缘路由                           | 默认 proxy transport 或 `proxyProvider`   |
 | 通过自有后端生成图片                               | `useImage`                                |
 | 通过自有后端生成语音                               | `useSpeech`                               |
+| 通过自有后端转写音频                               | `useTranscription`                        |
 | 迁移已有 AI SDK UI 界面                            | [AI SDK 迁移](/zh/guide/ai-sdk-migration) |
 | 在流开始前做 Provider failover                     | `fallbackProvider`                        |
 | 不配置 Provider key，先跑本地工具审批 UX           | `examples/chat`                           |

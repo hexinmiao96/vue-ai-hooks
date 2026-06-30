@@ -107,10 +107,11 @@ before calling `setMessages()`.
 ## Try the backend proxy template locally
 
 The proxy example supports both the default composable endpoints (`/api/chat`,
-`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`, `/api/object`)
-and the explicit `proxyProvider` endpoints (`/api/ai/*`). It streams
-deterministic chunks, structured JSON, image data URLs, audio data URLs, and
-embeddings without any third-party API key:
+`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
+`/api/transcription`, `/api/object`) and the explicit `proxyProvider` endpoints
+(`/api/ai/*`). It streams deterministic chunks, structured JSON, image data
+URLs, audio data URLs, transcripts, and embeddings without any third-party API
+key:
 
 ```bash
 pnpm example:proxy-server
@@ -126,12 +127,13 @@ useCompletion({ baseURL: 'http://127.0.0.1:8787' })
 useEmbedding({ baseURL: 'http://127.0.0.1:8787' })
 useImage({ baseURL: 'http://127.0.0.1:8787' })
 useSpeech({ baseURL: 'http://127.0.0.1:8787' })
+useTranscription({ baseURL: 'http://127.0.0.1:8787' })
 useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 ```
 
 When this works, replace the template server with your own `/api/chat`,
-`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`, and
-`/api/object` routes.
+`/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
+`/api/transcription`, and `/api/object` routes.
 
 ## Using a different provider
 
@@ -196,4 +198,5 @@ const { messages: messages6, append: append6 } = useChat({
 - [useEmbedding reference](/reference/use-embedding)
 - [useImage reference](/reference/use-image)
 - [useSpeech reference](/reference/use-speech)
+- [useTranscription reference](/reference/use-transcription)
 - [useObject reference](/reference/use-object)

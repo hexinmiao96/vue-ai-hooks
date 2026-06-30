@@ -364,6 +364,40 @@ export interface SpeechGenerationResult {
   response?: unknown
 }
 
+export interface TranscriptionSegment {
+  text: string
+  start?: number
+  end?: number
+}
+
+/** Request payload for transcription through an app-owned backend. */
+export interface TranscriptionRequest {
+  /** Audio URL, data URL, or base64 payload understood by your backend. */
+  audio: string
+  /** Extra JSON body fields for proxy-specific request options. */
+  body?: Record<string, unknown>
+  model?: string
+  language?: string
+  prompt?: string
+  temperature?: number
+  timestampGranularities?: Array<'word' | 'segment'>
+  providerOptions?: Record<string, unknown>
+  user?: string
+  signal?: AbortSignal
+  headers?: HeadersInit
+}
+
+export interface TranscriptionResult {
+  text: string
+  segments?: TranscriptionSegment[]
+  language?: string
+  durationInSeconds?: number
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
 export interface RetryContext {
   /** 1-based retry attempt number. */
   attempt: number

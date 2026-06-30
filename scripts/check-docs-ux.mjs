@@ -20,6 +20,8 @@ const files = {
   zhUseImage: readFileSync('docs/zh/reference/use-image.md', 'utf8'),
   useSpeech: readFileSync('docs/reference/use-speech.md', 'utf8'),
   zhUseSpeech: readFileSync('docs/zh/reference/use-speech.md', 'utf8'),
+  useTranscription: readFileSync('docs/reference/use-transcription.md', 'utf8'),
+  zhUseTranscription: readFileSync('docs/zh/reference/use-transcription.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
@@ -31,10 +33,12 @@ const files = {
   readme: readFileSync('README.md', 'utf8'),
   zhReadme: readFileSync('README.zh-CN.md', 'utf8'),
   envExample: readFileSync('.env.example', 'utf8'),
+  examplesEnvExample: readFileSync('examples/.env.example', 'utf8'),
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   speechExample: readFileSync('examples/speech/App.vue', 'utf8'),
+  transcriptionExample: readFileSync('examples/transcription/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
 }
@@ -81,6 +85,7 @@ for (const snippet of [
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   'The browser sends provider-agnostic JSON to your own `/api/chat` route',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
+  "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[Examples](/examples/)'
 ]) {
@@ -98,6 +103,7 @@ for (const snippet of [
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
   "useImage({ baseURL: 'http://127.0.0.1:8787' })",
+  "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
   '[示例](/zh/examples/)'
 ]) {
@@ -120,8 +126,10 @@ expect(
     files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&
     files.envExample.includes('VITE_PROXY_IMAGE_URL=/api/ai/image') &&
     files.envExample.includes('VITE_PROXY_SPEECH_URL=/api/ai/speech') &&
-    files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object'),
-  '.env.example must make the chat, image, speech, and object examples runnable without provider keys by default'
+    files.envExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription') &&
+    files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object') &&
+    files.examplesEnvExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription'),
+  '.env.example files must make the chat, image, speech, transcription, and object examples runnable without provider keys by default'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -214,6 +222,7 @@ for (const snippet of [
   '# AI SDK migration',
   'AI SDK `useChat` reference',
   'Quick mapping',
+  'AI SDK Core transcription',
   'DefaultChatTransport',
   'transport` or `provider`',
   'input`, `setInput()`, `handleInputChange()`',
@@ -232,6 +241,7 @@ for (const snippet of [
   '# AI SDK 迁移',
   'AI SDK `useChat` 参考',
   '快速映射',
+  'AI SDK Core 音频转写',
   'DefaultChatTransport',
   'transport` 或 `provider`',
   'input`、`setInput()`、`handleInputChange()`',
@@ -252,10 +262,13 @@ expect(
     files.packageJson.includes('"example:speech"') &&
     files.packageJson.includes('"example:speech:build"') &&
     files.packageJson.includes('pnpm example:speech:build') &&
+    files.packageJson.includes('"example:transcription"') &&
+    files.packageJson.includes('"example:transcription:build"') &&
+    files.packageJson.includes('pnpm example:transcription:build') &&
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the image and object examples'
+  'package scripts must expose and build the image, speech, transcription, and object examples'
 )
 
 expect(
@@ -272,13 +285,16 @@ for (const snippet of [
   'pnpm example:chat',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
-  '`/api/speech`, and `/api/object` routes',
+  '`/api/speech`, `/api/transcription`, and `/api/object` routes',
   'pnpm example:image',
   'deterministic local SVG',
   'proxy `/api/image`',
   'pnpm example:speech',
   'deterministic local WAV',
   'proxy `/api/speech`',
+  'pnpm example:transcription',
+  'deterministic local transcript',
+  '`/api/transcription` route',
   '`local-object` provider',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
@@ -287,6 +303,8 @@ for (const snippet of [
   '[Image generation](#image-demo)',
   'Generate speech through an app route',
   '[Speech generation](#speech-demo)',
+  'Turn audio into text through an app route',
+  '[Audio transcription](#transcription-demo)',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
 ]) {
@@ -299,13 +317,16 @@ for (const snippet of [
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
-  '`/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/speech`',
+  '`/api/transcription`、`/api/object` 路由',
   'pnpm example:image',
   '确定性的本地',
   'proxy `/api/image`',
   'pnpm example:speech',
   '确定性的本地',
   'proxy `/api/speech`',
+  'pnpm example:transcription',
+  '确定性的本地转写文本',
+  'proxy `/api/transcription`',
   '`local-object` Provider',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
@@ -314,6 +335,8 @@ for (const snippet of [
   '[图片生成](#image-demo)',
   '通过应用后端生成语音',
   '[语音生成](#speech-demo)',
+  '通过应用后端把音频转成文本',
+  '[音频转写](#transcription-demo)',
   '从提示词抽取类型化 JSON',
   '[结构化对象输出](#object-demo)'
 ]) {
@@ -341,6 +364,14 @@ expect(
   'Speech example must run without keys and switch to the proxy speech route when configured'
 )
 expect(
+  files.transcriptionExample.includes('useTranscription') &&
+    files.transcriptionExample.includes('localTranscriptionFetch') &&
+    files.transcriptionExample.includes('VITE_PROXY_TRANSCRIPTION_URL') &&
+    files.transcriptionExample.includes('VITE_PROXY_BASE_URL') &&
+    files.transcriptionExample.includes('traceSummary'),
+  'Transcription example must run without keys and switch to the proxy transcription route when configured'
+)
+expect(
   files.objectExample.includes("id: 'local-object'") &&
     files.objectExample.includes('useObject<Ticket>') &&
     files.objectExample.includes("schemaName: 'support_ticket'") &&
@@ -360,16 +391,23 @@ expect(
 expect(
   files.demoShowcase.includes("{ job: 'Image generation', pick: 'useImage' }") &&
     files.demoShowcase.includes("{ job: 'Speech generation', pick: 'useSpeech' }") &&
-    files.demoShowcase.includes("{ label: 'Composables', value: '7' }") &&
+    files.demoShowcase.includes("{ job: 'Audio transcription', pick: 'useTranscription' }") &&
+    files.demoShowcase.includes("{ label: 'Composables', value: '8' }") &&
     files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
     files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
+    files.demoShowcase.includes("{ label: 'Transcription', href: '#transcription-demo' }") &&
     files.demoShowcase.includes("{ label: 'useImage API', href: '#image-demo-api' }") &&
     files.demoShowcase.includes("{ label: 'useSpeech API', href: '#speech-demo-api' }") &&
+    files.demoShowcase.includes(
+      "{ label: 'useTranscription API', href: '#transcription-demo-api' }"
+    ) &&
     files.demoShowcase.includes('const imageCode = computed') &&
     files.demoShowcase.includes('const speechCode = computed') &&
+    files.demoShowcase.includes('const transcriptionCode = computed') &&
     files.demoShowcase.includes('id="image-demo"') &&
-    files.demoShowcase.includes('id="speech-demo"'),
-  'DemoShowcase must include the image and speech generation demos and API shortcuts'
+    files.demoShowcase.includes('id="speech-demo"') &&
+    files.demoShowcase.includes('id="transcription-demo"'),
+  'DemoShowcase must include the image, speech, and transcription demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes("quickChoiceTitle: '按任务选择'"),
@@ -377,10 +415,15 @@ expect(
 )
 expect(
   files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
-    files.demoShowcase.includes("{ label: '组合式函数', value: '7' }") &&
+    files.demoShowcase.includes("{ job: '音频转写', pick: 'useTranscription' }") &&
+    files.demoShowcase.includes("{ label: '组合式函数', value: '8' }") &&
     files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
-    files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }"),
-  'DemoShowcase must include the Chinese speech generation demo and API shortcuts'
+    files.demoShowcase.includes("{ label: '转写', href: '#transcription-demo' }") &&
+    files.demoShowcase.includes("{ label: 'useSpeech 接口', href: '#speech-demo-api' }") &&
+    files.demoShowcase.includes(
+      "{ label: 'useTranscription 接口', href: '#transcription-demo-api' }"
+    ),
+  'DemoShowcase must include the Chinese speech and transcription demos and API shortcuts'
 )
 expect(
   files.demoShowcase.includes('const attachments = fileInput.value?.files ?? undefined'),
@@ -512,13 +555,25 @@ expect(
     files.zhUseSpeech.includes('handleInputChange(e)') &&
     files.zhUseSpeech.includes('handleSubmit(e, opts?)') &&
     files.zhUseSpeech.includes('后端错误会保留文本') &&
-    files.readme.includes(
-      '`useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useSpeech`, and'
-    ) &&
-    files.zhReadme.includes(
-      '`useChat`、`useCompletion`、`useEmbedding`、`useImage`、`useSpeech` 和'
-    ),
-  'Object, embedding, speech docs plus READMEs must document form helpers'
+    files.useTranscription.includes('initialInput') &&
+    files.useTranscription.includes('transcription`') &&
+    files.useTranscription.includes('text`') &&
+    files.useTranscription.includes('setInput(value)') &&
+    files.useTranscription.includes('handleInputChange(e)') &&
+    files.useTranscription.includes('handleSubmit(e, opts?)') &&
+    files.useTranscription.includes('Backend errors leave the audio input available for retry') &&
+    files.zhUseTranscription.includes('initialInput') &&
+    files.zhUseTranscription.includes('transcription`') &&
+    files.zhUseTranscription.includes('text`') &&
+    files.zhUseTranscription.includes('setInput(value)') &&
+    files.zhUseTranscription.includes('handleInputChange(e)') &&
+    files.zhUseTranscription.includes('handleSubmit(e, opts?)') &&
+    files.zhUseTranscription.includes('后端错误会保留音频输入') &&
+    files.readme.includes('`useTranscription`, and `useObject` also expose') &&
+    files.readme.includes('All eight accept `initialInput`') &&
+    files.zhReadme.includes('`useTranscription` 和') &&
+    files.zhReadme.includes('八者都支持 `initialInput`'),
+  'Object, embedding, speech, transcription docs plus READMEs must document form helpers'
 )
 expect(
   files.config.includes("{ text: 'useImage', link: '/reference/use-image' }") &&
@@ -553,6 +608,25 @@ expect(
     files.readme.includes('`useSpeech`') &&
     files.zhReadme.includes('`useSpeech`'),
   'Speech generation docs and navigation must document the app-owned proxy hook'
+)
+expect(
+  files.config.includes("{ text: 'useTranscription', link: '/reference/use-transcription' }") &&
+    files.config.includes(
+      "{ text: 'useTranscription', link: '/zh/reference/use-transcription' }"
+    ) &&
+    files.useTranscription.includes('# useTranscription') &&
+    files.useTranscription.includes('app-owned backend') &&
+    files.useTranscription.includes('transcribeAudio(audio?, opts?)') &&
+    files.useTranscription.includes('handleSubmit(e, opts?)') &&
+    files.useTranscription.includes('Backend errors leave the audio input available for retry') &&
+    files.zhUseTranscription.includes('# useTranscription') &&
+    files.zhUseTranscription.includes('应用自有后端') &&
+    files.zhUseTranscription.includes('transcribeAudio(audio?, opts?)') &&
+    files.zhUseTranscription.includes('handleSubmit(e, opts?)') &&
+    files.zhUseTranscription.includes('后端错误会保留音频输入') &&
+    files.readme.includes('`useTranscription`') &&
+    files.zhReadme.includes('`useTranscription`'),
+  'Transcription docs and navigation must document the app-owned proxy hook'
 )
 expect(
   files.useChat.includes('## Message pruning') &&
@@ -659,6 +733,23 @@ expect(
   'Chinese public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
+  files.types.includes('### `TranscriptionRequest`') &&
+    files.types.includes('`audio`') &&
+    files.types.includes('timestampGranularities') &&
+    files.types.includes('interface TranscriptionSegment') &&
+    files.types.includes('interface TranscriptionResult') &&
+    files.types.includes('segments?: TranscriptionSegment[]') &&
+    files.types.includes('`audio`, `model`, and `stream` win') &&
+    files.zhTypes.includes('### `TranscriptionRequest`') &&
+    files.zhTypes.includes('`audio`') &&
+    files.zhTypes.includes('timestampGranularities') &&
+    files.zhTypes.includes('interface TranscriptionSegment') &&
+    files.zhTypes.includes('interface TranscriptionResult') &&
+    files.zhTypes.includes('segments?: TranscriptionSegment[]') &&
+    files.zhTypes.includes('`audio`、`model`、`stream`'),
+  'Public type docs must expose transcription request and result contracts'
+)
+expect(
   files.chatExample.includes('visibleMessageParts(message.parts)') &&
     files.chatExample.includes('aria-label="structured message parts"') &&
     files.chatExample.includes("dataType: 'source-url'") &&
@@ -698,6 +789,8 @@ for (const noisyLabel of [
   "label: 'useEmbedding Methods'",
   "label: 'useImage Properties'",
   "label: 'useImage Methods'",
+  "label: 'useTranscription Properties'",
+  "label: 'useTranscription Methods'",
   "label: 'useObject Properties'",
   "label: 'useObject Methods'",
   "label: 'useChat 参数'",
@@ -708,6 +801,8 @@ for (const noisyLabel of [
   "label: 'useEmbedding 方法'",
   "label: 'useImage 参数'",
   "label: 'useImage 方法'",
+  "label: 'useTranscription 参数'",
+  "label: 'useTranscription 方法'",
   "label: 'useObject 参数'",
   "label: 'useObject 方法'"
 ]) {
@@ -720,7 +815,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, transcription docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

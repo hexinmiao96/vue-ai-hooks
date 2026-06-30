@@ -130,9 +130,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 The same template also supports the default composable URLs
 (`/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, `/api/speech`,
-and `/api/object`). Use those when you omit `provider` and
+`/api/transcription`, and `/api/object`). Use those when you omit `provider` and
 configure `api` or `baseURL` directly on `useChat`, `useCompletion`,
-`useEmbedding`, `useImage`, `useSpeech`, or `useObject`.
+`useEmbedding`, `useImage`, `useSpeech`, `useTranscription`, or `useObject`.
 
 `proxyProvider` can consume either this project's `ChatChunk` SSE payloads or AI
 SDK UI message streams from an existing backend. That makes migration simpler

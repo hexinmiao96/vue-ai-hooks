@@ -9,6 +9,7 @@ const routes = {
   embedding: new Set(['/api/embedding', '/api/ai/embedding']),
   image: new Set(['/api/image', '/api/ai/image']),
   speech: new Set(['/api/speech', '/api/ai/speech']),
+  transcription: new Set(['/api/transcription', '/api/ai/transcription']),
   object: new Set(['/api/object', '/api/ai/object'])
 }
 
@@ -51,6 +52,11 @@ const server = createServer(async (request, response) => {
 
     if (request.method === 'POST' && routes.speech.has(url.pathname)) {
       await handleSpeech(request, response)
+      return
+    }
+
+    if (request.method === 'POST' && routes.transcription.has(url.pathname)) {
+      await handleTranscription(request, response)
       return
     }
 
@@ -166,6 +172,21 @@ async function handleSpeech(request, response) {
   sendJson(response, 200, {
     audio,
     model: body.model || 'proxy-example-speech',
+    providerMetadata: {
+      provider: 'proxy-server-example'
+    }
+  })
+}
+
+async function handleTranscription(request, response) {
+  const body = await readJson(request)
+  const audio = typeof body.audio === 'string' ? body.audio : ''
+  const seed = deterministicSeed(audio || 'transcription')
+  sendJson(response, 200, {
+    text: `Proxy transcript ${seed}: ${transcriptionLabel(audio)}`,
+    language: body.language || 'en',
+    durationInSeconds: 0,
+    model: body.model || 'proxy-example-transcription',
     providerMetadata: {
       provider: 'proxy-server-example'
     }
@@ -309,5 +330,13 @@ function titleFromPrompt(prompt) {
   const normalized = String(prompt || 'Proxy object output')
     .replace(/\s+/g, ' ')
     .trim()
+  return normalized.length > 48 ? `${normalized.slice(0, 45)}...` : normalized
+}
+
+function transcriptionLabel(audio) {
+  const normalized = String(audio || 'audio')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (normalized.startsWith('data:audio/')) return 'inline audio payload'
   return normalized.length > 48 ? `${normalized.slice(0, 45)}...` : normalized
 }

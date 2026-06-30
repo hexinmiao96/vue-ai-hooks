@@ -392,9 +392,25 @@ type DeepPartial<T> = T extends (...args: unknown[]) => unknown
 | `signal`          | `AbortSignal`             | Abort signal.                                           |
 | `headers`         | `HeadersInit`             | Per-request headers merged into the backend request.    |
 
+### `TranscriptionRequest`
+
+| Field                    | Type                         | Description                                              |
+| ------------------------ | ---------------------------- | -------------------------------------------------------- |
+| `audio`                  | `string`                     | Audio URL, data URL, or base64 payload for your backend. |
+| `body`                   | `Record<string, unknown>`    | Extra JSON body fields for app-owned backend options.    |
+| `model`                  | `string`                     | Transcription model id used by your backend.             |
+| `language`               | `string`                     | Language hint when supported by the provider.            |
+| `prompt`                 | `string`                     | Optional prompt or vocabulary hint.                      |
+| `temperature`            | `number`                     | Sampling temperature when supported by the provider.     |
+| `timestampGranularities` | `Array<'word' \| 'segment'>` | Timestamp granularity hints.                             |
+| `providerOptions`        | `Record<string, unknown>`    | Provider-specific options passed through your backend.   |
+| `user`                   | `string`                     | End-user identifier for provider policy/abuse tracking.  |
+| `signal`                 | `AbortSignal`                | Abort signal.                                            |
+| `headers`                | `HeadersInit`                | Per-request headers merged into the backend request.     |
+
 `body` is merged into provider/proxy JSON request bodies before the typed
 request fields. If keys conflict, explicit typed fields such as `messages`,
-`prompt`, `input`, `text`, `model`, and `stream` win.
+`prompt`, `input`, `text`, `audio`, `model`, and `stream` win.
 
 ## Responses
 
@@ -457,6 +473,23 @@ interface GeneratedAudio {
 
 interface SpeechGenerationResult {
   audio?: GeneratedAudio
+  model?: string
+  warnings?: unknown[]
+  providerMetadata?: Record<string, unknown>
+  response?: unknown
+}
+
+interface TranscriptionSegment {
+  text: string
+  start?: number
+  end?: number
+}
+
+interface TranscriptionResult {
+  text: string
+  segments?: TranscriptionSegment[]
+  language?: string
+  durationInSeconds?: number
   model?: string
   warnings?: unknown[]
   providerMetadata?: Record<string, unknown>

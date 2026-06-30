@@ -21,25 +21,26 @@ refs and provider objects instead of a full-stack framework integration layer.
 
 ## Quick mapping
 
-| AI SDK UI concept                                | vue-ai-hooks equivalent                                              |
-| ------------------------------------------------ | -------------------------------------------------------------------- |
-| `useChat()`                                      | `useChat()`                                                          |
-| `transport`                                      | `transport` or `provider`                                            |
-| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`          |
-| `messages` initial option                        | `messages` or `initialMessages`                                      |
-| Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included            |
-| `sendMessage()`                                  | `sendMessage()`                                                      |
-| `stop()`                                         | `stop()`                                                             |
-| `resumeStream()`                                 | `resumeStream()` with a provider that supports `resumeChat`          |
-| `addToolOutput()` / deprecated `addToolResult()` | `addToolOutput()` or `addToolResult({ toolCallId, output })`         |
-| `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()` |
-| `stopWhen`                                       | `stopWhen`                                                           |
-| `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                    |
-| Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`    |
-| `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`          |
-| AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route               |
-| AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route             |
-| UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport               |
+| AI SDK UI concept                                | vue-ai-hooks equivalent                                                |
+| ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `useChat()`                                      | `useChat()`                                                            |
+| `transport`                                      | `transport` or `provider`                                              |
+| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`            |
+| `messages` initial option                        | `messages` or `initialMessages`                                        |
+| Input state managed by app                       | `input`, `setInput()`, `handleInputChange()` are included              |
+| `sendMessage()`                                  | `sendMessage()`                                                        |
+| `stop()`                                         | `stop()`                                                               |
+| `resumeStream()`                                 | `resumeStream()` with a provider that supports `resumeChat`            |
+| `addToolOutput()` / deprecated `addToolResult()` | `addToolOutput()` or `addToolResult({ toolCallId, output })`           |
+| `addToolApprovalResponse()`                      | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()`   |
+| `stopWhen`                                       | `stopWhen`                                                             |
+| `experimental_throttle`                          | `experimental_throttle` or preferred `throttleMs`                      |
+| Custom stream data                               | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`      |
+| `experimental_useObject()`                       | `experimental_useObject()` alias or preferred `useObject()`            |
+| AI SDK Core image generation                     | `useImage()` calling your app-owned `/api/image` route                 |
+| AI SDK Core speech generation                    | `useSpeech()` calling your app-owned `/api/speech` route               |
+| AI SDK Core transcription                        | `useTranscription()` calling your app-owned `/api/transcription` route |
+| UI message stream protocol                       | Supported by `proxyProvider` / default proxy transport                 |
 
 ## Transport
 
@@ -225,12 +226,14 @@ fields for default chat proxy transports.
    image model credentials server-side.
 7. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep
    text-to-speech credentials server-side.
-8. Keep existing initial messages by passing `messages` or `initialMessages`.
-9. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
-   `gemini`, `anthropic`, or `openaiCompatible`.
-10. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
-11. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
+8. Map transcription calls to `useTranscription({ api: '/api/transcription' })`
+   and keep transcription credentials server-side.
+9. Keep existing initial messages by passing `messages` or `initialMessages`.
+10. Replace model-specific direct calls with `openai`, `deepseek`, `openrouter`,
+    `gemini`, `anthropic`, or `openaiCompatible`.
+11. Move custom data state to `data` / `setData()` when your UI needs AI SDK-style names.
+12. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
     `addToolApprovalResponse()`.
-12. Add `lastRequest` and `lastResponse` to your debug view before swapping
+13. Add `lastRequest` and `lastResponse` to your debug view before swapping
     production traffic.
-13. Run `pnpm release:check` or your app's equivalent gate before shipping.
+14. Run `pnpm release:check` or your app's equivalent gate before shipping.

@@ -9,12 +9,14 @@ type DemoHref =
   | '#embedding-demo'
   | '#image-demo'
   | '#speech-demo'
+  | '#transcription-demo'
   | '#object-demo'
   | '#chat-demo-api'
   | '#completion-demo-api'
   | '#embedding-demo-api'
   | '#image-demo-api'
   | '#speech-demo-api'
+  | '#transcription-demo-api'
   | '#object-demo-api'
   | '#chat-demo-api-props'
   | '#chat-demo-api-methods'
@@ -26,6 +28,8 @@ type DemoHref =
   | '#image-demo-api-methods'
   | '#speech-demo-api-props'
   | '#speech-demo-api-methods'
+  | '#transcription-demo-api-props'
+  | '#transcription-demo-api-methods'
   | '#object-demo-api-props'
   | '#object-demo-api-methods'
 type NavLink = {
@@ -131,6 +135,19 @@ input.value = 'Read this release note aloud for the product team.'
 await handleSubmit()
 
 console.log(audio.value?.url)`,
+    transcription: `const { transcription, input, handleSubmit, transcribeAudio, stop, clear } = useTranscription({
+  api: '/api/transcription',
+  defaultRequest: {
+    model: 'transcription-model',
+    language: 'en'
+  }
+})
+
+input.value = 'data:audio/wav;base64,...'
+
+await handleSubmit()
+
+console.log(transcription.value)`,
     object: `type Ticket = { title: string; priority: 'low' | 'high' }
 
 const { object, partialObject, text, input, submit, stop, clear } = useObject<Ticket>({
@@ -237,6 +254,19 @@ console.log(图片.value?.url, 图片列表.value.length)`,
 await handleSubmit()
 
 console.log(音频.value?.url)`,
+    transcription: `const { transcription: 转写文本, input: 输入文本, handleSubmit, transcribeAudio, stop, clear } = useTranscription({
+  api: '/api/transcription',
+  defaultRequest: {
+    model: 'transcription-model',
+    language: 'zh'
+  }
+})
+
+输入文本.value = 'data:audio/wav;base64,...'
+
+await handleSubmit()
+
+console.log(转写文本.value)`,
     object: `type 工单 = { title: string; priority: 'low' | 'high' }
 
 const { object: 工单对象, partialObject: 部分工单, text: 原始JSON, input: 输入文本, submit, stop, clear } = useObject<工单>({
@@ -278,10 +308,11 @@ const copy = {
       { job: 'Similarity search', pick: 'useEmbedding' },
       { job: 'Image generation', pick: 'useImage' },
       { job: 'Speech generation', pick: 'useSpeech' },
+      { job: 'Audio transcription', pick: 'useTranscription' },
       { job: 'Typed JSON extraction', pick: 'useObject' }
     ],
     heroStats: [
-      { label: 'Composables', value: '7' },
+      { label: 'Composables', value: '8' },
       { label: 'Runtime deps', value: '0' },
       { label: 'Typed APIs', value: '100%' }
     ],
@@ -291,6 +322,7 @@ const copy = {
       { label: 'Embedding', href: '#embedding-demo' },
       { label: 'Image', href: '#image-demo' },
       { label: 'Speech', href: '#speech-demo' },
+      { label: 'Transcription', href: '#transcription-demo' },
       { label: 'Object', href: '#object-demo' }
     ],
     apiLinks: [
@@ -299,6 +331,7 @@ const copy = {
       { label: 'useEmbedding API', href: '#embedding-demo-api' },
       { label: 'useImage API', href: '#image-demo-api' },
       { label: 'useSpeech API', href: '#speech-demo-api' },
+      { label: 'useTranscription API', href: '#transcription-demo-api' },
       { label: 'useObject API', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: 'Composables',
@@ -692,6 +725,82 @@ const copy = {
         ]
       }
     },
+    transcription: {
+      title: 'Audio transcription',
+      topbarTitle: 'useTranscription',
+      description:
+        'A backend-owned transcription route pattern with audio input, transcript refs, trace visibility, and stop/reset controls.',
+      audioLabel: 'Audio input',
+      audio: 'data:audio/wav;base64,...',
+      resultLabel: 'Transcript',
+      transcript: 'Local transcript for inline audio payload.',
+      badge: 'text - language - trace ready',
+      footer: 'transcribeAudio - stop - clear',
+      apiRef: {
+        title: 'useTranscription API',
+        propsTitle: 'Properties',
+        methodsTitle: 'Methods',
+        propsHeaders: {
+          name: 'Name',
+          type: 'Type',
+          required: 'Required',
+          description: 'Description'
+        },
+        methodsHeaders: {
+          name: 'Method',
+          description: 'Description'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: 'optional',
+            description: 'Transcription endpoint for the default app-owned backend route.'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: 'optional',
+            description: 'Backend origin for local proxy or deployed server routes.'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'TranscriptionRequest',
+            required: 'optional',
+            description:
+              'Default model, language, prompt, and provider options merged into each request.'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: TranscriptionResult) => void',
+            required: 'optional',
+            description: 'Callback invoked after the backend returns normalized transcript text.'
+          }
+        ],
+        methods: [
+          {
+            name: 'transcribeAudio',
+            type: '(audio?: string): Promise<TranscriptionResult>',
+            description: 'Send audio input and resolve with normalized transcript results.'
+          },
+          {
+            name: 'handleSubmit',
+            type: '(event?): Promise<TranscriptionResult>',
+            description: 'Wire a transcription form submit and clear input only after success.'
+          },
+          {
+            name: 'stop',
+            type: '(): void',
+            description: 'Abort the active transcription request.'
+          },
+          {
+            name: 'clear',
+            type: '(): void',
+            description: 'Clear transcript, result, trace, input, and current error.'
+          }
+        ]
+      }
+    },
     object: {
       title: 'Structured object output',
       topbarTitle: 'useObject',
@@ -803,6 +912,12 @@ const copy = {
         fit: 'Text-to-speech tools through app-owned backend routes'
       },
       {
+        name: 'useTranscription',
+        state: 'transcription, text, input, result, isLoading, error',
+        actions: 'transcribeAudio, handleSubmit, stop, clear',
+        fit: 'Audio-to-text tools through app-owned backend routes'
+      },
+      {
         name: 'useObject',
         state: 'partialObject, object, text, input, isLoading, error',
         actions: 'submit, stop, clear',
@@ -841,10 +956,11 @@ const copy = {
       { job: '语义相似度检索', pick: 'useEmbedding' },
       { job: '图片生成', pick: 'useImage' },
       { job: '语音生成', pick: 'useSpeech' },
+      { job: '音频转写', pick: 'useTranscription' },
       { job: '类型化 JSON 抽取', pick: 'useObject' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '7' },
+      { label: '组合式函数', value: '8' },
       { label: '运行时依赖', value: '0' },
       { label: '类型覆盖', value: '100%' }
     ],
@@ -854,6 +970,7 @@ const copy = {
       { label: '向量检索', href: '#embedding-demo' },
       { label: '图片', href: '#image-demo' },
       { label: '语音', href: '#speech-demo' },
+      { label: '转写', href: '#transcription-demo' },
       { label: '结构化对象', href: '#object-demo' }
     ],
     apiLinks: [
@@ -862,6 +979,7 @@ const copy = {
       { label: 'useEmbedding 接口', href: '#embedding-demo-api' },
       { label: 'useImage 接口', href: '#image-demo-api' },
       { label: 'useSpeech 接口', href: '#speech-demo-api' },
+      { label: 'useTranscription 接口', href: '#transcription-demo-api' },
       { label: 'useObject 接口', href: '#object-demo-api' }
     ] as NavLink[],
     demosTitle: '组合式函数',
@@ -1242,6 +1360,81 @@ const copy = {
         ]
       }
     },
+    transcription: {
+      title: '音频转写',
+      topbarTitle: 'useTranscription（音频转写）',
+      description:
+        '面向自有后端音频转写路由的表单模式：音频输入、转写文本 refs、请求 trace，以及停止和清空控制。',
+      audioLabel: '音频输入',
+      audio: 'data:audio/wav;base64,...',
+      resultLabel: '转写文本',
+      transcript: 'inline audio payload 的本地转写结果。',
+      badge: '文本 - 语言 - trace 已就绪',
+      footer: 'transcribeAudio - 停止 - 清空',
+      apiRef: {
+        title: 'useTranscription 接口',
+        propsTitle: '参数',
+        methodsTitle: '方法',
+        propsHeaders: {
+          name: '参数名',
+          type: '类型',
+          required: '必需',
+          description: '说明'
+        },
+        methodsHeaders: {
+          name: '方法名',
+          description: '说明'
+        },
+        props: [
+          {
+            name: 'api',
+            type: 'string',
+            required: '可选',
+            description: '默认自有后端路由的音频转写端点。'
+          },
+          {
+            name: 'baseURL',
+            type: 'string',
+            required: '可选',
+            description: '本地 proxy 或已部署服务端路由的后端地址。'
+          },
+          {
+            name: 'defaultRequest',
+            type: 'TranscriptionRequest',
+            required: '可选',
+            description: '每次请求都会合并的默认模型、语言、提示词和 provider 选项。'
+          },
+          {
+            name: 'onFinish',
+            type: '(result: TranscriptionResult) => void',
+            required: '可选',
+            description: '后端返回并归一化转写文本后触发。'
+          }
+        ],
+        methods: [
+          {
+            name: 'transcribeAudio',
+            type: '（audio?: string）：Promise<TranscriptionResult>',
+            description: '提交音频输入并返回归一化后的转写结果。'
+          },
+          {
+            name: 'handleSubmit',
+            type: '（event?）：Promise<TranscriptionResult>',
+            description: '接入转写表单提交，并且只在成功后清空输入。'
+          },
+          {
+            name: 'stop',
+            type: '（）：void',
+            description: '中断当前音频转写请求。'
+          },
+          {
+            name: 'clear',
+            type: '（）：void',
+            description: '清理转写文本、结果、trace、输入和当前错误。'
+          }
+        ]
+      }
+    },
     object: {
       title: '结构化对象输出',
       topbarTitle: 'useObject（结构化 JSON）',
@@ -1357,6 +1550,13 @@ const copy = {
         fit: '通过自有后端路由构建文字转语音工具'
       },
       {
+        name: 'useTranscription',
+        state:
+          'transcription（转写文本）、text（别名）、input（输入）、result（结果）、isLoading（加载中）、error（错误）',
+        actions: 'transcribeAudio 转写, handleSubmit 表单提交, stop 停止, clear 清空',
+        fit: '通过自有后端路由构建音频转文字工具'
+      },
+      {
         name: 'useObject',
         state:
           'partialObject（部分对象）、object（最终对象）、text（原始文本）、input（输入）、isLoading（加载中）、error（错误）',
@@ -1378,6 +1578,7 @@ const completionCode = computed(() => codeSamples[localeKey.value].completion)
 const embeddingCode = computed(() => codeSamples[localeKey.value].embedding)
 const imageCode = computed(() => codeSamples[localeKey.value].image)
 const speechCode = computed(() => codeSamples[localeKey.value].speech)
+const transcriptionCode = computed(() => codeSamples[localeKey.value].transcription)
 const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
 const sectionIds: DemoHref[] = [
@@ -1386,12 +1587,14 @@ const sectionIds: DemoHref[] = [
   '#embedding-demo',
   '#image-demo',
   '#speech-demo',
+  '#transcription-demo',
   '#object-demo',
   '#chat-demo-api',
   '#completion-demo-api',
   '#embedding-demo-api',
   '#image-demo-api',
   '#speech-demo-api',
+  '#transcription-demo-api',
   '#object-demo-api',
   '#chat-demo-api-props',
   '#chat-demo-api-methods',
@@ -1403,6 +1606,8 @@ const sectionIds: DemoHref[] = [
   '#image-demo-api-methods',
   '#speech-demo-api-props',
   '#speech-demo-api-methods',
+  '#transcription-demo-api-props',
+  '#transcription-demo-api-methods',
   '#object-demo-api-props',
   '#object-demo-api-methods'
 ]
@@ -1799,6 +2004,46 @@ onUnmounted(() => {
         </DemoBlock>
 
         <DemoBlock
+          id="transcription-demo"
+          api-title-id="transcription-demo-api"
+          api-props-section-id="transcription-demo-api-props"
+          api-methods-section-id="transcription-demo-api-methods"
+          :title="content.transcription.title"
+          :description="content.transcription.description"
+          :code="transcriptionCode"
+          :anchor-label="content.anchorLabel"
+          :panel-label="content.panelLabel"
+          :preview-label="content.previewLabel"
+          :code-label="content.codeLabel"
+          :copy-label="content.copyLabel"
+          :copied-label="content.copiedLabel"
+          :copy-failed-label="content.copyFailedLabel"
+          :api-aria-label="content.apiSectionLabel"
+          :api-ref="content.transcription.apiRef"
+        >
+          <div class="transcription-preview">
+            <div class="preview-topbar">
+              <span class="preview-topbar__mark is-slate" />
+              <span>{{ content.transcription.topbarTitle }}</span>
+            </div>
+            <div class="transcription-preview__grid">
+              <article class="transcription-input">
+                <span class="field-label">{{ content.transcription.audioLabel }}</span>
+                <p>{{ content.transcription.audio }}</p>
+                <span class="image-badge">{{ content.transcription.badge }}</span>
+              </article>
+              <article class="transcription-card">
+                <span class="field-label">{{ content.transcription.resultLabel }}</span>
+                <p>{{ content.transcription.transcript }}</p>
+              </article>
+            </div>
+            <footer class="preview-footer">
+              <span>{{ content.transcription.footer }}</span>
+            </footer>
+          </div>
+        </DemoBlock>
+
+        <DemoBlock
           id="object-demo"
           api-title-id="object-demo-api"
           api-props-section-id="object-demo-api-props"
@@ -2170,6 +2415,7 @@ onUnmounted(() => {
 .embedding-preview,
 .image-preview,
 .speech-preview,
+.transcription-preview,
 .structured-preview {
   display: grid;
   gap: 18px;
@@ -2218,6 +2464,10 @@ onUnmounted(() => {
   background: var(--demo-brand);
 }
 
+.preview-topbar__mark.is-slate {
+  background: var(--demo-muted);
+}
+
 .chat-preview__body {
   display: grid;
   gap: 12px;
@@ -2243,7 +2493,9 @@ onUnmounted(() => {
 .chat-message p,
 .completion-editor p,
 .completion-output p,
-.speech-prompt p {
+.speech-prompt p,
+.transcription-input p,
+.transcription-card p {
   margin: 0;
   color: var(--demo-ink);
   font-size: 0.9375rem;
@@ -2354,6 +2606,8 @@ onUnmounted(() => {
 .image-card,
 .speech-prompt,
 .speech-card,
+.transcription-input,
+.transcription-card,
 .structured-panel,
 .similarity-table {
   border: 1px solid var(--demo-border);
@@ -2367,23 +2621,32 @@ onUnmounted(() => {
 .image-card,
 .speech-prompt,
 .speech-card,
+.transcription-input,
+.transcription-card,
 .structured-panel {
   display: grid;
   gap: 10px;
   padding: 16px;
 }
 
-.image-preview__grid {
+.image-preview__grid,
+.transcription-preview__grid {
   display: grid;
   gap: 12px;
 }
 
 .image-prompt p,
-.speech-prompt p {
+.speech-prompt p,
+.transcription-input p,
+.transcription-card p {
   margin: 0;
   color: var(--demo-ink);
   font-size: 0.9375rem;
   line-height: 1.65;
+}
+
+.transcription-card {
+  background: var(--demo-brand-soft);
 }
 
 .image-badge {
@@ -2735,6 +2998,10 @@ onUnmounted(() => {
   }
 
   .speech-preview__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  }
+
+  .transcription-preview__grid {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   }
 

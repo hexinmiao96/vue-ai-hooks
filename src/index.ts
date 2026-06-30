@@ -98,6 +98,13 @@ export {
   type UseSpeechReturn
 } from './composables/useSpeech'
 export {
+  useTranscription,
+  type TranscriptionRequestInfo,
+  type TranscriptionResponseInfo,
+  type UseTranscriptionOptions,
+  type UseTranscriptionReturn
+} from './composables/useTranscription'
+export {
   useObject as experimental_useObject,
   useObject,
   type DeepPartial,
@@ -171,6 +178,9 @@ export type {
   GeneratedAudio,
   SpeechGenerationRequest,
   SpeechGenerationResult,
+  TranscriptionRequest,
+  TranscriptionResult,
+  TranscriptionSegment,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions
