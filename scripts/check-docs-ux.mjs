@@ -82,7 +82,7 @@ expect(
 )
 expect(
   files.envExample.includes(
-    'Supported chat values: local-tools, openai, openrouter, gemini, proxy'
+    'Supported chat values: local-tools, openai, openrouter, gemini, deepseek, proxy'
   ) &&
     files.envExample.includes('VITE_CHAT_PROVIDER=local-tools') &&
     files.envExample.includes('VITE_EXAMPLE_PROVIDER=local-object') &&

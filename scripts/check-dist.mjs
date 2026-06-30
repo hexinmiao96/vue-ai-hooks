@@ -20,6 +20,7 @@ const requiredExportFields = {
 const requiredRuntimeExports = [
   'AiHooksError',
   'anthropic',
+  'deepseek',
   'openai',
   'openaiCompatible',
   'openrouter',
@@ -90,6 +91,7 @@ for (const name of requiredRuntimeExports) {
 }
 
 assertEqual(esm.openai({ apiKey: 'test-key' }).id, 'openai-compatible', 'ESM openai provider id')
+assertEqual(esm.deepseek({ apiKey: 'test-key' }).id, 'deepseek', 'ESM deepseek provider id')
 assertEqual(cjs.openrouter({ apiKey: 'test-key' }).id, 'openrouter', 'CJS openrouter provider id')
 assertEqual(esm.proxyProvider().id, 'proxy', 'ESM proxy provider id')
 assertEqual(esm.anthropic({ apiKey: 'test-key' }).id, 'anthropic', 'ESM anthropic provider id')

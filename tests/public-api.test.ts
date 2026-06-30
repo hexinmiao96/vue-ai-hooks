@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   AiHooksError,
   anthropic,
+  deepseek,
   deserializeMessages,
   fallbackProvider,
   gemini,
@@ -48,6 +49,7 @@ import type {
   DataPartSchemas,
   DataPartValidator,
   DeepPartial,
+  DeepSeekConfig,
   EmbeddingRequestInfo,
   EmbeddingRequest,
   EmbeddingResponseInfo,
@@ -147,6 +149,7 @@ describe('public API types', () => {
     expectTypeOf(openai({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(openrouter({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(gemini({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(deepseek({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(proxyProvider()).toEqualTypeOf<ChatProvider>()
     expectTypeOf(anthropic({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(fallbackProvider({ providers: [provider] })).toEqualTypeOf<ChatProvider>()
@@ -161,6 +164,11 @@ describe('public API types', () => {
       timeoutMs?: number
     }>()
     expectTypeOf<GeminiConfig>().toMatchTypeOf<{
+      apiKey: string
+      baseURL?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<DeepSeekConfig>().toMatchTypeOf<{
       apiKey: string
       baseURL?: string
       timeoutMs?: number
@@ -207,6 +215,7 @@ describe('public API types', () => {
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')
     expect(openrouter({ apiKey: 'test-key' }).id).toBe('openrouter')
     expect(gemini({ apiKey: 'test-key' }).id).toBe('gemini')
+    expect(deepseek({ apiKey: 'test-key' }).id).toBe('deepseek')
     expect(proxyProvider().id).toBe('proxy')
     expect(anthropic({ apiKey: 'test-key' }).id).toBe('anthropic')
     expect(fallbackProvider({ providers: [provider] }).id).toBe('fallback')

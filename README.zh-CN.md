@@ -180,15 +180,16 @@ console.log(progress.value, result.value?.url)
 每个 Provider 都实现同一个 `ChatProvider` 接口，所以组合式函数不关心另一端具体使用哪个模型：
 
 ```ts
-import { useChat, openaiCompatible } from 'vue-ai-hooks'
+import { useChat, deepseek } from 'vue-ai-hooks'
 
 useChat({
-  provider: openaiCompatible({
-    apiKey: 'sk-...',
-    baseURL: 'https://api.deepseek.com/v1'
+  provider: deepseek({
+    apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY
   })
 })
 ```
+
+其他 OpenAI-compatible 网关仍可以直接使用 `openaiCompatible`。
 
 如果是 OpenRouter，可以直接使用内置 helper：
 

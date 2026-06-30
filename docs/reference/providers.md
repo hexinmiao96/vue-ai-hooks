@@ -7,9 +7,10 @@ Use the provider guide for integration examples. Use this page when you need the
 exact config surface.
 
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
-`GeminiConfig`, `FallbackProviderConfig`, `FallbackProviderContext`,
-`FallbackProviderKind`, `ProxyProviderConfig`, `ProxyRequestContext`,
-`ProxyRequestKind`, `ProxyRequestOverride`, and `AnthropicConfig`.
+`GeminiConfig`, `DeepSeekConfig`, `FallbackProviderConfig`,
+`FallbackProviderContext`, `FallbackProviderKind`, `ProxyProviderConfig`,
+`ProxyRequestContext`, `ProxyRequestKind`, `ProxyRequestOverride`, and
+`AnthropicConfig`.
 
 ## `ChatProvider`
 
@@ -107,8 +108,8 @@ import { openaiCompatible } from 'vue-ai-hooks'
 
 const provider = openaiCompatible({
   apiKey: 'sk-...',
-  baseURL: 'https://api.deepseek.com/v1',
-  defaultModel: 'deepseek-chat'
+  baseURL: 'https://gateway.example.com/v1',
+  defaultModel: 'custom-chat-model'
 })
 ```
 
@@ -121,6 +122,34 @@ your own OpenAI-compatible gateway.
 Streaming and non-streaming chat responses both preserve model tool calls as
 `ChatChunk.toolCalls`, so `useChat` can drive the same tool workflow regardless
 of transport mode.
+
+## `deepseek(config)`
+
+DeepSeek wrapper around its OpenAI-compatible API.
+
+```ts
+import { deepseek } from 'vue-ai-hooks'
+
+const provider = deepseek({
+  apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY,
+  defaultModel: 'deepseek-v4-flash'
+})
+```
+
+| Option           | Type                     | Default                    | Description                                          |
+| ---------------- | ------------------------ | -------------------------- | ---------------------------------------------------- |
+| `apiKey`         | `string`                 | required                   | DeepSeek API key. Keep it server-side in production. |
+| `baseURL`        | `string`                 | `https://api.deepseek.com` | Override for proxies or compatible gateways.         |
+| `headers`        | `Record<string, string>` | `{}`                       | Extra headers sent on every request.                 |
+| `defaultModel`   | `string`                 | `deepseek-v4-flash`        | Model used when a request omits `model`.             |
+| `chatPath`       | `string`                 | `/chat/completions`        | Chat endpoint path.                                  |
+| `completionPath` | `string`                 | `/completions`             | Completion endpoint path.                            |
+| `embeddingPath`  | `string`                 | `/embeddings`              | Embeddings endpoint path.                            |
+| `timeoutMs`      | `number`                 | -                          | Request timeout in milliseconds.                     |
+| `fetch`          | `typeof fetch`           | global `fetch`             | Custom fetch implementation.                         |
+
+The returned provider has `id: 'deepseek'` and reuses the same
+OpenAI-compatible request, streaming, tool-call, and `response_format` handling.
 
 ## `openrouter(config)`
 

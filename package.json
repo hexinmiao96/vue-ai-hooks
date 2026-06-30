@@ -89,6 +89,7 @@
     "claude",
     "anthropic",
     "openrouter",
+    "deepseek",
     "proxy",
     "transport",
     "hooks",

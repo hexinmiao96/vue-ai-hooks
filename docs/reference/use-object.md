@@ -110,8 +110,8 @@ const { object, partialObject, submit } = useObject<Ticket>({
 ## Provider support
 
 `useObject` sends `ChatRequest.responseFormat` with a JSON Schema response
-format. `openai`, `openaiCompatible`, `openrouter`, and `gemini` serialize it to
-OpenAI-compatible `response_format`; `proxyProvider` forwards it to your backend
+format. `openai`, `openaiCompatible`, `openrouter`, `gemini`, and `deepseek`
+serialize it to OpenAI-compatible `response_format`; `proxyProvider` forwards it to your backend
 unchanged. When `provider` and `transport` are omitted, `useObject` uses the
 built-in proxy transport and calls `api` or `/api/object`.
 

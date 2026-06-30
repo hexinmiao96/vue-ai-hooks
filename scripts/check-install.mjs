@@ -34,7 +34,7 @@ try {
     join(tempRoot, 'esm-check.mjs'),
     `
 import { createRequire } from 'node:module'
-import { AiHooksError, openai, openrouter, proxyProvider, useChat } from 'vue-ai-hooks'
+import { AiHooksError, deepseek, openai, openrouter, proxyProvider, useChat } from 'vue-ai-hooks'
 
 const require = createRequire(import.meta.url)
 const packageJson = require('vue-ai-hooks/package.json')
@@ -47,6 +47,9 @@ if (openai({ apiKey: 'test-key' }).id !== 'openai-compatible') {
 }
 if (openrouter({ apiKey: 'test-key' }).id !== 'openrouter') {
   throw new Error('ESM openrouter provider failed')
+}
+if (deepseek({ apiKey: 'test-key' }).id !== 'deepseek') {
+  throw new Error('ESM deepseek provider failed')
 }
 if (proxyProvider().id !== 'proxy') {
   throw new Error('ESM proxy provider failed')

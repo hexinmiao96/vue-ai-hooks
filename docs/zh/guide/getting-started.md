@@ -123,6 +123,7 @@ useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 import {
   useChat,
   anthropic,
+  deepseek,
   gemini,
   openaiCompatible,
   openrouter,
@@ -134,13 +135,9 @@ const { messages, append } = useChat({
   provider: anthropic({ apiKey: import.meta.env.VITE_ANTHROPIC_KEY })
 })
 
-// 任何 OpenAI-compatible 服务（DeepSeek、Moonshot、智谱、Ollama 的
-// OpenAI shim、vLLM 等）
+// DeepSeek 直连
 const { messages: messages2, append: append2 } = useChat({
-  provider: openaiCompatible({
-    apiKey: 'sk-...',
-    baseURL: 'https://api.deepseek.com/v1'
-  })
+  provider: deepseek({ apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY })
 })
 
 // OpenRouter 直连
@@ -153,8 +150,16 @@ const { messages: messages4, append: append4 } = useChat({
   provider: gemini({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
 })
 
-// 生产环境浏览器应用通过自己的后端或边缘路由调用
+// 其他 OpenAI-compatible 服务（Moonshot、智谱、Ollama、vLLM 等）
 const { messages: messages5, append: append5 } = useChat({
+  provider: openaiCompatible({
+    apiKey: 'sk-...',
+    baseURL: 'https://gateway.example.com/v1'
+  })
+})
+
+// 生产环境浏览器应用通过自己的后端或边缘路由调用
+const { messages: messages6, append: append6 } = useChat({
   provider: proxyProvider({
     chatUrl: '/api/ai/chat',
     headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),

@@ -107,9 +107,9 @@ const { object, partialObject, submit } = useObject<Ticket>({
 ## Provider 支持
 
 `useObject` 会通过 `ChatRequest.responseFormat` 发送 JSON Schema response
-format。`openai`、`openaiCompatible`、`openrouter` 和 `gemini` 会把它序列化为
-OpenAI-compatible 的 `response_format`；`proxyProvider` 会把它原样转发给你的后端。
-省略 `provider` 和 `transport` 时，`useObject` 会使用内置 proxy transport 并调用
+format。`openai`、`openaiCompatible`、`openrouter`、`gemini` 和 `deepseek`
+会把它序列化为 OpenAI-compatible 的 `response_format`；`proxyProvider`
+会把它原样转发给你的后端。省略 `provider` 和 `transport` 时，`useObject` 会使用内置 proxy transport 并调用
 `api` 或 `/api/object`。
 
 不强制结构化输出的 Provider 仍然可能在提示词约束下返回合法 JSON。客户端会对最终解析后的 JSON 校验常见 schema 关键字：`type`、`required`、`enum`、`properties`、`items` 和 `additionalProperties`。如果返回内容不是合法 JSON，或最终对象不符合 schema，`submit()` 会以 `AiHooksError` reject。

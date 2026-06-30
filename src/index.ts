@@ -95,6 +95,7 @@ export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/ope
 // request behavior while injecting OpenRouter-specific headers automatically.
 export { openrouter, type OpenRouterConfig } from './providers/openrouter'
 export { gemini, type GeminiConfig } from './providers/gemini'
+export { deepseek, type DeepSeekConfig } from './providers/deepseek'
 export {
   fallbackProvider,
   type FallbackProviderConfig,

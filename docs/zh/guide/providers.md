@@ -31,12 +31,29 @@ import { openaiCompatible } from 'vue-ai-hooks'
 
 openaiCompatible({
   apiKey: 'sk-...',
-  baseURL: 'https://api.deepseek.com/v1',
-  defaultModel: 'deepseek-chat'
+  baseURL: 'https://gateway.example.com/v1',
+  defaultModel: 'custom-chat-model'
 })
 ```
 
 和 `openai` 基本一致，但 `baseURL` 是必填项。适用于任何遵循 OpenAI REST 约定的服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 `/v1` shim、vLLM、LiteLLM 等。
+
+### `deepseek`
+
+```ts
+import { deepseek } from 'vue-ai-hooks'
+
+deepseek({
+  apiKey: 'sk-...',
+  // 可选：
+  baseURL: 'https://api.deepseek.com',
+  defaultModel: 'deepseek-v4-flash'
+})
+```
+
+`deepseek` 是针对 DeepSeek OpenAI-compatible 端点的轻量封装。它默认使用当前
+DeepSeek API root 和默认聊天模型，同时沿用通用 OpenAI-compatible Provider 的
+request body、流式输出、工具调用和超时行为。
 
 ### `openrouter`
 

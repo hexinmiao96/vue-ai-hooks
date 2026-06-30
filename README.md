@@ -193,15 +193,16 @@ Every provider implements the same `ChatProvider` interface, so the hooks
 don't care which model is on the other end:
 
 ```ts
-import { useChat, openaiCompatible } from 'vue-ai-hooks'
+import { useChat, deepseek } from 'vue-ai-hooks'
 
 useChat({
-  provider: openaiCompatible({
-    apiKey: 'sk-...',
-    baseURL: 'https://api.deepseek.com/v1'
+  provider: deepseek({
+    apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY
   })
 })
 ```
+
+Use `openaiCompatible` directly for other OpenAI-compatible gateways.
 
 For OpenRouter specifically, the dedicated helper is shorter:
 

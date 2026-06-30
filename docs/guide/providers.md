@@ -37,14 +37,32 @@ import { openaiCompatible } from 'vue-ai-hooks'
 
 openaiCompatible({
   apiKey: 'sk-...',
-  baseURL: 'https://api.deepseek.com/v1',
-  defaultModel: 'deepseek-chat'
+  baseURL: 'https://gateway.example.com/v1',
+  defaultModel: 'custom-chat-model'
 })
 ```
 
 Identical to `openai` but takes a `baseURL` as a required argument. Works with any
 service that follows the OpenAI REST conventions — DeepSeek, Moonshot, Zhipu,
 Ollama's `/v1` shim, vLLM, LiteLLM, etc.
+
+### `deepseek`
+
+```ts
+import { deepseek } from 'vue-ai-hooks'
+
+deepseek({
+  apiKey: 'sk-...',
+  // optional:
+  baseURL: 'https://api.deepseek.com',
+  defaultModel: 'deepseek-v4-flash'
+})
+```
+
+`deepseek` is a thin wrapper around `openaiCompatible` for DeepSeek's
+OpenAI-compatible endpoint. It defaults to the current DeepSeek API root and
+default chat model while keeping the same request body, streaming, tool calling,
+and timeout behavior as the generic OpenAI-compatible provider.
 
 ### `openrouter`
 

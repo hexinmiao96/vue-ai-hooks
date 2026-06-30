@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { useChat, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
+import { useChat, deepseek, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
 import type {
   ChatChunk,
   ChatProvider,
@@ -13,7 +13,7 @@ import type {
   ToolCall
 } from 'vue-ai-hooks'
 
-type ProviderType = 'openai' | 'openrouter' | 'gemini' | 'proxy' | 'local-tools'
+type ProviderType = 'openai' | 'openrouter' | 'gemini' | 'deepseek' | 'proxy' | 'local-tools'
 
 type CheckoutArgs = {
   orderId: string
@@ -34,6 +34,7 @@ type RenderedMessagePart = {
  * Runtime provider selection for the chat example:
  * - `VITE_CHAT_PROVIDER=openrouter` selects openrouter.
  * - `VITE_CHAT_PROVIDER=gemini` selects Gemini's OpenAI-compatible endpoint.
+ * - `VITE_CHAT_PROVIDER=deepseek` selects DeepSeek's OpenAI-compatible endpoint.
  * - `VITE_CHAT_PROVIDER=proxy` selects your app backend proxy.
  * - `VITE_CHAT_PROVIDER=local-tools` runs the tool approval demo without keys.
  * - when no provider is selected and no real OpenAI key is present, the demo
@@ -43,6 +44,7 @@ type RenderedMessagePart = {
  *   `VITE_OPENAI_BASE_URL`.
  * - openrouter: created via `openrouter` and reads `VITE_OPENROUTER_*` vars.
  * - gemini: created via `gemini` and reads `VITE_GEMINI_*` vars.
+ * - deepseek: created via `deepseek` and reads `VITE_DEEPSEEK_*` vars.
  * - proxy: created via `proxyProvider` and reads `VITE_PROXY_*` vars.
  * - local-tools: deterministic fake provider for testing approval UI locally.
  *
@@ -61,11 +63,13 @@ const providerType: ProviderType =
     ? 'openrouter'
     : providerName === 'gemini'
       ? 'gemini'
-      : providerName === 'proxy'
-        ? 'proxy'
-        : providerName === 'local-tools'
-          ? 'local-tools'
-          : 'openai'
+      : providerName === 'deepseek'
+        ? 'deepseek'
+        : providerName === 'proxy'
+          ? 'proxy'
+          : providerName === 'local-tools'
+            ? 'local-tools'
+            : 'openai'
 const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
   | RequestCredentials
   | undefined
@@ -224,21 +228,28 @@ const provider =
             defaultModel: import.meta.env.VITE_GEMINI_DEFAULT_MODEL || 'gemini-3.5-flash',
             baseURL: import.meta.env.VITE_GEMINI_BASE_URL
           })
-        : providerType === 'proxy'
-          ? proxyProvider({
-              // Browser requests go to your app backend; upstream keys stay server-side.
-              chatUrl: import.meta.env.VITE_PROXY_CHAT_URL || '/api/ai/chat',
-              baseURL: import.meta.env.VITE_PROXY_BASE_URL,
-              credentials: proxyCredentials,
-              headers: import.meta.env.VITE_PROXY_AUTH_TOKEN
-                ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
-                : undefined
+        : providerType === 'deepseek'
+          ? deepseek({
+              // DeepSeek uses https://api.deepseek.com by default.
+              apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY || '',
+              defaultModel: import.meta.env.VITE_DEEPSEEK_DEFAULT_MODEL || 'deepseek-v4-flash',
+              baseURL: import.meta.env.VITE_DEEPSEEK_BASE_URL
             })
-          : openai({
-              // Default path is https://api.openai.com/v1 if baseURL is omitted.
-              apiKey: import.meta.env.VITE_OPENAI_KEY || '',
-              baseURL: import.meta.env.VITE_OPENAI_BASE_URL
-            })
+          : providerType === 'proxy'
+            ? proxyProvider({
+                // Browser requests go to your app backend; upstream keys stay server-side.
+                chatUrl: import.meta.env.VITE_PROXY_CHAT_URL || '/api/ai/chat',
+                baseURL: import.meta.env.VITE_PROXY_BASE_URL,
+                credentials: proxyCredentials,
+                headers: import.meta.env.VITE_PROXY_AUTH_TOKEN
+                  ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
+                  : undefined
+              })
+            : openai({
+                // Default path is https://api.openai.com/v1 if baseURL is omitted.
+                apiKey: import.meta.env.VITE_OPENAI_KEY || '',
+                baseURL: import.meta.env.VITE_OPENAI_BASE_URL
+              })
 
 const chunkCount = shallowRef(0)
 const approvalLog = shallowRef('No approval decision yet.')

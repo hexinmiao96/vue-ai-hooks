@@ -6,7 +6,7 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 集成示例请看 Provider 指南；如果需要精确配置项，请看本页。
 
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
-`GeminiConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
+`GeminiConfig`、`DeepSeekConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
 `FallbackProviderKind`、`ProxyProviderConfig`、`ProxyRequestContext`、
 `ProxyRequestKind`、`ProxyRequestOverride` 和 `AnthropicConfig`。
 
@@ -104,8 +104,8 @@ import { openaiCompatible } from 'vue-ai-hooks'
 
 const provider = openaiCompatible({
   apiKey: 'sk-...',
-  baseURL: 'https://api.deepseek.com/v1',
-  defaultModel: 'deepseek-chat'
+  baseURL: 'https://gateway.example.com/v1',
+  defaultModel: 'custom-chat-model'
 })
 ```
 
@@ -115,6 +115,34 @@ const provider = openaiCompatible({
 
 流式和非流式 chat 响应都会把模型工具调用保留为 `ChatChunk.toolCalls`，因此
 `useChat` 在不同 transport 模式下可以复用同一套工具流程。
+
+## `deepseek(config)`
+
+基于 DeepSeek OpenAI-compatible API 的封装。
+
+```ts
+import { deepseek } from 'vue-ai-hooks'
+
+const provider = deepseek({
+  apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY,
+  defaultModel: 'deepseek-v4-flash'
+})
+```
+
+| 选项             | 类型                     | 默认值                     | 说明                                     |
+| ---------------- | ------------------------ | -------------------------- | ---------------------------------------- |
+| `apiKey`         | `string`                 | 必填                       | DeepSeek API key。生产环境请放在服务端。 |
+| `baseURL`        | `string`                 | `https://api.deepseek.com` | 代理或兼容网关地址。                     |
+| `headers`        | `Record<string, string>` | `{}`                       | 每个请求都会带上的额外 headers。         |
+| `defaultModel`   | `string`                 | `deepseek-v4-flash`        | 请求未指定 `model` 时使用的模型。        |
+| `chatPath`       | `string`                 | `/chat/completions`        | Chat 端点路径。                          |
+| `completionPath` | `string`                 | `/completions`             | Completion 端点路径。                    |
+| `embeddingPath`  | `string`                 | `/embeddings`              | Embeddings 端点路径。                    |
+| `timeoutMs`      | `number`                 | -                          | 请求超时时间，单位毫秒。                 |
+| `fetch`          | `typeof fetch`           | 全局 `fetch`               | 自定义 fetch 实现。                      |
+
+返回的 Provider 使用 `id: 'deepseek'`，并复用同一套 OpenAI-compatible 请求、
+流式输出、工具调用和 `response_format` 处理。
 
 ## `openrouter(config)`
 
