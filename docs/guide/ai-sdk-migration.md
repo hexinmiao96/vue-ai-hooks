@@ -60,10 +60,15 @@ import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   transport: new DefaultChatTransport({
-    chatUrl: '/api/chat',
+    api: '/api/chat',
     credentials: 'include',
     headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
-    body: () => ({ tenantId })
+    body: () => ({ tenantId }),
+    prepareSendMessagesRequest({ body, messages }) {
+      return {
+        body: { ...body, messageCount: messages.length }
+      }
+    }
   })
 })
 ```
@@ -71,6 +76,12 @@ const chat = useChat({
 You can also omit `provider`/`transport` and pass `api`, `baseURL`, `headers`,
 and `body` directly to `useChat()` when you do not need a reusable transport
 instance.
+
+`DefaultChatTransport({ api })` defaults to `/api/chat`, and resumable streams
+use `${api}/:id/stream` unless you pass `resumeUrl`. Use
+`prepareSendMessagesRequest` and `prepareReconnectToStreamRequest` on the
+transport when your AI SDK code already prepares request bodies or headers
+there. Use the same-named `useChat()` options when you omit the transport.
 
 Use `streamProtocol: 'text'` only when an existing chat endpoint streams raw
 text. Omit it for AI SDK UI message streams, `ChatChunk` SSE, and JSON chunk
@@ -291,8 +302,9 @@ fields for default chat proxy transports.
 ## Migration checklist
 
 1. Replace imports from AI SDK UI with `vue-ai-hooks`.
-2. Keep `DefaultChatTransport` as `new DefaultChatTransport(...)`, or map those
-   options to `api`, `baseURL`, `headers`, `body`, `credentials`, and `fetch`.
+2. Keep `DefaultChatTransport` as `new DefaultChatTransport(...)`; `api`,
+   `headers`, `body`, `credentials`, `fetch`, `prepareSendMessagesRequest`, and
+   `prepareReconnectToStreamRequest` can stay on the transport.
 3. Map AI SDK `DirectChatTransport` style in-process handlers to
    `new DirectChatTransport({ stream })`.
 4. Map chat or completion `streamProtocol: 'text'` when an existing route

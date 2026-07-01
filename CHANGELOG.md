@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stream failures.
 - Added `DefaultChatTransport` as an AI SDK-style proxy transport class for
   lower-friction chat migrations.
+- Added `DefaultChatTransport` `api` defaults and transport-level prepare hooks
+  for closer AI SDK `DefaultChatTransport` migration compatibility.
 - Added AI SDK-style `aiSdkTrigger` request metadata for chat send/regenerate
   preparation and lifecycle callbacks.
 - Added `validateMessages()` for boolean validation of persisted or imported

@@ -62,6 +62,96 @@ describe('proxyProvider', () => {
     expect(chunks).toEqual([{ content: 'transport ok' }])
   })
 
+  it('uses AI SDK-compatible DefaultChatTransport endpoints by default', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(sseResponse([{ content: 'chat ok' }]))
+      .mockResolvedValueOnce(sseResponse([{ content: 'resume ok' }]))
+    const transport = new DefaultChatTransport({ fetch: fetcher as unknown as typeof fetch })
+
+    const stream = await transport.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks: unknown[] = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    const resumed = await transport.resumeChat({ id: 'chat 1' })
+    const resumedChunks: unknown[] = []
+    for await (const chunk of resumed ?? []) resumedChunks.push(chunk)
+
+    const [chatUrl, chatInit] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    const [resumeUrl, resumeInit] = fetcher.mock.calls[1] as unknown as [string, RequestInit]
+    expect(chatUrl).toBe('/api/chat')
+    expect(chatInit.method).toBe('POST')
+    expect(resumeUrl).toBe('/api/chat/chat%201/stream')
+    expect(resumeInit.method).toBe('GET')
+    expect(chunks).toEqual([{ content: 'chat ok' }])
+    expect(resumedChunks).toEqual([{ content: 'resume ok' }])
+  })
+
+  it('supports DefaultChatTransport api alias and transport-level prepare hooks', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(sseResponse([{ content: 'prepared ok' }]))
+      .mockResolvedValueOnce(sseResponse([{ content: 'resume prepared' }]))
+    const transport = new DefaultChatTransport({
+      api: '/api/custom-chat',
+      body: { tenantId: 'tenant_1' },
+      headers: { 'X-Base': 'base' },
+      prepareSendMessagesRequest({ api, body, headers, messages, requestMetadata }) {
+        expect(api).toBe('/api/custom-chat')
+        expect(headers).toMatchObject({
+          'Content-Type': 'application/json',
+          'X-Base': 'base'
+        })
+        expect(body).toMatchObject({ tenantId: 'tenant_1' })
+        expect(requestMetadata).toEqual({ traceId: 'trace_1' })
+        return {
+          headers: { 'X-Prepared': String(messages.length) },
+          body: {
+            tenantId: body.tenantId,
+            metadata: requestMetadata,
+            lastMessage: messages.at(-1)?.content
+          }
+        }
+      },
+      prepareReconnectToStreamRequest({ api, id }) {
+        expect(api).toBe('/api/custom-chat/chat_1/stream')
+        return {
+          headers: { 'X-Resume': id }
+        }
+      },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    const stream = await transport.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }],
+      metadata: { traceId: 'trace_1' }
+    })
+    const chunks: unknown[] = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    const resumed = await transport.resumeChat({ id: 'chat_1' })
+    const resumedChunks: unknown[] = []
+    for await (const chunk of resumed ?? []) resumedChunks.push(chunk)
+
+    const [chatUrl, chatInit] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    const [, resumeInit] = fetcher.mock.calls[1] as unknown as [string, RequestInit]
+    const chatHeaders = chatInit.headers as Record<string, string>
+    const resumeHeaders = resumeInit.headers as Record<string, string>
+
+    expect(chatUrl).toBe('/api/custom-chat')
+    expect(JSON.parse(chatInit.body as string)).toEqual({
+      tenantId: 'tenant_1',
+      metadata: { traceId: 'trace_1' },
+      lastMessage: 'Hi'
+    })
+    expect(chatHeaders['X-Prepared']).toBe('1')
+    expect(resumeHeaders['X-Resume']).toBe('chat_1')
+    expect(chunks).toEqual([{ content: 'prepared ok' }])
+    expect(resumedChunks).toEqual([{ content: 'resume prepared' }])
+  })
+
   it('posts chat requests to the app backend and streams ChatChunk SSE payloads', async () => {
     const fetcher = vi.fn(async () =>
       sseResponse([

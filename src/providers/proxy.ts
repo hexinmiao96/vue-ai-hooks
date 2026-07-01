@@ -1,6 +1,7 @@
 import type {
   ChatChunk,
   ChatRequest,
+  ChatRequestMessage,
   ChatResumeRequest,
   ChatStreamProtocol,
   CompletionRequest,
@@ -89,7 +90,42 @@ export interface ProxyProviderConfig {
   fetch?: typeof fetch
 }
 
-export type DefaultChatTransportOptions = ProxyProviderConfig
+export interface DefaultChatTransportPrepareSendMessagesRequestOptions {
+  id?: string
+  api: string
+  credentials?: RequestCredentials
+  headers: Record<string, string>
+  body: Record<string, unknown>
+  messages: ChatRequestMessage[]
+  requestMetadata: unknown
+  request: ChatRequest
+}
+
+export interface DefaultChatTransportPrepareReconnectToStreamRequestOptions {
+  id: string
+  api: string
+  credentials?: RequestCredentials
+  headers: Record<string, string>
+  requestMetadata: unknown
+  request: ChatResumeRequest
+}
+
+export type DefaultChatTransportPrepareSendMessagesRequest = (
+  options: DefaultChatTransportPrepareSendMessagesRequestOptions
+) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>
+
+export type DefaultChatTransportPrepareReconnectToStreamRequest = (
+  options: DefaultChatTransportPrepareReconnectToStreamRequestOptions
+) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>
+
+export interface DefaultChatTransportOptions extends ProxyProviderConfig {
+  /** AI SDK-compatible chat endpoint alias. Defaults to `/api/chat`. */
+  api?: string
+  /** AI SDK-style hook for final chat request headers, body, credentials, or URL. */
+  prepareSendMessagesRequest?: DefaultChatTransportPrepareSendMessagesRequest
+  /** AI SDK-style hook for resumable stream request headers, credentials, or URL. */
+  prepareReconnectToStreamRequest?: DefaultChatTransportPrepareReconnectToStreamRequest
+}
 
 /**
  * AI SDK-style proxy transport for app-owned backend or edge routes.
@@ -102,7 +138,48 @@ export class DefaultChatTransport implements ChatProvider {
   declare private readonly p: ChatProvider
 
   constructor(config: DefaultChatTransportOptions = {}) {
-    this.p = proxyProvider(config)
+    const {
+      api = '/api/chat',
+      chatUrl,
+      resumeUrl,
+      prepareRequest,
+      prepareSendMessagesRequest,
+      prepareReconnectToStreamRequest,
+      ...proxyConfig
+    } = config
+    const resolvedChatUrl = chatUrl ?? api
+    this.p = proxyProvider({
+      ...proxyConfig,
+      chatUrl: resolvedChatUrl,
+      resumeUrl: resumeUrl ?? defaultResumeUrl(resolvedChatUrl),
+      prepareRequest: async (context) => {
+        let override: ProxyRequestOverride | void = undefined
+        if (context.kind === 'chat') {
+          override = await prepareSendMessagesRequest?.({
+            id: context.request.id,
+            api: context.url,
+            credentials: context.credentials,
+            headers: context.headers,
+            body: context.body,
+            messages: context.request.messages,
+            requestMetadata: context.request.metadata,
+            request: context.request
+          })
+        } else if (context.kind === 'resume') {
+          override = await prepareReconnectToStreamRequest?.({
+            id: context.request.id,
+            api: context.url,
+            credentials: context.credentials,
+            headers: context.headers,
+            requestMetadata: context.request.metadata,
+            request: context.request
+          })
+        }
+
+        const nextContext = override ? applyProxyOverride(context, override) : context
+        return mergeProxyOverrides(override, await prepareRequest?.(nextContext))
+      }
+    })
     this.id = this.p.id
   }
 
@@ -120,6 +197,34 @@ export class DefaultChatTransport implements ChatProvider {
 
   embedding(request: EmbeddingRequest): Promise<EmbeddingResult> {
     return this.p.embedding(request)
+  }
+}
+
+function defaultResumeUrl(chatUrl: string) {
+  return `${chatUrl.replace(/\/+$/, '')}/:id/stream`
+}
+
+function applyProxyOverride(
+  context: ProxyRequestContext,
+  override: ProxyRequestOverride
+): ProxyRequestContext {
+  return {
+    ...context,
+    ...override,
+    headers: override.headers ? mergeHeaders(context.headers, override.headers) : context.headers
+  } as ProxyRequestContext
+}
+
+function mergeProxyOverrides(
+  first?: ProxyRequestOverride | void,
+  second?: ProxyRequestOverride | void
+): ProxyRequestOverride | void {
+  if (!first) return second
+  if (!second) return first
+  return {
+    ...first,
+    ...second,
+    headers: second.headers ? mergeHeaders(first.headers ?? {}, second.headers) : first.headers
   }
 }
 

@@ -314,12 +314,18 @@ expect(
   files.providers.includes('## `DefaultChatTransport`') &&
     files.providers.includes('DefaultChatTransportOptions') &&
     files.providers.includes('new DefaultChatTransport') &&
+    files.providers.includes('prepareSendMessagesRequest') &&
+    files.providers.includes('prepareReconnectToStreamRequest') &&
     files.zhProviders.includes('## `DefaultChatTransport`') &&
     files.zhProviders.includes('DefaultChatTransportOptions') &&
     files.zhProviders.includes('new DefaultChatTransport') &&
+    files.zhProviders.includes('prepareSendMessagesRequest') &&
+    files.zhProviders.includes('prepareReconnectToStreamRequest') &&
     files.aiSdkMigration.includes('new DefaultChatTransport') &&
-    files.zhAiSdkMigration.includes('new DefaultChatTransport'),
-  'Provider and migration docs must expose the AI SDK-style DefaultChatTransport wrapper'
+    files.aiSdkMigration.includes('prepareSendMessagesRequest') &&
+    files.zhAiSdkMigration.includes('new DefaultChatTransport') &&
+    files.zhAiSdkMigration.includes('prepareSendMessagesRequest'),
+  'Provider and migration docs must expose AI SDK-style DefaultChatTransport endpoints and prepare hooks'
 )
 expect(
   files.packageJson.includes('"example:image"') &&

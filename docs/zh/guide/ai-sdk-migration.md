@@ -57,16 +57,26 @@ import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   transport: new DefaultChatTransport({
-    chatUrl: '/api/chat',
+    api: '/api/chat',
     credentials: 'include',
     headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
-    body: () => ({ tenantId })
+    body: () => ({ tenantId }),
+    prepareSendMessagesRequest({ body, messages }) {
+      return {
+        body: { ...body, messageCount: messages.length }
+      }
+    }
   })
 })
 ```
 
 如果不需要复用 transport 实例，也可以省略 `provider`/`transport`，直接把 `api`、
 `baseURL`、`headers` 和 `body` 传给 `useChat()`。
+
+`DefaultChatTransport({ api })` 默认使用 `/api/chat`，可恢复流默认使用
+`${api}/:id/stream`，除非显式传入 `resumeUrl`。已有 AI SDK 代码如果把 body 或
+headers 准备逻辑放在 transport 上，可以继续使用 `prepareSendMessagesRequest` 和
+`prepareReconnectToStreamRequest`；省略 transport 时再使用 `useChat()` 上的同名选项。
 
 只有已有 chat endpoint 返回原始文本流时才需要 `streamProtocol: 'text'`。AI SDK UI message
 stream、`ChatChunk` SSE 和 JSON chunk 响应保持默认即可。
@@ -271,8 +281,9 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 ## 迁移清单
 
 1. 把 AI SDK UI 的 import 替换为 `vue-ai-hooks`。
-2. 保留 `DefaultChatTransport` 为 `new DefaultChatTransport(...)`，或把这些选项映射到
-   `api`、`baseURL`、`headers`、`body`、`credentials` 和 `fetch`。
+2. 保留 `DefaultChatTransport` 为 `new DefaultChatTransport(...)`；`api`、`headers`、
+   `body`、`credentials`、`fetch`、`prepareSendMessagesRequest` 和
+   `prepareReconnectToStreamRequest` 都可以继续放在 transport 上。
 3. 将 AI SDK `DirectChatTransport` 风格的进程内 handler 映射到
    `new DirectChatTransport({ stream })`。
 4. 已有 chat 或 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。

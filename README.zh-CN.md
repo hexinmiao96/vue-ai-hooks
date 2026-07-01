@@ -46,7 +46,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生产聊天工作流**：服务端代理路径、可恢复流、thread 上下文、请求准备钩子、自定义
   body、metadata 和请求追踪。
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
-  `Message.parts`、自定义流数据、消息裁剪、`DirectChatTransport`，以及可复用的 UI stream 解码工具。
+  `Message.parts`、自定义流数据、消息裁剪、`DefaultChatTransport`、
+  `DirectChatTransport`，以及可复用的 UI stream 解码工具。
 - **工具调用控制**：`tool()` / `dynamicTool()` helper、本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
 - **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片、视频、语音、转写和重排路由、
   自定义生成任务、稳定 id 和 Date-safe 持久化 helper。

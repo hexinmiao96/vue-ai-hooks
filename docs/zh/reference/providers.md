@@ -8,8 +8,12 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
 `GeminiConfig`、`DeepSeekConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
 `FallbackProviderKind`、`ProxyProviderConfig`、`DefaultChatTransportOptions`、
-`ProxyRequestContext`、`ProxyRequestKind`、`ProxyRequestOverride`、
-`DirectChatTransportOptions`、`DirectChatStreamProtocol` 和 `AnthropicConfig`。
+`DefaultChatTransportPrepareSendMessagesRequest`、
+`DefaultChatTransportPrepareSendMessagesRequestOptions`、
+`DefaultChatTransportPrepareReconnectToStreamRequest`、
+`DefaultChatTransportPrepareReconnectToStreamRequestOptions`、`ProxyRequestContext`、
+`ProxyRequestKind`、`ProxyRequestOverride`、`DirectChatTransportOptions`、
+`DirectChatStreamProtocol` 和 `AnthropicConfig`。
 
 ## `ChatProvider`
 
@@ -286,23 +290,40 @@ POST body，然后再合并 Provider request 字段。`ChatRequest.threadId` 和
 
 AI SDK 风格的 `proxyProvider()` class wrapper。迁移已有
 `transport: new DefaultChatTransport(...)` 的 chat UI 时可以直接使用它；如果更偏好
-Provider 工厂，也可以继续直接使用 `proxyProvider()`。
+Provider 工厂，也可以继续直接使用 `proxyProvider()`。它的 `api` 默认值是
+`/api/chat`，默认恢复流 URL 是 `${api}/:id/stream`。
 
 ```ts
 import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   transport: new DefaultChatTransport({
-    chatUrl: '/api/chat',
+    api: '/api/chat',
     credentials: 'include',
-    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` })
+    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),
+    body: () => ({ tenantId: getTenantId() }),
+    prepareSendMessagesRequest({ body, messages, requestMetadata }) {
+      return {
+        headers: { 'X-Message-Count': String(messages.length) },
+        body: { ...body, trace: requestMetadata }
+      }
+    }
   })
 })
 ```
 
-`DefaultChatTransportOptions` 与 `ProxyProviderConfig` 是同一类型，因此支持上面记录的
-`baseURL`、`chatUrl`、`resumeUrl`、`headers`、`body`、`prepareRequest`、
-`credentials`、`timeoutMs` 和 `fetch` 选项。
+`DefaultChatTransportOptions` 扩展自 `ProxyProviderConfig`，并额外支持：
+
+| 选项                              | 类型                                 | 默认值      | 说明                                                     |
+| --------------------------------- | ------------------------------------ | ----------- | -------------------------------------------------------- |
+| `api`                             | `string`                             | `/api/chat` | AI SDK 兼容的 chat endpoint 别名。                       |
+| `prepareSendMessagesRequest`      | `(options) => ProxyRequestOverride`  | -           | 调整最终 chat 请求的 URL、headers、body 或 credentials。 |
+| `prepareReconnectToStreamRequest` | `(options) => ProxyRequestOverride`  | -           | 调整最终恢复流请求的 URL、headers 或 credentials。       |
+| 其他 `ProxyProviderConfig` 选项   | 见 [`proxyProvider`](#proxyprovider) | -           | `baseURL`、`chatUrl`、`resumeUrl`、`headers` 等。        |
+
+`chatUrl` 仍然兼容已有 `proxyProvider()` 风格配置。如果同时设置 `api` 和
+`chatUrl`，以 `chatUrl` 为准。底层 `prepareRequest` 也仍然可用，并且会在
+transport 级 prepare hook 之后运行。
 
 ## `DirectChatTransport`
 

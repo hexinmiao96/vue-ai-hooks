@@ -84,6 +84,8 @@ import type {
   DirectChatStreamProtocol,
   DirectChatTransportOptions,
   DefaultChatTransportOptions,
+  DefaultChatTransportPrepareReconnectToStreamRequest,
+  DefaultChatTransportPrepareSendMessagesRequest,
   EmbeddingRequestInfo,
   EmbeddingRequest,
   EmbeddingResponseInfo,
@@ -269,7 +271,14 @@ describe('public API types', () => {
       timeoutMs?: number
     }>()
     expectTypeOf<ProxyProviderConfig['chatUrl']>().toEqualTypeOf<string | undefined>()
-    expectTypeOf<DefaultChatTransportOptions>().toEqualTypeOf<ProxyProviderConfig>()
+    expectTypeOf<DefaultChatTransportOptions>().toMatchTypeOf<ProxyProviderConfig>()
+    expectTypeOf<DefaultChatTransportOptions['api']>().toEqualTypeOf<string | undefined>()
+    expectTypeOf<DefaultChatTransportOptions['prepareSendMessagesRequest']>().toEqualTypeOf<
+      DefaultChatTransportPrepareSendMessagesRequest | undefined
+    >()
+    expectTypeOf<DefaultChatTransportOptions['prepareReconnectToStreamRequest']>().toEqualTypeOf<
+      DefaultChatTransportPrepareReconnectToStreamRequest | undefined
+    >()
     expectTypeOf<ProxyProviderConfig['credentials']>().toEqualTypeOf<
       RequestCredentials | undefined
     >()

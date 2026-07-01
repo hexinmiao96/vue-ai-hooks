@@ -54,7 +54,8 @@ The AI-in-Vue story is currently fragmented. Options today:
   request tracing.
 - **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
-  pruning, `DirectChatTransport`, plus reusable UI stream decoding utilities.
+  pruning, `DefaultChatTransport`, `DirectChatTransport`, plus reusable UI stream
+  decoding utilities.
 - **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.

@@ -9,9 +9,12 @@ exact config surface.
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
 `GeminiConfig`, `DeepSeekConfig`, `FallbackProviderConfig`,
 `FallbackProviderContext`, `FallbackProviderKind`, `ProxyProviderConfig`,
-`DefaultChatTransportOptions`, `ProxyRequestContext`, `ProxyRequestKind`,
-`ProxyRequestOverride`, `DirectChatTransportOptions`, `DirectChatStreamProtocol`,
-and `AnthropicConfig`.
+`DefaultChatTransportOptions`, `DefaultChatTransportPrepareSendMessagesRequest`,
+`DefaultChatTransportPrepareSendMessagesRequestOptions`,
+`DefaultChatTransportPrepareReconnectToStreamRequest`,
+`DefaultChatTransportPrepareReconnectToStreamRequestOptions`,
+`ProxyRequestContext`, `ProxyRequestKind`, `ProxyRequestOverride`,
+`DirectChatTransportOptions`, `DirectChatStreamProtocol`, and `AnthropicConfig`.
 
 ## `ChatProvider`
 
@@ -303,24 +306,40 @@ selection, rate limiting, logging, and vendor-specific retries.
 
 AI SDK-style class wrapper around `proxyProvider()`. Use it when migrating a
 chat UI that already has `transport: new DefaultChatTransport(...)`; use
-`proxyProvider()` directly when you prefer a provider factory.
+`proxyProvider()` directly when you prefer a provider factory. Its `api` option
+defaults to `/api/chat`, and the default resume URL is `${api}/:id/stream`.
 
 ```ts
 import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   transport: new DefaultChatTransport({
-    chatUrl: '/api/chat',
+    api: '/api/chat',
     credentials: 'include',
-    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` })
+    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),
+    body: () => ({ tenantId: getTenantId() }),
+    prepareSendMessagesRequest({ body, messages, requestMetadata }) {
+      return {
+        headers: { 'X-Message-Count': String(messages.length) },
+        body: { ...body, trace: requestMetadata }
+      }
+    }
   })
 })
 ```
 
-`DefaultChatTransportOptions` is the same type as `ProxyProviderConfig`, so it
-supports the same `baseURL`, `chatUrl`, `resumeUrl`, `headers`, `body`,
-`prepareRequest`, `credentials`, `timeoutMs`, and `fetch` options documented
-above.
+`DefaultChatTransportOptions` extends `ProxyProviderConfig` with:
+
+| Option                              | Type                                  | Default     | Description                                                        |
+| ----------------------------------- | ------------------------------------- | ----------- | ------------------------------------------------------------------ |
+| `api`                               | `string`                              | `/api/chat` | AI SDK-compatible alias for the chat endpoint.                     |
+| `prepareSendMessagesRequest`        | `(options) => ProxyRequestOverride`   | -           | Adjust final chat request URL, headers, body, or credentials.      |
+| `prepareReconnectToStreamRequest`   | `(options) => ProxyRequestOverride`   | -           | Adjust final resume request URL, headers, or credentials.          |
+| other `ProxyProviderConfig` options | see [`proxyProvider`](#proxyprovider) | -           | `baseURL`, `chatUrl`, `resumeUrl`, `headers`, `body`, and `fetch`. |
+
+`chatUrl` still works for existing `proxyProvider()`-style configuration. When
+both `api` and `chatUrl` are set, `chatUrl` wins. The lower-level
+`prepareRequest` hook can still be used after the transport-level prepare hooks.
 
 ## `DirectChatTransport`
 
