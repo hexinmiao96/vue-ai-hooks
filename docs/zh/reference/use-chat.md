@@ -21,7 +21,7 @@
 `SendAutomaticallyWhen`、`SendAutomaticallyWhenOptions`、`IdGenerator`、
 `ToolCallHandlerContext`、`ToolResultHandlerContext`、`StopWhen`、
 `StopWhenOptions`、`JsonSchemaDefinition`、`ToolInputSchema`、`ToolExecute`、
-`ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
+`ToolModelOutput`、`ToolModelOutputContext`、`ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
 `ValidateMessagesOptions`、`ValidateUIMessagesOptions`、`SafeValidateMessagesResult`、
 `SafeValidateUIMessagesResult`、`RetryOptions` 和 `RetryContext`。
 
@@ -460,6 +460,8 @@ await append('发送精简后的模型上下文。')
 当 UI 中可能还有等待审批或尚未返回结果的工具调用时，可以传
 `{ ignoreIncompleteToolCalls: true }`，只保留已经有匹配 `role: 'tool'` 结果消息的
 tool call。
+工具定义里包含 `toModelOutput`、且希望把 tool result 消息转换成模型可读文本或多模态
+`ContentPart[]` 时，可以传 `{ tools }`。
 自定义 `data-*` parts 默认也会被移除。某个 data part 需要变成模型可读上下文时，显式传入
 `convertDataPart`：
 
@@ -603,6 +605,9 @@ const chat = useChat({
       strict: true,
       async execute({ city }) {
         return { temp: await weatherService.temperature(city) }
+      },
+      toModelOutput(output) {
+        return `天气：${output.temp}`
       }
     }),
     runtimeLookup: dynamicTool({
@@ -614,6 +619,8 @@ const chat = useChat({
 
 Provider 请求仍会收到归一化后的 OpenAI-compatible `Tool[]`。如果同时传入
 `toolHandlers`，显式 handler 会覆盖 helper 定义里的 `execute`。
+`toModelOutput` 会被 `convertToModelMessages(messages, { tools })` 使用，用于把已存储的
+tool result 消息转换成面向模型的文本或现有 `ContentPart[]`。
 
 浏览器本地工具需要 store、session 快照或客户端服务实例时，可以使用 `context`。它会通过
 `ToolCallHandlerContext.context` 传给 `toolHandlers`、`requiresToolApproval`、

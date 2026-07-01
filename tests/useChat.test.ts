@@ -592,6 +592,69 @@ describe('useChat', () => {
     expect(messages[1].toolCalls).toHaveLength(2)
   })
 
+  it('converts tool results with tool toModelOutput definitions', () => {
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Inspect the generated chart.'
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_chart',
+            type: 'function',
+            function: { name: 'renderChart', arguments: '{"kind":"revenue"}' }
+          }
+        ]
+      },
+      {
+        id: 'tool_1',
+        role: 'tool',
+        content: '{"url":"https://cdn.test/chart.png","caption":"Revenue chart"}',
+        toolCallId: 'call_chart'
+      }
+    ]
+
+    const modelMessages = convertToModelMessages(messages, {
+      tools: {
+        renderChart: tool<{ kind: string }, { url: string; caption: string }>({
+          inputSchema: jsonSchema({
+            type: 'object',
+            required: ['kind'],
+            properties: { kind: { type: 'string' } }
+          }),
+          toModelOutput(output, context) {
+            expect(output.caption).toBe('Revenue chart')
+            expect(context.toolCall.id).toBe('call_chart')
+            return [
+              { type: 'text', text: output.caption },
+              { type: 'image_url', image_url: { url: output.url, detail: 'auto' } }
+            ]
+          }
+        })
+      }
+    })
+
+    expect(modelMessages[2]).toEqual({
+      role: 'tool',
+      content: [
+        { type: 'text', text: 'Revenue chart' },
+        {
+          type: 'image_url',
+          image_url: { url: 'https://cdn.test/chart.png', detail: 'auto' }
+        }
+      ],
+      toolCallId: 'call_chart'
+    })
+    expect(messages[2].content).toBe(
+      '{"url":"https://cdn.test/chart.png","caption":"Revenue chart"}'
+    )
+  })
+
   it('deserializes all structured message part variants', () => {
     const restored = deserializeMessages([
       {

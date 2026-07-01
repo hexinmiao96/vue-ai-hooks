@@ -219,11 +219,20 @@ type ToolExecute<TInput = unknown, TOutput = unknown> = (
   context: ToolCallHandlerContext
 ) => TOutput | Promise<TOutput>
 
+interface ToolModelOutputContext {
+  toolCall: ToolCall
+  message: Message
+  messages: Message[]
+}
+
+type ToolModelOutput = string | ContentPart | ContentPart[] | null | undefined
+
 interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   description?: string
   inputSchema?: ToolInputSchema<TInput>
   parameters?: Record<string, unknown>
   execute?: ToolExecute<TInput, TOutput>
+  toModelOutput?: (output: TOutput, context: ToolModelOutputContext) => ToolModelOutput
   strict?: boolean
   dynamic?: boolean
 }
@@ -235,7 +244,9 @@ type ChatToolsInput = Tool[] | ToolSet
 
 `jsonSchema(schema)` 会把 JSON Schema 包装给 `tool({ inputSchema })` 使用。
 `tool()` 和 `dynamicTool()` 返回的 `ToolDefinition` 会由 `useChat({ tools })`
-归一化成 Provider 侧的 `Tool[]`；其中的 `execute` 会注册成本地 handler。
+归一化成 Provider 侧的 `Tool[]`；其中的 `execute` 会注册成本地 handler。tool result
+消息需要转换成模型可读文本或 `ContentPart[]` 时，`convertToModelMessages(messages, {
+tools })` 会读取 `toModelOutput`。
 
 工具执行回调使用和 `toolHandlers` 相同的已解析参数快照：
 

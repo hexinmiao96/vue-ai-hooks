@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   custom `data-*` UI parts into model-facing content.
 - Added `convertToModelMessages({ ignoreIncompleteToolCalls })` for skipping
   pending or approval-gated tool calls that do not yet have tool results.
+- Added `ToolDefinition.toModelOutput` and `convertToModelMessages({ tools })`
+  for model-facing conversion of stored tool result messages.
 - Added `stepCountIs()` as an AI SDK-compatible alias for `isStepCount()` tool
   loop stopping conditions.
 

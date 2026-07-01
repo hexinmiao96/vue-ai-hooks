@@ -197,13 +197,14 @@ rendering state, use `convertToModelMessages(messages)`. It removes `parts`,
 Use `ignoreIncompleteToolCalls` when paused approval flows may leave assistant
 tool calls without matching tool result messages.
 Use `convertDataPart` when a custom `data-*` part should become model-readable
-context:
+context, and pass `tools` when tool definitions include `toModelOutput`:
 
 ```ts
 import { convertToModelMessages } from 'vue-ai-hooks'
 
 const modelMessages = convertToModelMessages(chat.messages.value, {
   ignoreIncompleteToolCalls: true,
+  tools: chatTools,
   convertDataPart(part) {
     if (part.type !== 'data-chart') return
     return `Chart context: ${JSON.stringify(part.data)}`

@@ -21,7 +21,8 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
 `StopWhenOptions`, `JsonSchemaDefinition`, `ToolInputSchema`,
-`ToolExecute`, `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
+`ToolExecute`, `ToolModelOutput`, `ToolModelOutputContext`,
+`ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
 `ChatToolsInput`, `ValidateMessagesOptions`, `ValidateUIMessagesOptions`,
 `SafeValidateMessagesResult`, `SafeValidateUIMessagesResult`, `RetryOptions`,
 and `RetryContext`.
@@ -479,6 +480,9 @@ and shallow-cloned `metadata`. Pass `{ preserveIds: true }` or
 Pass `{ ignoreIncompleteToolCalls: true }` when the UI may contain pending or
 approval-gated tool calls that do not yet have matching `role: 'tool'` result
 messages.
+Pass `{ tools }` when tool definitions include `toModelOutput` and tool result
+messages should be converted into text or multimodal `ContentPart[]` for model
+context.
 Custom `data-*` parts are also removed by default. Pass `convertDataPart` when a
 specific data part should become model-readable context:
 
@@ -629,6 +633,9 @@ const chat = useChat({
       strict: true,
       async execute({ city }) {
         return { temp: await weatherService.temperature(city) }
+      },
+      toModelOutput(output) {
+        return `Weather: ${output.temp}`
       }
     }),
     runtimeLookup: dynamicTool({
@@ -641,6 +648,9 @@ const chat = useChat({
 Provider requests still receive the normalized OpenAI-compatible `Tool[]`.
 If you also pass `toolHandlers`, explicit handlers override `execute` functions
 from the helper definitions.
+`toModelOutput` is used by `convertToModelMessages(messages, { tools })` to turn
+stored tool result messages into model-facing text or existing `ContentPart[]`
+values.
 
 Use `context` for browser-local dependencies that tools need, such as a store,
 session snapshot, or client service handle. It is passed to `toolHandlers`,

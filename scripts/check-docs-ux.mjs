@@ -896,10 +896,12 @@ expect(
     files.useChat.includes('ChatRequestMessage[]') &&
     files.useChat.includes('stripMetadata') &&
     files.useChat.includes('ignoreIncompleteToolCalls') &&
+    files.useChat.includes('toModelOutput') &&
     files.useChat.includes('convertDataPart') &&
     files.aiSdkMigration.includes('| `convertToModelMessages()`') &&
     files.aiSdkMigration.includes('const modelMessages = convertToModelMessages') &&
     files.aiSdkMigration.includes('ignoreIncompleteToolCalls') &&
+    files.aiSdkMigration.includes('tools: chatTools') &&
     files.aiSdkMigration.includes('convertDataPart') &&
     files.readme.includes('`convertToModelMessages()`'),
   'English docs must document model message conversion helper in useChat, migration guide, and README'
@@ -972,10 +974,12 @@ expect(
     files.zhUseChat.includes('ChatRequestMessage[]') &&
     files.zhUseChat.includes('stripMetadata') &&
     files.zhUseChat.includes('ignoreIncompleteToolCalls') &&
+    files.zhUseChat.includes('toModelOutput') &&
     files.zhUseChat.includes('convertDataPart') &&
     files.zhAiSdkMigration.includes('| `convertToModelMessages()`') &&
     files.zhAiSdkMigration.includes('const modelMessages = convertToModelMessages') &&
     files.zhAiSdkMigration.includes('ignoreIncompleteToolCalls') &&
+    files.zhAiSdkMigration.includes('tools: chatTools') &&
     files.zhAiSdkMigration.includes('convertDataPart') &&
     files.zhReadme.includes('`convertToModelMessages()`'),
   'Chinese docs must document model message conversion helper in useChat, migration guide, and README'

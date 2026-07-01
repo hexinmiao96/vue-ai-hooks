@@ -227,11 +227,20 @@ type ToolExecute<TInput = unknown, TOutput = unknown> = (
   context: ToolCallHandlerContext
 ) => TOutput | Promise<TOutput>
 
+interface ToolModelOutputContext {
+  toolCall: ToolCall
+  message: Message
+  messages: Message[]
+}
+
+type ToolModelOutput = string | ContentPart | ContentPart[] | null | undefined
+
 interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   description?: string
   inputSchema?: ToolInputSchema<TInput>
   parameters?: Record<string, unknown>
   execute?: ToolExecute<TInput, TOutput>
+  toModelOutput?: (output: TOutput, context: ToolModelOutputContext) => ToolModelOutput
   strict?: boolean
   dynamic?: boolean
 }
@@ -244,7 +253,9 @@ type ChatToolsInput = Tool[] | ToolSet
 `jsonSchema(schema)` wraps a JSON Schema for `tool({ inputSchema })`. `tool()`
 and `dynamicTool()` return `ToolDefinition` values that `useChat({ tools })`
 normalizes into provider-facing `Tool[]`; `execute` functions are registered as
-local handlers.
+local handlers. `toModelOutput` is read by `convertToModelMessages(messages, {
+tools })` when tool result messages need model-facing text or `ContentPart[]`
+content.
 
 Tool execution callbacks use the same parsed argument snapshot as
 `toolHandlers`:

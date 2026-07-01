@@ -74,12 +74,23 @@ export type ToolExecute<TInput = unknown, TOutput = unknown> = (
   context: ToolCallHandlerContext
 ) => TOutput | Promise<TOutput>
 
+export interface ToolModelOutputContext {
+  toolCall: ToolCall
+  message: Message
+  messages: Message[]
+}
+
+export type ToolModelOutput = string | ContentPart | ContentPart[] | null | undefined
+
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   description?: string
   inputSchema?: ToolInputSchema<TInput>
   parameters?: Record<string, unknown>
   execute?: {
     bivarianceHack(args: TInput, context: ToolCallHandlerContext): TOutput | Promise<TOutput>
+  }['bivarianceHack']
+  toModelOutput?: {
+    bivarianceHack(output: TOutput, context: ToolModelOutputContext): ToolModelOutput
   }['bivarianceHack']
   strict?: boolean
   dynamic?: boolean
@@ -293,6 +304,7 @@ export interface ConvertToModelMessagesOptions {
   preserveCreatedAt?: boolean
   stripMetadata?: boolean
   ignoreIncompleteToolCalls?: boolean
+  tools?: ToolSet
   convertDataPart?: (
     part: Extract<MessagePart, { type: 'data' | `data-${string}` }>,
     message: Message
@@ -1007,6 +1019,14 @@ export function convertToModelMessages(
         completedToolCallIds.add(message.toolCallId)
     }
   }
+  const toolDefinitions = options.tools && !Array.isArray(options.tools) ? options.tools : null
+  const toolCallsById = toolDefinitions ? new Map<string, ToolCall>() : null
+  if (toolCallsById) {
+    for (const message of messages) {
+      if (message.role !== 'assistant') continue
+      for (const call of message.toolCalls ?? []) toolCallsById.set(call.id, call)
+    }
+  }
 
   return messages.map((message) => {
     const converted = cloneMessage(message) as ModelMessage & { parts?: MessagePart[] }
@@ -1025,6 +1045,29 @@ export function convertToModelMessages(
       const calls = converted.toolCalls?.filter((call) => completedToolCallIds.has(call.id))
       if (calls?.length) converted.toolCalls = calls
       else delete converted.toolCalls
+    }
+    if (toolDefinitions && toolCallsById && message.role === 'tool' && message.toolCallId) {
+      const toolCall = toolCallsById.get(message.toolCallId)
+      const definition = toolCall ? toolDefinitions[toolCall.function.name] : undefined
+      if (toolCall && definition && !isWireTool(definition) && definition.toModelOutput) {
+        let output: unknown = message.content
+        if (typeof output === 'string') {
+          try {
+            output = JSON.parse(output) as unknown
+          } catch {
+            output = message.content
+          }
+        }
+        const content = definition.toModelOutput(output, { toolCall, message, messages })
+        if (content != null) {
+          converted.content =
+            typeof content === 'string'
+              ? content
+              : Array.isArray(content)
+                ? content.map((part) => ({ ...part }))
+                : [{ ...content }]
+        }
+      }
     }
     if (stripMetadata) delete converted.metadata
     return converted

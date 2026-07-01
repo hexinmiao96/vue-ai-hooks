@@ -4,13 +4,13 @@ import { gzipSync } from 'node:zlib'
 const budgets = [
   {
     file: 'dist/index.mjs',
-    maxBytes: 126_100,
-    maxGzipBytes: 30_200
+    maxBytes: 126_900,
+    maxGzipBytes: 30_450
   },
   {
     file: 'dist/index.cjs',
-    maxBytes: 89_100,
-    maxGzipBytes: 26_400
+    maxBytes: 89_700,
+    maxGzipBytes: 26_600
   }
 ]
 const failures = []

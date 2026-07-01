@@ -197,6 +197,8 @@ import type {
   ToolDefinition,
   ToolExecute,
   ToolInputSchema,
+  ToolModelOutput,
+  ToolModelOutputContext,
   ToolSet,
   ToolApprovalResponse,
   ToolApprovalPredicate,
@@ -1412,6 +1414,11 @@ describe('public API types', () => {
       execute(input) {
         expectTypeOf(input).toEqualTypeOf<{ q: string }>()
         return { answer: input.q }
+      },
+      toModelOutput(output, context) {
+        expectTypeOf(output).toEqualTypeOf<{ answer: string }>()
+        expectTypeOf(context).toEqualTypeOf<ToolModelOutputContext>()
+        return { type: 'text', text: output.answer }
       }
     })
     const runtimeTool = dynamicTool({
@@ -1430,6 +1437,7 @@ describe('public API types', () => {
     const schemaInput: ToolInputSchema<{ q: string }> = schema
     const executeContract: ToolExecute<{ q: string }, { answer: string }> | undefined =
       lookupTool.execute
+    const modelOutput: ToolModelOutput = { type: 'text', text: 'ok' }
     const anyToolDefinition: AnyToolDefinition = lookupTool
     void [
       schemaContract,
@@ -1437,6 +1445,7 @@ describe('public API types', () => {
       runtimeToolContract,
       schemaInput,
       executeContract,
+      modelOutput,
       anyToolDefinition,
       chatTools,
       wireTools
@@ -1617,6 +1626,7 @@ describe('public API types', () => {
     const convertOptions: ConvertToModelMessagesOptions = {
       preserveIds: true,
       ignoreIncompleteToolCalls: true,
+      tools: toolSet,
       convertDataPart(part, sourceMessage) {
         expectTypeOf(part).toEqualTypeOf<MessageDataPart>()
         expectTypeOf(sourceMessage).toEqualTypeOf<Message>()
@@ -1673,6 +1683,7 @@ describe('public API types', () => {
     expectTypeOf(modelMessagesWithOptions).toEqualTypeOf<ModelMessage[]>()
     expectTypeOf(convertOptions).toEqualTypeOf<ConvertToModelMessagesOptions>()
     expectTypeOf(convertOptions.ignoreIncompleteToolCalls).toEqualTypeOf<boolean | undefined>()
+    expectTypeOf(convertOptions.tools).toEqualTypeOf<ToolSet | undefined>()
     expectTypeOf(message.parts).toEqualTypeOf<MessagePart[] | undefined>()
     expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()

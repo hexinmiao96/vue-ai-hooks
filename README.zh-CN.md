@@ -374,7 +374,8 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用
 `convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息；
 某些自定义 `data-*` parts 需要变成模型可读上下文时可以传 `convertDataPart`；审批中的
-tool calls 需要等结果回来后再进入模型上下文时可以传 `ignoreIncompleteToolCalls`。
+tool calls 需要等结果回来后再进入模型上下文时可以传 `ignoreIncompleteToolCalls`；工具定义里
+包含 `toModelOutput` 时可以同步传 `tools`，把 tool result 转成模型可读内容。
 `ChatRequest.messages` 可直接接收这些 `ChatRequestMessage[]` payload。
 
 自有后端路由需要逐步产出 AI SDK UI message stream parts 时，可以使用

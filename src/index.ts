@@ -68,6 +68,8 @@ export {
   type ToolDefinition,
   type ToolExecute,
   type ToolInputSchema,
+  type ToolModelOutput,
+  type ToolModelOutputContext,
   type ToolSet,
   type JsonSchemaDefinition,
   type ToolApprovalResponse,

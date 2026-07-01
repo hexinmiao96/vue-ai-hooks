@@ -438,7 +438,8 @@ a provider. Use `convertToModelMessages()` after pruning when a proxy route or
 provider adapter should receive model-facing messages without UI-only
 `Message.parts`; pass `convertDataPart` when selected custom `data-*` parts
 should become model-readable context, and `ignoreIncompleteToolCalls` when
-approval-gated tool calls should be skipped until results arrive.
+approval-gated tool calls should be skipped until results arrive. Pass `tools`
+when tool definitions include `toModelOutput` for model-facing tool results.
 `ChatRequest.messages` accepts those `ChatRequestMessage[]` payloads directly.
 
 Use `createUIMessageStream()` when an app-owned route should produce AI SDK UI
