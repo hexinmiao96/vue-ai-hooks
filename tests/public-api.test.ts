@@ -293,6 +293,10 @@ describe('public API types', () => {
     const directConfig: DirectChatTransportOptions = {
       id: 'local-agent',
       streamProtocol: 'ui-message',
+      onError(error) {
+        expectTypeOf(error).toEqualTypeOf<unknown>()
+        return 'hidden local agent error'
+      },
       stream(request) {
         expectTypeOf(request).toEqualTypeOf<ChatRequest>()
         return []
@@ -303,6 +307,9 @@ describe('public API types', () => {
       }
     }
     expectTypeOf<DirectChatStreamProtocol>().toEqualTypeOf<'ui-message' | 'chat-chunk'>()
+    expectTypeOf<DirectChatTransportOptions['onError']>().toEqualTypeOf<
+      CreateUIMessageStreamOptions['onError']
+    >()
     expectTypeOf(directConfig).toEqualTypeOf<DirectChatTransportOptions>()
     expectTypeOf<AnthropicConfig>().toMatchTypeOf<{
       apiKey: string

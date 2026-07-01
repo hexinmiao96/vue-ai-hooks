@@ -317,18 +317,22 @@ const chat = useChat({
 })
 ```
 
-| Option           | Type                       | Default        | Description                                                |
-| ---------------- | -------------------------- | -------------- | ---------------------------------------------------------- |
-| `id`             | `string`                   | `'direct'`     | Provider id shown in request traces.                       |
-| `stream`         | `(request) => stream`      | required       | Chat handler returning AI SDK UI message parts by default. |
-| `resumeStream`   | `(request) => stream`      | -              | Optional resumable stream handler for `resumeStream()`.    |
-| `streamProtocol` | `DirectChatStreamProtocol` | `'ui-message'` | Use `'chat-chunk'` when returning `ChatChunk` values.      |
+| Option           | Type                                | Default        | Description                                                |
+| ---------------- | ----------------------------------- | -------------- | ---------------------------------------------------------- |
+| `id`             | `string`                            | `'direct'`     | Provider id shown in request traces.                       |
+| `stream`         | `(request) => stream`               | required       | Chat handler returning AI SDK UI message parts by default. |
+| `resumeStream`   | `(request) => stream`               | -              | Optional resumable stream handler for `resumeStream()`.    |
+| `onError`        | `(error) => part \| string \| null` | -              | Maps thrown UI-message stream errors before they reach UI. |
+| `streamProtocol` | `DirectChatStreamProtocol`          | `'ui-message'` | Use `'chat-chunk'` when returning `ChatChunk` values.      |
 
 `DirectChatStreamProtocol` is `'ui-message' | 'chat-chunk'`.
 
 The default `ui-message` protocol accepts the same `UIMessageStreamSource` as
-`createUIMessageStreamResponse()`. Use `streamProtocol: 'chat-chunk'` when your
-local handler already yields provider-agnostic `ChatChunk` values:
+`createUIMessageStreamResponse()`. `onError` uses the same contract as
+`createUIMessageStream({ onError })`, so local agent failures can be sanitized
+or suppressed before they become UI message stream error parts. Use
+`streamProtocol: 'chat-chunk'` when your local handler already yields
+provider-agnostic `ChatChunk` values:
 
 ```ts
 const localTools = new DirectChatTransport({

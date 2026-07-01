@@ -442,6 +442,8 @@ message stream parts over time. Use `createUIMessageStreamResponse()` or
 `DirectChatTransport` when an in-process agent, demo, or test harness should
 consume them without an HTTP proxy. `readUIMessageStream()` remains available
 for lower-level custom transports outside `proxyProvider`.
+`DirectChatTransport({ onError })` can sanitize local agent failures before they
+reach the UI message stream.
 `createUIMessageStreamParser()`, `toChatChunks()`, `formatSSEData()`, and `parseSSE()` are exported for
 already-parsed parts or custom SSE readers.
 

@@ -102,8 +102,9 @@ const chat = useChat({
 })
 ```
 
-它默认消费 AI SDK UI message stream parts。如果 handler 已经返回 `ChatChunk`，
-传入 `streamProtocol: 'chat-chunk'`。
+它默认消费 AI SDK UI message stream parts。使用 `onError` 可以先清洗本地 agent 失败，
+再让它作为 UI message stream 错误浮到 UI。如果 handler 已经返回 `ChatChunk`，传入
+`streamProtocol: 'chat-chunk'`。
 
 ## Input 处理
 

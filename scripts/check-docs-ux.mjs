@@ -160,7 +160,9 @@ expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('DirectChatTransport') &&
+    files.readme.includes('DirectChatTransport({ onError })') &&
     files.zhReadme.includes('DirectChatTransport') &&
+    files.zhReadme.includes('DirectChatTransport({ onError })') &&
     files.readme.includes('`examples/image`') &&
     files.zhReadme.includes('`examples/image`') &&
     files.readme.includes('`examples/video`') &&
@@ -252,6 +254,7 @@ for (const snippet of [
   'AI SDK Core reranking',
   'DefaultChatTransport',
   'DirectChatTransport',
+  'onError',
   'transport` or `provider`',
   'input`, `setInput()`, `handleInputChange()`',
   'addToolApprovalResponse()',
@@ -276,6 +279,7 @@ for (const snippet of [
   'AI SDK Core 文档重排',
   'DefaultChatTransport',
   'DirectChatTransport',
+  'onError',
   'transport` 或 `provider`',
   'input`、`setInput()`、`handleInputChange()`',
   'addToolApprovalResponse()',
@@ -296,6 +300,15 @@ expect(
     files.readme.includes("useChat({ streamProtocol: 'text' })") &&
     files.zhReadme.includes("useChat({ streamProtocol: 'text' })"),
   'English and Chinese docs must document chat text stream protocol compatibility'
+)
+expect(
+  files.providers.includes('`onError`') &&
+    files.providers.includes('createUIMessageStream({ onError })') &&
+    files.zhProviders.includes('`onError`') &&
+    files.zhProviders.includes('createUIMessageStream({ onError })') &&
+    files.aiSdkMigration.includes('Use `onError`') &&
+    files.zhAiSdkMigration.includes('使用 `onError`'),
+  'DirectChatTransport docs must explain UI-message onError sanitization in English and Chinese'
 )
 expect(
   files.packageJson.includes('"example:image"') &&

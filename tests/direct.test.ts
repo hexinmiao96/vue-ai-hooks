@@ -84,6 +84,52 @@ describe('DirectChatTransport', () => {
     await expect(collect(stream)).resolves.toEqual([])
   })
 
+  it('maps UI message stream handler errors through onError', async () => {
+    const transport = new DirectChatTransport({
+      stream() {
+        throw new Error('secret upstream failure')
+      },
+      onError(error) {
+        expect(error).toBeInstanceOf(Error)
+        return 'local agent failed'
+      }
+    })
+
+    const stream = await transport.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+
+    await expect(collect(stream)).rejects.toMatchObject({
+      name: 'AiHooksError',
+      message: 'local agent failed'
+    })
+  })
+
+  it('maps UI message source iteration errors after yielding earlier parts', async () => {
+    const transport = new DirectChatTransport({
+      async *stream() {
+        yield { type: 'text-delta', id: 'text_1', delta: 'before' }
+        throw new Error('hidden iteration failure')
+      },
+      onError() {
+        return 'iteration failed'
+      }
+    })
+
+    const stream = await transport.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks: unknown[] = []
+
+    await expect(async () => {
+      for await (const chunk of stream) chunks.push(chunk)
+    }).rejects.toMatchObject({
+      name: 'AiHooksError',
+      message: 'iteration failed'
+    })
+    expect(chunks).toEqual([{ content: 'before' }])
+  })
+
   it('supports optional resumable streams', async () => {
     const transport = new DirectChatTransport({
       stream: () => [],

@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   DemoShowcase block for exercising AI SDK UI message stream parts end to end.
 - Added `DirectChatTransport` for in-process chat agents, no-key demos, tests,
   and AI SDK UI message stream handlers that do not need an HTTP proxy.
+- Added `DirectChatTransport` `onError` support for sanitizing local UI-message
+  stream failures.
 - Added `validateMessages()` for boolean validation of persisted or imported
   chat message payloads before hydration.
 - Added chat `streamProtocol: 'text'` support for app-owned proxy chat and

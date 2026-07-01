@@ -301,17 +301,20 @@ const chat = useChat({
 })
 ```
 
-| 选项             | 类型                       | 默认值         | 说明                                               |
-| ---------------- | -------------------------- | -------------- | -------------------------------------------------- |
-| `id`             | `string`                   | `'direct'`     | 请求追踪中展示的 Provider id。                     |
-| `stream`         | `(request) => stream`      | 必填           | 聊天处理函数，默认返回 AI SDK UI message parts。   |
-| `resumeStream`   | `(request) => stream`      | -              | 可选恢复流处理函数，供 `resumeStream()` 使用。     |
-| `streamProtocol` | `DirectChatStreamProtocol` | `'ui-message'` | handler 已返回 `ChatChunk` 时使用 `'chat-chunk'`。 |
+| 选项             | 类型                                | 默认值         | 说明                                               |
+| ---------------- | ----------------------------------- | -------------- | -------------------------------------------------- |
+| `id`             | `string`                            | `'direct'`     | 请求追踪中展示的 Provider id。                     |
+| `stream`         | `(request) => stream`               | 必填           | 聊天处理函数，默认返回 AI SDK UI message parts。   |
+| `resumeStream`   | `(request) => stream`               | -              | 可选恢复流处理函数，供 `resumeStream()` 使用。     |
+| `onError`        | `(error) => part \| string \| null` | -              | UI message stream 错误进入 UI 前的清洗/映射函数。  |
+| `streamProtocol` | `DirectChatStreamProtocol`          | `'ui-message'` | handler 已返回 `ChatChunk` 时使用 `'chat-chunk'`。 |
 
 `DirectChatStreamProtocol` 是 `'ui-message' | 'chat-chunk'`。
 
 默认 `ui-message` 协议接受和 `createUIMessageStreamResponse()` 相同的
-`UIMessageStreamSource`。如果本地 handler 已经直接产出框架无关的 `ChatChunk`，使用
+`UIMessageStreamSource`。`onError` 使用和 `createUIMessageStream({ onError })`
+相同的契约，因此本地 agent 失败可以先清洗或抑制，再变成 UI message stream error
+part。如果本地 handler 已经直接产出框架无关的 `ChatChunk`，使用
 `streamProtocol: 'chat-chunk'`：
 
 ```ts

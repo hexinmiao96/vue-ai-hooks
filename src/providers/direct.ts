@@ -8,8 +8,10 @@ import type {
 } from '../types'
 import { AiHooksError } from '../types'
 import {
+  createUIMessageStream,
   createUIMessageStreamResponse,
   readUIMessageStream,
+  type CreateUIMessageStreamOptions,
   type UIMessageStreamSource
 } from '../utils/stream'
 import type { ChatProvider } from './types'
@@ -35,6 +37,8 @@ export interface DirectChatTransportOptions {
   stream: DirectChatStreamHandler
   /** Optional resumable stream handler used by `useChat().resumeStream()`. */
   resumeStream?: DirectChatResumeHandler
+  /** Map thrown UI-message stream errors into an AI SDK UI error part. */
+  onError?: CreateUIMessageStreamOptions['onError']
   /** Use `chat-chunk` when the handler already returns vue-ai-hooks ChatChunk values. */
   streamProtocol?: DirectChatStreamProtocol
 }
@@ -47,25 +51,34 @@ export class DirectChatTransport implements ChatProvider {
 
   declare private readonly s: DirectChatStreamHandler
   declare private readonly r?: DirectChatResumeHandler
+  declare private readonly e?: CreateUIMessageStreamOptions['onError']
   declare private readonly p?: DirectChatStreamProtocol
 
   constructor(options: DirectChatTransportOptions) {
     this.id = options.id ?? 'direct'
     this.s = options.stream
     this.r = options.resumeStream
+    this.e = options.onError
     this.p = options.streamProtocol
   }
 
   async chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>> {
-    const source = await this.s(request)
-    return this.c(source, request.signal)
+    if (this.p === 'chat-chunk') {
+      const source = await this.s(request)
+      return readChatChunkStream(source as DirectChatChunkSource, request.signal)
+    }
+
+    return this.c(() => this.s(request), request.signal)
   }
 
   async resumeChat(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null> {
     if (!this.r) return null
 
     const source = await this.r(request)
-    return source ? this.c(source, request.signal) : null
+    if (!source) return null
+    if (this.p === 'chat-chunk')
+      return readChatChunkStream(source as DirectChatChunkSource, request.signal)
+    return this.c(() => source, request.signal)
   }
 
   completion(request: CompletionRequest): Promise<AsyncIterable<string>>
@@ -78,13 +91,20 @@ export class DirectChatTransport implements ChatProvider {
     throw new AiHooksError('Chat')
   }
 
-  private c(source: DirectChatStreamSource, signal?: AbortSignal): AsyncIterable<ChatChunk> {
-    if (this.p === 'chat-chunk') {
-      return readChatChunkStream(source as DirectChatChunkSource, signal)
-    }
-
+  private c(
+    source: () => DirectChatStreamSource | Promise<DirectChatStreamSource>,
+    signal?: AbortSignal
+  ): AsyncIterable<ChatChunk> {
     return readUIMessageStream({
-      response: createUIMessageStreamResponse({ stream: source as UIMessageStreamSource }),
+      response: createUIMessageStreamResponse({
+        stream: createUIMessageStream({
+          signal,
+          onError: this.e,
+          async execute({ merge }) {
+            return merge((await source()) as UIMessageStreamSource)
+          }
+        })
+      }),
       signal
     })
   }

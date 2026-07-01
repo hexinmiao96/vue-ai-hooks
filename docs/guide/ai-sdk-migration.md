@@ -106,8 +106,10 @@ const chat = useChat({
 })
 ```
 
-Its default protocol consumes AI SDK UI message stream parts. If your handler
-already yields `ChatChunk` values, pass `streamProtocol: 'chat-chunk'`.
+Its default protocol consumes AI SDK UI message stream parts. Use `onError` to
+sanitize local agent failures before they surface as UI message stream errors.
+If your handler already yields `ChatChunk` values, pass
+`streamProtocol: 'chat-chunk'`.
 
 ## Input handling
 

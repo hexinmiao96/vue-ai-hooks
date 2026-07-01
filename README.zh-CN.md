@@ -376,6 +376,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `createUIMessageStream()`；需要发出这些 parts 时，可以使用
 `createUIMessageStreamResponse()` 或 `pipeUIMessageStreamToResponse()`。进程内 agent、demo
 或测试工具不想经过 HTTP proxy 时，可以使用 `DirectChatTransport` 消费这些 stream。
+`DirectChatTransport({ onError })` 可以先清洗本地 agent 失败，再让它进入 UI message stream。
 底层自定义 transport 仍可直接使用 `readUIMessageStream()`。已经自行解析 SSE 或只需要处理单个 part 时，也可以使用
 `createUIMessageStreamParser()`、`toChatChunks()`、`formatSSEData()` 和 `parseSSE()`。
 
