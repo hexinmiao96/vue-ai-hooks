@@ -9,9 +9,12 @@ import {
   jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
+  safeValidateMessages,
+  safeValidateUIMessages,
   serializeMessages,
   tool,
   validateMessages,
+  validateUIMessages,
   useChat
 } from '../src/composables/useChat'
 import type { ChatProvider } from '../src/providers/types'
@@ -256,6 +259,102 @@ describe('useChat', () => {
     expect(raw[0].createdAt).toBe('2026-01-02T03:04:05.000Z')
     expect(validateMessages([{ id: 'bad', role: 'assistant', content: 1 }])).toBe(false)
     expect(validateMessages({ messages: raw })).toBe(false)
+  })
+
+  it('safely validates persisted messages with metadata and data part schemas', () => {
+    const raw = [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: 'answer',
+        metadata: { source: 'storage' },
+        parts: [
+          { type: 'text', text: 'answer' },
+          { type: 'data-progress', data: { value: 60 } }
+        ]
+      }
+    ]
+
+    const result = safeValidateMessages(raw, {
+      messageMetadataSchema: {
+        type: 'object',
+        required: ['source'],
+        properties: { source: { type: 'string' } },
+        additionalProperties: false
+      },
+      dataPartSchemas: {
+        'data-progress': {
+          type: 'object',
+          required: ['value'],
+          properties: { value: { type: 'number' } },
+          additionalProperties: false
+        }
+      }
+    })
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.messages[0].metadata).toEqual({ source: 'storage' })
+      expect(result.messages[0].parts?.[1]).toEqual({
+        type: 'data-progress',
+        data: { value: 60 }
+      })
+    }
+    expect(
+      validateMessages(raw, { dataPartSchemas: { 'data-progress': { type: 'object' } } })
+    ).toBe(true)
+  })
+
+  it('reports safe message validation errors without throwing', () => {
+    const raw = [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: 'answer',
+        metadata: { source: 1 },
+        parts: [{ type: 'data-progress', data: { value: 'bad' } }]
+      }
+    ]
+
+    const metadataResult = safeValidateMessages(raw, {
+      messageMetadataSchema: {
+        type: 'object',
+        properties: { source: { type: 'string' } }
+      }
+    })
+    const dataResult = safeValidateMessages(raw, {
+      dataPartSchemas: {
+        'data-progress': {
+          type: 'object',
+          properties: { value: { type: 'number' } }
+        }
+      }
+    })
+
+    expect(metadataResult.success).toBe(false)
+    if (!metadataResult.success) {
+      expect(metadataResult.error.message).toContain('messages[0].metadata.source must be string')
+    }
+    expect(dataResult.success).toBe(false)
+    if (!dataResult.success) {
+      expect(dataResult.error.message).toContain('messages[0].parts[0].data.value must be number')
+    }
+    expect(
+      validateMessages(raw, { dataPartSchemas: { 'data-progress': { type: 'number' } } })
+    ).toBe(false)
+  })
+
+  it('exposes AI SDK-style UI message validation aliases', () => {
+    const raw = [{ id: 'm1', role: 'user', content: 'hi' }]
+
+    expect(validateUIMessages(raw)).toEqual([{ id: 'm1', role: 'user', content: 'hi' }])
+    expect(safeValidateUIMessages(raw)).toEqual({
+      success: true,
+      messages: [{ id: 'm1', role: 'user', content: 'hi' }]
+    })
+    expect(() => validateUIMessages([{ id: 'bad', role: 'user', content: 1 }])).toThrow(
+      'Messages could not be deserialized'
+    )
   })
 
   it('converts UI messages to model messages without mutating originals', () => {

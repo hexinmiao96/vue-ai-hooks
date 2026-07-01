@@ -22,10 +22,12 @@
 `ToolCallHandlerContext`、`ToolResultHandlerContext`、`StopWhen`、
 `StopWhenOptions`、`JsonSchemaDefinition`、`ToolInputSchema`、`ToolExecute`、
 `ToolDefinition`、`AnyToolDefinition`、`ToolSet`、`ChatToolsInput`、
-`RetryOptions` 和 `RetryContext`。
+`ValidateMessagesOptions`、`ValidateUIMessagesOptions`、`SafeValidateMessagesResult`、
+`SafeValidateUIMessagesResult`、`RetryOptions` 和 `RetryContext`。
 
 公开 helper：`pruneMessages`、`convertToModelMessages`、`serializeMessages`、
-`deserializeMessages`、`validateMessages` 和
+`deserializeMessages`、`validateMessages`、`safeValidateMessages`、
+`validateUIMessages`、`safeValidateUIMessages` 和
 `lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、`jsonSchema`、
 `tool`、`dynamicTool`。
 
@@ -200,13 +202,29 @@ const restored = deserializeMessages(await loadChat('support-thread-1'))
 if (restored) setMessages(restored)
 ```
 
-只需要在导入或接收 payload 前做 boolean 门禁时，用 `validateMessages(raw)`；需要恢复
-`Date` 并得到克隆后的消息对象时，继续用 `deserializeMessages(raw)`：
+只需要在导入或接收 payload 前做 boolean 门禁时，用 `validateMessages(raw)`；希望拿到
+“恢复后的 messages 或错误”且不抛异常时，用 `safeValidateMessages(raw)`。迁移已有
+AI SDK 服务端代码时，可以使用 `validateUIMessages(raw)` 或
+`safeValidateUIMessages(raw)`。这些校验 helper 都支持 `messageMetadataSchema` 和
+`dataPartSchemas`，因此导入的 payload 可以复用 `useChat()` 运行时的 schema：
 
 ```ts
 const raw = await loadChat('support-thread-1')
-if (!validateMessages(raw)) throw new Error('Invalid stored chat')
-setMessages(deserializeMessages(raw)!)
+const result = safeValidateMessages(raw, {
+  messageMetadataSchema: {
+    type: 'object',
+    properties: { source: { type: 'string' } }
+  },
+  dataPartSchemas: {
+    'data-progress': {
+      type: 'object',
+      properties: { value: { type: 'number' } }
+    }
+  }
+})
+
+if (!result.success) throw result.error
+setMessages(result.messages)
 ```
 
 只有当你需要自定义包裹结构，或不想用默认 localStorage 时，才覆盖 `storage`、

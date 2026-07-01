@@ -22,10 +22,13 @@ Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
 `StopWhenOptions`, `JsonSchemaDefinition`, `ToolInputSchema`,
 `ToolExecute`, `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
-`ChatToolsInput`, `RetryOptions`, and `RetryContext`.
+`ChatToolsInput`, `ValidateMessagesOptions`, `ValidateUIMessagesOptions`,
+`SafeValidateMessagesResult`, `SafeValidateUIMessagesResult`, `RetryOptions`,
+and `RetryContext`.
 
 Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`,
-`deserializeMessages`, `validateMessages`,
+`deserializeMessages`, `validateMessages`, `safeValidateMessages`,
+`validateUIMessages`, `safeValidateUIMessages`,
 `lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`, `jsonSchema`,
 `tool`, and `dynamicTool`.
 
@@ -204,13 +207,30 @@ if (restored) setMessages(restored)
 ```
 
 Use `validateMessages(raw)` when you only need a boolean gate before accepting
-or importing a payload. Use `deserializeMessages(raw)` when you need restored
-`Date` values and cloned message objects:
+or importing a payload. Use `safeValidateMessages(raw)` when you want either
+restored messages or a validation error without throwing. Use
+`validateUIMessages(raw)` or `safeValidateUIMessages(raw)` when you are porting
+AI SDK server code that already validates persisted UI messages. All validation
+helpers accept `messageMetadataSchema` and `dataPartSchemas`, so imported
+payloads can be checked with the same schemas used by `useChat()`:
 
 ```ts
 const raw = await loadChat('support-thread-1')
-if (!validateMessages(raw)) throw new Error('Invalid stored chat')
-setMessages(deserializeMessages(raw)!)
+const result = safeValidateMessages(raw, {
+  messageMetadataSchema: {
+    type: 'object',
+    properties: { source: { type: 'string' } }
+  },
+  dataPartSchemas: {
+    'data-progress': {
+      type: 'object',
+      properties: { value: { type: 'number' } }
+    }
+  }
+})
+
+if (!result.success) throw result.error
+setMessages(result.messages)
 ```
 
 Override `storage`, `serialize`, or `deserialize` only when you need a custom

@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preparation and lifecycle callbacks.
 - Added `validateMessages()` for boolean validation of persisted or imported
   chat message payloads before hydration.
+- Added `safeValidateMessages()`, `validateUIMessages()`, and
+  `safeValidateUIMessages()` for schema-aware persisted chat validation.
 - Added chat `streamProtocol: 'text'` support for app-owned proxy chat and
   resume endpoints that stream raw text.
 

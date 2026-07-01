@@ -14,9 +14,12 @@ export {
   jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
   pruneMessages,
+  safeValidateMessages,
+  safeValidateUIMessages,
   serializeMessages,
   tool,
   validateMessages,
+  validateUIMessages,
   useChat,
   type AddToolOutputOptions,
   type AddToolResultOptions,
@@ -55,6 +58,8 @@ export {
   type SendChatMessageInput,
   type SendChatTrigger,
   type SerializedMessage,
+  type SafeValidateMessagesResult,
+  type SafeValidateUIMessagesResult,
   type SetDataInput,
   type SetMessagesInput,
   type StopWhen,
@@ -70,7 +75,9 @@ export {
   type ToolCallHandlerContext,
   type ToolResultHandlerContext,
   type UseChatOptions,
-  type UseChatReturn
+  type UseChatReturn,
+  type ValidateMessagesOptions,
+  type ValidateUIMessagesOptions
 } from './composables/useChat'
 export {
   useCompletion,

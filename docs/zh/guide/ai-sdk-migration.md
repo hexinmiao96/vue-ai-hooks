@@ -19,33 +19,34 @@
 
 ## 快速映射
 
-| AI SDK UI 概念                                 | vue-ai-hooks 对应能力                                                                                                                                         |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useChat()`                                    | `useChat()`                                                                                                                                                   |
-| `transport`                                    | `transport` 或 `provider`                                                                                                                                     |
-| `DefaultChatTransport`                         | `new DefaultChatTransport(...)`，或省略 `provider` 并使用 `api`、`baseURL`、`headers`、`body`                                                                 |
-| `DirectChatTransport`                          | `new DirectChatTransport({ stream })`，用于进程内 agent、测试和本地 demo                                                                                      |
-| `messages` 初始选项                            | `messages` 或 `initialMessages`                                                                                                                               |
-| `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                                                                                                         |
-| `generateId()` / `createIdGenerator()`         | `generateId()` 和 `createIdGenerator()`，用于覆盖 composable id 生成逻辑                                                                                      |
-| 应用自行管理 input state                       | 内置 `input`、`setInput()`、`handleInputChange()`                                                                                                             |
-| `sendMessage()`                                | `sendMessage()`                                                                                                                                               |
-| `stop()`                                       | `stop()`                                                                                                                                                      |
-| `resumeStream()`                               | `resumeStream()`，需要 provider 支持 `resumeChat`                                                                                                             |
-| `addToolOutput()` / 已弃用的 `addToolResult()` | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`                                                                                                  |
-| `addToolApprovalResponse()`                    | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`                                                                                          |
-| `tool()` / `dynamicTool()`                     | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`                                                                                         |
-| `stopWhen`                                     | `stopWhen`                                                                                                                                                    |
-| `experimental_throttle`                        | `experimental_throttle`，或更推荐的 `throttleMs`                                                                                                              |
-| 自定义 stream data                             | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`                                                                                               |
-| `experimental_useObject()`                     | `experimental_useObject()` 别名，或更推荐的 `useObject()`                                                                                                     |
-| AI SDK Core 图片生成                           | `useImage()` 调用你的自有 `/api/image` 路由                                                                                                                   |
-| AI SDK Core 视频生成                           | `useVideo()` 调用你的自有 `/api/video` 路由                                                                                                                   |
-| AI SDK Core 语音生成                           | `useSpeech()` 调用你的自有 `/api/speech` 路由                                                                                                                 |
-| AI SDK Core 音频转写                           | `useTranscription()` 调用你的自有 `/api/transcription` 路由                                                                                                   |
-| AI SDK Core 文档重排                           | `useRerank()` 调用你的自有 `/api/rerank` 路由                                                                                                                 |
-| AI SDK Core `cosineSimilarity()`               | `cosineSimilarity()`，用于比较 embedding 向量                                                                                                                 |
-| UI message stream 协议                         | `proxyProvider`、`createUIMessageStream()`、`createUIMessageStreamResponse()`、`pipeUIMessageStreamToResponse()`、`readUIMessageStream()` 和 `toChatChunks()` |
+| AI SDK UI 概念                                      | vue-ai-hooks 对应能力                                                                                                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useChat()`                                         | `useChat()`                                                                                                                                                   |
+| `transport`                                         | `transport` 或 `provider`                                                                                                                                     |
+| `DefaultChatTransport`                              | `new DefaultChatTransport(...)`，或省略 `provider` 并使用 `api`、`baseURL`、`headers`、`body`                                                                 |
+| `DirectChatTransport`                               | `new DirectChatTransport({ stream })`，用于进程内 agent、测试和本地 demo                                                                                      |
+| `messages` 初始选项                                 | `messages` 或 `initialMessages`                                                                                                                               |
+| `convertToModelMessages()`                          | `convertToModelMessages()`，用于移除 UI-only 消息字段                                                                                                         |
+| `validateUIMessages()` / `safeValidateUIMessages()` | `validateUIMessages()`、`safeValidateUIMessages()` 或 `safeValidateMessages()`，用于持久化聊天 payload                                                        |
+| `generateId()` / `createIdGenerator()`              | `generateId()` 和 `createIdGenerator()`，用于覆盖 composable id 生成逻辑                                                                                      |
+| 应用自行管理 input state                            | 内置 `input`、`setInput()`、`handleInputChange()`                                                                                                             |
+| `sendMessage()`                                     | `sendMessage()`                                                                                                                                               |
+| `stop()`                                            | `stop()`                                                                                                                                                      |
+| `resumeStream()`                                    | `resumeStream()`，需要 provider 支持 `resumeChat`                                                                                                             |
+| `addToolOutput()` / 已弃用的 `addToolResult()`      | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`                                                                                                  |
+| `addToolApprovalResponse()`                         | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`                                                                                          |
+| `tool()` / `dynamicTool()`                          | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`                                                                                         |
+| `stopWhen`                                          | `stopWhen`                                                                                                                                                    |
+| `experimental_throttle`                             | `experimental_throttle`，或更推荐的 `throttleMs`                                                                                                              |
+| 自定义 stream data                                  | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`                                                                                               |
+| `experimental_useObject()`                          | `experimental_useObject()` 别名，或更推荐的 `useObject()`                                                                                                     |
+| AI SDK Core 图片生成                                | `useImage()` 调用你的自有 `/api/image` 路由                                                                                                                   |
+| AI SDK Core 视频生成                                | `useVideo()` 调用你的自有 `/api/video` 路由                                                                                                                   |
+| AI SDK Core 语音生成                                | `useSpeech()` 调用你的自有 `/api/speech` 路由                                                                                                                 |
+| AI SDK Core 音频转写                                | `useTranscription()` 调用你的自有 `/api/transcription` 路由                                                                                                   |
+| AI SDK Core 文档重排                                | `useRerank()` 调用你的自有 `/api/rerank` 路由                                                                                                                 |
+| AI SDK Core `cosineSimilarity()`                    | `cosineSimilarity()`，用于比较 embedding 向量                                                                                                                 |
+| UI message stream 协议                              | `proxyProvider`、`createUIMessageStream()`、`createUIMessageStreamResponse()`、`pipeUIMessageStreamToResponse()`、`readUIMessageStream()` 和 `toChatChunks()` |
 
 ## Transport
 
@@ -163,6 +164,21 @@ useChat({
 
 也支持 `initialMessages`，两者同时存在时 `initialMessages` 优先。返回的 `messages`
 ref 仍是渲染时的事实来源。
+
+从不可信来源恢复持久化 UI messages 前，可以先用 `safeValidateUIMessages()`。
+它会恢复 `Date`，并用和 `useChat()` 相同的 schema 选项校验 `Message.parts`、message
+metadata 和自定义 data parts：
+
+```ts
+const result = safeValidateUIMessages(rawMessages, {
+  messageMetadataSchema,
+  dataPartSchemas
+})
+
+if (result.success) {
+  useChat({ messages: result.messages })
+}
+```
 
 后端路由或 provider 调用需要面向模型的历史，而不是 UI 渲染状态时，可以使用
 `convertToModelMessages(messages)`。它默认移除 `parts`、`id` 和 `createdAt`，
@@ -296,12 +312,14 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 10. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。
 11. 将文档重排调用迁移到 `useRerank({ api: '/api/rerank' })`，并把重排模型凭据保留在服务端。
 12. 通过 `messages` 或 `initialMessages` 保留已有初始历史。
-13. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
+13. 恢复持久化聊天历史前，用 `validateUIMessages()` 或
+    `safeValidateUIMessages()` 做服务端 UI message 校验。
+14. 将模型直连调用替换为 `openai`、`deepseek`、`openrouter`、`gemini`、`anthropic`
     或 `openaiCompatible`。
-14. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
-15. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
+15. UI 需要 AI SDK 风格命名时，把自定义数据状态迁移到 `data` / `setData()`。
+16. 将 AI SDK 的 `tool()` 定义直接放进 `useChat({ tools })`，或继续使用已有
     wire-format `Tool[]` 加 `toolHandlers`。
-16. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
+17. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-17. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
-18. 发布前运行 `pnpm release:check` 或你项目等价的门禁。
+18. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+19. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

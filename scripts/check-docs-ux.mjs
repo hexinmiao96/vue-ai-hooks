@@ -905,9 +905,14 @@ expect(
     files.useChat.includes('ChatPersistOptions') &&
     files.useChat.includes('SerializedMessage') &&
     files.useChat.includes('validateMessages(raw)') &&
+    files.useChat.includes('safeValidateMessages(raw)') &&
+    files.useChat.includes('safeValidateUIMessages(raw)') &&
+    files.useChat.includes('ValidateMessagesOptions') &&
+    files.aiSdkMigration.includes('safeValidateUIMessages(rawMessages') &&
+    files.aiSdkMigration.includes('| `validateUIMessages()` / `safeValidateUIMessages()`') &&
     files.useChat.includes('serializeMessages(messages.value)') &&
     files.useChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
-  'English useChat docs must document Date-safe message persistence helpers and public types'
+  'English useChat docs must document Date-safe and schema-safe message persistence helpers and public types'
 )
 expect(
   files.useChat.includes('## Structured message parts') &&
@@ -971,9 +976,14 @@ expect(
     files.zhUseChat.includes('ChatPersistOptions') &&
     files.zhUseChat.includes('SerializedMessage') &&
     files.zhUseChat.includes('validateMessages(raw)') &&
+    files.zhUseChat.includes('safeValidateMessages(raw)') &&
+    files.zhUseChat.includes('safeValidateUIMessages(raw)') &&
+    files.zhUseChat.includes('ValidateMessagesOptions') &&
+    files.zhAiSdkMigration.includes('safeValidateUIMessages(rawMessages') &&
+    files.zhAiSdkMigration.includes('| `validateUIMessages()` / `safeValidateUIMessages()`') &&
     files.zhUseChat.includes('serializeMessages(messages.value)') &&
     files.zhUseChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
-  'Chinese useChat docs must document Date-safe message persistence helpers and public types'
+  'Chinese useChat docs must document Date-safe and schema-safe message persistence helpers and public types'
 )
 expect(
   files.zhUseChat.includes('## 结构化消息 parts') &&

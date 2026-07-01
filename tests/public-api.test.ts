@@ -31,10 +31,13 @@ import {
   pruneMessages,
   proxyProvider,
   readUIMessageStream,
+  safeValidateMessages,
+  safeValidateUIMessages,
   serializeMessages,
   tool,
   toChatChunks,
   validateMessages,
+  validateUIMessages,
   useChat,
   useCompletion,
   useEmbedding,
@@ -161,6 +164,8 @@ import type {
   SendChatMessageInput,
   SetDataInput,
   SetMessagesInput,
+  SafeValidateMessagesResult,
+  SafeValidateUIMessagesResult,
   SendChatTrigger,
   SerializedMessage,
   SpeechGenerationRequest,
@@ -205,6 +210,8 @@ import type {
   UIMessageStreamWriter,
   UseChatOptions,
   UseChatReturn,
+  ValidateMessagesOptions,
+  ValidateUIMessagesOptions,
   UseCompletionOptions,
   UseCompletionReturn,
   UseEmbeddingOptions,
@@ -387,6 +394,13 @@ describe('public API types', () => {
     expectTypeOf(pipeUIMessageStreamToResponse).returns.toEqualTypeOf<Promise<void>>()
     expectTypeOf(formatSSEData).parameter(0).toEqualTypeOf<unknown>()
     expectTypeOf(formatSSEData).returns.toEqualTypeOf<string>()
+    expectTypeOf(validateMessages).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(validateMessages).parameter(1).toEqualTypeOf<ValidateMessagesOptions | undefined>()
+    expectTypeOf(validateMessages).returns.toEqualTypeOf<boolean>()
+    expectTypeOf(safeValidateMessages).returns.toEqualTypeOf<SafeValidateMessagesResult>()
+    expectTypeOf(validateUIMessages).returns.toEqualTypeOf<Message[]>()
+    expectTypeOf(safeValidateUIMessages).returns.toEqualTypeOf<SafeValidateUIMessagesResult>()
+    expectTypeOf<ValidateUIMessagesOptions>().toEqualTypeOf<ValidateMessagesOptions>()
     expectTypeOf<CreateUIMessageStreamResponseOptions>().toMatchTypeOf<{
       stream: UIMessageStreamSource
       status?: number

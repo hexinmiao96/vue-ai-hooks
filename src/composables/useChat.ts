@@ -316,6 +316,31 @@ export type MessageMetadataSchema<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 > = Record<string, unknown> | MessageMetadataValidator<TMessageMetadata>
 
+export interface ValidateMessagesOptions<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> {
+  dataPartSchemas?: DataPartSchemas<TData>
+  messageMetadataSchema?: MessageMetadataSchema<TMessageMetadata>
+}
+
+export type ValidateUIMessagesOptions<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> = ValidateMessagesOptions<TData, TMessageMetadata>
+
+export type SafeValidateMessagesResult =
+  | {
+      success: true
+      messages: Message[]
+    }
+  | {
+      success: false
+      error: Error
+    }
+
+export type SafeValidateUIMessagesResult = SafeValidateMessagesResult
+
 export interface UseChatOptions<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -845,8 +870,109 @@ export function deserializeMessages(raw: unknown): Message[] | null {
 /**
  * Check whether an unknown payload can be restored by `deserializeMessages()`.
  */
-export function validateMessages(raw: unknown): boolean {
-  return !!deserializeMessages(raw)
+export function validateMessages(raw: unknown, options: ValidateMessagesOptions = {}): boolean {
+  return safeValidateMessages(raw, options).success
+}
+
+/**
+ * Restore messages and return either the validated payload or the validation error.
+ */
+export function safeValidateMessages(
+  raw: unknown,
+  options: ValidateMessagesOptions = {}
+): SafeValidateMessagesResult {
+  const messages = deserializeMessages(raw)
+  if (!messages) {
+    return {
+      success: false,
+      error: new AiHooksError('Messages could not be deserialized')
+    }
+  }
+
+  try {
+    validateRestoredMessages(messages, options)
+    return { success: true, messages }
+  } catch (err) {
+    return { success: false, error: normalizeValidationError(err) }
+  }
+}
+
+/**
+ * AI SDK-style helper that returns validated UI messages or throws.
+ */
+export function validateUIMessages(
+  raw: unknown,
+  options: ValidateUIMessagesOptions = {}
+): Message[] {
+  const result = safeValidateMessages(raw, options)
+  if (!result.success) throw result.error
+  return result.messages
+}
+
+/**
+ * AI SDK-style helper that returns a discriminated result instead of throwing.
+ */
+export function safeValidateUIMessages(
+  raw: unknown,
+  options: ValidateUIMessagesOptions = {}
+): SafeValidateUIMessagesResult {
+  return safeValidateMessages(raw, options)
+}
+
+function validateRestoredMessages(messages: Message[], options: ValidateMessagesOptions) {
+  messages.forEach((message, messageIndex) => {
+    validateRestoredMessageMetadata(message.metadata, options, `messages[${messageIndex}].metadata`)
+    message.parts?.forEach((part, partIndex) => {
+      if (isMessageDataPart(part)) {
+        validateRestoredDataPart(
+          part,
+          options,
+          `messages[${messageIndex}].parts[${partIndex}].data`
+        )
+      }
+    })
+  })
+}
+
+function isMessageDataPart(
+  part: MessagePart
+): part is Extract<MessagePart, { type: 'data' | `data-${string}` }> {
+  return part.type === 'data' || part.type.startsWith('data-')
+}
+
+function validateRestoredMessageMetadata(
+  metadata: unknown,
+  options: ValidateMessagesOptions,
+  path: string
+) {
+  if (metadata === undefined || !options.messageMetadataSchema) return
+  const error =
+    typeof options.messageMetadataSchema === 'function'
+      ? options.messageMetadataSchema(metadata)
+        ? null
+        : `${path} did not match validator`
+      : validateJsonSchema(metadata, options.messageMetadataSchema, path)
+  if (error) throw new AiHooksError(`Message metadata did not match schema: ${error}`)
+}
+
+function validateRestoredDataPart(
+  part: Extract<MessagePart, { type: 'data' | `data-${string}` }>,
+  options: ValidateMessagesOptions,
+  path: string
+) {
+  const schema = options.dataPartSchemas?.[part.type]
+  if (!schema) return
+  const error =
+    typeof schema === 'function'
+      ? schema(part.data)
+        ? null
+        : `${path} did not match validator`
+      : validateJsonSchema(part.data, schema, path)
+  if (error) throw new AiHooksError(`Stream data part did not match schema: ${error}`)
+}
+
+function normalizeValidationError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err))
 }
 
 function toAiSdkTrigger(trigger: SendChatTrigger): AiSdkSendChatTrigger {
