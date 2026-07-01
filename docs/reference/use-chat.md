@@ -476,6 +476,19 @@ and `createdAt`, while preserving `role`, `content`, `name`, tool call fields,
 and shallow-cloned `metadata`. Pass `{ preserveIds: true }` or
 `{ preserveCreatedAt: true }` when your backend needs those fields, and
 `{ stripMetadata: true }` when metadata should stay client-side.
+Custom `data-*` parts are also removed by default. Pass `convertDataPart` when a
+specific data part should become model-readable context:
+
+```ts
+const modelMessages = convertToModelMessages(messages.value, {
+  convertDataPart(part) {
+    if (part.type !== 'data-chart') return
+    const data = part.data as { title?: string; value?: number }
+    return `Chart ${data.title}: ${data.value}`
+  }
+})
+```
+
 `ChatRequest.messages` accepts `ChatRequestMessage[]`, so
 `prepareSendMessagesRequest` and `prepareStep` can return `ModelMessage[]` for
 provider/proxy requests while the reactive UI state remains `Message[]`. In

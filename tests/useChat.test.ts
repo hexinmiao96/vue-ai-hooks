@@ -480,6 +480,54 @@ describe('useChat', () => {
     expect('metadata' in modelMessages[0]).toBe(false)
   })
 
+  it('converts custom data parts into model message content when requested', () => {
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Use this dashboard context.',
+        parts: [
+          { type: 'text', text: 'Use this dashboard context.' },
+          { type: 'data-chart', data: { title: 'Revenue', value: 42 } },
+          { type: 'data-empty', data: { hidden: true } },
+          { type: 'data-image', data: { url: 'https://cdn.test/chart.png' } }
+        ]
+      }
+    ]
+
+    const modelMessages = convertToModelMessages(messages, {
+      convertDataPart(part) {
+        if (part.type === 'data-chart' && typeof part.data === 'object' && part.data !== null) {
+          const data = part.data as { title?: unknown; value?: unknown }
+          return `Chart ${String(data.title)} value: ${String(data.value)}`
+        }
+        if (part.type === 'data-image') {
+          return {
+            type: 'image_url',
+            image_url: { url: 'https://cdn.test/chart.png', detail: 'auto' }
+          }
+        }
+        return undefined
+      }
+    })
+
+    expect(modelMessages).toEqual([
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'Use this dashboard context.' },
+          { type: 'text', text: 'Chart Revenue value: 42' },
+          {
+            type: 'image_url',
+            image_url: { url: 'https://cdn.test/chart.png', detail: 'auto' }
+          }
+        ]
+      }
+    ])
+    expect(messages[0].parts).toHaveLength(4)
+    expect(typeof messages[0].content).toBe('string')
+  })
+
   it('deserializes all structured message part variants', () => {
     const restored = deserializeMessages([
       {

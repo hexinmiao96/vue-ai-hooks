@@ -371,6 +371,7 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用
 `convertToModelMessages()` 把历史转换成不包含 UI-only `Message.parts` 的模型请求消息；
+某些自定义 `data-*` parts 需要变成模型可读上下文时可以传 `convertDataPart`。
 `ChatRequest.messages` 可直接接收这些 `ChatRequestMessage[]` payload。
 
 自有后端路由需要逐步产出 AI SDK UI message stream parts 时，可以使用

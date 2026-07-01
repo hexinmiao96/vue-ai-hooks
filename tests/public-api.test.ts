@@ -1614,7 +1614,12 @@ describe('public API types', () => {
       stripMetadata: true
     })
     const convertOptions: ConvertToModelMessagesOptions = {
-      preserveIds: true
+      preserveIds: true,
+      convertDataPart(part, sourceMessage) {
+        expectTypeOf(part).toEqualTypeOf<MessageDataPart>()
+        expectTypeOf(sourceMessage).toEqualTypeOf<Message>()
+        return { type: 'text', text: part.type }
+      }
     }
     const chatPersistOptions: ChatPersistOptions = {
       key: 'public-chat-test',

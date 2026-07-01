@@ -434,8 +434,9 @@ Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to
 a provider. Use `convertToModelMessages()` after pruning when a proxy route or
 provider adapter should receive model-facing messages without UI-only
-`Message.parts`; `ChatRequest.messages` accepts those `ChatRequestMessage[]`
-payloads directly.
+`Message.parts`; pass `convertDataPart` when selected custom `data-*` parts
+should become model-readable context. `ChatRequest.messages` accepts those
+`ChatRequestMessage[]` payloads directly.
 
 Use `createUIMessageStream()` when an app-owned route should produce AI SDK UI
 message stream parts over time. Use `createUIMessageStreamResponse()` or

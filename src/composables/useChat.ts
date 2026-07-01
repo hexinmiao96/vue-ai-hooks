@@ -292,6 +292,10 @@ export interface ConvertToModelMessagesOptions {
   preserveIds?: boolean
   preserveCreatedAt?: boolean
   stripMetadata?: boolean
+  convertDataPart?: (
+    part: Extract<MessagePart, { type: 'data' | `data-${string}` }>,
+    message: Message
+  ) => string | ContentPart | ContentPart[] | null | undefined
 }
 
 export interface ChatPersistOptions {
@@ -990,8 +994,12 @@ export function convertToModelMessages(
 
   return messages.map((message) => {
     const converted = cloneMessage(message) as ModelMessage & { parts?: MessagePart[] }
+    const dataParts = convertModelDataParts(message, options)
 
     delete converted.parts
+    if (dataParts.length) {
+      converted.content = appendModelContentParts(converted.content, dataParts)
+    }
     if (!preserveIds) delete converted.id
     if (!preserveCreatedAt) delete converted.createdAt
     else if (converted.createdAt !== undefined) {
@@ -1000,6 +1008,32 @@ export function convertToModelMessages(
     if (stripMetadata) delete converted.metadata
     return converted
   })
+}
+
+function convertModelDataParts(
+  message: Message,
+  options: ConvertToModelMessagesOptions
+): ContentPart[] {
+  if (!options.convertDataPart || !message.parts?.length) return []
+
+  const converted: ContentPart[] = []
+  for (const part of message.parts) {
+    if (!isMessageDataPart(part)) continue
+    const next = options.convertDataPart(part, message)
+    if (next == null) continue
+    if (typeof next === 'string') {
+      if (next) converted.push({ type: 'text', text: next })
+      continue
+    }
+    converted.push(...(Array.isArray(next) ? next : [next]))
+  }
+  return converted
+}
+
+function appendModelContentParts(content: MessageContent, parts: ContentPart[]): ContentPart[] {
+  const base: ContentPart[] =
+    typeof content === 'string' ? (content ? [{ type: 'text', text: content }] : []) : content
+  return [...base.map((part) => ({ ...part })), ...parts.map((part) => ({ ...part }))]
 }
 
 function hasContent(content: MessageContent): boolean {

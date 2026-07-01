@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `safeValidateUIMessages()` for schema-aware persisted chat validation.
 - Added chat `streamProtocol: 'text'` support for app-owned proxy chat and
   resume endpoints that stream raw text.
+- Added `convertToModelMessages({ convertDataPart })` for opt-in conversion of
+  custom `data-*` UI parts into model-facing content.
 
 ## [0.3.0] - 2026-06-30
 

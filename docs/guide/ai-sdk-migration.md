@@ -192,12 +192,19 @@ if (result.success) {
 
 When a backend route or provider call needs model-facing history instead of UI
 rendering state, use `convertToModelMessages(messages)`. It removes `parts`,
-`id`, and `createdAt` by default, while preserving content and tool call fields:
+`id`, and `createdAt` by default, while preserving content and tool call fields.
+Use `convertDataPart` when a custom `data-*` part should become model-readable
+context:
 
 ```ts
 import { convertToModelMessages } from 'vue-ai-hooks'
 
-const modelMessages = convertToModelMessages(chat.messages.value)
+const modelMessages = convertToModelMessages(chat.messages.value, {
+  convertDataPart(part) {
+    if (part.type !== 'data-chart') return
+    return `Chart context: ${JSON.stringify(part.data)}`
+  }
+})
 ```
 
 ## Tools
