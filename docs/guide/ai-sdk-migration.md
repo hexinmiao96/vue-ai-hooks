@@ -24,6 +24,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | AI SDK UI concept                                   | vue-ai-hooks equivalent                                                                                                                                         |
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useChat()`                                         | `useChat()`                                                                                                                                                     |
+| `new Chat(...)` / `useChat({ chat })`               | `new Chat(...)` and `useChat({ chat })` for sharing one chat instance across Vue components                                                                     |
 | `transport`                                         | `transport` or `provider`                                                                                                                                       |
 | `DefaultChatTransport`                              | `new DefaultChatTransport(...)`, or omit `provider` and use `api`, `baseURL`, `headers`, `body`                                                                 |
 | `DirectChatTransport`                               | `new DirectChatTransport({ stream })` for in-process agents, tests, and local demos                                                                             |
@@ -50,6 +51,29 @@ refs and provider objects instead of a full-stack framework integration layer.
 | AI SDK Core reranking                               | `useRerank()` calling your app-owned `/api/rerank` route                                                                                                        |
 | AI SDK Core `cosineSimilarity()`                    | `cosineSimilarity()` for comparing embedding vectors                                                                                                            |
 | UI message stream protocol                          | `proxyProvider`, `createUIMessageStream()`, `createUIMessageStreamResponse()`, `pipeUIMessageStreamToResponse()`, `readUIMessageStream()`, and `toChatChunks()` |
+
+## Chat instances
+
+AI SDK 5 can pass an existing chat instance into `useChat({ chat })`.
+`vue-ai-hooks` supports the same migration shape with a Vue ref-backed `Chat`
+class:
+
+```ts
+import { Chat, useChat } from 'vue-ai-hooks'
+
+export const supportChat = new Chat({
+  id: 'support-thread',
+  api: '/api/chat'
+})
+
+export function useSupportChat() {
+  return useChat({ chat: supportChat })
+}
+```
+
+The instance owns messages, status, tools, persistence, and callbacks. When it
+is passed to `useChat({ chat })`, all other `useChat` options are ignored, so put
+transport and request configuration on the `new Chat(...)` call.
 
 ## Transport
 

@@ -249,6 +249,8 @@ for (const snippet of [
   '# AI SDK migration',
   'AI SDK `useChat` reference',
   'Quick mapping',
+  'new Chat(...)',
+  'useChat({ chat })',
   'AI SDK Core video generation',
   'AI SDK Core transcription',
   'AI SDK Core reranking',
@@ -274,6 +276,8 @@ for (const snippet of [
   '# AI SDK 迁移',
   'AI SDK `useChat` 参考',
   '快速映射',
+  'new Chat(...)',
+  'useChat({ chat })',
   'AI SDK Core 视频生成',
   'AI SDK Core 音频转写',
   'AI SDK Core 文档重排',
@@ -905,6 +909,28 @@ expect(
     files.aiSdkMigration.includes('convertDataPart') &&
     files.readme.includes('`convertToModelMessages()`'),
   'English docs must document model message conversion helper in useChat, migration guide, and README'
+)
+expect(
+  files.useChat.includes('Public TypeScript types: `Chat`, `ChatOptions`') &&
+    files.useChat.includes('const sharedChat = new Chat') &&
+    files.useChat.includes('useChat({ chat: sharedChat })') &&
+    files.useChat.includes('other options are ignored') &&
+    files.aiSdkMigration.includes('## Chat instances') &&
+    files.aiSdkMigration.includes('export const supportChat = new Chat') &&
+    files.readme.includes('new Chat({ ... })') &&
+    files.readme.includes('useChat({ chat })'),
+  'English docs must document reusable Chat instances and useChat({ chat }) precedence'
+)
+expect(
+  files.zhUseChat.includes('公开 TypeScript 类型：`Chat`、`ChatOptions`') &&
+    files.zhUseChat.includes('const sharedChat = new Chat') &&
+    files.zhUseChat.includes('useChat({ chat: sharedChat })') &&
+    files.zhUseChat.includes('其它选项') &&
+    files.zhAiSdkMigration.includes('## Chat 实例') &&
+    files.zhAiSdkMigration.includes('export const supportChat = new Chat') &&
+    files.zhReadme.includes('new Chat({ ... })') &&
+    files.zhReadme.includes('useChat({ chat })'),
+  'Chinese docs must document reusable Chat instances and useChat({ chat }) precedence'
 )
 expect(
   files.useChat.includes('## Message persistence') &&

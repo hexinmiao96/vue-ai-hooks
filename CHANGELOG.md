@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added a `Chat` instance class and `useChat({ chat })` support so Vue apps can
+  share an AI SDK-style chat object across components while reusing the existing
+  streaming, tool, persistence, and resume behavior.
+
 ## [0.4.0] - 2026-07-01
 
 ### Added

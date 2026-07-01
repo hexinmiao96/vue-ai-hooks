@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
 import {
+  Chat,
   convertToModelMessages,
   deserializeMessages,
   dynamicTool,
@@ -176,6 +177,34 @@ describe('useChat', () => {
     const initial = [{ id: 'm1', role: 'user' as const, content: 'hi' }]
     const { messages } = useChat({ provider: fakeProvider([]), messages: initial })
     expect(messages.value).toEqual(initial)
+  })
+
+  it('reuses an existing Chat instance when useChat receives chat', async () => {
+    const requests: ChatRequest[] = []
+    const chat = new Chat({
+      id: 'chat-instance',
+      provider: fakeTurnProvider([[{ content: 'from instance' }]], requests)
+    })
+    const ignoredProvider = fakeProvider([{ content: 'ignored' }])
+
+    const reused = useChat({
+      chat,
+      id: 'ignored-id',
+      provider: ignoredProvider,
+      messages: [{ id: 'ignored-message', role: 'user', content: 'ignored' }]
+    })
+
+    expect(reused).toBe(chat)
+    expect(reused.id.value).toBe('chat-instance')
+
+    await reused.sendMessage({ text: 'hello' })
+
+    expect(requests).toHaveLength(1)
+    expect(requests[0].id).toBe('chat-instance')
+    expect(reused.messages.value.map((message) => message.content)).toEqual([
+      'hello',
+      'from instance'
+    ])
   })
 
   it('prefers initialMessages over messages when both are provided', () => {

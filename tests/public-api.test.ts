@@ -3,6 +3,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   AiHooksError,
   anthropic,
+  Chat,
   convertToModelMessages,
   cosineSimilarity,
   createIdGenerator,
@@ -59,6 +60,7 @@ import type {
   AppendChatOptions,
   AnthropicConfig,
   ChatFinishInfo,
+  ChatOptions,
   ChatChunk,
   ChatAttachmentInput,
   ChatAttachmentsInput,
@@ -433,6 +435,8 @@ describe('public API types', () => {
     const chat = useChat({ provider } satisfies UseChatOptions)
     const defaultTransportChat = useChat({} satisfies UseChatOptions)
     const apiChat = useChat({ api: '/api/chat' } satisfies UseChatOptions)
+    const chatInstance = new Chat({ provider } satisfies ChatOptions)
+    const instanceChat = useChat({ chat: chatInstance, provider } satisfies UseChatOptions)
     const typedChat = useChat<{ progress: number; label?: string }>({
       provider,
       onData(part) {
@@ -505,6 +509,9 @@ describe('public API types', () => {
     expectTypeOf(chat).toEqualTypeOf<UseChatReturn>()
     expectTypeOf(defaultTransportChat).toEqualTypeOf<UseChatReturn>()
     expectTypeOf(apiChat).toEqualTypeOf<UseChatReturn>()
+    expect(instanceChat).toBe(chatInstance)
+    expectTypeOf(chatInstance).toMatchTypeOf<UseChatReturn>()
+    expectTypeOf(instanceChat).toEqualTypeOf<UseChatReturn>()
     expectTypeOf(chat.id).toEqualTypeOf<Ref<string>>()
     expectTypeOf(chat.messages).toEqualTypeOf<Ref<Message[]>>()
     expectTypeOf(chat.status).toEqualTypeOf<Ref<ChatStatus>>()
@@ -586,6 +593,8 @@ describe('public API types', () => {
     expectTypeOf(defaultTransportCompletion).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf(completionApi).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf<UseChatOptions>().toMatchTypeOf<RetryOptions>()
+    expectTypeOf<UseChatOptions['chat']>().toEqualTypeOf<Chat | undefined>()
+    expectTypeOf<ChatOptions>().toEqualTypeOf<Omit<UseChatOptions, 'chat'>>()
     expectTypeOf<UseChatOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseChatOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseChatOptions['api']>().toEqualTypeOf<string | undefined>()

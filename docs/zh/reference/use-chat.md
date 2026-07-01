@@ -2,7 +2,7 @@
 
 用于流式聊天补全的核心组合式函数。
 
-公开 TypeScript 类型：`UseChatOptions`、`UseChatReturn`、`ToolCallHandler`、
+公开 TypeScript 类型：`Chat`、`ChatOptions`、`UseChatOptions`、`UseChatReturn`、`ToolCallHandler`、
 `AppendChatOptions`、`SendChatMessageInput`、`AddToolResultOptions`、`AddToolOutputOptions`、
 `ToolApprovalResponse`、`ChatFinishInfo`、`ChatRequestInfo`、`ChatRequestLifecycleKind`、
 `ChatResponseInfo`、`ChatStatus`、`RegenerateChatOptions`、`ResumeChatOptions`、
@@ -51,6 +51,22 @@ const chat = useChat({
 })
 ```
 
+多个组件需要共享同一个控制对象时，可以先创建可复用 chat 实例：
+
+```ts
+import { Chat, useChat } from 'vue-ai-hooks'
+
+const sharedChat = new Chat({
+  api: '/api/chat',
+  id: 'support-thread'
+})
+
+const chat = useChat({ chat: sharedChat })
+```
+
+传入 `chat` 后，`useChat()` 会直接返回这个实例，并忽略其它选项。Provider、transport、
+id、持久化和回调应配置在 `new Chat(...)` 这一步。
+
 传入自定义数据类型后，`streamData` 和 `onData` 会带上类型：
 
 ```ts
@@ -78,6 +94,7 @@ const { streamData } = useChat<{ progress: number; label?: string }>({
 
 | 名称                              | 类型                                                                   | 默认值       | 说明                                                           |
 | --------------------------------- | ---------------------------------------------------------------------- | ------------ | -------------------------------------------------------------- |
+| `chat`                            | `Chat`                                                                 | -            | 复用已有 chat 实例；传入后其它选项会被忽略。                   |
 | `provider`                        | `ChatProvider`                                                         | proxy        | 要使用的 Provider；省略时使用默认 proxy transport。            |
 | `transport`                       | `ChatProvider`                                                         | -            | AI SDK 风格的 `provider` 别名。                                |
 | `api`                             | `string`                                                               | `/api/chat`  | 默认 proxy transport 的 chat URL。                             |

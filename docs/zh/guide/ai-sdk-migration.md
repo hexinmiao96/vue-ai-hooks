@@ -22,6 +22,7 @@
 | AI SDK UI 概念                                      | vue-ai-hooks 对应能力                                                                                                                                         |
 | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useChat()`                                         | `useChat()`                                                                                                                                                   |
+| `new Chat(...)` / `useChat({ chat })`               | `new Chat(...)` 和 `useChat({ chat })`，用于在多个 Vue 组件间共享同一个 chat 实例                                                                             |
 | `transport`                                         | `transport` 或 `provider`                                                                                                                                     |
 | `DefaultChatTransport`                              | `new DefaultChatTransport(...)`，或省略 `provider` 并使用 `api`、`baseURL`、`headers`、`body`                                                                 |
 | `DirectChatTransport`                               | `new DirectChatTransport({ stream })`，用于进程内 agent、测试和本地 demo                                                                                      |
@@ -48,6 +49,27 @@
 | AI SDK Core 文档重排                                | `useRerank()` 调用你的自有 `/api/rerank` 路由                                                                                                                 |
 | AI SDK Core `cosineSimilarity()`                    | `cosineSimilarity()`，用于比较 embedding 向量                                                                                                                 |
 | UI message stream 协议                              | `proxyProvider`、`createUIMessageStream()`、`createUIMessageStreamResponse()`、`pipeUIMessageStreamToResponse()`、`readUIMessageStream()` 和 `toChatChunks()` |
+
+## Chat 实例
+
+AI SDK 5 可以把已有 chat 实例传给 `useChat({ chat })`。`vue-ai-hooks` 也提供
+Vue ref 驱动的 `Chat` 类来承接这种迁移方式：
+
+```ts
+import { Chat, useChat } from 'vue-ai-hooks'
+
+export const supportChat = new Chat({
+  id: 'support-thread',
+  api: '/api/chat'
+})
+
+export function useSupportChat() {
+  return useChat({ chat: supportChat })
+}
+```
+
+实例持有 messages、status、tools、持久化和回调。传给 `useChat({ chat })` 后，其它
+`useChat` 选项会被忽略，因此 transport 和请求配置应写在 `new Chat(...)` 这一步。
 
 ## Transport
 

@@ -2,7 +2,7 @@
 
 The core composable for streaming chat completions.
 
-Public TypeScript types: `UseChatOptions`, `UseChatReturn`,
+Public TypeScript types: `Chat`, `ChatOptions`, `UseChatOptions`, `UseChatReturn`,
 `AppendChatOptions`, `SendChatMessageInput`, `AddToolResultOptions`, `AddToolOutputOptions`,
 `ToolApprovalResponse`, `ChatFinishInfo`, `ChatRequestInfo`, `ChatRequestLifecycleKind`,
 `ChatResponseInfo`, `ChatStatus`, `RegenerateChatOptions`, `ResumeChatOptions`,
@@ -53,6 +53,24 @@ const chat = useChat({
 })
 ```
 
+Create a reusable chat instance when several components should share one
+controller object:
+
+```ts
+import { Chat, useChat } from 'vue-ai-hooks'
+
+const sharedChat = new Chat({
+  api: '/api/chat',
+  id: 'support-thread'
+})
+
+const chat = useChat({ chat: sharedChat })
+```
+
+When `chat` is provided, `useChat()` returns that instance and ignores other
+options. Configure the provider, transport, id, persistence, and callbacks on
+the `new Chat(...)` call instead.
+
 Pass a custom data shape to type `streamData` and `onData`:
 
 ```ts
@@ -80,6 +98,7 @@ Use `input` with a Vue form for the common composer flow:
 
 | Name                              | Type                                                                   | Default      | Description                                                            |
 | --------------------------------- | ---------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| `chat`                            | `Chat`                                                                 | —            | Existing chat instance to reuse; other options are ignored.            |
 | `provider`                        | `ChatProvider`                                                         | proxy        | The provider to use. Omit to use the default proxy transport.          |
 | `transport`                       | `ChatProvider`                                                         | —            | AI SDK-style alias for `provider`.                                     |
 | `api`                             | `string`                                                               | `/api/chat`  | Chat URL for the default proxy transport.                              |

@@ -54,8 +54,8 @@ The AI-in-Vue story is currently fragmented. Options today:
   request tracing.
 - **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
-  pruning, `DefaultChatTransport`, `DirectChatTransport`, plus reusable UI stream
-  decoding utilities.
+  pruning, reusable `Chat` instances, `DefaultChatTransport`,
+  `DirectChatTransport`, plus reusable UI stream decoding utilities.
 - **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.
@@ -431,6 +431,10 @@ Passing the same `id` to multiple `useChat()` calls shares chat state across
 components. The first instance seeds `initialMessages` and `initialInput`;
 `messages` is accepted as an AI SDK-style alias for `initialMessages`. `setId()`
 only changes the id sent with future provider requests.
+When a component tree should share one explicit controller object, create
+`new Chat({ ... })` and pass it to `useChat({ chat })`; the instance owns the
+provider, persistence, callbacks, messages, and status, and other `useChat`
+options are ignored.
 
 Use `pruneMessages()` inside `prepareSendMessagesRequest` when long chats should
 send only recent context, system prompts, and current or selected tool details to

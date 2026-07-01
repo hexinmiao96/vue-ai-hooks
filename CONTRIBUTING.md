@@ -97,8 +97,8 @@ implementation. Most providers that follow the OpenAI REST spec can use
 Run `pnpm build && pnpm size:check` before submitting changes that affect
 runtime code. Current published bundle budgets:
 
-- `dist/index.mjs`: 84,500 bytes raw, 21,800 bytes gzip.
-- `dist/index.cjs`: 59,000 bytes raw, 19,000 bytes gzip.
+- `dist/index.mjs`: 127,200 bytes raw, 30,600 bytes gzip.
+- `dist/index.cjs`: 89,700 bytes raw, 26,600 bytes gzip.
 
 ## Commit messages
 

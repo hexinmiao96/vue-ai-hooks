@@ -363,6 +363,7 @@ export interface UseChatOptions<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 >
   extends RetryOptions, StreamThrottleOptions {
+  chat?: Chat<TData, TMessageMetadata>
   provider?: ChatProvider
   transport?: ChatProvider
   api?: string
@@ -457,6 +458,11 @@ export interface UseChatReturn<
   clear: () => void
   abortController: Ref<AbortController | null>
 }
+
+export type ChatOptions<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> = Omit<UseChatOptions<TData, TMessageMetadata>, 'chat'>
 
 const empty = [] as Message[]
 
@@ -1267,6 +1273,8 @@ export function useChat<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 >(options: UseChatOptions<TData, TMessageMetadata> = {}): UseChatReturn<TData, TMessageMetadata> {
+  if (options.chat) return options.chat
+
   const {
     provider: providedProvider,
     transport,
@@ -2524,5 +2532,51 @@ export function useChat<
     clearTrace,
     clear,
     abortController
+  }
+}
+
+export class Chat<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> implements UseChatReturn<TData, TMessageMetadata> {
+  declare readonly id: UseChatReturn<TData, TMessageMetadata>['id']
+  declare readonly messages: UseChatReturn<TData, TMessageMetadata>['messages']
+  declare readonly input: UseChatReturn<TData, TMessageMetadata>['input']
+  declare readonly status: UseChatReturn<TData, TMessageMetadata>['status']
+  declare readonly usage: UseChatReturn<TData, TMessageMetadata>['usage']
+  declare readonly data: UseChatReturn<TData, TMessageMetadata>['data']
+  declare readonly streamData: UseChatReturn<TData, TMessageMetadata>['streamData']
+  declare readonly pendingToolCalls: UseChatReturn<TData, TMessageMetadata>['pendingToolCalls']
+  declare readonly isLoading: UseChatReturn<TData, TMessageMetadata>['isLoading']
+  declare readonly error: UseChatReturn<TData, TMessageMetadata>['error']
+  declare readonly lastRequest: UseChatReturn<TData, TMessageMetadata>['lastRequest']
+  declare readonly lastResponse: UseChatReturn<TData, TMessageMetadata>['lastResponse']
+  declare readonly append: UseChatReturn<TData, TMessageMetadata>['append']
+  declare readonly sendMessage: UseChatReturn<TData, TMessageMetadata>['sendMessage']
+  declare readonly addToolResult: UseChatReturn<TData, TMessageMetadata>['addToolResult']
+  declare readonly addToolOutput: UseChatReturn<TData, TMessageMetadata>['addToolOutput']
+  declare readonly addToolApprovalResponse: UseChatReturn<
+    TData,
+    TMessageMetadata
+  >['addToolApprovalResponse']
+  declare readonly approveToolCall: UseChatReturn<TData, TMessageMetadata>['approveToolCall']
+  declare readonly rejectToolCall: UseChatReturn<TData, TMessageMetadata>['rejectToolCall']
+  declare readonly regenerate: UseChatReturn<TData, TMessageMetadata>['regenerate']
+  declare readonly resumeStream: UseChatReturn<TData, TMessageMetadata>['resumeStream']
+  declare readonly reload: UseChatReturn<TData, TMessageMetadata>['reload']
+  declare readonly stop: UseChatReturn<TData, TMessageMetadata>['stop']
+  declare readonly setId: UseChatReturn<TData, TMessageMetadata>['setId']
+  declare readonly setInput: UseChatReturn<TData, TMessageMetadata>['setInput']
+  declare readonly handleInputChange: UseChatReturn<TData, TMessageMetadata>['handleInputChange']
+  declare readonly handleSubmit: UseChatReturn<TData, TMessageMetadata>['handleSubmit']
+  declare readonly setMessages: UseChatReturn<TData, TMessageMetadata>['setMessages']
+  declare readonly setData: UseChatReturn<TData, TMessageMetadata>['setData']
+  declare readonly clearError: UseChatReturn<TData, TMessageMetadata>['clearError']
+  declare readonly clearTrace: UseChatReturn<TData, TMessageMetadata>['clearTrace']
+  declare readonly clear: UseChatReturn<TData, TMessageMetadata>['clear']
+  declare readonly abortController: UseChatReturn<TData, TMessageMetadata>['abortController']
+
+  constructor(options: ChatOptions<TData, TMessageMetadata> = {}) {
+    Object.assign(this, useChat(options))
   }
 }

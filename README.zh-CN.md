@@ -46,7 +46,7 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **生产聊天工作流**：服务端代理路径、可恢复流、thread 上下文、请求准备钩子、自定义
   body、metadata 和请求追踪。
 - **AI SDK 风格 UI helper**：`sendMessage`、工具输出/审批别名、文件附件、结构化
-  `Message.parts`、自定义流数据、消息裁剪、`DefaultChatTransport`、
+  `Message.parts`、自定义流数据、消息裁剪、可复用 `Chat` 实例、`DefaultChatTransport`、
   `DirectChatTransport`，以及可复用的 UI stream 解码工具。
 - **工具调用控制**：`tool()` / `dynamicTool()` helper、本地 handler、审批 gate、活跃工具筛选、停止条件和逐步骤请求准备。
 - **类型化输出和生成**：JSON Schema 结构化输出、embedding 向量、自有后端图片、视频、语音、转写和重排路由、
@@ -369,6 +369,9 @@ agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `t
 `useChat`、`useCompletion`、`useGeneration` 和 `useObject` 支持 `generateId`，适合 SSR、持久化、测试快照或后端链路追踪需要稳定 ID 的场景。AI SDK 风格的随机 ID 可以直接使用 `createIdGenerator()`。显式传入的 `id` 和 `messageId` 仍然优先。
 
 多个 `useChat()` 传入同一个 `id` 时，会在组件之间共享聊天状态。某个 id 的第一个实例会写入 `initialMessages` 和 `initialInput`；`messages` 也可作为 AI SDK 风格的 `initialMessages` 别名。`setId()` 只会改变后续 provider request 携带的 id。
+如果组件树需要共享一个明确的控制对象，可以先创建 `new Chat({ ... })`，再传给
+`useChat({ chat })`；实例会持有 provider、持久化、回调、messages 和 status，其它
+`useChat` 选项会被忽略。
 
 长对话只想发送最近上下文、system prompt 和当前工具细节时，可以在
 `prepareSendMessagesRequest` 中使用 `pruneMessages()`。裁剪之后还可以使用

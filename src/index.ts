@@ -6,6 +6,7 @@
 
 // Composables
 export {
+  Chat,
   convertToModelMessages,
   deserializeMessages,
   dynamicTool,
@@ -27,6 +28,7 @@ export {
   type AiSdkSendChatTrigger,
   type AnyToolDefinition,
   type AppendChatOptions,
+  type ChatOptions,
   type ChatToolsInput,
   type ChatPersistOptions,
   type ChatFinishInfo,
