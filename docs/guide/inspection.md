@@ -25,22 +25,20 @@ debugging migration code.
 ```vue
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useChat } from 'vue-ai-hooks'
+import { inspectRequestTrace, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({ api: '/api/chat' })
 
-const traceJson = computed(() =>
-  JSON.stringify(
-    {
-      status: chat.status.value,
-      error: chat.error.value?.message ?? null,
-      request: chat.lastRequest.value,
-      response: chat.lastResponse.value
-    },
-    null,
-    2
-  )
+const inspection = computed(() =>
+  inspectRequestTrace({
+    status: chat.status.value,
+    error: chat.error.value,
+    lastRequest: chat.lastRequest.value,
+    lastResponse: chat.lastResponse.value
+  })
 )
+
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
 </script>
 
 <template>
@@ -52,10 +50,16 @@ const traceJson = computed(() =>
   <details>
     <summary>Request trace</summary>
     <button type="button" @click="chat.clearTrace()">Clear trace</button>
-    <pre>{{ traceJson }}</pre>
+    <p>{{ inspection.summary }}</p>
+    <pre>{{ inspectionJson }}</pre>
   </details>
 </template>
 ```
+
+`inspectRequestTrace()` classifies errors as `authentication`, `rate-limit`,
+`network`, `provider`, `validation`, and other render-safe categories. It only
+reports `hasCause`; it does not copy raw provider response bodies into the
+summary.
 
 Do not render provider API keys, raw authorization headers, or full tenant data
 in a browser debug panel. If your backend adds those fields, keep them out of

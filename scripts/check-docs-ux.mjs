@@ -204,9 +204,13 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
-    files.readme.includes('[ROADMAP.md](./ROADMAP.md)') &&
-    files.zhReadme.includes('[ROADMAP.md](./ROADMAP.md)') &&
-    files.zhReadme.includes('GitHub issue 只记录可复现 bug'),
+    files.readme.includes(
+      '[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)'
+    ) &&
+    files.zhReadme.includes(
+      '[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)'
+    ) &&
+    /GitHub\s+issue 只记录可复现 bug/.test(files.zhReadme),
   'Readmes must explain no-key chat defaults, list image/video/object examples, and link upgrade/migration guidance'
 )
 
@@ -231,6 +235,9 @@ for (const snippet of [
   'lastRequest',
   'lastResponse',
   'clearTrace()',
+  'inspectRequestTrace',
+  'classifies errors',
+  'hasCause',
   'submit-user-message',
   'Request trace',
   'Debugging checklist',
@@ -245,6 +252,8 @@ for (const snippet of [
   'lastRequest',
   'lastResponse',
   'clearTrace()',
+  'inspectRequestTrace',
+  'hasCause',
   'submit-user-message',
   '请求 trace',
   '排查清单',

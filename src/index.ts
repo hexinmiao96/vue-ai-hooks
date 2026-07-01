@@ -211,6 +211,15 @@ export {
   type UIMessageStreamSource,
   type UIMessageStreamWriter
 } from './utils/stream'
+export {
+  classifyInspectionError,
+  inspectRequestTrace,
+  type InspectionErrorCategory,
+  type InspectionErrorSummary,
+  type InspectionStatus,
+  type InspectRequestTraceOptions,
+  type RequestInspectionSnapshot
+} from './utils/inspection'
 
 // Persistence
 export { usePersist, type UsePersistOptions } from './composables/usePersist'

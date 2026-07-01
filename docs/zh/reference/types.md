@@ -688,6 +688,80 @@ try {
 `status` 适合用于 HTTP 相关的重试或用户提示决策。`cause` 只建议用于诊断，因为
 Provider 可能会把原始上游响应体放在这里。
 
+## 调试检查 helper
+
+`classifyInspectionError(error)` 会把未知抛出值转换成适合界面渲染的
+`InspectionErrorSummary`：
+
+```ts
+type InspectionErrorCategory =
+  | 'abort'
+  | 'authentication'
+  | 'authorization'
+  | 'rate-limit'
+  | 'timeout'
+  | 'network'
+  | 'provider'
+  | 'validation'
+  | 'unknown'
+
+interface InspectionErrorSummary {
+  category: InspectionErrorCategory
+  message: string
+  name?: string
+  status?: number
+  retryable: boolean
+  hasCause: boolean
+}
+```
+
+原始 `cause` 不会被复制进 summary。可以用 `hasCause` 告诉调试面板存在更深层诊断信息，
+但不要在浏览器里直接渲染 Provider 响应体或租户数据。
+
+`inspectRequestTrace(options)` 会把现有的 `lastRequest`、`lastResponse`、`status`
+和 `error` 合成一个 `RequestInspectionSnapshot`：
+
+```ts
+type InspectionStatus = AiRequestStatus | 'idle'
+
+interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unknown> {
+  status?: InspectionStatus
+  error?: unknown
+  lastRequest?: TRequest | null
+  lastResponse?: TResponse | null
+  now?: Date | string | number
+}
+
+interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
+  status: InspectionStatus
+  request: TRequest | null
+  response: TResponse | null
+  error: InspectionErrorSummary | null
+  providerId?: string
+  api?: string
+  attempt?: number
+  trigger?: string
+  aiSdkTrigger?: string
+  hasRequest: boolean
+  hasResponse: boolean
+  hasStream?: boolean
+  retryable: boolean
+  summary: string
+  timestamp: string
+}
+```
+
+```ts
+import { inspectRequestTrace } from 'vue-ai-hooks'
+
+const snapshot = inspectRequestTrace({
+  status: chat.status.value,
+  error: chat.error.value,
+  lastRequest: chat.lastRequest.value,
+  lastResponse: chat.lastResponse.value
+})
+```
+
 ## 重试选项
 
 `UseChatOptions`、`UseCompletionOptions`、`UseEmbeddingOptions`、

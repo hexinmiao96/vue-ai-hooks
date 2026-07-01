@@ -25,6 +25,7 @@ const requiredReactExportFields = {
 const requiredRuntimeExports = [
   'AiHooksError',
   'anthropic',
+  'classifyInspectionError',
   'convertToModelMessages',
   'cosineSimilarity',
   'createIdGenerator',
@@ -36,6 +37,7 @@ const requiredRuntimeExports = [
   'dynamicTool',
   'formatSSEData',
   'generateId',
+  'inspectRequestTrace',
   'jsonSchema',
   'openai',
   'openaiCompatible',
@@ -148,6 +150,16 @@ assertEqual(esm.openai({ apiKey: 'test-key' }).id, 'openai-compatible', 'ESM ope
 assertEqual(esm.deepseek({ apiKey: 'test-key' }).id, 'deepseek', 'ESM deepseek provider id')
 assertEqual(cjs.openrouter({ apiKey: 'test-key' }).id, 'openrouter', 'CJS openrouter provider id')
 assertEqual(esm.proxyProvider().id, 'proxy', 'ESM proxy provider id')
+assertEqual(
+  esm.classifyInspectionError(new esm.AiHooksError('too many requests', { status: 429 })).category,
+  'rate-limit',
+  'ESM classifyInspectionError category'
+)
+assertEqual(
+  esm.inspectRequestTrace({ lastRequest: { providerId: 'proxy' }, now: 0 }).providerId,
+  'proxy',
+  'ESM inspectRequestTrace provider id'
+)
 assertEqual(
   new esm.DirectChatTransport({ stream: () => [] }).id,
   'direct',

@@ -627,8 +627,9 @@ This is **v0.5.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
 Next focus: clearer inspection, more providers, and production hardening. Feature
-planning lives in [ROADMAP.md](./ROADMAP.md); GitHub issues are reserved for
-reproducible bugs.
+planning lives in
+[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
+GitHub issues are reserved for reproducible bugs.
 
 ## Known limitations
 

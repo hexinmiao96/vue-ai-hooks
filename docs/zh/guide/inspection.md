@@ -23,22 +23,20 @@ Provider 或 proxy 路由什么内容。
 ```vue
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useChat } from 'vue-ai-hooks'
+import { inspectRequestTrace, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({ api: '/api/chat' })
 
-const traceJson = computed(() =>
-  JSON.stringify(
-    {
-      status: chat.status.value,
-      error: chat.error.value?.message ?? null,
-      request: chat.lastRequest.value,
-      response: chat.lastResponse.value
-    },
-    null,
-    2
-  )
+const inspection = computed(() =>
+  inspectRequestTrace({
+    status: chat.status.value,
+    error: chat.error.value,
+    lastRequest: chat.lastRequest.value,
+    lastResponse: chat.lastResponse.value
+  })
 )
+
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
 </script>
 
 <template>
@@ -50,10 +48,15 @@ const traceJson = computed(() =>
   <details>
     <summary>请求 trace</summary>
     <button type="button" @click="chat.clearTrace()">清空 trace</button>
-    <pre>{{ traceJson }}</pre>
+    <p>{{ inspection.summary }}</p>
+    <pre>{{ inspectionJson }}</pre>
   </details>
 </template>
 ```
+
+`inspectRequestTrace()` 会把错误分类为 `authentication`、`rate-limit`、`network`、
+`provider`、`validation` 等适合界面渲染的类别。它只报告 `hasCause`，不会把原始
+Provider 响应体复制进 summary。
 
 不要在浏览器调试面板里渲染 Provider API key、原始 authorization header 或完整租户数据。
 如果后端会补这些字段，不要把它们返回给浏览器，也不要显示在用户可见日志里。
