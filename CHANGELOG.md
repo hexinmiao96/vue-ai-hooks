@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-01
+
 ### Added
 
 - Added `useVideo` for app-owned video generation routes with normalized
@@ -44,6 +46,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for model-facing conversion of stored tool result messages.
 - Added `stepCountIs()` as an AI SDK-compatible alias for `isStepCount()` tool
   loop stopping conditions.
+
+### Changed
+
+- Release notes now keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
 
 ## [0.3.0] - 2026-06-30
 
