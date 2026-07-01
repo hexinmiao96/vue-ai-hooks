@@ -21,14 +21,19 @@ try {
   const [packed] = JSON.parse(packOutput)
   const tarball = join(tempRoot, packed.filename)
   const vuePeer = realpathSync(join(root, 'node_modules/vue'))
+  const reactPeer = realpathSync(join(root, 'node_modules/react'))
 
   writeFileSync(
     join(tempRoot, 'package.json'),
     JSON.stringify({ private: true, type: 'module' }, null, 2)
   )
-  run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball, vuePeer], {
-    cwd: tempRoot
-  })
+  run(
+    'npm',
+    ['install', '--ignore-scripts', '--no-audit', '--no-fund', tarball, vuePeer, reactPeer],
+    {
+      cwd: tempRoot
+    }
+  )
 
   writeFileSync(
     join(tempRoot, 'esm-check.mjs'),
@@ -60,6 +65,11 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 if (typeof useChat !== 'function') {
   throw new Error('ESM useChat export failed')
 }
+
+const reactEntry = await import('vue-ai-hooks/react')
+if (typeof reactEntry.useChat !== 'function') {
+  throw new Error('ESM React useChat export failed')
+}
 `
   )
   run('node', ['esm-check.mjs'], { cwd: tempRoot })
@@ -85,6 +95,11 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 if (typeof useCompletion !== 'function') {
   throw new Error('CJS useCompletion export failed')
 }
+
+const reactEntry = require('vue-ai-hooks/react')
+if (typeof reactEntry.useChat !== 'function') {
+  throw new Error('CJS React useChat export failed')
+}
 `
   )
   run('node', ['cjs-check.cjs'], { cwd: tempRoot })
@@ -94,6 +109,8 @@ if (typeof useCompletion !== 'function') {
     `
 import { useChat, openaiCompatible } from 'vue-ai-hooks'
 import type { ChatProvider, Message, UseChatReturn } from 'vue-ai-hooks'
+import { useChat as useReactChat } from 'vue-ai-hooks/react'
+import type { UseReactChatReturn } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
   apiKey: 'test-key',
@@ -101,8 +118,11 @@ const provider: ChatProvider = openaiCompatible({
 })
 const initialMessages: Message[] = [{ id: 'msg_1', role: 'user', content: 'hello' }]
 const chat: UseChatReturn = useChat({ provider, initialMessages })
+const reactChat: UseReactChatReturn = useReactChat({ provider, initialMessages })
 
 chat.setMessages(initialMessages)
+reactChat.setMessages(initialMessages)
+reactChat.setInput('hello from react')
 `
   )
   run(

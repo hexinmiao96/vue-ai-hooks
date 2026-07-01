@@ -90,11 +90,13 @@ const requiredViteConfigSnippets = [
   'plugins: [vue()]',
   'emptyOutDir: false',
   'sourcemap: true',
-  "entry: resolve(__dirname, 'src/index.ts')",
+  "index: resolve(__dirname, 'src/index.ts')",
+  "react: resolve(__dirname, 'src/react.ts')",
   "name: 'VueAiHooks'",
-  "fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`",
+  "fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'mjs' : 'cjs'}`",
   "formats: ['es', 'cjs']",
-  "external: ['vue']",
+  "external: ['vue', 'react']",
+  "react: 'React'",
   "vue: 'Vue'"
 ]
 const expectedPackageFiles = [
@@ -110,6 +112,8 @@ const expectedPackageFiles = [
 ]
 const requiredPackageKeywords = [
   'vue',
+  'react',
+  'react-hooks',
   'vue3',
   'composables',
   'vue-composable',
@@ -245,12 +249,20 @@ expect(
   'package must not bundle runtime dependencies'
 )
 expect(
-  Object.keys(packageJson.peerDependencies ?? {}).length === 1,
-  'package must keep peer dependencies limited to Vue'
+  Object.keys(packageJson.peerDependencies ?? {}).length === 2,
+  'package must keep peer dependencies limited to Vue and optional React'
 )
 expect(
   packageJson.peerDependencies?.vue === '^3.4.0',
   'Vue peer dependency must stay documented as ^3.4.0'
+)
+expect(
+  packageJson.peerDependencies?.react === '^18.2.0 || ^19.0.0',
+  'React peer dependency must support React 18 and 19'
+)
+expect(
+  packageJson.peerDependenciesMeta?.react?.optional === true,
+  'React peer dependency must stay optional for Vue-only consumers'
 )
 expect(packageJson.engines?.node === '>=18.18.0', 'Node engine floor must stay >=18.18.0')
 expect(
@@ -294,6 +306,10 @@ expect(tsconfig.compilerOptions?.sourceMap === true, 'tsconfig.json must emit so
 expect(
   tsconfig.compilerOptions?.paths?.['vue-ai-hooks']?.[0] === 'src/index.ts',
   'tsconfig.json must map vue-ai-hooks to src/index.ts for local consumers'
+)
+expect(
+  tsconfig.compilerOptions?.paths?.['vue-ai-hooks/react']?.[0] === 'src/react.ts',
+  'tsconfig.json must map vue-ai-hooks/react to src/react.ts for local React consumers'
 )
 expect(
   tsconfig.include?.includes('tests/**/*.ts') &&

@@ -13,15 +13,19 @@ export default defineConfig({
     emptyOutDir: false,
     sourcemap: true,
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(__dirname, 'src/index.ts'),
+        react: resolve(__dirname, 'src/react.ts')
+      },
       name: 'VueAiHooks',
-      fileName: (format) => `index.${format === 'es' ? 'mjs' : 'cjs'}`,
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'mjs' : 'cjs'}`,
       formats: ['es', 'cjs']
     },
     rollupOptions: {
-      external: ['vue'],
+      external: ['vue', 'react'],
       output: {
         globals: {
+          react: 'React',
           vue: 'Vue'
         }
       }

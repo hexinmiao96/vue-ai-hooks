@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      'vue-ai-hooks/react': resolve(__dirname, 'src/react.ts'),
       'vue-ai-hooks': resolve(__dirname, 'src/index.ts')
     }
   },

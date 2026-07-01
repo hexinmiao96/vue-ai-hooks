@@ -21,7 +21,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "vue-ai-hooks": ["src/index.ts"]
+      "vue-ai-hooks": ["src/index.ts"],
+      "vue-ai-hooks/react": ["src/react.ts"]
     },
     "types": ["node", "vitest/globals", "vite/client"]
   },

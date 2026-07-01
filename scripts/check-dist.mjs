@@ -17,6 +17,11 @@ const requiredExportFields = {
   import: './dist/index.mjs',
   require: './dist/index.cjs'
 }
+const requiredReactExportFields = {
+  types: './dist/react.d.ts',
+  import: './dist/react.mjs',
+  require: './dist/react.cjs'
+}
 const requiredRuntimeExports = [
   'AiHooksError',
   'anthropic',
@@ -53,6 +58,7 @@ const requiredRuntimeExports = [
   'usePersist'
 ]
 const publicExports = extractExports(readFileSync(fromRoot('src/index.ts'), 'utf8'))
+const reactPublicExports = extractExports(readFileSync(fromRoot('src/react.ts'), 'utf8'))
 
 function fail(message) {
   console.error(message)
@@ -72,6 +78,13 @@ for (const [field, expected] of Object.entries(requiredPackageFields)) {
 for (const [field, expected] of Object.entries(requiredExportFields)) {
   assertEqual(packageJson.exports?.['.']?.[field], expected, `package.json exports["."].${field}`)
 }
+for (const [field, expected] of Object.entries(requiredReactExportFields)) {
+  assertEqual(
+    packageJson.exports?.['./react']?.[field],
+    expected,
+    `package.json exports["./react"].${field}`
+  )
+}
 assertEqual(
   packageJson.exports?.['./package.json'],
   './package.json',
@@ -84,7 +97,13 @@ for (const path of [
   'dist/index.cjs',
   'dist/index.cjs.map',
   'dist/index.d.ts',
-  'dist/index.d.ts.map'
+  'dist/index.d.ts.map',
+  'dist/react.mjs',
+  'dist/react.mjs.map',
+  'dist/react.cjs',
+  'dist/react.cjs.map',
+  'dist/react.d.ts',
+  'dist/react.d.ts.map'
 ]) {
   if (!existsSync(fromRoot(path))) {
     fail(`Missing built file: ${path}`)
@@ -93,15 +112,28 @@ for (const path of [
 
 const esmBundle = readFileSync(fromRoot('dist/index.mjs'), 'utf8')
 const cjsBundle = readFileSync(fromRoot('dist/index.cjs'), 'utf8')
+const reactEsmBundle = readFileSync(fromRoot('dist/react.mjs'), 'utf8')
+const reactCjsBundle = readFileSync(fromRoot('dist/react.cjs'), 'utf8')
 if (!/from\s+["']vue["']/.test(esmBundle)) {
   fail('dist/index.mjs must keep Vue externalized as an ESM import')
 }
 if (!/require\(["']vue["']\)/.test(cjsBundle)) {
   fail('dist/index.cjs must keep Vue externalized as a CJS require')
 }
+if (/from\s+["']react["']/.test(esmBundle) || /require\(["']react["']\)/.test(cjsBundle)) {
+  fail('root dist bundles must not import React')
+}
+if (!/from\s+["']react["']/.test(reactEsmBundle)) {
+  fail('dist/react.mjs must keep React externalized as an ESM import')
+}
+if (!/require\(["']react["']\)/.test(reactCjsBundle)) {
+  fail('dist/react.cjs must keep React externalized as a CJS require')
+}
 
 const esm = await import(pathToFileURL(fileURLToPath(fromRoot('dist/index.mjs'))).href)
 const cjs = require(fileURLToPath(fromRoot('dist/index.cjs')))
+const reactEsm = await import(pathToFileURL(fileURLToPath(fromRoot('dist/react.mjs'))).href)
+const reactCjs = require(fileURLToPath(fromRoot('dist/react.cjs')))
 
 for (const name of requiredRuntimeExports) {
   if (!(name in esm)) {
@@ -123,6 +155,8 @@ assertEqual(
 )
 assertEqual(esm.anthropic({ apiKey: 'test-key' }).id, 'anthropic', 'ESM anthropic provider id')
 assertEqual(new cjs.AiHooksError('test').name, 'AiHooksError', 'CJS AiHooksError instance name')
+assertEqual(typeof reactEsm.useChat, 'function', 'ESM React useChat export')
+assertEqual(typeof reactCjs.useChat, 'function', 'CJS React useChat export')
 
 const declarations = readFileSync(fromRoot('dist/index.d.ts'), 'utf8')
 for (const name of publicExports) {
@@ -130,8 +164,16 @@ for (const name of publicExports) {
     fail(`Missing declaration export: ${name}`)
   }
 }
+const reactDeclarations = readFileSync(fromRoot('dist/react.d.ts'), 'utf8')
+for (const name of reactPublicExports) {
+  if (!reactDeclarations.includes(name)) {
+    fail(`Missing React declaration export: ${name}`)
+  }
+}
 
-console.log(`Dist check passed for ESM, CJS, and ${publicExports.length} declaration exports.`)
+console.log(
+  `Dist check passed for root and React ESM/CJS bundles, ${publicExports.length} root exports, and ${reactPublicExports.length} React exports.`
+)
 
 function extractExports(content) {
   const names = new Set()

@@ -11,6 +11,16 @@ const budgets = [
     file: 'dist/index.cjs',
     maxBytes: 89_700,
     maxGzipBytes: 26_600
+  },
+  {
+    file: 'dist/react.mjs',
+    maxBytes: 45_000,
+    maxGzipBytes: 13_000
+  },
+  {
+    file: 'dist/react.cjs',
+    maxBytes: 40_000,
+    maxGzipBytes: 12_000
   }
 ]
 const failures = []

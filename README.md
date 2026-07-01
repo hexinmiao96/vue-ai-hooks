@@ -3,7 +3,7 @@
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 > Vue 3 Composable library for building AI-powered applications.
-> Streaming-first, multi-provider, fully typed.
+> Streaming-first, multi-provider, fully typed, with an optional React chat entry.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml)
@@ -14,10 +14,10 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Ten composables, pluggable
-providers, Server-Sent Events streaming handled for you. Works with OpenAI and any
-OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
-vLLM, Gemini's OpenAI-compatible endpoint, etc.).
+[Axios](https://axios-http.com) to the LLM world. Ten Vue composables, an optional
+React `useChat` subpath, pluggable providers, Server-Sent Events streaming handled
+for you. Works with OpenAI and any OpenAI-compatible service (DeepSeek, Moonshot,
+Zhipu, Ollama via its OpenAI shim, vLLM, Gemini's OpenAI-compatible endpoint, etc.).
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -45,6 +45,8 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Ten composables, one mental model**: `useChat`, `useCompletion`,
   `useEmbedding`, `useGeneration`, `useImage`, `useVideo`, `useSpeech`,
   `useTranscription`, `useRerank`, and `useObject`.
+- **Optional React chat support**: import `useChat` from `vue-ai-hooks/react` for
+  React streaming chat state while reusing the same providers and message types.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -77,11 +79,13 @@ npm install vue-ai-hooks
 yarn add vue-ai-hooks
 ```
 
-Peer dependency: `vue@^3.4.0`.
+Peer dependencies: `vue@^3.4.0` for the root Vue entry. `react@^18.2.0 || ^19.0.0`
+is optional and only needed when importing from `vue-ai-hooks/react`.
 
 ## Runtime requirements
 
 - Vue 3.4 or newer.
+- React 18.2 or newer only for the optional `vue-ai-hooks/react` entry.
 - Modern browser APIs for client-side usage: `fetch`, `AbortController`,
   `ReadableStream`, and Server-Sent Events.
 - Node.js 18.18 or newer for development, tests, examples, and docs builds.
@@ -121,6 +125,33 @@ const { messages, input, handleSubmit, isLoading, stop, error } = useChat({
     <button type="button" :disabled="!isLoading" @click="stop">Stop</button>
   </form>
 </template>
+```
+
+### React streaming chat
+
+```tsx
+import { useChat } from 'vue-ai-hooks/react'
+import { openai } from 'vue-ai-hooks'
+
+export function ChatPanel() {
+  const { messages, input, handleInputChange, handleSubmit, isLoading, stop, error } = useChat({
+    provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+  })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {messages.map((message) => (
+        <p key={message.id}>{typeof message.content === 'string' ? message.content : ''}</p>
+      ))}
+      <textarea value={input} onChange={handleInputChange} />
+      <button disabled={isLoading || !input.trim()}>Send</button>
+      <button type="button" disabled={!isLoading} onClick={stop}>
+        Stop
+      </button>
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
 ```
 
 ### Single-shot completion

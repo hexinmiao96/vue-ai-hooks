@@ -52,6 +52,7 @@ import {
   useTranscription,
   usePersist
 } from 'vue-ai-hooks'
+import { useChat as useReactChat } from 'vue-ai-hooks/react'
 import type {
   AiRequestStatus,
   AiSdkSendChatTrigger,
@@ -237,6 +238,7 @@ import type {
   UseTranscriptionReturn,
   UsePersistOptions
 } from 'vue-ai-hooks'
+import type { UseReactChatOptions, UseReactChatReturn } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
   apiKey: 'test-key',
@@ -251,6 +253,18 @@ function assertInvalidPublicApiUsage() {
 }
 
 describe('public API types', () => {
+  it('exports the React chat subpath without changing the Vue root entry', () => {
+    const reactOptions: UseReactChatOptions = { provider }
+
+    expect(typeof useReactChat).toBe('function')
+    expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
+    expectTypeOf<UseReactChatReturn>().toMatchTypeOf<{
+      messages: Message[]
+      input: string
+      append: (content: string | Message) => Promise<void>
+    }>()
+  })
+
   it('exports provider factories as ChatProvider-compatible values', () => {
     expectTypeOf(openai({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(openrouter({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
