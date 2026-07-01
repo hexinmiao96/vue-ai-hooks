@@ -23,7 +23,7 @@
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useChat()`                                    | `useChat()`                                                                                                                                                   |
 | `transport`                                    | `transport` 或 `provider`                                                                                                                                     |
-| `DefaultChatTransport`                         | 省略 `provider`，使用 `api`、`baseURL`、`headers`、`body`                                                                                                     |
+| `DefaultChatTransport`                         | `new DefaultChatTransport(...)`，或省略 `provider` 并使用 `api`、`baseURL`、`headers`、`body`                                                                 |
 | `DirectChatTransport`                          | `new DirectChatTransport({ stream })`，用于进程内 agent、测试和本地 demo                                                                                      |
 | `messages` 初始选项                            | `messages` 或 `initialMessages`                                                                                                                               |
 | `convertToModelMessages()`                     | `convertToModelMessages()`，用于移除 UI-only 消息字段                                                                                                         |
@@ -49,19 +49,24 @@
 
 ## Transport
 
-AI SDK 示例通常会构造 `DefaultChatTransport`。在 `vue-ai-hooks` 中，默认路径已经是
-proxy transport：
+AI SDK 示例通常会构造 `DefaultChatTransport`。`vue-ai-hooks` 也导出
+`DefaultChatTransport`，并且默认 `useChat()` 路径已经是 proxy transport：
 
 ```ts
-import { useChat } from 'vue-ai-hooks'
+import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
-  api: '/api/chat',
-  credentials: 'include',
-  headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
-  body: () => ({ tenantId })
+  transport: new DefaultChatTransport({
+    chatUrl: '/api/chat',
+    credentials: 'include',
+    headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
+    body: () => ({ tenantId })
+  })
 })
 ```
+
+如果不需要复用 transport 实例，也可以省略 `provider`/`transport`，直接把 `api`、
+`baseURL`、`headers` 和 `body` 传给 `useChat()`。
 
 只有已有 chat endpoint 返回原始文本流时才需要 `streamProtocol: 'text'`。AI SDK UI message
 stream、`ChatChunk` SSE 和 JSON chunk 响应保持默认即可。
@@ -266,8 +271,8 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 ## 迁移清单
 
 1. 把 AI SDK UI 的 import 替换为 `vue-ai-hooks`。
-2. 将 `DefaultChatTransport` 选项映射到 `api`、`baseURL`、`headers`、`body`、
-   `credentials` 和 `fetch`。
+2. 保留 `DefaultChatTransport` 为 `new DefaultChatTransport(...)`，或把这些选项映射到
+   `api`、`baseURL`、`headers`、`body`、`credentials` 和 `fetch`。
 3. 将 AI SDK `DirectChatTransport` 风格的进程内 handler 映射到
    `new DirectChatTransport({ stream })`。
 4. 已有 chat 或 completion 路由返回纯文本流时，映射 `streamProtocol: 'text'`。

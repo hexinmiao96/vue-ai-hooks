@@ -9,8 +9,9 @@ exact config surface.
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
 `GeminiConfig`, `DeepSeekConfig`, `FallbackProviderConfig`,
 `FallbackProviderContext`, `FallbackProviderKind`, `ProxyProviderConfig`,
-`ProxyRequestContext`, `ProxyRequestKind`, `ProxyRequestOverride`,
-`DirectChatTransportOptions`, `DirectChatStreamProtocol`, and `AnthropicConfig`.
+`DefaultChatTransportOptions`, `ProxyRequestContext`, `ProxyRequestKind`,
+`ProxyRequestOverride`, `DirectChatTransportOptions`, `DirectChatStreamProtocol`,
+and `AnthropicConfig`.
 
 ## `ChatProvider`
 
@@ -297,6 +298,29 @@ where there is no body.
 `signal` and request-level `headers` are used for the proxy HTTP request and are
 not copied into the JSON body. Your backend owns upstream credentials, model
 selection, rate limiting, logging, and vendor-specific retries.
+
+## `DefaultChatTransport`
+
+AI SDK-style class wrapper around `proxyProvider()`. Use it when migrating a
+chat UI that already has `transport: new DefaultChatTransport(...)`; use
+`proxyProvider()` directly when you prefer a provider factory.
+
+```ts
+import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DefaultChatTransport({
+    chatUrl: '/api/chat',
+    credentials: 'include',
+    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` })
+  })
+})
+```
+
+`DefaultChatTransportOptions` is the same type as `ProxyProviderConfig`, so it
+supports the same `baseURL`, `chatUrl`, `resumeUrl`, `headers`, `body`,
+`prepareRequest`, `credentials`, `timeoutMs`, and `fetch` options documented
+above.
 
 ## `DirectChatTransport`
 

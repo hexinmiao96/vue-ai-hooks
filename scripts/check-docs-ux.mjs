@@ -311,6 +311,17 @@ expect(
   'DirectChatTransport docs must explain UI-message onError sanitization in English and Chinese'
 )
 expect(
+  files.providers.includes('## `DefaultChatTransport`') &&
+    files.providers.includes('DefaultChatTransportOptions') &&
+    files.providers.includes('new DefaultChatTransport') &&
+    files.zhProviders.includes('## `DefaultChatTransport`') &&
+    files.zhProviders.includes('DefaultChatTransportOptions') &&
+    files.zhProviders.includes('new DefaultChatTransport') &&
+    files.aiSdkMigration.includes('new DefaultChatTransport') &&
+    files.zhAiSdkMigration.includes('new DefaultChatTransport'),
+  'Provider and migration docs must expose the AI SDK-style DefaultChatTransport wrapper'
+)
+expect(
   files.packageJson.includes('"example:image"') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&

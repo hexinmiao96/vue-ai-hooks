@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { proxyProvider } from '../src/providers/proxy'
+import { DefaultChatTransport, proxyProvider } from '../src/providers/proxy'
 
 function jsonResponse(data: unknown): Response {
   return new Response(JSON.stringify(data), {
@@ -41,6 +41,27 @@ function textResponse(chunks: string[], contentType = 'text/plain; charset=utf-8
 }
 
 describe('proxyProvider', () => {
+  it('supports an AI SDK-style DefaultChatTransport wrapper', async () => {
+    const fetcher = vi.fn(async () => sseResponse([{ content: 'transport ok' }]))
+    const transport = new DefaultChatTransport({
+      id: 'default-chat',
+      baseURL: 'https://app.example.test',
+      chatUrl: '/api/chat',
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    const stream = await transport.chat({
+      messages: [{ id: 'm1', role: 'user', content: 'Hi' }]
+    })
+    const chunks: unknown[] = []
+    for await (const chunk of stream) chunks.push(chunk)
+
+    const [url] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(transport.id).toBe('default-chat')
+    expect(url).toBe('https://app.example.test/api/chat')
+    expect(chunks).toEqual([{ content: 'transport ok' }])
+  })
+
   it('posts chat requests to the app backend and streams ChatChunk SSE payloads', async () => {
     const fetcher = vi.fn(async () =>
       sseResponse([

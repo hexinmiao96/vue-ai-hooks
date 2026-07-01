@@ -159,7 +159,9 @@ export {
   type FallbackProviderKind
 } from './providers/fallback'
 export {
+  DefaultChatTransport,
   proxyProvider,
+  type DefaultChatTransportOptions,
   type ProxyProviderConfig,
   type ProxyRequestContext,
   type ProxyRequestKind,

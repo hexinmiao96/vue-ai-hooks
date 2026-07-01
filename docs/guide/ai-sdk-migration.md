@@ -25,7 +25,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useChat()`                                      | `useChat()`                                                                                                                                                     |
 | `transport`                                      | `transport` or `provider`                                                                                                                                       |
-| `DefaultChatTransport`                           | Omit `provider` and use `api`, `baseURL`, `headers`, `body`                                                                                                     |
+| `DefaultChatTransport`                           | `new DefaultChatTransport(...)`, or omit `provider` and use `api`, `baseURL`, `headers`, `body`                                                                 |
 | `DirectChatTransport`                            | `new DirectChatTransport({ stream })` for in-process agents, tests, and local demos                                                                             |
 | `messages` initial option                        | `messages` or `initialMessages`                                                                                                                                 |
 | `convertToModelMessages()`                       | `convertToModelMessages()` for stripping UI-only message fields                                                                                                 |
@@ -51,19 +51,26 @@ refs and provider objects instead of a full-stack framework integration layer.
 
 ## Transport
 
-AI SDK examples often construct a `DefaultChatTransport`. In `vue-ai-hooks`, the
-default path is already a proxy transport:
+AI SDK examples often construct a `DefaultChatTransport`. `vue-ai-hooks` also
+exports `DefaultChatTransport`, and the default `useChat()` path is already a
+proxy transport:
 
 ```ts
-import { useChat } from 'vue-ai-hooks'
+import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
-  api: '/api/chat',
-  credentials: 'include',
-  headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
-  body: () => ({ tenantId })
+  transport: new DefaultChatTransport({
+    chatUrl: '/api/chat',
+    credentials: 'include',
+    headers: () => ({ Authorization: `Bearer ${sessionToken}` }),
+    body: () => ({ tenantId })
+  })
 })
 ```
+
+You can also omit `provider`/`transport` and pass `api`, `baseURL`, `headers`,
+and `body` directly to `useChat()` when you do not need a reusable transport
+instance.
 
 Use `streamProtocol: 'text'` only when an existing chat endpoint streams raw
 text. Omit it for AI SDK UI message streams, `ChatChunk` SSE, and JSON chunk
@@ -284,8 +291,8 @@ fields for default chat proxy transports.
 ## Migration checklist
 
 1. Replace imports from AI SDK UI with `vue-ai-hooks`.
-2. Map `DefaultChatTransport` options to `api`, `baseURL`, `headers`, `body`,
-   `credentials`, and `fetch`.
+2. Keep `DefaultChatTransport` as `new DefaultChatTransport(...)`, or map those
+   options to `api`, `baseURL`, `headers`, `body`, `credentials`, and `fetch`.
 3. Map AI SDK `DirectChatTransport` style in-process handlers to
    `new DirectChatTransport({ stream })`.
 4. Map chat or completion `streamProtocol: 'text'` when an existing route

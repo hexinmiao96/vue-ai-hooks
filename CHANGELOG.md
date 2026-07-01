@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and AI SDK UI message stream handlers that do not need an HTTP proxy.
 - Added `DirectChatTransport` `onError` support for sanitizing local UI-message
   stream failures.
+- Added `DefaultChatTransport` as an AI SDK-style proxy transport class for
+  lower-friction chat migrations.
 - Added AI SDK-style `aiSdkTrigger` request metadata for chat send/regenerate
   preparation and lifecycle callbacks.
 - Added `validateMessages()` for boolean validation of persisted or imported

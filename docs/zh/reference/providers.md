@@ -7,9 +7,9 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
 `GeminiConfig`、`DeepSeekConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
-`FallbackProviderKind`、`ProxyProviderConfig`、`ProxyRequestContext`、
-`ProxyRequestKind`、`ProxyRequestOverride`、`DirectChatTransportOptions`、
-`DirectChatStreamProtocol` 和 `AnthropicConfig`。
+`FallbackProviderKind`、`ProxyProviderConfig`、`DefaultChatTransportOptions`、
+`ProxyRequestContext`、`ProxyRequestKind`、`ProxyRequestOverride`、
+`DirectChatTransportOptions`、`DirectChatStreamProtocol` 和 `AnthropicConfig`。
 
 ## `ChatProvider`
 
@@ -281,6 +281,28 @@ POST body，然后再合并 Provider request 字段。`ChatRequest.threadId` 和
 `resumeChat()` 中运行，此时没有 body。
 
 `signal` 和单次请求的 `headers` 只用于代理 HTTP 请求，不会复制进 JSON body。上游凭据、模型选择、限流、日志和厂商专属重试都应由你的后端负责。
+
+## `DefaultChatTransport`
+
+AI SDK 风格的 `proxyProvider()` class wrapper。迁移已有
+`transport: new DefaultChatTransport(...)` 的 chat UI 时可以直接使用它；如果更偏好
+Provider 工厂，也可以继续直接使用 `proxyProvider()`。
+
+```ts
+import { DefaultChatTransport, useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  transport: new DefaultChatTransport({
+    chatUrl: '/api/chat',
+    credentials: 'include',
+    headers: () => ({ Authorization: `Bearer ${getSessionToken()}` })
+  })
+})
+```
+
+`DefaultChatTransportOptions` 与 `ProxyProviderConfig` 是同一类型，因此支持上面记录的
+`baseURL`、`chatUrl`、`resumeUrl`、`headers`、`body`、`prepareRequest`、
+`credentials`、`timeoutMs` 和 `fetch` 选项。
 
 ## `DirectChatTransport`
 

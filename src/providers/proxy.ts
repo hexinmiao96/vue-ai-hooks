@@ -89,6 +89,40 @@ export interface ProxyProviderConfig {
   fetch?: typeof fetch
 }
 
+export type DefaultChatTransportOptions = ProxyProviderConfig
+
+/**
+ * AI SDK-style proxy transport for app-owned backend or edge routes.
+ *
+ * This is a class wrapper around `proxyProvider()` so migrated chat UIs can keep
+ * a `transport: new DefaultChatTransport(...)` shape.
+ */
+export class DefaultChatTransport implements ChatProvider {
+  declare readonly id: string
+  declare private readonly p: ChatProvider
+
+  constructor(config: DefaultChatTransportOptions = {}) {
+    this.p = proxyProvider(config)
+    this.id = this.p.id
+  }
+
+  chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>> {
+    return this.p.chat(request)
+  }
+
+  resumeChat(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null> {
+    return this.p.resumeChat?.(request) ?? Promise.resolve(null)
+  }
+
+  completion(request: CompletionRequest): Promise<AsyncIterable<string>> {
+    return this.p.completion(request)
+  }
+
+  embedding(request: EmbeddingRequest): Promise<EmbeddingResult> {
+    return this.p.embedding(request)
+  }
+}
+
 /**
  * Provider for app-owned backend or edge proxy endpoints.
  *
