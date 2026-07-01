@@ -7,11 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-01
+
 ### Added
 
 - Added optional React chat support via `vue-ai-hooks/react`, including a React
   `useChat` hook, subpath package exports, docs, tests, and install checks while
   keeping the Vue root entry unchanged.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
 
 ## [0.4.1] - 2026-07-01
 
