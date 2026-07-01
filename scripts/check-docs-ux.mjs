@@ -14,6 +14,8 @@ const files = {
   zhUpgrade03: readFileSync('docs/zh/guide/upgrade-0.3.md', 'utf8'),
   aiSdkMigration: readFileSync('docs/guide/ai-sdk-migration.md', 'utf8'),
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
+  inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
+  zhInspection: readFileSync('docs/zh/guide/inspection.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
   zhUseChat: readFileSync('docs/zh/reference/use-chat.md', 'utf8'),
   useEmbedding: readFileSync('docs/reference/use-embedding.md', 'utf8'),
@@ -52,7 +54,8 @@ const files = {
   rerankExample: readFileSync('examples/rerank/App.vue', 'utf8'),
   objectExample: readFileSync('examples/object/App.vue', 'utf8'),
   proxyServer: readFileSync('examples/proxy-server/server.mjs', 'utf8'),
-  demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8')
+  demoShowcase: readFileSync('docs/.vitepress/theme/components/DemoShowcase.vue', 'utf8'),
+  roadmap: readFileSync('ROADMAP.md', 'utf8')
 }
 const failures = []
 
@@ -83,6 +86,11 @@ expect(
   'English home page must link to the library-fit guide'
 )
 expect(
+  files.config.includes("{ text: 'Inspection', link: '/guide/inspection' }") &&
+    files.config.includes("{ text: '调试检查', link: '/zh/guide/inspection' }"),
+  'VitePress sidebars must expose the inspection guide in English and Chinese'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
 )
@@ -107,7 +115,8 @@ for (const snippet of [
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
-  '[Examples](/examples/)'
+  '[Examples](/examples/)',
+  '[Inspection](/guide/inspection)'
 ]) {
   expect(files.gettingStarted.includes(snippet), `English getting started must include: ${snippet}`)
 }
@@ -128,7 +137,8 @@ for (const snippet of [
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
-  '[示例](/zh/examples/)'
+  '[示例](/zh/examples/)',
+  '[调试检查](/zh/guide/inspection)'
 ]) {
   expect(
     files.zhGettingStarted.includes(snippet),
@@ -193,9 +203,56 @@ expect(
     files.readme.includes('/docs/guide/upgrade-0.3.md') &&
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
-    files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md'),
+    files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
+    files.readme.includes('[ROADMAP.md](./ROADMAP.md)') &&
+    files.zhReadme.includes('[ROADMAP.md](./ROADMAP.md)') &&
+    files.zhReadme.includes('GitHub issue 只记录可复现 bug'),
   'Readmes must explain no-key chat defaults, list image/video/object examples, and link upgrade/migration guidance'
 )
+
+for (const snippet of [
+  '# Roadmap',
+  'GitHub issues are reserved for',
+  'reproducible bugs',
+  '0.5.x',
+  '0.6.x',
+  '0.7.x',
+  '0.8.x',
+  'inspection',
+  'provider presets',
+  'React',
+  'Non-goals'
+]) {
+  expect(files.roadmap.includes(snippet), `Roadmap must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Inspection',
+  'lastRequest',
+  'lastResponse',
+  'clearTrace()',
+  'submit-user-message',
+  'Request trace',
+  'Debugging checklist',
+  'Production path',
+  'provider credentials'
+]) {
+  expect(files.inspection.includes(snippet), `English inspection guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 调试检查',
+  'lastRequest',
+  'lastResponse',
+  'clearTrace()',
+  'submit-user-message',
+  '请求 trace',
+  '排查清单',
+  '生产路径',
+  'Provider 凭据'
+]) {
+  expect(files.zhInspection.includes(snippet), `Chinese inspection guide must include: ${snippet}`)
+}
 
 for (const snippet of [
   '# Choosing vue-ai-hooks',
@@ -1281,7 +1338,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, competitive positioning, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

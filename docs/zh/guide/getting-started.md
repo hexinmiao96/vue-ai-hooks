@@ -181,6 +181,7 @@ const { messages: messages6, append: append6 } = useChat({
 
 - [示例](/zh/examples/) - 按产品任务选择合适的组合式函数
 - [Provider](/zh/guide/providers) - 如何添加自己的 Provider
+- [调试检查](/zh/guide/inspection) - 检查 request trace 和 Provider 失败
 - [useChat 参考](/zh/reference/use-chat) - 完整 API
 - [useCompletion 参考](/zh/reference/use-completion)
 - [useEmbedding 参考](/zh/reference/use-embedding)
