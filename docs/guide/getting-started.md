@@ -16,6 +16,7 @@ npm install vue-ai-hooks
 | -------------------------------- | ----------------------------------------------------------------- |
 | See the UI without provider keys | Run the [local tool approval demo](#run-a-demo-without-api-keys)  |
 | Compare library fit              | Read [Choosing vue-ai-hooks](/guide/choosing)                     |
+| Upgrade from v0.3.x              | Read the [v0.4.0 upgrade guide](/guide/upgrade-0.4)               |
 | Upgrade from v0.2.1              | Read the [v0.3.0 upgrade guide](/guide/upgrade-0.3)               |
 | Port an AI SDK UI app            | Use the [AI SDK migration guide](/guide/ai-sdk-migration)         |
 | Try your backend proxy contract  | Run the [proxy template](#try-the-backend-proxy-template-locally) |

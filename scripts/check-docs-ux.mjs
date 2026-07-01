@@ -8,6 +8,8 @@ const files = {
   zhChoosing: readFileSync('docs/zh/guide/choosing.md', 'utf8'),
   gettingStarted: readFileSync('docs/guide/getting-started.md', 'utf8'),
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
+  upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
+  zhUpgrade04: readFileSync('docs/zh/guide/upgrade-0.4.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
   zhUpgrade03: readFileSync('docs/zh/guide/upgrade-0.3.md', 'utf8'),
   aiSdkMigration: readFileSync('docs/guide/ai-sdk-migration.md', 'utf8'),
@@ -63,6 +65,11 @@ expect(
   'English examples sidebar must use English labels'
 )
 expect(
+  files.config.includes("{ text: 'Upgrade to v0.4.0', link: '/guide/upgrade-0.4' }") &&
+    files.config.includes("{ text: '升级到 v0.4.0', link: '/zh/guide/upgrade-0.4' }"),
+  'VitePress sidebars must expose the current v0.4.0 upgrade guide in English and Chinese'
+)
+expect(
   !files.config.includes("{ text: '示例', link: '/examples/' }"),
   'English VitePress nav must not show Chinese text for /examples/'
 )
@@ -87,6 +94,7 @@ expect(
 for (const snippet of [
   '## Pick a path',
   '[Choosing vue-ai-hooks](/guide/choosing)',
+  '[v0.4.0 upgrade guide](/guide/upgrade-0.4)',
   '[v0.3.0 upgrade guide](/guide/upgrade-0.3)',
   '[AI SDK migration guide](/guide/ai-sdk-migration)',
   '## Run a demo without API keys',
@@ -107,6 +115,7 @@ for (const snippet of [
 for (const snippet of [
   '## 先选一条路径',
   '[选择 vue-ai-hooks](/zh/guide/choosing)',
+  '[v0.4.0 升级指南](/zh/guide/upgrade-0.4)',
   '[v0.3.0 升级指南](/zh/guide/upgrade-0.3)',
   '[AI SDK 迁移指南](/zh/guide/ai-sdk-migration)',
   '## 不需要 API key 的 Demo',
@@ -175,6 +184,8 @@ expect(
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/choosing.md') &&
     files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
+    files.readme.includes('/docs/guide/upgrade-0.4.md') &&
+    files.zhReadme.includes('/docs/zh/guide/upgrade-0.4.md') &&
     files.readme.includes('/docs/guide/upgrade-0.3.md') &&
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
@@ -208,6 +219,57 @@ for (const snippet of [
   '本包刻意不负责什么'
 ]) {
   expect(files.zhChoosing.includes(snippet), `Chinese choosing guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Upgrade to v0.4.0',
+  'currently on `vue-ai-hooks@0.3.x`',
+  'v0.4.0 does not intentionally remove or rename documented public exports',
+  'pnpm add vue-ai-hooks@^0.4.0',
+  'pnpm release:check',
+  'Chat instances',
+  'useChat({ chat: supportChat })',
+  'Video generation',
+  'pnpm example:video',
+  'UI message stream utilities',
+  '/api/ui-message-stream',
+  'Transport migration',
+  'DefaultChatTransport',
+  'DirectChatTransport({ onError })',
+  'Model message conversion',
+  'ignoreIncompleteToolCalls',
+  'stepCountIs()',
+  'Persisted message validation',
+  'Recommended migration order'
+]) {
+  expect(files.upgrade04.includes(snippet), `English v0.4.0 upgrade guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 升级到 v0.4.0',
+  '当前使用 `vue-ai-hooks@0.3.x`',
+  'v0.4.0 不会有意移除或重命名',
+  'pnpm add vue-ai-hooks@^0.4.0',
+  'pnpm release:check',
+  'Chat 实例',
+  'useChat({ chat: supportChat })',
+  '视频生成',
+  'pnpm example:video',
+  'UI message stream 工具',
+  '/api/ui-message-stream',
+  'Transport 迁移',
+  'DefaultChatTransport',
+  'DirectChatTransport({ onError })',
+  'Model message 转换',
+  'ignoreIncompleteToolCalls',
+  'stepCountIs()',
+  '持久化消息校验',
+  '推荐迁移顺序'
+]) {
+  expect(
+    files.zhUpgrade04.includes(snippet),
+    `Chinese v0.4.0 upgrade guide must include: ${snippet}`
+  )
 }
 
 for (const snippet of [
