@@ -476,6 +476,9 @@ and `createdAt`, while preserving `role`, `content`, `name`, tool call fields,
 and shallow-cloned `metadata`. Pass `{ preserveIds: true }` or
 `{ preserveCreatedAt: true }` when your backend needs those fields, and
 `{ stripMetadata: true }` when metadata should stay client-side.
+Pass `{ ignoreIncompleteToolCalls: true }` when the UI may contain pending or
+approval-gated tool calls that do not yet have matching `role: 'tool'` result
+messages.
 Custom `data-*` parts are also removed by default. Pass `convertDataPart` when a
 specific data part should become model-readable context:
 

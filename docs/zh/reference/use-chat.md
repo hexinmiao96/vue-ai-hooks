@@ -457,6 +457,9 @@ await append('发送精简后的模型上下文。')
 和 `createdAt`，保留 `role`、`content`、`name`、工具调用字段和浅克隆的
 `metadata`。后端需要这些字段时可以传 `{ preserveIds: true }` 或
 `{ preserveCreatedAt: true }`；metadata 只应留在客户端时传 `{ stripMetadata: true }`。
+当 UI 中可能还有等待审批或尚未返回结果的工具调用时，可以传
+`{ ignoreIncompleteToolCalls: true }`，只保留已经有匹配 `role: 'tool'` 结果消息的
+tool call。
 自定义 `data-*` parts 默认也会被移除。某个 data part 需要变成模型可读上下文时，显式传入
 `convertDataPart`：
 

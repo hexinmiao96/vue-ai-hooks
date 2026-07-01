@@ -1616,6 +1616,7 @@ describe('public API types', () => {
     })
     const convertOptions: ConvertToModelMessagesOptions = {
       preserveIds: true,
+      ignoreIncompleteToolCalls: true,
       convertDataPart(part, sourceMessage) {
         expectTypeOf(part).toEqualTypeOf<MessageDataPart>()
         expectTypeOf(sourceMessage).toEqualTypeOf<Message>()
@@ -1671,6 +1672,7 @@ describe('public API types', () => {
     expectTypeOf(modelMessages).toEqualTypeOf<ModelMessage[]>()
     expectTypeOf(modelMessagesWithOptions).toEqualTypeOf<ModelMessage[]>()
     expectTypeOf(convertOptions).toEqualTypeOf<ConvertToModelMessagesOptions>()
+    expectTypeOf(convertOptions.ignoreIncompleteToolCalls).toEqualTypeOf<boolean | undefined>()
     expectTypeOf(message.parts).toEqualTypeOf<MessagePart[] | undefined>()
     expectTypeOf(request.threadId).toEqualTypeOf<string | undefined>()
     expectTypeOf(request.forwardedProps).toEqualTypeOf<Record<string, unknown> | undefined>()

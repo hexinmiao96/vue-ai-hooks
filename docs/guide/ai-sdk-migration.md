@@ -194,6 +194,8 @@ if (result.success) {
 When a backend route or provider call needs model-facing history instead of UI
 rendering state, use `convertToModelMessages(messages)`. It removes `parts`,
 `id`, and `createdAt` by default, while preserving content and tool call fields.
+Use `ignoreIncompleteToolCalls` when paused approval flows may leave assistant
+tool calls without matching tool result messages.
 Use `convertDataPart` when a custom `data-*` part should become model-readable
 context:
 
@@ -201,6 +203,7 @@ context:
 import { convertToModelMessages } from 'vue-ai-hooks'
 
 const modelMessages = convertToModelMessages(chat.messages.value, {
+  ignoreIncompleteToolCalls: true,
   convertDataPart(part) {
     if (part.type !== 'data-chart') return
     return `Chart context: ${JSON.stringify(part.data)}`

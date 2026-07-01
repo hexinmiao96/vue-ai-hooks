@@ -529,6 +529,69 @@ describe('useChat', () => {
     expect(typeof messages[0].content).toBe('string')
   })
 
+  it('can ignore incomplete tool calls during model message conversion', () => {
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Look up docs and billing status.'
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_done',
+            type: 'function',
+            function: { name: 'lookupDocs', arguments: '{"q":"vue"}' }
+          },
+          {
+            id: 'call_pending',
+            type: 'function',
+            function: { name: 'chargeCard', arguments: '{"amount":42}' }
+          }
+        ]
+      },
+      {
+        id: 'tool_1',
+        role: 'tool',
+        content: '{"ok":true}',
+        toolCallId: 'call_done'
+      }
+    ]
+
+    const defaultMessages = convertToModelMessages(messages)
+    const modelMessages = convertToModelMessages(messages, {
+      ignoreIncompleteToolCalls: true
+    })
+
+    expect(defaultMessages[1].toolCalls).toHaveLength(2)
+    expect(modelMessages).toEqual([
+      {
+        role: 'user',
+        content: 'Look up docs and billing status.'
+      },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_done',
+            type: 'function',
+            function: { name: 'lookupDocs', arguments: '{"q":"vue"}' }
+          }
+        ]
+      },
+      {
+        role: 'tool',
+        content: '{"ok":true}',
+        toolCallId: 'call_done'
+      }
+    ])
+    expect(messages[1].toolCalls).toHaveLength(2)
+  })
+
   it('deserializes all structured message part variants', () => {
     const restored = deserializeMessages([
       {

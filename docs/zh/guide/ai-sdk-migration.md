@@ -183,13 +183,15 @@ if (result.success) {
 
 后端路由或 provider 调用需要面向模型的历史，而不是 UI 渲染状态时，可以使用
 `convertToModelMessages(messages)`。它默认移除 `parts`、`id` 和 `createdAt`，
-保留 content 和工具调用字段。某个自定义 `data-*` part 需要变成模型可读上下文时，使用
-`convertDataPart`：
+保留 content 和工具调用字段。审批流暂停时如果 assistant 里还存在没有匹配 tool 结果消息的
+tool call，可以使用 `ignoreIncompleteToolCalls`。某个自定义 `data-*` part 需要变成模型可读
+上下文时，使用 `convertDataPart`：
 
 ```ts
 import { convertToModelMessages } from 'vue-ai-hooks'
 
 const modelMessages = convertToModelMessages(chat.messages.value, {
+  ignoreIncompleteToolCalls: true,
   convertDataPart(part) {
     if (part.type !== 'data-chart') return
     return `图表上下文：${JSON.stringify(part.data)}`

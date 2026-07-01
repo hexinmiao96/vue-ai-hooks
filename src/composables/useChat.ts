@@ -292,6 +292,7 @@ export interface ConvertToModelMessagesOptions {
   preserveIds?: boolean
   preserveCreatedAt?: boolean
   stripMetadata?: boolean
+  ignoreIncompleteToolCalls?: boolean
   convertDataPart?: (
     part: Extract<MessagePart, { type: 'data' | `data-${string}` }>,
     message: Message
@@ -992,7 +993,20 @@ export function convertToModelMessages(
   messages: Message[],
   options: ConvertToModelMessagesOptions = {}
 ): ModelMessage[] {
-  const { preserveIds = false, preserveCreatedAt = false, stripMetadata = false } = options
+  const {
+    preserveIds = false,
+    preserveCreatedAt = false,
+    stripMetadata = false,
+    ignoreIncompleteToolCalls = false
+  } = options
+  let completedToolCallIds: Set<string> | null = null
+  if (ignoreIncompleteToolCalls) {
+    completedToolCallIds = new Set()
+    for (const message of messages) {
+      if (message.role === 'tool' && message.toolCallId)
+        completedToolCallIds.add(message.toolCallId)
+    }
+  }
 
   return messages.map((message) => {
     const converted = cloneMessage(message) as ModelMessage & { parts?: MessagePart[] }
@@ -1006,6 +1020,11 @@ export function convertToModelMessages(
     if (!preserveCreatedAt) delete converted.createdAt
     else if (converted.createdAt !== undefined) {
       converted.createdAt = new Date(converted.createdAt.getTime())
+    }
+    if (completedToolCallIds) {
+      const calls = converted.toolCalls?.filter((call) => completedToolCallIds.has(call.id))
+      if (calls?.length) converted.toolCalls = calls
+      else delete converted.toolCalls
     }
     if (stripMetadata) delete converted.metadata
     return converted
