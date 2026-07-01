@@ -16,8 +16,21 @@ Choose `vue-ai-hooks` when you want:
 - Tool calls, tool approvals, stream data, retries, persistence, and request
   inspection without adding a full agent framework.
 
-Pick another layer when you need a full-stack React-first SDK, a provider SDK for
-server-only calls, or a multi-agent orchestration framework.
+Pick another layer when you need a broader full-stack AI SDK, a provider SDK for
+server-only calls, a drop-in copilot shell, or a multi-agent orchestration
+framework.
+
+## Current competitive snapshot
+
+Snapshot date: 2026-07-01. Treat this as a product-positioning snapshot, not a
+permanent benchmark.
+
+| Alternative                                                                  | Official scope to track                                                                                                           | Where `vue-ai-hooks` fits                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [AI SDK UI](https://ai-sdk.dev/docs/reference/ai-sdk-ui)                     | Framework integrations, `useChat`, transports, UI message streams, model adapters, and the broader AI SDK Core surface.           | Use `vue-ai-hooks` when a Vue app needs one small composable layer that also covers completion, embeddings, image, video, speech, transcription, rerank, object output, app-owned proxy routes, and no-key demos. |
+| [CopilotKit](https://docs.copilotkit.ai/reference)                           | Drop-in copilot UI components, framework SDKs including Vue, agent access, human-in-the-loop hooks, and AG-UI-style agent events. | Use `vue-ai-hooks` when you want lower-level composables and own your product UI. Pick CopilotKit when you want a higher-level copilot shell connected to an agent protocol.                                      |
+| [LangChain.js](https://docs.langchain.com/oss/javascript/langchain/overview) | Agent harnesses, tools, middleware, retrieval, memory, multi-agent flows, and LangSmith observability.                            | Use LangChain behind your API route for orchestration; use `vue-ai-hooks` in Vue to render and control the stream.                                                                                                |
+| [VueUse](https://vueuse.org/)                                                | Broad Vue composition utilities, tree-shakable helpers, add-ons, and interactive utility demos.                                   | Use VueUse for general reactivity/browser utilities and `vue-ai-hooks` for AI request lifecycles, provider/proxy contracts, and model-stream state.                                                               |
 
 ## Decision table
 
@@ -33,6 +46,8 @@ server-only calls, or a multi-agent orchestration framework.
 | Port an existing AI SDK UI surface                    | [AI SDK migration](/guide/ai-sdk-migration)     |
 | Add provider failover before a stream starts          | `fallbackProvider`                              |
 | Run local tool approval UX without provider keys      | `examples/chat`                                 |
+| Build a product-specific AI UI without buying a shell | `vue-ai-hooks` composables + your components    |
+| Drop in a full copilot panel tied to agent protocols  | CopilotKit-style UI framework                   |
 | Build agent graphs, retrievers, or long-running plans | a workflow or agent framework around your model |
 | Share code with a React-first AI SDK UI app           | AI SDK UI may be the better primary layer       |
 
@@ -42,7 +57,9 @@ server-only calls, or a multi-agent orchestration framework.
 
 [AI SDK](https://ai-sdk.dev/docs) is a broad full-stack SDK with a strong UI
 message stream protocol, transports, model adapters, tool calling, and framework
-integrations.
+integrations. Its official UI docs include Vue support, while its framework
+support matrix still makes React the widest UI surface and lists the Vue package
+primarily around chat.
 
 `vue-ai-hooks` is narrower: it focuses on Vue composables, app-owned proxy
 routes, provider adapters, and typed refs. It accepts AI SDK-style concepts such
@@ -56,14 +73,29 @@ when Vue state and a small package surface are the center.
 
 ### LangChain.js
 
-[LangChain.js](https://js.langchain.com/docs/) is useful for chains, agents,
-retrievers, memory, model abstraction, and tool orchestration.
+[LangChain.js](https://docs.langchain.com/oss/javascript/langchain/overview) is
+useful for chains, agents, retrievers, memory, model abstraction, and tool
+orchestration.
 
 `vue-ai-hooks` is not an agent framework. It owns the browser/app composable
 layer: rendering streams, request lifecycle, provider/proxy transport, local
 tool approvals, and UI diagnostics. Use LangChain or a similar backend framework
 behind your API route when you need orchestration, then return `ChatChunk` or AI
 SDK UI stream parts to `vue-ai-hooks`.
+
+### CopilotKit
+
+[CopilotKit](https://docs.copilotkit.ai/reference) is a closer product-level
+alternative than a raw model SDK. Its reference docs include framework SDKs,
+Vue composables and components, chat UI components, frontend tools,
+human-in-the-loop hooks, and agent access. Its AG-UI docs describe an
+event-based SSE protocol for connecting frontends to agents.
+
+`vue-ai-hooks` deliberately stays lower-level. It does not ship a popup,
+sidebar, or full copilot shell. That keeps the package useful when your product
+already has a custom design system, chat surface, review flow, or audit panel.
+If you want a ready-made copilot UI with agent protocol integration, CopilotKit
+may be the faster starting point.
 
 ### Direct fetch and SSE parsing
 

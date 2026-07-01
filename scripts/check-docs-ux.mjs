@@ -172,6 +172,10 @@ expect(
     files.readme.includes('DirectChatTransport({ onError })') &&
     files.zhReadme.includes('DirectChatTransport') &&
     files.zhReadme.includes('DirectChatTransport({ onError })') &&
+    files.readme.includes('**CopilotKit**') &&
+    files.zhReadme.includes('**CopilotKit**') &&
+    files.readme.includes('**VueUse**') &&
+    files.zhReadme.includes('**VueUse**') &&
     files.readme.includes('`examples/image`') &&
     files.zhReadme.includes('`examples/image`') &&
     files.readme.includes('`examples/video`') &&
@@ -196,11 +200,20 @@ expect(
 for (const snippet of [
   '# Choosing vue-ai-hooks',
   'Short answer',
+  'Current competitive snapshot',
+  'Snapshot date: 2026-07-01',
   'Decision table',
   'Vercel AI SDK',
+  'CopilotKit',
   'LangChain.js',
   'Direct fetch and SSE parsing',
   'VueUse',
+  'Build a product-specific AI UI without buying a shell',
+  'Drop in a full copilot panel tied to agent protocols',
+  'framework SDKs',
+  'Vue composables and components',
+  'AG-UI docs',
+  'event-based SSE protocol',
   'Architecture fit',
   'What this package intentionally does not own'
 ]) {
@@ -210,11 +223,18 @@ for (const snippet of [
 for (const snippet of [
   '# 选择 vue-ai-hooks',
   '简短结论',
+  '当前竞品快照',
+  '快照日期：2026-07-01',
   '决策表',
   'Vercel AI SDK',
+  'CopilotKit',
   'LangChain.js',
   '手写 fetch 和 SSE 解析',
   'VueUse',
+  '构建强产品定制的 AI UI，不接入成品外壳',
+  '快速放入接入 agent 协议的完整 copilot 面板',
+  'Vue composables 和 components',
+  'event-based SSE',
   '架构适配',
   '本包刻意不负责什么'
 ]) {
@@ -1261,7 +1281,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, first-run paths, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, first-run paths, competitive positioning, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

@@ -34,7 +34,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 | Library                       | Tradeoff                                                                      |
 | ----------------------------- | ----------------------------------------------------------------------------- |
 | **Vercel AI SDK**             | Broad full-stack SDK; larger surface area than a focused Vue composable layer |
+| **CopilotKit**                | Higher-level copilot UI and agent integration; more product opinion           |
 | **LangChain.js**              | Powerful but heavy; opinionated chains, lots of magic                         |
+| **VueUse**                    | Excellent Vue utility layer, but not an AI request lifecycle SDK              |
 | **Direct fetch + manual SSE** | Works, but you re-implement aborts, retries, and state for every project      |
 | **vue-ai-hooks**              | A focused, framework-native SDK with the boring parts done                    |
 

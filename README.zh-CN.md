@@ -30,7 +30,9 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 | 库                        | 取舍                                                         |
 | ------------------------- | ------------------------------------------------------------ |
 | **Vercel AI SDK**         | 覆盖面很广的全栈 SDK；API 面比聚焦 Vue composable 的方案更大 |
+| **CopilotKit**            | 更偏成品 copilot UI 和 agent 集成；产品形态更强              |
 | **LangChain.js**          | 功能强大但偏重；链式抽象较多，魔法也多                       |
+| **VueUse**                | 很好的 Vue 通用工具层，但不是 AI 请求生命周期 SDK            |
 | **直接 fetch + 手写 SSE** | 可行，但每个项目都要重复实现中止、重试和状态管理             |
 | **vue-ai-hooks**          | 专注、框架原生，并把繁琐部分处理好                           |
 
