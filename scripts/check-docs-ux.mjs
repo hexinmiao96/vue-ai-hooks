@@ -928,6 +928,7 @@ expect(
 expect(
   files.useChat.includes('sendAutomaticallyWhen') &&
     files.useChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
+    files.useChat.includes('stepCountIs') &&
     files.useChat.includes('SendAutomaticallyWhen') &&
     files.useChat.includes('call `sendMessage()` without content') &&
     files.useChat.includes('`Tool[] \\| ToolSet`') &&
@@ -1001,6 +1002,7 @@ expect(
 expect(
   files.zhUseChat.includes('sendAutomaticallyWhen') &&
     files.zhUseChat.includes('lastAssistantMessageIsCompleteWithToolCalls') &&
+    files.zhUseChat.includes('stepCountIs') &&
     files.zhUseChat.includes('SendAutomaticallyWhen') &&
     files.zhUseChat.includes('无参调用') &&
     files.zhUseChat.includes('`sendMessage()`') &&

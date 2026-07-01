@@ -12,6 +12,7 @@ import {
   safeValidateMessages,
   safeValidateUIMessages,
   serializeMessages,
+  stepCountIs,
   tool,
   validateMessages,
   validateUIMessages,
@@ -3915,6 +3916,36 @@ describe('useChat', () => {
         messages: messages.slice(0, 2)
       })
     ).toBe(false)
+  })
+
+  it('exports an AI SDK-style stepCountIs stop helper alias', () => {
+    const messages: Message[] = [
+      {
+        id: 'u1',
+        role: 'user',
+        content: 'Use tools.'
+      },
+      {
+        id: 'a1',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{}' }
+          }
+        ]
+      }
+    ]
+    const options = {
+      messages,
+      toolCalls: messages[1].toolCalls ?? []
+    }
+
+    expect(stepCountIs).toBe(isStepCount)
+    expect(stepCountIs(1)(options)).toBe(true)
+    expect(stepCountIs(2)(options)).toBe(false)
   })
 
   it('preserves per-request options during tool follow-up requests', async () => {

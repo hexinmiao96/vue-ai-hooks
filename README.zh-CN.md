@@ -352,6 +352,8 @@ tenant headers、trace metadata 或后端专属 body 字段时，可以使用 `p
 `prepareReconnectToStreamRequest`。
 自动工具循环需要按 assistant 步骤调整请求时，可以使用 `prepareStep`，例如工具结果回来后收窄
 `activeTools`。
+迁移 AI SDK 风格工具循环限制时，可以把 `stepCountIs()` 或 `hasToolCall()` 传给
+`stopWhen`，底层 Vue 状态模型不需要改变。
 agent 后端需要服务端 thread 标识和应用上下文时，可以使用 `threadId` 和
 `forwardedProps`，不用改变客户端共享 chat id。
 浏览器本地工具 handler 需要 store、服务实例或 session 状态时，可以使用 `context`，

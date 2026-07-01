@@ -35,6 +35,7 @@
 | `resumeStream()`                                    | `resumeStream()`，需要 provider 支持 `resumeChat`                                                                                                             |
 | `addToolOutput()` / 已弃用的 `addToolResult()`      | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`                                                                                                  |
 | `addToolApprovalResponse()`                         | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`                                                                                          |
+| `stepCountIs()`                                     | `stepCountIs()`，或旧名 `isStepCount()`，用于限制自动工具循环步骤数                                                                                           |
 | `tool()` / `dynamicTool()`                          | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`                                                                                         |
 | `stopWhen`                                          | `stopWhen`                                                                                                                                                    |
 | `experimental_throttle`                             | `experimental_throttle`，或更推荐的 `throttleMs`                                                                                                              |
@@ -251,7 +252,7 @@ await chat.addToolApprovalResponse({
 ```ts
 const chat = useChat({
   api: '/api/chat',
-  stopWhen: isStepCount(4),
+  stopWhen: stepCountIs(4),
   sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   prepareStep({ stepNumber, request }) {
     return {

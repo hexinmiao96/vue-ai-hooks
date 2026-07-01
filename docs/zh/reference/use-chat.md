@@ -28,8 +28,8 @@
 公开 helper：`pruneMessages`、`convertToModelMessages`、`serializeMessages`、
 `deserializeMessages`、`validateMessages`、`safeValidateMessages`、
 `validateUIMessages`、`safeValidateUIMessages` 和
-`lastAssistantMessageIsCompleteWithToolCalls`、`isStepCount`、`hasToolCall`、`jsonSchema`、
-`tool`、`dynamicTool`。
+`lastAssistantMessageIsCompleteWithToolCalls`、`stepCountIs`、`isStepCount`、
+`hasToolCall`、`jsonSchema`、`tool`、`dynamicTool`。
 
 ## 用法
 
@@ -669,18 +669,18 @@ const chat = useChat({
 ```
 
 自动工具循环需要按条件停住时，可以使用 `stopWhen`。内置 helper 覆盖常见限制：
-`isStepCount(n)` 会在第 N 个 assistant 工具调用步骤后停止，`hasToolCall(...names)`
-会在最新 assistant 步骤调用指定工具时停止：
+`stepCountIs(n)` 会在第 N 个 assistant 工具调用步骤后停止，`isStepCount(n)` 是同一
+helper 的旧名称，`hasToolCall(...names)` 会在最新 assistant 步骤调用指定工具时停止：
 
 ```ts
-import { hasToolCall, isStepCount, useChat } from 'vue-ai-hooks'
+import { hasToolCall, stepCountIs, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   provider,
   tools: [searchDocsTool, chargeCardTool],
   toolHandlers,
   maxToolRoundtrips: 4,
-  stopWhen: [isStepCount(3), hasToolCall('chargeCard')]
+  stopWhen: [stepCountIs(3), hasToolCall('chargeCard')]
 })
 ```
 

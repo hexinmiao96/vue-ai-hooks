@@ -486,6 +486,8 @@ export function isStepCount(count: number): StopWhen {
       .length >= count
 }
 
+export const stepCountIs = isStepCount
+
 export function hasToolCall(...toolNames: string[]): StopWhen {
   return ({ toolCalls }) =>
     toolNames.length

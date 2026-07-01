@@ -397,6 +397,8 @@ fields after the final chat id, messages, proxy `api`, credentials, and request
 metadata are known.
 Use `prepareStep` when automatic tool loops need request changes per assistant
 step, such as narrowing `activeTools` after a tool result arrives.
+Use `stepCountIs()` or `hasToolCall()` with `stopWhen` to port AI SDK-style tool
+loop limits without changing the underlying Vue state model.
 Use `threadId` and `forwardedProps` when an agent backend needs a server thread
 identifier plus app context without changing the client-side shared chat id.
 Use `context` when browser-local tool handlers need stores, services, or session

@@ -34,6 +34,7 @@ import {
   safeValidateMessages,
   safeValidateUIMessages,
   serializeMessages,
+  stepCountIs,
   tool,
   toChatChunks,
   validateMessages,
@@ -1578,7 +1579,7 @@ describe('public API types', () => {
     }
     const stopWhen: StopWhen = (stopOptions) => {
       expectTypeOf(stopOptions).toEqualTypeOf<StopWhenOptions>()
-      return hasToolCall('lookup')(stopOptions) || isStepCount(2)(stopOptions)
+      return hasToolCall('lookup')(stopOptions) || stepCountIs(2)(stopOptions)
     }
     const options: UseChatOptions = {
       provider,
@@ -1742,6 +1743,8 @@ describe('public API types', () => {
     expectTypeOf(stopWhen).toEqualTypeOf<StopWhen>()
     expectTypeOf(isStepCount).parameter(0).toEqualTypeOf<number>()
     expectTypeOf(isStepCount).returns.toEqualTypeOf<StopWhen>()
+    expectTypeOf(stepCountIs).toEqualTypeOf<typeof isStepCount>()
+    expectTypeOf(stepCountIs).returns.toEqualTypeOf<StopWhen>()
     expectTypeOf(hasToolCall).toEqualTypeOf<(...toolNames: string[]) => StopWhen>()
     expectTypeOf(hasToolCall).returns.toEqualTypeOf<StopWhen>()
     expectTypeOf(lastAssistantMessageIsCompleteWithToolCalls).toMatchTypeOf<SendAutomaticallyWhen>()

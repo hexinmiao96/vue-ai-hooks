@@ -29,8 +29,8 @@ and `RetryContext`.
 Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`,
 `deserializeMessages`, `validateMessages`, `safeValidateMessages`,
 `validateUIMessages`, `safeValidateUIMessages`,
-`lastAssistantMessageIsCompleteWithToolCalls`, `isStepCount`, `hasToolCall`, `jsonSchema`,
-`tool`, and `dynamicTool`.
+`lastAssistantMessageIsCompleteWithToolCalls`, `stepCountIs`, `isStepCount`,
+`hasToolCall`, `jsonSchema`, `tool`, and `dynamicTool`.
 
 ## Usage
 
@@ -706,19 +706,20 @@ const chat = useChat({
 ```
 
 Use `stopWhen` when automatic tool loops should stop after a condition matches.
-Built-in helpers cover common limits: `isStepCount(n)` stops after N assistant
-tool-call steps, and `hasToolCall(...names)` stops when the latest assistant
-step called a named tool:
+Built-in helpers cover common limits: `stepCountIs(n)` stops after N assistant
+tool-call steps, `isStepCount(n)` is the same helper under the older name, and
+`hasToolCall(...names)` stops when the latest assistant step called a named
+tool:
 
 ```ts
-import { hasToolCall, isStepCount, useChat } from 'vue-ai-hooks'
+import { hasToolCall, stepCountIs, useChat } from 'vue-ai-hooks'
 
 const chat = useChat({
   provider,
   tools: [searchDocsTool, chargeCardTool],
   toolHandlers,
   maxToolRoundtrips: 4,
-  stopWhen: [isStepCount(3), hasToolCall('chargeCard')]
+  stopWhen: [stepCountIs(3), hasToolCall('chargeCard')]
 })
 ```
 

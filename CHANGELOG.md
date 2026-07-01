@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resume endpoints that stream raw text.
 - Added `convertToModelMessages({ convertDataPart })` for opt-in conversion of
   custom `data-*` UI parts into model-facing content.
+- Added `stepCountIs()` as an AI SDK-compatible alias for `isStepCount()` tool
+  loop stopping conditions.
 
 ## [0.3.0] - 2026-06-30
 

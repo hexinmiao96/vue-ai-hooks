@@ -37,6 +37,7 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `resumeStream()`                                    | `resumeStream()` with a provider that supports `resumeChat`                                                                                                     |
 | `addToolOutput()` / deprecated `addToolResult()`    | `addToolOutput()` or `addToolResult({ toolCallId, output })`                                                                                                    |
 | `addToolApprovalResponse()`                         | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()`                                                                                            |
+| `stepCountIs()`                                     | `stepCountIs()` or older `isStepCount()` for automatic tool-loop limits                                                                                         |
 | `tool()` / `dynamicTool()`                          | `tool()`, `dynamicTool()`, and `jsonSchema()` with `useChat({ tools })`                                                                                         |
 | `stopWhen`                                          | `stopWhen`                                                                                                                                                      |
 | `experimental_throttle`                             | `experimental_throttle` or preferred `throttleMs`                                                                                                               |
@@ -264,7 +265,7 @@ tool loops:
 ```ts
 const chat = useChat({
   api: '/api/chat',
-  stopWhen: isStepCount(4),
+  stopWhen: stepCountIs(4),
   sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
   prepareStep({ stepNumber, request }) {
     return {

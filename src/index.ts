@@ -17,6 +17,7 @@ export {
   safeValidateMessages,
   safeValidateUIMessages,
   serializeMessages,
+  stepCountIs,
   tool,
   validateMessages,
   validateUIMessages,
