@@ -133,13 +133,13 @@ Configure npm with these trusted publisher settings before pushing a release tag
 - Workflow filename: `publish.yml`
 - Allowed action: `npm publish`
 
-Then create and push a tag matching `package.json`, for example `v0.4.0`.
+Then create and push a tag matching `package.json`, for example `v0.4.1`.
 
 Release checklist:
 
 1. Update `CHANGELOG.md` and the `package.json` version.
 2. Run `pnpm release:check`.
-3. Create a tag that exactly matches the package version, for example `v0.4.0`.
+3. Create a tag that exactly matches the package version, for example `v0.4.1`.
 4. Push the tag and confirm the GitHub Actions publish workflow completes.
    The publish workflow intentionally runs only from `v*` tags; there is no
    manual publish dispatch path.

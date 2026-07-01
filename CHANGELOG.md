@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 No changes yet.
 
+## [0.4.1] - 2026-07-01
+
+### Changed
+
+- Published the v0.4 upgrade guide, current-release README links, and
+  docs UX guardrails so npm consumers see the same onboarding path as the
+  repository docs.
+- Clarified competitive positioning against AI SDK UI, CopilotKit,
+  LangChain.js, and VueUse in the English and Chinese choosing guides.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.4.0] - 2026-07-01
 
 ### Added
