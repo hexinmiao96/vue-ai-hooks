@@ -254,6 +254,8 @@ type ToolApprovalPredicate = (
 
 type SendAutomaticallyWhen = (options: { messages: Message[] }) => boolean | PromiseLike<boolean>
 
+type AiSdkSendChatTrigger = 'submit-user-message' | 'regenerate-assistant-message'
+
 interface PrepareStepOptions {
   id: string
   messages: Message[]
@@ -262,6 +264,7 @@ interface PrepareStepOptions {
   headers?: Record<string, string>
   request: ChatRequest
   trigger: 'submit-message' | 'regenerate-message'
+  aiSdkTrigger?: AiSdkSendChatTrigger
   messageId?: string
   stepNumber: number
   toolCalls: ToolCall[]
@@ -303,6 +306,7 @@ interface ChatRequestInfo {
   body?: Record<string, unknown>
   headers?: Record<string, string>
   trigger?: 'submit-message' | 'regenerate-message'
+  aiSdkTrigger?: AiSdkSendChatTrigger
   messageId?: string
   stepNumber?: number
 }

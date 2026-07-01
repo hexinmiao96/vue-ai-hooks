@@ -466,7 +466,7 @@ request preparation hooks, use the `messages` option for the UI snapshot and
 
 Use `prepareSendMessagesRequest` when your backend needs last-mile request
 customization that depends on the current chat id, proxy `api`, credentials,
-trigger, metadata, headers, or resolved message list:
+trigger, AI SDK trigger, metadata, headers, or resolved message list:
 
 ```ts
 const { append, regenerate } = useChat({
@@ -476,10 +476,10 @@ const { append, regenerate } = useChat({
     body: { tenantId: 'acme' },
     headers: { 'X-App': 'support-console' }
   },
-  prepareSendMessagesRequest({ id, api, credentials, trigger, body, headers }) {
+  prepareSendMessagesRequest({ id, api, credentials, trigger, aiSdkTrigger, body, headers }) {
     return {
       headers: { ...headers, 'X-Chat-Id': id, 'X-Chat-Api': api ?? 'direct' },
-      body: { ...body, credentials, trigger }
+      body: { ...body, credentials, trigger, aiSdkTrigger }
     }
   }
 })
@@ -490,10 +490,11 @@ await regenerate({ messageId: 'msg_assistant_1' })
 
 The hook receives `PrepareSendMessagesRequestOptions`: `id`, `messages`,
 `requestMetadata`, `body`, `headers`, the full `request`, `trigger`
-(`'submit-message'` or `'regenerate-message'`), and optional `messageId`.
-Return `Partial<ChatRequest>` to override request fields. Returned `body` and
-`headers` are merged over the already resolved request so existing defaults are
-not dropped accidentally.
+(`'submit-message'` or `'regenerate-message'`), `aiSdkTrigger`
+(`'submit-user-message'` or `'regenerate-assistant-message'`), and optional
+`messageId`. Return `Partial<ChatRequest>` to override request fields. Returned
+`body` and `headers` are merged over the already resolved request so existing
+defaults are not dropped accidentally.
 
 Use `prepareReconnectToStreamRequest` for resumable proxy streams:
 

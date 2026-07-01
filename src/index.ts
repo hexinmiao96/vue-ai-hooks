@@ -20,6 +20,7 @@ export {
   useChat,
   type AddToolOutputOptions,
   type AddToolResultOptions,
+  type AiSdkSendChatTrigger,
   type AnyToolDefinition,
   type AppendChatOptions,
   type ChatToolsInput,

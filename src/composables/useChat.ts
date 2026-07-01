@@ -158,6 +158,7 @@ export interface ChatRequestInfo {
   body?: Record<string, unknown>
   headers?: Record<string, string>
   trigger?: SendChatTrigger
+  aiSdkTrigger?: AiSdkSendChatTrigger
   messageId?: string
   stepNumber?: number
 }
@@ -192,6 +193,7 @@ export interface SendChatMessageInput<
 }
 
 export type SendChatTrigger = 'submit-message' | 'regenerate-message'
+export type AiSdkSendChatTrigger = 'submit-user-message' | 'regenerate-assistant-message'
 
 export interface PrepareSendMessagesRequestOptions {
   id: string
@@ -203,6 +205,7 @@ export interface PrepareSendMessagesRequestOptions {
   headers?: Record<string, string>
   request: ChatRequest
   trigger: SendChatTrigger
+  aiSdkTrigger?: AiSdkSendChatTrigger
   messageId?: string
 }
 
@@ -846,6 +849,10 @@ export function validateMessages(raw: unknown): boolean {
   return !!deserializeMessages(raw)
 }
 
+function toAiSdkTrigger(trigger: SendChatTrigger): AiSdkSendChatTrigger {
+  return trigger === 'regenerate-message' ? 'regenerate-assistant-message' : 'submit-user-message'
+}
+
 /**
  * Convert UI chat messages into provider/model-facing messages.
  */
@@ -1363,7 +1370,9 @@ export function useChat<
       requestMetadata: request.metadata,
       ...(request.body ? { body: { ...request.body } } : {}),
       ...(request.headers ? { headers: headersToRecord(request.headers) } : {}),
-      ...(context?.trigger ? { trigger: context.trigger } : {}),
+      ...(context?.trigger
+        ? { trigger: context.trigger, aiSdkTrigger: toAiSdkTrigger(context.trigger) }
+        : {}),
       ...(context?.messageId ? { messageId: context.messageId } : {}),
       ...(context?.stepNumber !== undefined ? { stepNumber: context.stepNumber } : {})
     }
@@ -1832,6 +1841,7 @@ export function useChat<
       headers: headersToRecord(base.headers),
       request: { ...base, messages: base.messages.map(cloneMessage) },
       trigger: context.trigger,
+      aiSdkTrigger: toAiSdkTrigger(context.trigger),
       messageId: context.messageId,
       stepNumber: context.stepNumber,
       toolCalls: latestAssistantToolCalls(baseMessages).map((call) => ({
@@ -1853,6 +1863,7 @@ export function useChat<
         messages: stepRequest.messages.map(cloneMessage)
       },
       trigger: context.trigger,
+      aiSdkTrigger: toAiSdkTrigger(context.trigger),
       messageId: context.messageId
     })
     return applyActiveTools(mergePreparedChatRequest(stepRequest, prepared))

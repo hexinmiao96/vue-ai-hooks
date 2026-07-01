@@ -662,14 +662,25 @@ expect(
   files.useChat.includes('lastRequest') &&
     files.useChat.includes('lastResponse') &&
     files.useChat.includes('clearTrace()') &&
+    files.useChat.includes('aiSdkTrigger') &&
+    files.useChat.includes('submit-user-message') &&
     files.zhUseChat.includes('lastRequest') &&
     files.zhUseChat.includes('lastResponse') &&
     files.zhUseChat.includes('clearTrace()') &&
+    files.zhUseChat.includes('aiSdkTrigger') &&
+    files.zhUseChat.includes('submit-user-message') &&
     files.readme.includes('lastRequest') &&
     files.zhReadme.includes('lastRequest') &&
     files.chatExample.includes('lastRequest') &&
     files.chatExample.includes('trace-panel'),
   'Docs and chat example must surface provider request trace refs'
+)
+expect(
+  files.types.includes('aiSdkTrigger?:') &&
+    files.types.includes('regenerate-assistant-message') &&
+    files.zhTypes.includes('aiSdkTrigger?:') &&
+    files.zhTypes.includes('regenerate-assistant-message'),
+  'Public type docs must expose AI SDK-style chat trigger metadata'
 )
 expect(
   files.useObject.includes('initialInput') &&

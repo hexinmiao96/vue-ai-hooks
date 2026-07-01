@@ -48,6 +48,7 @@ import {
 } from 'vue-ai-hooks'
 import type {
   AiRequestStatus,
+  AiSdkSendChatTrigger,
   AddToolOutputOptions,
   AddToolResultOptions,
   AppendChatOptions,
@@ -703,6 +704,9 @@ describe('public API types', () => {
       PrepareReconnectToStreamRequest | undefined
     >()
     expectTypeOf<ChatRequestLifecycleKind>().toEqualTypeOf<'chat' | 'resume'>()
+    expectTypeOf<AiSdkSendChatTrigger>().toEqualTypeOf<
+      'submit-user-message' | 'regenerate-assistant-message'
+    >()
     expectTypeOf<ChatRequestInfo>().toMatchTypeOf<{
       kind: ChatRequestLifecycleKind
       request: ChatRequest | ChatResumeRequest
@@ -710,6 +714,7 @@ describe('public API types', () => {
       providerId: string
       api?: string
       credentials?: RequestCredentials
+      aiSdkTrigger?: AiSdkSendChatTrigger
     }>()
     expectTypeOf<ChatResponseInfo>().toMatchTypeOf<ChatRequestInfo & { hasStream: boolean }>()
     expectTypeOf<PrepareSendMessagesRequestOptions['api']>().toEqualTypeOf<string | undefined>()
@@ -1464,6 +1469,7 @@ describe('public API types', () => {
     const regenerateOptions: RegenerateChatOptions = { messageId: 'msg_1', temperature: 0.2 }
     const resumeOptions: ResumeChatOptions = { metadata: { reason: 'reload' } }
     const sendTrigger: SendChatTrigger = 'submit-message'
+    const aiSdkTrigger: AiSdkSendChatTrigger = 'submit-user-message'
     const prepareSendOptions: PrepareSendMessagesRequestOptions = {
       id: 'chat_1',
       messages: [message],
@@ -1472,6 +1478,7 @@ describe('public API types', () => {
       headers: { 'X-Trace': 'trace_1' },
       request,
       trigger: sendTrigger,
+      aiSdkTrigger,
       messageId: 'msg_1'
     }
     const prepareStepOptions: PrepareStepOptions = {
@@ -1643,6 +1650,7 @@ describe('public API types', () => {
     expectTypeOf(resumeRequest.headers).toEqualTypeOf<HeadersInit | undefined>()
     expectTypeOf(resumeRequest.streamProtocol).toEqualTypeOf<ChatStreamProtocol | undefined>()
     expectTypeOf(prepareSendOptions.trigger).toEqualTypeOf<SendChatTrigger>()
+    expectTypeOf(prepareSendOptions.aiSdkTrigger).toEqualTypeOf<AiSdkSendChatTrigger | undefined>()
     expectTypeOf(prepareStepOptions.stepNumber).toEqualTypeOf<number>()
     expectTypeOf(prepareStepOptions.toolCalls).toEqualTypeOf<ToolCall[]>()
     expectTypeOf(prepareReconnectOptions.request).toEqualTypeOf<ChatResumeRequest>()

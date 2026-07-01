@@ -446,8 +446,9 @@ await append('发送精简后的模型上下文。')
 
 ## 请求准备钩子
 
-当后端需要根据当前 chat id、触发来源、metadata、headers 或最终消息列表做最后一层
-请求改写依赖当前 chat id、proxy `api`、credentials、trigger、metadata、headers 或最终消息列表时，可以使用 `prepareSendMessagesRequest`：
+当后端需要根据当前 chat id、proxy `api`、credentials、trigger、AI SDK trigger、
+metadata、headers 或最终消息列表做最后一层请求改写时，可以使用
+`prepareSendMessagesRequest`：
 
 ```ts
 const { append, regenerate } = useChat({
@@ -457,10 +458,10 @@ const { append, regenerate } = useChat({
     body: { tenantId: 'acme' },
     headers: { 'X-App': 'support-console' }
   },
-  prepareSendMessagesRequest({ id, api, credentials, trigger, body, headers }) {
+  prepareSendMessagesRequest({ id, api, credentials, trigger, aiSdkTrigger, body, headers }) {
     return {
       headers: { ...headers, 'X-Chat-Id': id, 'X-Chat-Api': api ?? 'direct' },
-      body: { ...body, credentials, trigger }
+      body: { ...body, credentials, trigger, aiSdkTrigger }
     }
   }
 })
@@ -471,9 +472,10 @@ await regenerate({ messageId: 'msg_assistant_1' })
 
 该钩子接收 `PrepareSendMessagesRequestOptions`：`id`、`messages`、
 `requestMetadata`、`body`、`headers`、完整 `request`、`trigger`
-（`'submit-message'` 或 `'regenerate-message'`），以及可选 `messageId`。返回
-`Partial<ChatRequest>` 可以覆盖请求字段；返回的 `body` 和 `headers` 会叠加到已经解析
-好的请求上，避免默认值被意外丢掉。
+（`'submit-message'` 或 `'regenerate-message'`）、`aiSdkTrigger`
+（`'submit-user-message'` 或 `'regenerate-assistant-message'`），以及可选
+`messageId`。返回 `Partial<ChatRequest>` 可以覆盖请求字段；返回的 `body` 和
+`headers` 会叠加到已经解析好的请求上，避免默认值被意外丢掉。
 
 可恢复代理流可以使用 `prepareReconnectToStreamRequest`：
 

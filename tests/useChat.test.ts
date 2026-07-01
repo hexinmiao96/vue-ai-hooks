@@ -135,7 +135,9 @@ describe('useChat', () => {
     expect(prepareSendMessagesRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         api: '/api/chat',
-        credentials: 'include'
+        credentials: 'include',
+        trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message'
       })
     )
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
@@ -999,6 +1001,7 @@ describe('useChat', () => {
         providerId: 'observable-chat',
         attempt: 1,
         trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message',
         stepNumber: 0,
         requestMetadata: { source: 'prepared' },
         body: { tenantId: 'tenant_default', route: '/tickets/1', prepared: true },
@@ -1028,6 +1031,8 @@ describe('useChat', () => {
       kind: 'chat',
       providerId: 'observable-chat',
       attempt: 2,
+      trigger: 'submit-message',
+      aiSdkTrigger: 'submit-user-message',
       body: { tenantId: 'tenant_default', route: '/tickets/1', prepared: true }
     })
     expect(lastResponse.value).toMatchObject({
@@ -2194,6 +2199,7 @@ describe('useChat', () => {
       expect.objectContaining({
         id: 'chat_prepare',
         trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message',
         messageId: undefined,
         body: { tenantId: 'tenant_runtime', defaultOnly: true },
         headers: { 'X-Default': 'yes', 'X-Trace': 'trace_1' },
@@ -2410,6 +2416,7 @@ describe('useChat', () => {
     expect(prepareSendMessagesRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         trigger: 'regenerate-message',
+        aiSdkTrigger: 'regenerate-assistant-message',
         messageId: 'a1',
         messages: [{ id: 'u1', role: 'user', content: 'question' }]
       })
@@ -3627,7 +3634,8 @@ describe('useChat', () => {
       expect.objectContaining({
         stepNumber: 0,
         toolCalls: [],
-        trigger: 'submit-message'
+        trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message'
       })
     )
     expect(prepareStep).toHaveBeenNthCalledWith(
@@ -3635,7 +3643,8 @@ describe('useChat', () => {
       expect.objectContaining({
         stepNumber: 1,
         toolCalls: [expect.objectContaining({ id: 'call_1' })],
-        trigger: 'submit-message'
+        trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message'
       })
     )
     expect(requests).toHaveLength(2)
