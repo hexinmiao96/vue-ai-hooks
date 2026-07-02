@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-02
+
+### Added
+
+- Added first-class OpenAI-compatible provider presets for Kimi/Moonshot,
+  Zhipu/BigModel/Z.ai, local Ollama, and vLLM, including public config types,
+  dist checks, public API tests, and English/Chinese provider docs.
+- Added docs UX guardrails so README, getting-started, and provider reference
+  pages keep the provider preset onboarding path visible.
+
+### Fixed
+
+- Replaced regex-based trailing-slash trimming in `openaiCompatible` URL joining
+  with a bounded character loop, resolving the CodeQL polynomial-regex alert
+  surfaced by the new provider presets.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.6.0] - 2026-07-02
 
 ### Added
