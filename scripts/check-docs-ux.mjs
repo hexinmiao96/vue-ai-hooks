@@ -145,6 +145,8 @@ for (const snippet of [
   'PROXY_UPSTREAM_BASE_URL',
   'PROXY_UPSTREAM_API_KEY',
   'PROXY_UPSTREAM_MODEL',
+  'PROXY_UPSTREAM_TIMEOUT_MS',
+  'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy recipes](/guide/proxy-recipes)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
@@ -174,6 +176,8 @@ for (const snippet of [
   'PROXY_UPSTREAM_BASE_URL',
   'PROXY_UPSTREAM_API_KEY',
   'PROXY_UPSTREAM_MODEL',
+  'PROXY_UPSTREAM_TIMEOUT_MS',
+  'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
@@ -271,10 +275,14 @@ expect(
     files.envExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription') &&
     files.envExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
     files.envExample.includes('VITE_PROXY_OBJECT_URL=/api/ai/object') &&
+    files.envExample.includes('PROXY_UPSTREAM_TIMEOUT_MS=30000') &&
+    files.envExample.includes('PROXY_UPSTREAM_TRACE_HEADER=x-request-id') &&
     files.examplesEnvExample.includes('VITE_PROXY_VIDEO_URL=/api/ai/video') &&
     files.examplesEnvExample.includes('VITE_PROXY_RERANK_URL=/api/ai/rerank') &&
-    files.examplesEnvExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription'),
-  '.env.example files must make the chat, image, video, speech, transcription, rerank, and object examples runnable without provider keys by default'
+    files.examplesEnvExample.includes('VITE_PROXY_TRANSCRIPTION_URL=/api/ai/transcription') &&
+    files.examplesEnvExample.includes('PROXY_UPSTREAM_TIMEOUT_MS=30000') &&
+    files.examplesEnvExample.includes('PROXY_UPSTREAM_TRACE_HEADER=x-request-id'),
+  '.env.example files must make examples runnable without provider keys and document server-only upstream proxy controls'
 )
 expect(
   files.chatExample.includes('const openAiKey =') &&
@@ -336,6 +344,10 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
+    files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
+    files.zhReadme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
+    files.readme.includes('sanitized retryable errors') &&
+    files.zhReadme.includes('脱敏') &&
     files.readme.includes(
       '[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)'
     ) &&
@@ -540,14 +552,25 @@ for (const snippet of [
   'PROXY_UPSTREAM_BASE_URL=https://api.openai.com/v1',
   'PROXY_UPSTREAM_API_KEY=$OPENAI_API_KEY',
   'PROXY_UPSTREAM_MODEL=gpt-4.1-mini',
-  '## Local Ollama or vLLM',
+  '## Timeout, trace, and safe errors',
+  'PROXY_UPSTREAM_TIMEOUT_MS=30000',
+  'PROXY_UPSTREAM_TRACE_HEADER=x-request-id',
+  'upstream_timeout',
+  'retryable: true',
+  '## Local Ollama',
   'PROXY_UPSTREAM_BASE_URL=http://127.0.0.1:11434/v1',
+  'PROXY_UPSTREAM_TIMEOUT_MS=60000',
+  '## vLLM gateway',
+  'python -m vllm.entrypoints.openai.api_server',
+  '## Private OpenAI-compatible gateway',
+  'PROXY_UPSTREAM_TRACE_HEADER=x-correlation-id',
   'PROXY_UPSTREAM_CHAT_PATH=/chat/completions',
   '## Client wiring',
   "useChat({ baseURL: 'http://127.0.0.1:8787' })",
   'proxyProvider({',
   '## Production checklist',
-  'Keep provider keys in server-only environment variables'
+  'Keep provider keys in server-only environment variables',
+  'Convert provider `429` and `5xx` responses into sanitized retryable errors'
 ]) {
   expect(files.proxyRecipes.includes(snippet), `English proxy recipes must include: ${snippet}`)
 }
@@ -561,14 +584,25 @@ for (const snippet of [
   'PROXY_UPSTREAM_BASE_URL=https://api.openai.com/v1',
   'PROXY_UPSTREAM_API_KEY=$OPENAI_API_KEY',
   'PROXY_UPSTREAM_MODEL=gpt-4.1-mini',
-  '## 本地 Ollama 或 vLLM',
+  '## 超时、trace 和安全错误',
+  'PROXY_UPSTREAM_TIMEOUT_MS=30000',
+  'PROXY_UPSTREAM_TRACE_HEADER=x-request-id',
+  'upstream_timeout',
+  'retryable: true',
+  '## 本地 Ollama',
   'PROXY_UPSTREAM_BASE_URL=http://127.0.0.1:11434/v1',
+  'PROXY_UPSTREAM_TIMEOUT_MS=60000',
+  '## vLLM 网关',
+  'python -m vllm.entrypoints.openai.api_server',
+  '## 私有 OpenAI-compatible 网关',
+  'PROXY_UPSTREAM_TRACE_HEADER=x-correlation-id',
   'PROXY_UPSTREAM_CHAT_PATH=/chat/completions',
   '## 客户端接入',
   "useChat({ baseURL: 'http://127.0.0.1:8787' })",
   'proxyProvider({',
   '## 生产检查清单',
-  'Provider key 只放在服务端环境变量里'
+  'Provider key 只放在服务端环境变量里',
+  '把 Provider `429` 和 `5xx` 响应转换成脱敏的 retryable 错误'
 ]) {
   expect(files.zhProxyRecipes.includes(snippet), `Chinese proxy recipes must include: ${snippet}`)
 }

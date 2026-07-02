@@ -21,7 +21,9 @@ const upstream = {
   model: process.env.PROXY_UPSTREAM_MODEL || '',
   chatPath: process.env.PROXY_UPSTREAM_CHAT_PATH || '/chat/completions',
   completionPath: process.env.PROXY_UPSTREAM_COMPLETION_PATH || '/completions',
-  embeddingPath: process.env.PROXY_UPSTREAM_EMBEDDING_PATH || '/embeddings'
+  embeddingPath: process.env.PROXY_UPSTREAM_EMBEDDING_PATH || '/embeddings',
+  timeoutMs: positiveInteger(process.env.PROXY_UPSTREAM_TIMEOUT_MS, 30000),
+  traceHeader: process.env.PROXY_UPSTREAM_TRACE_HEADER || 'x-request-id'
 }
 const upstreamEnabled = Boolean(upstream.baseURL)
 
@@ -181,9 +183,10 @@ async function handleEmbedding(request, response) {
 async function handleUpstreamChat(body, response) {
   const requestBody = openAiChatBody(body)
   if (!hasModel(requestBody, response)) return
+  const traceId = createProxyTraceId('chat', body)
 
   try {
-    const data = await postUpstreamJson(upstream.chatPath, requestBody)
+    const data = await postUpstreamJson(upstream.chatPath, requestBody, traceId)
     const choice = Array.isArray(data.choices) ? data.choices[0] : undefined
     const message = choice?.message || {}
     const chunks = [
@@ -194,7 +197,9 @@ async function handleUpstreamChat(body, response) {
         usage: normalizeUsage(data.usage),
         metadata: {
           provider: 'openai-compatible',
-          upstreamModel: data.model || requestBody.model
+          upstreamModel: data.model || requestBody.model,
+          proxyTraceId: traceId,
+          upstreamTraceHeader: upstream.traceHeader || undefined
         }
       }
     ]
@@ -209,9 +214,10 @@ async function handleUpstreamChat(body, response) {
 async function handleUpstreamCompletion(body, response) {
   const requestBody = openAiCompletionBody(body)
   if (!hasModel(requestBody, response)) return
+  const traceId = createProxyTraceId('completion', body)
 
   try {
-    const data = await postUpstreamJson(upstream.completionPath, requestBody)
+    const data = await postUpstreamJson(upstream.completionPath, requestBody, traceId)
     const choice = Array.isArray(data.choices) ? data.choices[0] : undefined
     let text = ''
     if (typeof choice?.text === 'string') {
@@ -228,16 +234,22 @@ async function handleUpstreamCompletion(body, response) {
 async function handleUpstreamEmbedding(body, response) {
   const requestBody = openAiEmbeddingBody(body)
   if (!hasModel(requestBody, response)) return
+  const traceId = createProxyTraceId('embedding', body)
 
   try {
-    const data = await postUpstreamJson(upstream.embeddingPath, requestBody)
+    const data = await postUpstreamJson(upstream.embeddingPath, requestBody, traceId)
     const embeddings = Array.isArray(data.data)
       ? data.data.map((item) => item?.embedding).filter(Array.isArray)
       : []
     sendJson(response, 200, {
       embeddings,
       model: data.model || requestBody.model,
-      usage: normalizeUsage(data.usage)
+      usage: normalizeUsage(data.usage),
+      providerMetadata: {
+        provider: 'openai-compatible',
+        proxyTraceId: traceId,
+        upstreamTraceHeader: upstream.traceHeader || undefined
+      }
     })
   } catch (error) {
     sendUpstreamError(response, error)
@@ -524,23 +536,61 @@ function hasModel(body, response) {
   return false
 }
 
-async function postUpstreamJson(path, body) {
+async function postUpstreamJson(path, body, traceId) {
   const headers = { 'Content-Type': 'application/json' }
   if (upstream.apiKey) headers.Authorization = `Bearer ${upstream.apiKey}`
+  if (upstream.traceHeader) headers[upstream.traceHeader] = traceId
 
-  const response = await fetch(upstreamUrl(path), {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  })
-  const text = await response.text()
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), upstream.timeoutMs)
+
+  let response
+  let text
+  try {
+    response = await fetch(upstreamUrl(path), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal
+    })
+    text = await response.text()
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw upstreamError('Upstream provider timed out', {
+        status: 504,
+        code: 'upstream_timeout',
+        retryable: true,
+        traceId
+      })
+    }
+    throw upstreamError('Upstream proxy request failed', {
+      status: 502,
+      code: 'upstream_network_error',
+      retryable: true,
+      traceId
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
+
   if (!response.ok) {
-    throw new Error(`Upstream provider returned HTTP ${response.status}`)
+    throw upstreamError(`Upstream provider returned HTTP ${response.status}`, {
+      status: 502,
+      upstreamStatus: response.status,
+      code: 'upstream_http_error',
+      retryable: response.status === 429 || response.status >= 500,
+      traceId
+    })
   }
   try {
     return text ? JSON.parse(text) : {}
   } catch {
-    throw new Error('Upstream provider returned invalid JSON')
+    throw upstreamError('Upstream provider returned invalid JSON', {
+      status: 502,
+      code: 'upstream_invalid_json',
+      retryable: false,
+      traceId
+    })
   }
 }
 
@@ -550,9 +600,19 @@ function upstreamUrl(path) {
 }
 
 function sendUpstreamError(response, error) {
-  sendJson(response, 502, {
-    error: error instanceof Error ? error.message : 'Upstream proxy request failed'
+  sendJson(response, Number(error?.status) || 502, {
+    error: error instanceof Error ? error.message : 'Upstream proxy request failed',
+    code: error?.code || 'upstream_proxy_error',
+    ...(error?.traceId ? { traceId: error.traceId } : {}),
+    ...(error?.upstreamStatus ? { upstreamStatus: error.upstreamStatus } : {}),
+    ...(typeof error?.retryable === 'boolean' ? { retryable: error.retryable } : {})
   })
+}
+
+function upstreamError(message, options) {
+  const error = new Error(message)
+  Object.assign(error, options)
+  return error
 }
 
 function normalizeToolCalls(toolCalls) {
@@ -578,6 +638,16 @@ function trimTrailingSlash(value) {
   let end = value.length
   while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1
   return value.slice(0, end)
+}
+
+function positiveInteger(value, fallback) {
+  const number = Number(value)
+  return Number.isInteger(number) && number > 0 ? number : fallback
+}
+
+function createProxyTraceId(kind, body) {
+  const id = typeof body?.id === 'string' && body.id ? body.id : `${kind}:${Date.now()}`
+  return `proxy-${createHash('sha256').update(`${kind}:${id}`).digest('hex').slice(0, 16)}`
 }
 
 function latestUserText(messages) {

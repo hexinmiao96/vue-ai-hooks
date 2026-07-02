@@ -29,11 +29,15 @@ try {
   upstreamProxyServer = await startProxyServer(upstreamProxyPort, {
     PROXY_UPSTREAM_BASE_URL: `http://127.0.0.1:${upstreamPort}/v1`,
     PROXY_UPSTREAM_API_KEY: 'test-upstream-key',
-    PROXY_UPSTREAM_MODEL: 'fake-upstream-model'
+    PROXY_UPSTREAM_MODEL: 'fake-upstream-model',
+    PROXY_UPSTREAM_TIMEOUT_MS: '100',
+    PROXY_UPSTREAM_TRACE_HEADER: 'x-request-id'
   })
   await checkUpstreamChatRoute()
   await checkUpstreamCompletionRoute()
   await checkUpstreamEmbeddingRoute()
+  await checkUpstreamErrorSanitization()
+  await checkUpstreamTimeout()
   console.log('Proxy example check passed for default, legacy, and upstream routes.')
 } finally {
   defaultServer?.kill()
@@ -52,6 +56,8 @@ function startProxyServer(proxyPort, env = {}) {
         PROXY_UPSTREAM_CHAT_PATH: '',
         PROXY_UPSTREAM_COMPLETION_PATH: '',
         PROXY_UPSTREAM_EMBEDDING_PATH: '',
+        PROXY_UPSTREAM_TIMEOUT_MS: '',
+        PROXY_UPSTREAM_TRACE_HEADER: '',
         ...env,
         PORT: String(proxyPort)
       },
@@ -92,6 +98,10 @@ function startFakeUpstream() {
       sendFakeJson(response, 400, { error: 'missing model' })
       return
     }
+    if (!request.headers['x-request-id']) {
+      sendFakeJson(response, 400, { error: 'missing trace header' })
+      return
+    }
 
     if (request.url === '/v1/chat/completions') {
       sendFakeJson(response, 200, {
@@ -112,6 +122,15 @@ function startFakeUpstream() {
     }
 
     if (request.url === '/v1/completions') {
+      if (String(body.prompt || '').includes('timeout')) {
+        await sleep(300)
+      }
+      if (String(body.prompt || '').includes('leak secret')) {
+        sendFakeJson(response, 429, {
+          error: 'rate limited with secret test-upstream-key in provider body'
+        })
+        return
+      }
       sendFakeJson(response, 200, {
         id: 'fake-completion-response',
         model: body.model,
@@ -345,9 +364,11 @@ async function checkUpstreamChatRoute() {
     events.some(
       (event) =>
         event.metadata?.provider === 'openai-compatible' &&
-        event.metadata?.upstreamModel === 'request-chat-model'
+        event.metadata?.upstreamModel === 'request-chat-model' &&
+        event.metadata?.upstreamTraceHeader === 'x-request-id' &&
+        String(event.metadata?.proxyTraceId || '').startsWith('proxy-')
     ),
-    '/api/chat should include sanitized upstream metadata'
+    '/api/chat should include sanitized upstream trace metadata'
   )
 
   const replay = await getSse('/api/chat/upstream-chat/stream')
@@ -371,6 +392,39 @@ async function checkUpstreamEmbeddingRoute() {
   expect(response.embeddings?.length === 2, '/api/embedding should normalize upstream vectors')
   expect(response.embeddings?.[1]?.[0] === 1.1, '/api/embedding should preserve vector values')
   expect(response.usage?.totalTokens === 2, '/api/embedding should normalize upstream usage')
+  expect(
+    String(response.providerMetadata?.proxyTraceId || '').startsWith('proxy-'),
+    '/api/embedding should include sanitized proxy trace metadata'
+  )
+}
+
+async function checkUpstreamErrorSanitization() {
+  const { status, body } = await postJsonWithStatus('/api/completion', {
+    prompt: 'leak secret from upstream'
+  })
+  const serialized = JSON.stringify(body)
+  expect(status === 502, '/api/completion should map upstream HTTP errors to a 502')
+  expect(body.upstreamStatus === 429, '/api/completion should expose sanitized upstream status')
+  expect(body.retryable === true, '/api/completion should mark 429 upstream errors retryable')
+  expect(
+    body.code === 'upstream_http_error',
+    '/api/completion should classify upstream HTTP errors'
+  )
+  expect(String(body.traceId || '').startsWith('proxy-'), '/api/completion should return trace id')
+  expect(
+    !serialized.includes('test-upstream-key'),
+    '/api/completion should not leak raw upstream error bodies'
+  )
+}
+
+async function checkUpstreamTimeout() {
+  const { status, body } = await postJsonWithStatus('/api/completion', {
+    prompt: 'timeout upstream request'
+  })
+  expect(status === 504, '/api/completion should return 504 for upstream timeouts')
+  expect(body.code === 'upstream_timeout', '/api/completion should classify upstream timeouts')
+  expect(body.retryable === true, '/api/completion should mark timeouts retryable')
+  expect(String(body.traceId || '').startsWith('proxy-'), '/api/completion should trace timeouts')
 }
 
 async function postJson(path, body) {
@@ -381,6 +435,15 @@ async function postJson(path, body) {
   })
   expect(response.ok, `${path} should return HTTP 2xx`)
   return await response.json()
+}
+
+async function postJsonWithStatus(path, body) {
+  const response = await fetch(`${baseURL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  return { status: response.status, body: await response.json() }
 }
 
 async function postSse(path, body) {
@@ -427,4 +490,8 @@ function latestFakeText(messages) {
   if (!Array.isArray(messages)) return ''
   const message = [...messages].reverse().find((item) => item?.role === 'user')
   return typeof message?.content === 'string' ? message.content : ''
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
