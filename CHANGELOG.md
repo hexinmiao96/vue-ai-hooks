@@ -7,11 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-02
+
 ### Added
 
 - Added React `useCompletion` support through `vue-ai-hooks/react`, including
   provider/proxy streaming, request traces, retry-before-first-delta behavior,
   form helpers, tests, and English/Chinese reference docs.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
 
 ## [0.7.1] - 2026-07-02
 

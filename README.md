@@ -652,7 +652,7 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.7.1** — a working foundation, not feature-complete. The core
+This is **v0.8.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
 Next focus: clearer inspection, more providers, and production hardening. Feature
