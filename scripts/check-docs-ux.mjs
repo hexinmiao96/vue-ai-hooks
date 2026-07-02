@@ -22,6 +22,8 @@ const files = {
   zhProxyRecipes: readFileSync('docs/zh/guide/proxy-recipes.md', 'utf8'),
   serverStorage: readFileSync('docs/guide/server-storage.md', 'utf8'),
   zhServerStorage: readFileSync('docs/zh/guide/server-storage.md', 'utf8'),
+  regenerateBranches: readFileSync('docs/guide/regenerate-branches.md', 'utf8'),
+  zhRegenerateBranches: readFileSync('docs/zh/guide/regenerate-branches.md', 'utf8'),
   agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
   zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
@@ -126,6 +128,11 @@ expect(
   'VitePress sidebars must expose the server storage guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Regenerate branches', link: '/guide/regenerate-branches' }") &&
+    files.config.includes("{ text: '重新生成分支', link: '/zh/guide/regenerate-branches' }"),
+  'VitePress sidebars must expose the regenerate branch guide in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
     files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
@@ -172,6 +179,7 @@ for (const snippet of [
   '[Proxy recipes](/guide/proxy-recipes)',
   '[Agent events](/guide/agent-events)',
   '[server storage recipe](/guide/server-storage)',
+  '[Regenerate branches recipe](/guide/regenerate-branches)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
 ]) {
@@ -206,6 +214,7 @@ for (const snippet of [
   '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[Agent 事件](/zh/guide/agent-events)',
   '[服务端存储配方](/zh/guide/server-storage)',
+  '[重新生成分支配方](/zh/guide/regenerate-branches)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
 ]) {
@@ -224,6 +233,10 @@ for (const snippet of [
   'threads.createThread',
   'Server-side chat history',
   '[Server storage](/guide/server-storage)',
+  'Regenerate or branch history',
+  '[Regenerate branches](/guide/regenerate-branches)',
+  'sourceMessageId',
+  'runId: crypto.randomUUID()',
   'Own `/api/chat` proxy',
   'Agent service stream adapter',
   'AI SDK UI stream migration',
@@ -249,6 +262,10 @@ for (const snippet of [
   'threads.createThread',
   '服务端聊天历史',
   '[服务端存储](/zh/guide/server-storage)',
+  '重新生成或分支历史',
+  '[重新生成分支](/zh/guide/regenerate-branches)',
+  'sourceMessageId',
+  'runId: crypto.randomUUID()',
   '自有 `/api/chat` proxy',
   'Agent 服务 stream 适配',
   'AI SDK UI stream 迁移',
@@ -305,11 +322,14 @@ for (const snippet of [
   '## Streaming contract',
   '## UI state and inspection',
   '[server storage recipe](/guide/server-storage)',
+  '[regenerate branches recipe](/guide/regenerate-branches)',
   'multi-device history',
+  'Do not overwrite old',
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
   '## Production smoke test',
+  'without duplicate `runId` writes',
   'GitHub issues should contain reproducible bugs only'
 ]) {
   expect(
@@ -325,11 +345,14 @@ for (const snippet of [
   '## 流式契约',
   '## UI 状态和检查',
   '[服务端存储配方](/zh/guide/server-storage)',
+  '[重新生成分支配方](/zh/guide/regenerate-branches)',
   '多设备历史',
+  '重新生成时不要覆盖旧 assistant 消息',
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
   '## 生产 smoke test',
+  '没有重复写入相同 `runId`',
   'GitHub issue 只记录可复现 bug'
 ]) {
   expect(
@@ -379,6 +402,62 @@ for (const snippet of [
   expect(
     files.zhServerStorage.includes(snippet),
     `Chinese server storage guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Regenerate branches recipe',
+  'POST /api/chat/threads/:threadId/regenerate',
+  'POST /api/chat/threads/:threadId/branches',
+  'GET  /api/chat/threads/:threadId/branches',
+  'PATCH /api/chat/threads/:threadId/branches/:branchId',
+  'branchId',
+  'runId',
+  'revision',
+  'sourceMessageId',
+  'parentMessageId',
+  'deserializeMessages',
+  'serializeMessages',
+  'pruneMessages',
+  'inspectRequestTrace',
+  'safeValidateMessages()',
+  'idempotent key',
+  'tenant',
+  'Do not store provider credentials',
+  'Restore smoke test',
+  'do not mutate an old assistant message'
+]) {
+  expect(
+    files.regenerateBranches.includes(snippet),
+    `English regenerate branches guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 重新生成分支配方',
+  'POST /api/chat/threads/:threadId/regenerate',
+  'POST /api/chat/threads/:threadId/branches',
+  'GET  /api/chat/threads/:threadId/branches',
+  'PATCH /api/chat/threads/:threadId/branches/:branchId',
+  'branchId',
+  'runId',
+  'revision',
+  'sourceMessageId',
+  'parentMessageId',
+  'deserializeMessages',
+  'serializeMessages',
+  'pruneMessages',
+  'inspectRequestTrace',
+  'safeValidateMessages()',
+  '幂等 key',
+  'tenant',
+  'branch 或 message JSON 里保存 Provider 凭据',
+  'Restore smoke test',
+  '不要原地修改旧 assistant 消息'
+]) {
+  expect(
+    files.zhRegenerateBranches.includes(snippet),
+    `Chinese regenerate branches guide must include: ${snippet}`
   )
 }
 
@@ -468,6 +547,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
     files.readme.includes('/docs/guide/server-storage.md') &&
     files.zhReadme.includes('/docs/zh/guide/server-storage.md') &&
+    files.readme.includes('/docs/guide/regenerate-branches.md') &&
+    files.zhReadme.includes('/docs/zh/guide/regenerate-branches.md') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
@@ -582,7 +663,9 @@ for (const snippet of [
   '0.14.x',
   'AgentEvent',
   'useChatThreads',
-  'server storage recipe',
+  'server storage',
+  'regenerate/branch',
+  'idempotent `runId`',
   'inspection',
   'provider presets',
   'React',
@@ -1820,7 +1903,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {
