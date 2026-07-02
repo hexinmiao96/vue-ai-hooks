@@ -25,14 +25,16 @@ change back to storage.
 
 ## Options
 
-| Name          | Type                          | Default                              | Description                                                                     |
-| ------------- | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| `key`         | `string`                      | required                             | Storage key.                                                                    |
-| `version`     | `number`                      | -                                    | Adds `:v${version}` to the storage key so incompatible old data is ignored.     |
-| `serialize`   | `(value: T) => unknown`       | identity                             | Convert the ref value before JSON serialization.                                |
-| `deserialize` | `(raw: unknown) => T \| null` | identity                             | Convert parsed JSON back to the ref value. Return `null` to discard saved data. |
-| `storage`     | `Storage \| null`             | `window.localStorage` when available | Override storage, or pass `null` for SSR/tests.                                 |
-| `onError`     | `(err: Error) => void`        | -                                    | Receives save errors such as quota failures. Load errors are ignored.           |
+| Name           | Type                          | Default                              | Description                                                                     |
+| -------------- | ----------------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
+| `key`          | `string`                      | required                             | Storage key.                                                                    |
+| `version`      | `number`                      | -                                    | Adds `:v${version}` to the storage key so incompatible old data is ignored.     |
+| `serialize`    | `(value: T) => unknown`       | identity                             | Convert the ref value before JSON serialization.                                |
+| `deserialize`  | `(raw: unknown) => T \| null` | identity                             | Convert parsed JSON back to the ref value. Return `null` to discard saved data. |
+| `storage`      | `Storage \| null`             | `window.localStorage` when available | Override storage, or pass `null` for SSR/tests.                                 |
+| `onError`      | `(err: Error) => void`        | -                                    | Receives save errors such as quota failures.                                    |
+| `onLoadError`  | `(err: Error) => void`        | -                                    | Receives load errors such as malformed JSON. Omit to ignore bad saved data.     |
+| `onClearError` | `(err: Error) => void`        | -                                    | Receives storage remove errors from `clear()`.                                  |
 
 ## Return value
 
@@ -78,5 +80,19 @@ in-memory `Storage` shim in tests when you want deterministic persistence:
 usePersist(source, {
   key: 'test-key',
   storage: memoryStorage
+})
+```
+
+## Error hooks
+
+By default, load and clear failures are best-effort: malformed JSON is ignored
+and `clear()` does not throw. Production apps can opt in to observability:
+
+```ts
+usePersist(source, {
+  key: 'chat-cache',
+  onLoadError: (error) => reportStorageIssue('load', error),
+  onClearError: (error) => reportStorageIssue('clear', error),
+  onError: (error) => reportStorageIssue('save', error)
 })
 ```

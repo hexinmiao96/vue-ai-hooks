@@ -177,6 +177,9 @@ interface ChatPersistOptions {
   storage?: Storage | null
   serialize?: (value: Message[]) => unknown
   deserialize?: (raw: unknown) => Message[] | null
+  onError?: (err: Error) => void
+  onLoadError?: (err: Error) => void
+  onClearError?: (err: Error) => void
 }
 ```
 

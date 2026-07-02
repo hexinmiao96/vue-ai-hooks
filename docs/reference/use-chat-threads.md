@@ -47,7 +47,8 @@ server-backed message storage, or both.
 | `now`                   | `() => Date`                  | `() => new Date()` | Override time for deterministic tests.                           |
 
 `ChatThreadsPersistOptions` accepts `key`, `version`, `storage`, `serialize`,
-`deserialize`, and `onError`, matching the shape of `UsePersistOptions`.
+`deserialize`, `onError`, `onLoadError`, and `onClearError`, matching the shape
+of `UsePersistOptions`.
 
 ## Return value
 

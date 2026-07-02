@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repeatable after a release.
 - Updated GitHub Actions setup actions to Node 24-backed versions to avoid
   runner deprecation warnings in CI and release jobs.
+- Added opt-in persistence load and clear error callbacks.
 
 ## [0.14.0] - 2026-07-02
 

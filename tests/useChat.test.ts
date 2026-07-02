@@ -801,6 +801,53 @@ describe('useChat', () => {
     expect(restored.messages.value[0].createdAt?.toISOString()).toBe('2026-02-03T04:05:06.000Z')
   })
 
+  it('forwards persistence load, save, and clear errors', async () => {
+    const loadErrors: Error[] = []
+    const saveErrors: Error[] = []
+    const clearErrors: Error[] = []
+    const badLoadStorage = memoryStorage()
+    badLoadStorage.setItem('chat:persist-errors', 'not-json')
+
+    useChat({
+      provider: fakeProvider([]),
+      persist: {
+        key: 'chat:persist-errors',
+        storage: badLoadStorage,
+        onLoadError: (error) => loadErrors.push(error)
+      }
+    })
+
+    expect(loadErrors).toHaveLength(1)
+
+    const failingStorage: Storage = {
+      ...memoryStorage(),
+      setItem() {
+        throw new Error('quota')
+      },
+      removeItem() {
+        throw 'remove failed'
+      }
+    } as Storage
+    const chat = useChat({
+      provider: fakeProvider([]),
+      persist: {
+        key: 'chat:persist-errors',
+        storage: failingStorage,
+        onError: (error) => saveErrors.push(error),
+        onClearError: (error) => clearErrors.push(error)
+      }
+    })
+
+    chat.setMessages([{ id: 'm1', role: 'user', content: 'saved' }])
+    await nextTick()
+    expect(chat.error.value?.message).toBe('quota')
+    chat.clear()
+
+    expect(saveErrors[0]?.message).toBe('quota')
+    expect(chat.error.value).toBeNull()
+    expect(clearErrors[0]?.message).toBe('remove failed')
+  })
+
   it('prunes chat history for provider requests without mutating original messages', () => {
     const messages: Message[] = [
       { id: 'sys', role: 'system', content: 'Use short answers.' },

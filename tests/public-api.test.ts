@@ -1842,7 +1842,13 @@ describe('public API types', () => {
     }
     const chatThreadsPersist: ChatThreadsPersistOptions<{ owner: string }> = {
       key: 'threads',
-      storage: null
+      storage: null,
+      onLoadError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      },
+      onClearError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      }
     }
     const chatThreadsOptions: UseChatThreadsOptions<{ owner: string }> = {
       initialThreads: [chatThread],
@@ -1907,7 +1913,18 @@ describe('public API types', () => {
       }
     }
     const source = ref<Message[]>([])
-    const persistOptions: UsePersistOptions<Message[]> = { key: 'public-api-test' }
+    const persistOptions: UsePersistOptions<Message[]> = {
+      key: 'public-api-test',
+      onError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      },
+      onLoadError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      },
+      onClearError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      }
+    }
     const persisted = usePersist(source, persistOptions)
     const serializedMessages = serializeMessages([message])
     const restoredMessages = deserializeMessages(serializedMessages)
@@ -1935,7 +1952,16 @@ describe('public API types', () => {
       key: 'public-chat-test',
       storage: null,
       serialize: serializeMessages,
-      deserialize: deserializeMessages
+      deserialize: deserializeMessages,
+      onError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      },
+      onLoadError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      },
+      onClearError(error) {
+        expectTypeOf(error).toEqualTypeOf<Error>()
+      }
     }
 
     expectTypeOf<ContentPart>().toEqualTypeOf<TextPart | ImageUrlPart>()

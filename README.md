@@ -605,7 +605,8 @@ serialization. `useChat({ persist })` uses Date-safe message serialization
 internally, and the exported `serializeMessages()` / `deserializeMessages()` /
 `validateMessages()` / `safeValidateMessages()` / `validateUIMessages()` helpers
 also preserve and check valid `Message.parts`, metadata schemas, and custom data
-part schemas for structured chat rendering. See the
+part schemas for structured chat rendering. `onLoadError` and `onClearError`
+make storage restore and cleanup failures observable. See the
 [usePersist reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-persist.md) for details.
 
 ### `useChatThreads(options)`

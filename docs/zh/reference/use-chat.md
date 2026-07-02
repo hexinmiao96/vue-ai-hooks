@@ -207,8 +207,9 @@ const { messages, append, clear } = useChat({
 })
 ```
 
-存储里的坏数据会被忽略，不会写入 `messages`。调用 `clear()` 时，也会移除对应的
-持久化记录。
+存储里的坏数据会被忽略，不会写入 `messages`。如果你想记录损坏 storage 或读取受阻，
+可以使用 `persist.onLoadError`。调用 `clear()` 时，也会移除对应的持久化记录；如果要观测
+storage 移除失败，可以使用 `persist.onClearError`。
 
 如果你的应用要把对话保存到数据库或自己的后端，可以直接复用这两个 helper：
 
@@ -259,7 +260,11 @@ const chat = useChat({
       messages: serializeMessages(messages)
     }),
     deserialize: (raw) =>
-      raw && typeof raw === 'object' && 'messages' in raw ? deserializeMessages(raw.messages) : null
+      raw && typeof raw === 'object' && 'messages' in raw
+        ? deserializeMessages(raw.messages)
+        : null,
+    onLoadError: (error) => console.warn('Could not restore chat cache', error),
+    onClearError: (error) => console.warn('Could not clear chat cache', error)
   }
 })
 ```

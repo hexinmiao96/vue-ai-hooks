@@ -163,6 +163,39 @@ describe('usePersist', () => {
     expect(source.value).toEqual(['fallback'])
   })
 
+  it('reports load errors through onLoadError', () => {
+    const badStorage: Storage = {
+      ...memoryStorage(),
+      getItem() {
+        return 'not-json'
+      }
+    } as Storage
+    const errors: Error[] = []
+    const source = ref<string[]>(['fallback'])
+
+    usePersist(source, { key: 'k', storage: badStorage, onLoadError: (e) => errors.push(e) })
+
+    expect(source.value).toEqual(['fallback'])
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toBeInstanceOf(Error)
+  })
+
+  it('normalizes non-Error load failures before calling onLoadError', () => {
+    const badStorage: Storage = {
+      ...memoryStorage(),
+      getItem() {
+        throw 'read failed'
+      }
+    } as Storage
+    const errors: Error[] = []
+    const source = ref<string[]>(['fallback'])
+
+    usePersist(source, { key: 'k', storage: badStorage, onLoadError: (e) => errors.push(e) })
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0].message).toBe('read failed')
+  })
+
   it('ignores remove errors during clear()', () => {
     const failingStorage: Storage = {
       ...memoryStorage(),
@@ -174,6 +207,28 @@ describe('usePersist', () => {
     const { clear } = usePersist(source, { key: 'k', storage: failingStorage })
 
     expect(() => clear()).not.toThrow()
+  })
+
+  it('reports clear errors through onClearError', () => {
+    const failingStorage: Storage = {
+      ...memoryStorage(),
+      removeItem() {
+        throw 'remove failed'
+      }
+    } as Storage
+    const errors: Error[] = []
+    const source = ref<string[]>(['x'])
+    const { clear } = usePersist(source, {
+      key: 'k',
+      storage: failingStorage,
+      onClearError: (e) => errors.push(e)
+    })
+
+    clear()
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toBeInstanceOf(Error)
+    expect(errors[0].message).toBe('remove failed')
   })
 
   it('works without storage (SSR / no window)', () => {

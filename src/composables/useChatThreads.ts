@@ -75,6 +75,8 @@ export interface ChatThreadsPersistOptions<
   serialize?: UsePersistOptions<ChatThreadsState<TMetadata>>['serialize']
   deserialize?: UsePersistOptions<ChatThreadsState<TMetadata>>['deserialize']
   onError?: UsePersistOptions<ChatThreadsState<TMetadata>>['onError']
+  onLoadError?: UsePersistOptions<ChatThreadsState<TMetadata>>['onLoadError']
+  onClearError?: UsePersistOptions<ChatThreadsState<TMetadata>>['onClearError']
 }
 
 export interface UseChatThreadsOptions<
@@ -141,7 +143,9 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
         storage: options.persist.storage,
         serialize: options.persist.serialize ?? serializeChatThreadsState,
         deserialize: options.persist.deserialize ?? ((raw) => deserializeChatThreadsState(raw)),
-        onError: options.persist.onError
+        onError: options.persist.onError,
+        onLoadError: options.persist.onLoadError,
+        onClearError: options.persist.onClearError
       })
     : null
 

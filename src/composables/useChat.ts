@@ -320,6 +320,9 @@ export interface ChatPersistOptions {
   storage?: Storage | null
   serialize?: UsePersistOptions<Message[]>['serialize']
   deserialize?: UsePersistOptions<Message[]>['deserialize']
+  onError?: UsePersistOptions<Message[]>['onError']
+  onLoadError?: UsePersistOptions<Message[]>['onLoadError']
+  onClearError?: UsePersistOptions<Message[]>['onClearError']
 }
 
 export type DataPartValidator<TData = unknown> = (data: unknown) => data is TData
@@ -1376,7 +1379,10 @@ export function useChat<
         deserialize: persist.deserialize ?? deserializeMessages,
         onError: (e) => {
           error.value = e
-        }
+          persist.onError?.(e)
+        },
+        onLoadError: persist.onLoadError,
+        onClearError: persist.onClearError
       })
     : null
   validateMessagesMetadata(messages.value)

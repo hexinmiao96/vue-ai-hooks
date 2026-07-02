@@ -214,7 +214,9 @@ const { messages, append, clear } = useChat({
 ```
 
 Invalid stored payloads are ignored instead of being written into `messages`.
-`clear()` also removes the persisted entry.
+Use `persist.onLoadError` if you want to log corrupted storage or blocked
+reads. `clear()` also removes the persisted entry; use `persist.onClearError`
+to observe storage remove failures.
 
 Use the helpers directly when your app saves chats to a database or your own
 backend:
@@ -268,7 +270,11 @@ const chat = useChat({
       messages: serializeMessages(messages)
     }),
     deserialize: (raw) =>
-      raw && typeof raw === 'object' && 'messages' in raw ? deserializeMessages(raw.messages) : null
+      raw && typeof raw === 'object' && 'messages' in raw
+        ? deserializeMessages(raw.messages)
+        : null,
+    onLoadError: (error) => console.warn('Could not restore chat cache', error),
+    onClearError: (error) => console.warn('Could not clear chat cache', error)
   }
 })
 ```

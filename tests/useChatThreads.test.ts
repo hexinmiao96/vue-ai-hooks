@@ -231,6 +231,51 @@ describe('useChatThreads', () => {
     expect(storage.getItem('threads:v1')).toBeNull()
   })
 
+  it('forwards persistence load, save, and clear errors', async () => {
+    const loadErrors: Error[] = []
+    const saveErrors: Error[] = []
+    const clearErrors: Error[] = []
+    const badLoadStorage = memoryStorage()
+    badLoadStorage.setItem('threads:v1', 'not-json')
+
+    useChatThreads({
+      persist: {
+        key: 'threads',
+        version: 1,
+        storage: badLoadStorage,
+        onLoadError: (error) => loadErrors.push(error)
+      }
+    })
+
+    expect(loadErrors).toHaveLength(1)
+
+    const failingStorage: Storage = {
+      ...memoryStorage(),
+      setItem() {
+        throw new Error('quota')
+      },
+      removeItem() {
+        throw 'remove failed'
+      }
+    } as Storage
+    const threads = useChatThreads({
+      persist: {
+        key: 'threads',
+        version: 1,
+        storage: failingStorage,
+        onError: (error) => saveErrors.push(error),
+        onClearError: (error) => clearErrors.push(error)
+      }
+    })
+
+    threads.createThread({ title: 'Support' })
+    await nextTick()
+    threads.clearPersistedThreads()
+
+    expect(saveErrors[0]?.message).toBe('quota')
+    expect(clearErrors[0]?.message).toBe('remove failed')
+  })
+
   it('normalizes duplicate and invalid initial threads', () => {
     const threads = useChatThreads({
       initialActiveThreadId: 'thread_1',

@@ -23,14 +23,16 @@ const { clear } = usePersist(messages, {
 
 ## 选项
 
-| 名称          | 类型                          | 默认值                           | 说明                                                             |
-| ------------- | ----------------------------- | -------------------------------- | ---------------------------------------------------------------- |
-| `key`         | `string`                      | 必填                             | Storage key。                                                    |
-| `version`     | `number`                      | -                                | 在 storage key 后追加 `:v${version}`，让不兼容的旧数据自然失效。 |
-| `serialize`   | `(value: T) => unknown`       | 原样返回                         | JSON 序列化前的转换函数。                                        |
-| `deserialize` | `(raw: unknown) => T \| null` | 原样返回                         | 把解析后的 JSON 转回 ref 值。返回 `null` 会丢弃已保存数据。      |
-| `storage`     | `Storage \| null`             | 可用时使用 `window.localStorage` | 覆盖 storage；SSR 或测试中可传 `null`。                          |
-| `onError`     | `(err: Error) => void`        | -                                | 接收保存阶段错误，例如 quota 失败。读取阶段错误会被忽略。        |
+| 名称           | 类型                          | 默认值                           | 说明                                                             |
+| -------------- | ----------------------------- | -------------------------------- | ---------------------------------------------------------------- |
+| `key`          | `string`                      | 必填                             | Storage key。                                                    |
+| `version`      | `number`                      | -                                | 在 storage key 后追加 `:v${version}`，让不兼容的旧数据自然失效。 |
+| `serialize`    | `(value: T) => unknown`       | 原样返回                         | JSON 序列化前的转换函数。                                        |
+| `deserialize`  | `(raw: unknown) => T \| null` | 原样返回                         | 把解析后的 JSON 转回 ref 值。返回 `null` 会丢弃已保存数据。      |
+| `storage`      | `Storage \| null`             | 可用时使用 `window.localStorage` | 覆盖 storage；SSR 或测试中可传 `null`。                          |
+| `onError`      | `(err: Error) => void`        | -                                | 接收保存阶段错误，例如 quota 失败。                              |
+| `onLoadError`  | `(err: Error) => void`        | -                                | 接收读取阶段错误，例如损坏的 JSON；省略时继续忽略坏数据。        |
+| `onClearError` | `(err: Error) => void`        | -                                | 接收 `clear()` 移除 storage 时的错误。                           |
 
 ## 返回值
 
@@ -73,5 +75,19 @@ usePersist(selectedIds, {
 usePersist(source, {
   key: 'test-key',
   storage: memoryStorage
+})
+```
+
+## 错误回调
+
+默认情况下，读取和清理都是 best-effort：损坏的 JSON 会被忽略，`clear()` 不会抛错。
+生产应用可以按需接入观测：
+
+```ts
+usePersist(source, {
+  key: 'chat-cache',
+  onLoadError: (error) => reportStorageIssue('load', error),
+  onClearError: (error) => reportStorageIssue('clear', error),
+  onError: (error) => reportStorageIssue('save', error)
 })
 ```

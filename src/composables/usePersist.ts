@@ -29,10 +29,13 @@ export interface UsePersistOptions<T> {
    */
   storage?: Storage | null
   /**
-   * Ref to write errors to. Errors during load are silently skipped (the
-   * caller can decide to surface them); errors during save are written here.
+   * Receives save errors such as quota failures.
    */
   onError?: (err: Error) => void
+  /** Receives load errors such as malformed JSON. */
+  onLoadError?: (err: Error) => void
+  /** Receives clear errors from the underlying storage. */
+  onClearError?: (err: Error) => void
 }
 
 /**
@@ -50,7 +53,8 @@ export function usePersist<T>(
 ): {
   clear: () => void
 } {
-  const { key, version, serialize, deserialize, storage, onError } = options
+  const { key, version, serialize, deserialize, storage, onError, onLoadError, onClearError } =
+    options
   const versionedKey = version !== undefined ? `${key}:v${version}` : key
   const effectiveStorage =
     storage !== undefined ? storage : typeof window !== 'undefined' ? window.localStorage : null
@@ -66,8 +70,8 @@ export function usePersist<T>(
           source.value = restored
         }
       }
-    } catch {
-      // Silently ignore load errors; the caller can still use the hook.
+    } catch (err) {
+      onLoadError?.(normalizePersistError(err))
     }
   }
 
@@ -80,7 +84,7 @@ export function usePersist<T>(
           const payload = serialize ? serialize(value) : value
           effectiveStorage.setItem(versionedKey, JSON.stringify(payload))
         } catch (err) {
-          onError?.(err instanceof Error ? err : new Error(String(err)))
+          onError?.(normalizePersistError(err))
         }
       },
       { deep: true }
@@ -91,11 +95,15 @@ export function usePersist<T>(
     if (effectiveStorage) {
       try {
         effectiveStorage.removeItem(versionedKey)
-      } catch {
-        // ignore
+      } catch (err) {
+        onClearError?.(normalizePersistError(err))
       }
     }
   }
 
   return { clear }
+}
+
+function normalizePersistError(err: unknown): Error {
+  return err instanceof Error ? err : new Error(String(err))
 }
