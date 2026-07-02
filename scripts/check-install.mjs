@@ -70,6 +70,9 @@ const reactEntry = await import('vue-ai-hooks/react')
 if (typeof reactEntry.useChat !== 'function') {
   throw new Error('ESM React useChat export failed')
 }
+if (typeof reactEntry.useCompletion !== 'function') {
+  throw new Error('ESM React useCompletion export failed')
+}
 `
   )
   run('node', ['esm-check.mjs'], { cwd: tempRoot })
@@ -100,6 +103,9 @@ const reactEntry = require('vue-ai-hooks/react')
 if (typeof reactEntry.useChat !== 'function') {
   throw new Error('CJS React useChat export failed')
 }
+if (typeof reactEntry.useCompletion !== 'function') {
+  throw new Error('CJS React useCompletion export failed')
+}
 `
   )
   run('node', ['cjs-check.cjs'], { cwd: tempRoot })
@@ -109,8 +115,8 @@ if (typeof reactEntry.useChat !== 'function') {
     `
 import { useChat, openaiCompatible } from 'vue-ai-hooks'
 import type { ChatProvider, Message, UseChatReturn } from 'vue-ai-hooks'
-import { useChat as useReactChat } from 'vue-ai-hooks/react'
-import type { UseReactChatReturn } from 'vue-ai-hooks/react'
+import { useChat as useReactChat, useCompletion as useReactCompletion } from 'vue-ai-hooks/react'
+import type { UseReactChatReturn, UseReactCompletionReturn } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
   apiKey: 'test-key',
@@ -119,10 +125,12 @@ const provider: ChatProvider = openaiCompatible({
 const initialMessages: Message[] = [{ id: 'msg_1', role: 'user', content: 'hello' }]
 const chat: UseChatReturn = useChat({ provider, initialMessages })
 const reactChat: UseReactChatReturn = useReactChat({ provider, initialMessages })
+const reactCompletion: UseReactCompletionReturn = useReactCompletion({ provider })
 
 chat.setMessages(initialMessages)
 reactChat.setMessages(initialMessages)
 reactChat.setInput('hello from react')
+reactCompletion.setInput('complete from react')
 `
   )
   run(

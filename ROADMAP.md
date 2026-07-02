@@ -11,8 +11,8 @@ planning.
 2. Make docs and demos easier to follow by product task, not only by API name.
 3. Add provider presets and production proxy recipes for common OpenAI-compatible
    services while keeping browser keys out of production apps.
-4. Decide whether the React entry stays a chat migration bridge or grows toward
-   parity with the Vue composables.
+4. Grow the React entry from a chat migration bridge toward focused parity for
+   completion, object output, and shared stream helpers.
 5. Strengthen tool approval and agent-event adapter patterns without turning the
    package into a full agent framework.
 
@@ -44,9 +44,8 @@ planning.
 
 ### 0.8.x
 
-- Choose one React direction:
-  - keep `vue-ai-hooks/react` as a focused `useChat` migration bridge, or
-  - expand React support to completion, object output, and shared stream helpers.
+- Expand React support beyond the existing chat and completion hooks toward
+  object output and shared stream helpers.
 - Add agent-event adapter recipes for services that emit tool approval,
   progress, and human-in-the-loop events.
 

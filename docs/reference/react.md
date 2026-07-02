@@ -1,9 +1,8 @@
-# React useChat
+# React hooks
 
 `vue-ai-hooks/react` is the optional React entry. It currently exposes React
-`useChat` for streaming chat UIs while reusing the same providers, proxy
-transport, message types, request tracing, and stream chunk format as the Vue
-entry.
+`useChat` and `useCompletion` for streaming React UIs while reusing the same
+providers, proxy transport, request tracing, and stream formats as the Vue entry.
 
 Install React in the consuming app only when you use this subpath:
 
@@ -12,7 +11,7 @@ pnpm add vue-ai-hooks react
 ```
 
 ```tsx
-import { useChat } from 'vue-ai-hooks/react'
+import { useChat, useCompletion } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'
 
 export function ChatPanel() {
@@ -36,10 +35,32 @@ export function ChatPanel() {
 }
 ```
 
+For single-shot text completion:
+
+```tsx
+import { useCompletion } from 'vue-ai-hooks/react'
+import { openai } from 'vue-ai-hooks'
+
+export function CompletionBox() {
+  const { completion, input, handleInputChange, handleSubmit, isLoading, error } = useCompletion({
+    provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+  })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <textarea value={input} onChange={handleInputChange} />
+      <button disabled={isLoading || !input.trim()}>Complete</button>
+      {completion ? <output>{completion}</output> : null}
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
+```
+
 ## API
 
 ```ts
-import { useChat } from 'vue-ai-hooks/react'
+import { useChat, useCompletion } from 'vue-ai-hooks/react'
 ```
 
 `useChat(options)` accepts `UseReactChatOptions`:
@@ -70,6 +91,31 @@ import { useChat } from 'vue-ai-hooks/react'
 | `setMessages(next)`, `setData(next)`                                                     | Replace or functionally update messages and stream data.           |
 | `clearError()`, `clearTrace()`, `clear()`                                                | Reset error, trace, or the full chat state.                        |
 
+`useCompletion(options)` accepts `UseReactCompletionOptions`:
+
+| Option                                                       | Description                                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `provider` / `transport`                                     | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`. |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`  | Proxy transport options used when no provider is passed.                        |
+| `initialInput`, `initialCompletion`                          | Initial React state.                                                            |
+| `defaultRequest`, `streamProtocol`                           | Defaults merged into each `CompletionRequest`.                                  |
+| `id`, `generateId`                                           | Stable id and custom id generator for request traces.                           |
+| `onUpdate`, `onRequest`, `onResponse`, `onFinish`, `onError` | Lifecycle callbacks for streamed text, traces, completion, and provider errors. |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`       | Retry controls; retries only happen before the first streamed text delta.       |
+| `throttleMs`, `experimental_throttle`                        | Minimum wait in ms between React state updates during fast streams.             |
+
+`UseReactCompletionReturn` exposes plain React state and actions:
+
+| Return                                                      | Description                                                      |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- |
+| `id`, `completion`, `input`, `status`, `isLoading`, `error` | Current completion state.                                        |
+| `lastRequest`, `lastResponse`                               | Last request and response trace snapshots.                       |
+| `complete(prompt?, options?)`                               | Run a completion. Resolves to the final text.                    |
+| `stop()`                                                    | Abort the active stream.                                         |
+| `setInput(value)`, `setCompletion(value)`                   | Controlled input and completion setters.                         |
+| `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                        |
+| `clearError()`, `clearTrace()`, `clear()`                   | Reset error, trace, or the full completion state.                |
+| `abortController`                                           | Active `AbortController`, or `null` when no stream is in flight. |
+
 The React entry intentionally does not export the Vue-only composables. Import
-the Vue APIs from the root package and the React chat hook from
-`vue-ai-hooks/react`.
+the Vue APIs from the root package and React hooks from `vue-ai-hooks/react`.

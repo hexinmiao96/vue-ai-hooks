@@ -58,7 +58,7 @@ import {
   usePersist,
   zhipu
 } from 'vue-ai-hooks'
-import { useChat as useReactChat } from 'vue-ai-hooks/react'
+import { useChat as useReactChat, useCompletion as useReactCompletion } from 'vue-ai-hooks/react'
 import type {
   AiRequestStatus,
   AiSdkSendChatTrigger,
@@ -254,7 +254,14 @@ import type {
   UseTranscriptionReturn,
   UsePersistOptions
 } from 'vue-ai-hooks'
-import type { UseReactChatOptions, UseReactChatReturn } from 'vue-ai-hooks/react'
+import type {
+  UseReactChatOptions,
+  UseReactChatReturn,
+  UseReactCompletionOptions,
+  UseReactCompletionReturn,
+  ReactCompletionRequestInfo,
+  ReactCompletionResponseInfo
+} from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
   apiKey: 'test-key',
@@ -269,16 +276,31 @@ function assertInvalidPublicApiUsage() {
 }
 
 describe('public API types', () => {
-  it('exports the React chat subpath without changing the Vue root entry', () => {
+  it('exports the React subpath without changing the Vue root entry', () => {
     const reactOptions: UseReactChatOptions = { provider }
+    const reactCompletionOptions: UseReactCompletionOptions = { provider }
 
     expect(typeof useReactChat).toBe('function')
+    expect(typeof useReactCompletion).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
     expectTypeOf<UseReactChatReturn>().toMatchTypeOf<{
       messages: Message[]
       input: string
       append: (content: string | Message) => Promise<void>
     }>()
+    expectTypeOf(reactCompletionOptions).toMatchTypeOf<UseReactCompletionOptions>()
+    expectTypeOf<ReturnType<typeof useReactCompletion>>().toEqualTypeOf<UseReactCompletionReturn>()
+    expectTypeOf<UseReactCompletionReturn>().toMatchTypeOf<{
+      completion: string
+      input: string
+      complete: (prompt?: string, options?: Partial<CompletionRequest>) => Promise<string>
+    }>()
+    expectTypeOf<
+      UseReactCompletionReturn['lastRequest']
+    >().toEqualTypeOf<ReactCompletionRequestInfo | null>()
+    expectTypeOf<
+      UseReactCompletionReturn['lastResponse']
+    >().toEqualTypeOf<ReactCompletionResponseInfo | null>()
   })
 
   it('exports provider factories as ChatProvider-compatible values', () => {
