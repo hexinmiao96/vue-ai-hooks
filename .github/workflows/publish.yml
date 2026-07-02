@@ -41,6 +41,9 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           test "v${version}" = "$GITHUB_REF_NAME"
 
+      - name: Release cadence
+        run: pnpm release:cadence
+
       - name: Security audit
         run: pnpm security:audit
 

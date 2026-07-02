@@ -43,6 +43,7 @@ pnpm changelog:check # verify CHANGELOG has a dated section for the current pack
 pnpm metadata:check # verify package metadata, README, docs navigation, and contributor facts
 pnpm community:check # verify CODEOWNERS, issue/PR templates, support, security, and conduct files
 pnpm workflows:check # verify CI, CodeQL, and npm publish workflow guardrails
+pnpm release:cadence # reject a second npm version in the same Asia/Shanghai day
 pnpm api:check   # verify public exports, reference docs, and VitePress guide/reference navigation
 pnpm docs:ux:check # verify docs onboarding paths, examples language routing, and demo navigation
 pnpm links:check # verify local Markdown links
@@ -120,6 +121,13 @@ runtime behavior:
 
 Call out any breaking change explicitly in the PR and `CHANGELOG.md`.
 
+Release cadence is deliberately slow: publish at most one npm version per
+Asia/Shanghai calendar day. Merge PRs whenever they are ready, but batch package
+version bumps and tags into the next daily release. `pnpm release:cadence` and
+the publish workflow enforce this rule; re-checking an already-published
+`package.json` version is allowed, but a new version is blocked once another
+version has already shipped that day.
+
 ## Publishing
 
 This package publishes through npm Trusted Publishing from GitHub Actions.
@@ -138,7 +146,7 @@ Then create and push a tag matching `package.json`, for example `v0.14.0`.
 Release checklist:
 
 1. Update `CHANGELOG.md` and the `package.json` version.
-2. Run `pnpm release:check`.
+2. Run `pnpm release:check`; it includes the daily release cadence gate.
 3. Create a tag that exactly matches the package version, for example `v0.14.0`.
 4. Push the tag and confirm the GitHub Actions publish workflow completes.
    The publish workflow intentionally runs only from `v*` tags; there is no

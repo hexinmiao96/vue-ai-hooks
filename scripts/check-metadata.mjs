@@ -411,8 +411,13 @@ expect(
   'pnpm check must include docs:ux:check'
 )
 expect(
-  packageJson.scripts?.['release:check'] === 'pnpm security:audit && pnpm check',
-  'release:check must run security audit and pnpm check'
+  packageJson.scripts?.['release:cadence'] === 'node scripts/check-release-cadence.mjs',
+  'release:cadence must verify the daily npm release limit'
+)
+expect(
+  packageJson.scripts?.['release:check'] ===
+    'pnpm security:audit && pnpm release:cadence && pnpm check',
+  'release:check must run security audit, release cadence, and pnpm check'
 )
 expect(
   packageJson.scripts?.prepublishOnly === 'pnpm release:check',
@@ -680,6 +685,14 @@ expect(
 expect(
   contributing.includes('## Versioning policy'),
   'CONTRIBUTING.md must document the versioning policy'
+)
+expect(
+  normalizedContributing.includes('publish at most one npm version per Asia/Shanghai calendar day'),
+  'CONTRIBUTING.md must document the daily release cadence'
+)
+expect(
+  contributing.includes('pnpm release:cadence'),
+  'CONTRIBUTING.md must document the release cadence command'
 )
 expect(
   normalizedContributing.includes(
