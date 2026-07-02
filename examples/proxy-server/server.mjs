@@ -15,6 +15,15 @@ const routes = {
   object: new Set(['/api/object', '/api/ai/object']),
   uiMessageStream: new Set(['/api/ui-message-stream', '/api/ai/ui-message-stream'])
 }
+const upstream = {
+  baseURL: trimTrailingSlash(process.env.PROXY_UPSTREAM_BASE_URL || ''),
+  apiKey: process.env.PROXY_UPSTREAM_API_KEY || '',
+  model: process.env.PROXY_UPSTREAM_MODEL || '',
+  chatPath: process.env.PROXY_UPSTREAM_CHAT_PATH || '/chat/completions',
+  completionPath: process.env.PROXY_UPSTREAM_COMPLETION_PATH || '/completions',
+  embeddingPath: process.env.PROXY_UPSTREAM_EMBEDDING_PATH || '/embeddings'
+}
+const upstreamEnabled = Boolean(upstream.baseURL)
 
 const server = createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`)
@@ -97,6 +106,11 @@ server.listen(port, () => {
 
 async function handleChat(request, response) {
   const body = await readJson(request)
+  if (upstreamEnabled) {
+    await handleUpstreamChat(body, response)
+    return
+  }
+
   const chatId = typeof body.id === 'string' && body.id ? body.id : `chat_${Date.now()}`
   const userText = latestUserText(body.messages)
   const chunks = [
@@ -131,6 +145,11 @@ function handleResume(response, chatId) {
 
 async function handleCompletion(request, response) {
   const body = await readJson(request)
+  if (upstreamEnabled) {
+    await handleUpstreamCompletion(body, response)
+    return
+  }
+
   const prompt = typeof body.prompt === 'string' ? body.prompt : ''
   sendSse(response, [
     { text: 'Completion from proxy: ' },
@@ -141,6 +160,11 @@ async function handleCompletion(request, response) {
 
 async function handleEmbedding(request, response) {
   const body = await readJson(request)
+  if (upstreamEnabled) {
+    await handleUpstreamEmbedding(body, response)
+    return
+  }
+
   const inputs = Array.isArray(body.input) ? body.input : [body.input]
   const texts = inputs.map((input) => (typeof input === 'string' ? input : ''))
   const embeddings = texts.map((text) => deterministicVector(text))
@@ -152,6 +176,72 @@ async function handleEmbedding(request, response) {
       totalTokens: texts.reduce((total, text) => total + estimateTokens(text), 0)
     }
   })
+}
+
+async function handleUpstreamChat(body, response) {
+  const requestBody = openAiChatBody(body)
+  if (!hasModel(requestBody, response)) return
+
+  try {
+    const data = await postUpstreamJson(upstream.chatPath, requestBody)
+    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined
+    const message = choice?.message || {}
+    const chunks = [
+      {
+        content: typeof message.content === 'string' ? message.content : undefined,
+        toolCalls: normalizeToolCalls(message.tool_calls),
+        finishReason: choice?.finish_reason || 'stop',
+        usage: normalizeUsage(data.usage),
+        metadata: {
+          provider: 'openai-compatible',
+          upstreamModel: data.model || requestBody.model
+        }
+      }
+    ]
+    const chatId = typeof body.id === 'string' && body.id ? body.id : ''
+    if (chatId) chatStreams.set(chatId, chunks)
+    sendSse(response, chunks)
+  } catch (error) {
+    sendUpstreamError(response, error)
+  }
+}
+
+async function handleUpstreamCompletion(body, response) {
+  const requestBody = openAiCompletionBody(body)
+  if (!hasModel(requestBody, response)) return
+
+  try {
+    const data = await postUpstreamJson(upstream.completionPath, requestBody)
+    const choice = Array.isArray(data.choices) ? data.choices[0] : undefined
+    let text = ''
+    if (typeof choice?.text === 'string') {
+      text = choice.text
+    } else if (typeof choice?.message?.content === 'string') {
+      text = choice.message.content
+    }
+    sendSse(response, [{ text }])
+  } catch (error) {
+    sendUpstreamError(response, error)
+  }
+}
+
+async function handleUpstreamEmbedding(body, response) {
+  const requestBody = openAiEmbeddingBody(body)
+  if (!hasModel(requestBody, response)) return
+
+  try {
+    const data = await postUpstreamJson(upstream.embeddingPath, requestBody)
+    const embeddings = Array.isArray(data.data)
+      ? data.data.map((item) => item?.embedding).filter(Array.isArray)
+      : []
+    sendJson(response, 200, {
+      embeddings,
+      model: data.model || requestBody.model,
+      usage: normalizeUsage(data.usage)
+    })
+  } catch (error) {
+    sendUpstreamError(response, error)
+  }
 }
 
 async function handleImage(request, response) {
@@ -349,6 +439,145 @@ function sendSse(response, chunks) {
   })
   for (const chunk of chunks) response.write(`data: ${JSON.stringify(chunk)}\n\n`)
   response.end('data: [DONE]\n\n')
+}
+
+function openAiChatBody(body) {
+  const extra = extraBody(body)
+  const requestBody = {
+    ...extra,
+    model: body.model || extra.model || upstream.model,
+    messages: Array.isArray(body.messages) ? body.messages.map(openAiMessage) : [],
+    stream: false
+  }
+  copyOpenAiOptions(body, requestBody)
+  return requestBody
+}
+
+function openAiCompletionBody(body) {
+  const extra = extraBody(body)
+  const requestBody = {
+    ...extra,
+    model: body.model || extra.model || upstream.model,
+    prompt: typeof body.prompt === 'string' ? body.prompt : '',
+    stream: false
+  }
+  copyOpenAiOptions(body, requestBody)
+  return requestBody
+}
+
+function openAiEmbeddingBody(body) {
+  const extra = extraBody(body)
+  const requestBody = {
+    ...extra,
+    input: Array.isArray(body.input) ? body.input : [body.input],
+    model: body.model || extra.model || upstream.model
+  }
+  if (body.user !== undefined) requestBody.user = body.user
+  return requestBody
+}
+
+function openAiMessage(message) {
+  const out = {
+    role: typeof message?.role === 'string' ? message.role : 'user',
+    content: message?.content ?? ''
+  }
+  if (typeof message?.name === 'string') out.name = message.name
+  if (typeof message?.toolCallId === 'string') out.tool_call_id = message.toolCallId
+  if (Array.isArray(message?.toolCalls)) out.tool_calls = message.toolCalls
+  if (Array.isArray(message?.tool_calls)) out.tool_calls = message.tool_calls
+  return out
+}
+
+function extraBody(body) {
+  return body?.body && typeof body.body === 'object' && !Array.isArray(body.body) ? body.body : {}
+}
+
+function copyOpenAiOptions(source, target) {
+  const optionMap = [
+    ['temperature', 'temperature'],
+    ['maxTokens', 'max_tokens'],
+    ['max_tokens', 'max_tokens'],
+    ['topP', 'top_p'],
+    ['top_p', 'top_p'],
+    ['frequencyPenalty', 'frequency_penalty'],
+    ['frequency_penalty', 'frequency_penalty'],
+    ['presencePenalty', 'presence_penalty'],
+    ['presence_penalty', 'presence_penalty'],
+    ['stop', 'stop'],
+    ['tools', 'tools'],
+    ['toolChoice', 'tool_choice'],
+    ['tool_choice', 'tool_choice'],
+    ['responseFormat', 'response_format'],
+    ['response_format', 'response_format'],
+    ['user', 'user']
+  ]
+  for (const [from, to] of optionMap) {
+    if (source[from] !== undefined) target[to] = source[from]
+  }
+}
+
+function hasModel(body, response) {
+  if (body.model) return true
+  sendJson(response, 400, {
+    error: 'Set PROXY_UPSTREAM_MODEL or pass model in the request body.'
+  })
+  return false
+}
+
+async function postUpstreamJson(path, body) {
+  const headers = { 'Content-Type': 'application/json' }
+  if (upstream.apiKey) headers.Authorization = `Bearer ${upstream.apiKey}`
+
+  const response = await fetch(upstreamUrl(path), {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+  const text = await response.text()
+  if (!response.ok) {
+    throw new Error(`Upstream provider returned HTTP ${response.status}`)
+  }
+  try {
+    return text ? JSON.parse(text) : {}
+  } catch {
+    throw new Error('Upstream provider returned invalid JSON')
+  }
+}
+
+function upstreamUrl(path) {
+  const base = upstream.baseURL.endsWith('/') ? upstream.baseURL : `${upstream.baseURL}/`
+  return new URL(path.startsWith('/') ? path.slice(1) : path, base).toString()
+}
+
+function sendUpstreamError(response, error) {
+  sendJson(response, 502, {
+    error: error instanceof Error ? error.message : 'Upstream proxy request failed'
+  })
+}
+
+function normalizeToolCalls(toolCalls) {
+  if (!Array.isArray(toolCalls) || toolCalls.length === 0) return undefined
+  return toolCalls.map((call, index) => ({
+    ...call,
+    index: Number.isInteger(call?.index) ? call.index : index
+  }))
+}
+
+function normalizeUsage(usage) {
+  if (!usage || typeof usage !== 'object') return undefined
+  const promptTokens = Number(usage.promptTokens ?? usage.prompt_tokens ?? 0)
+  const completionTokens = Number(usage.completionTokens ?? usage.completion_tokens ?? 0)
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens: Number(usage.totalTokens ?? usage.total_tokens ?? promptTokens + completionTokens)
+  }
+}
+
+function trimTrailingSlash(value) {
+  let end = value.length
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1
+  return value.slice(0, end)
 }
 
 function latestUserText(messages) {

@@ -189,6 +189,10 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
+For copyable upstream environment recipes, including OpenAI-compatible gateways,
+Ollama, vLLM, custom endpoint paths, and a production checklist, see
+[Proxy recipes](./proxy-recipes.md).
+
 The same template also supports the default composable URLs
 (`/api/chat`, `/api/completion`, `/api/embedding`, `/api/image`, `/api/video`, `/api/speech`,
 `/api/transcription`, `/api/rerank`, and `/api/object`). Use those when you omit `provider`

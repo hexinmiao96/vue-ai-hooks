@@ -69,7 +69,8 @@ When proxying provider streams through your own backend or edge runtime:
 
 `examples/proxy-server` is a minimal Node template for these boundaries. It keeps
 provider credentials out of the browser contract while preserving SSE framing for
-the client.
+the client. See [Proxy recipes](./proxy-recipes.md) for copyable upstream
+environment variables and production checks.
 
 ## Testing SSR boundaries
 

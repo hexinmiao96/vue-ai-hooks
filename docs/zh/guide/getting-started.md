@@ -124,6 +124,11 @@ useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 这一步跑通后，把模板服务替换成你自己的 `/api/chat`、`/api/completion`、
 `/api/embedding`、`/api/image`、`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object` 路由即可。
 
+如果要让这个模板连接真实 OpenAI-compatible 上游，同时不把 key 暴露到浏览器，
+在 Node 进程上设置 `PROXY_UPSTREAM_BASE_URL`、`PROXY_UPSTREAM_API_KEY` 和
+`PROXY_UPSTREAM_MODEL`。OpenAI、Ollama、vLLM 和生产检查清单见
+[Proxy 配方](/zh/guide/proxy-recipes)。
+
 ## 使用不同 Provider
 
 每个 Provider 都实现同一个 `ChatProvider` 接口。要使用非 OpenAI 服务，只需要替换工厂函数：

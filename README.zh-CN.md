@@ -475,6 +475,7 @@ tool calls 需要等结果回来后再进入模型上下文时可以传 `ignoreI
 ### `usePersist(source, options)`
 
 把任意 Vue `Ref` 持久化到 `localStorage`，支持版本号和自定义序列化。`useChat({ persist })` 内部会使用 Date-safe 的消息序列化；导出的 `serializeMessages()` / `deserializeMessages()` / `validateMessages()` / `safeValidateMessages()` / `validateUIMessages()` 也可以复用于后端持久化，并校验合法的 `Message.parts`、metadata schema 和自定义 data part schema。详见 [usePersist 参考](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/reference/use-persist.md)、[Provider 参考](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/reference/providers.md) 和 [公共类型](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/reference/types.md)。选型边界见 [选择 vue-ai-hooks](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/choosing.md)。升级兼容性说明见 [API 稳定性指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/api-stability.md)。当前版本线请看 [v0.4.0 升级指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/upgrade-0.4.md)；如果你来自 `0.2.1`，请先看 [v0.3.0 升级指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/upgrade-0.3.md)。如果你正在迁移 AI SDK UI 界面，请看 [AI SDK 迁移指南](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/ai-sdk-migration.md)。
+后端代理环境变量配方见 [Proxy 配方](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/proxy-recipes.md)。
 
 ## 示例
 
@@ -509,6 +510,10 @@ pnpm example:proxy-server
 # 另开一个终端
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
+
+如果要让同一个模板连接真实 OpenAI-compatible 上游，在 Node 进程上设置
+`PROXY_UPSTREAM_BASE_URL`、`PROXY_UPSTREAM_API_KEY` 和 `PROXY_UPSTREAM_MODEL`。
+模板会把这些值留在服务端，并把 chat、completion 和 embedding 响应归一化回浏览器契约。
 
 同一个代理模板也支持 `useChat({ baseURL })`、`useCompletion({ baseURL })`、
 `useEmbedding({ baseURL })`、`useImage({ baseURL })`、`useVideo({ baseURL })`、`useSpeech({ baseURL })` 和

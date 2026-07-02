@@ -62,7 +62,8 @@ client-only 模式保护浏览器代码。
 - 针对认证失败、额度不足、模型无效和 Provider 故障返回有用错误。
 
 `examples/proxy-server` 是这些边界的最小 Node 模板。它让 Provider 凭据留在浏览器
-契约之外，同时保留客户端需要的 SSE framing。
+契约之外，同时保留客户端需要的 SSE framing。可复制的上游环境变量和生产检查见
+[Proxy 配方](./proxy-recipes.md)。
 
 ## 测试 SSR 边界
 
