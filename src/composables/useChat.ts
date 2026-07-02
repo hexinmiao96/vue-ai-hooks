@@ -1377,12 +1377,9 @@ export function useChat<
         storage: persist.storage,
         serialize: persist.serialize ?? serializeMessages,
         deserialize: persist.deserialize ?? deserializeMessages,
-        onError: (e) => {
-          error.value = e
-          persist.onError?.(e)
-        },
-        onLoadError: persist.onLoadError,
-        onClearError: persist.onClearError
+        onError: handlePersistenceError('save', persist.onError, true),
+        onLoadError: handlePersistenceError('load', persist.onLoadError),
+        onClearError: handlePersistenceError('clear', persist.onClearError)
       })
     : null
   validateMessagesMetadata(messages.value)
@@ -1643,6 +1640,22 @@ export function useChat<
     status.value = 'error'
     onError?.(e)
     return e
+  }
+  function handlePersistenceError(
+    phase: 'load' | 'save' | 'clear',
+    handler?: (err: Error) => void,
+    setError = false
+  ) {
+    return (e: Error) => {
+      if (setError) error.value = e
+      recordInspectionEvent({
+        kind: 'error',
+        label: `persistence ${phase} failed`,
+        message: e.message,
+        metadata: { phase, key: persist?.key }
+      })
+      handler?.(e)
+    }
   }
   function requestInfo(
     kind: ChatRequestLifecycleKind,

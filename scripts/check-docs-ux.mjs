@@ -888,7 +888,10 @@ for (const snippet of [
   'Request trace',
   'Debugging checklist',
   'Production path',
-  'provider credentials'
+  'provider credentials',
+  'persistence load failed',
+  'persistence save failed',
+  'persistence clear failed'
 ]) {
   expect(files.inspection.includes(snippet), `English inspection guide must include: ${snippet}`)
 }
@@ -907,7 +910,10 @@ for (const snippet of [
   '请求 trace',
   '排查清单',
   '生产路径',
-  'Provider 凭据'
+  'Provider 凭据',
+  'persistence load failed',
+  'persistence save failed',
+  'persistence clear failed'
 ]) {
   expect(files.zhInspection.includes(snippet), `Chinese inspection guide must include: ${snippet}`)
 }
@@ -1815,6 +1821,8 @@ expect(
     files.useChat.includes('validateMessages(raw)') &&
     files.useChat.includes('safeValidateMessages(raw)') &&
     files.useChat.includes('safeValidateUIMessages(raw)') &&
+    files.useChat.includes('persist.onLoadError') &&
+    files.useChat.includes('persist.onClearError') &&
     files.useChat.includes('ValidateMessagesOptions') &&
     files.aiSdkMigration.includes('safeValidateUIMessages(rawMessages') &&
     files.aiSdkMigration.includes('| `validateUIMessages()` / `safeValidateUIMessages()`') &&
@@ -1912,6 +1920,8 @@ expect(
     files.zhUseChat.includes('validateMessages(raw)') &&
     files.zhUseChat.includes('safeValidateMessages(raw)') &&
     files.zhUseChat.includes('safeValidateUIMessages(raw)') &&
+    files.zhUseChat.includes('persist.onLoadError') &&
+    files.zhUseChat.includes('persist.onClearError') &&
     files.zhUseChat.includes('ValidateMessagesOptions') &&
     files.zhAiSdkMigration.includes('safeValidateUIMessages(rawMessages') &&
     files.zhAiSdkMigration.includes('| `validateUIMessages()` / `safeValidateUIMessages()`') &&

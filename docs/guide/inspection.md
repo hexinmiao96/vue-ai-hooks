@@ -92,6 +92,12 @@ The same snapshot already includes a `timeline`, normalized `retries`, a compact
 `createInspectionCurl(request)` is exported separately when you only need the
 copyable request command.
 
+When `useChat({ persist })` receives `onLoadError`, `onError`, or
+`onClearError` from the persistence layer, `inspect().timeline` records
+`persistence load failed`, `persistence save failed`, or
+`persistence clear failed` events with `{ phase, key }` metadata. These events
+do not include stored message payloads, provider credentials, or raw causes.
+
 Do not render provider API keys, raw authorization headers, or full tenant data
 in a browser debug panel. If your backend adds those fields, keep them out of
 the response and logs you show to users.
@@ -111,6 +117,8 @@ the response and logs you show to users.
    before retrying automatically.
 7. Use `inspection.timeline` to correlate request, retry, stream, response, and
    error events before opening a provider support ticket.
+8. If local history disappears or cannot be cleared, check persistence events
+   in the same timeline before asking users to reset storage.
 
 ## Production path
 

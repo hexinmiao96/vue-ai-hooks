@@ -63,6 +63,8 @@ storage, and operations.
 - Add an internal debug panel around `inspectRequestTrace()`.
 - Show `summary`, `timeline`, `retries`, `providerTrace`, and redacted `curl`
   only to trusted support or developer surfaces.
+- Include `useChat({ persist })` load, save, and clear failures in the same
+  timeline before asking users to reset local history.
 - Never render raw provider response bodies or authorization headers.
 
 ## Persistence and threads

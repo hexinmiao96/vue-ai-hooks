@@ -808,7 +808,7 @@ describe('useChat', () => {
     const badLoadStorage = memoryStorage()
     badLoadStorage.setItem('chat:persist-errors', 'not-json')
 
-    useChat({
+    const loadedChat = useChat({
       provider: fakeProvider([]),
       persist: {
         key: 'chat:persist-errors',
@@ -818,6 +818,15 @@ describe('useChat', () => {
     })
 
     expect(loadErrors).toHaveLength(1)
+    expect(loadedChat.inspect().timeline).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'error',
+          label: 'persistence load failed',
+          metadata: { phase: 'load', key: 'chat:persist-errors' }
+        })
+      ])
+    )
 
     const failingStorage: Storage = {
       ...memoryStorage(),
@@ -841,11 +850,29 @@ describe('useChat', () => {
     chat.setMessages([{ id: 'm1', role: 'user', content: 'saved' }])
     await nextTick()
     expect(chat.error.value?.message).toBe('quota')
+    expect(chat.inspect().timeline).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'error',
+          label: 'persistence save failed',
+          metadata: { phase: 'save', key: 'chat:persist-errors' }
+        })
+      ])
+    )
     chat.clear()
 
     expect(saveErrors[0]?.message).toBe('quota')
     expect(chat.error.value).toBeNull()
     expect(clearErrors[0]?.message).toBe('remove failed')
+    expect(chat.inspect().timeline).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'error',
+          label: 'persistence clear failed',
+          metadata: { phase: 'clear', key: 'chat:persist-errors' }
+        })
+      ])
+    )
   })
 
   it('prunes chat history for provider requests without mutating original messages', () => {

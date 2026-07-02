@@ -90,6 +90,12 @@ Provider 响应体复制进 summary。
 `providerTrace`，以及设置 `curl: true` 后生成的脱敏 `curl` 命令。只需要复制请求命令时，
 也可以单独调用导出的 `createInspectionCurl(request)`。
 
+当 `useChat({ persist })` 从持久化层收到 `onLoadError`、`onError` 或
+`onClearError` 时，`inspect().timeline` 会记录 `persistence load failed`、
+`persistence save failed` 或 `persistence clear failed` 事件，并附带
+`{ phase, key }` metadata。这些事件不会包含已保存的消息 payload、Provider 凭据或原始
+cause。
+
 不要在浏览器调试面板里渲染 Provider API key、原始 authorization header 或完整租户数据。
 如果后端会补这些字段，不要把它们返回给浏览器，也不要显示在用户可见日志里。
 
@@ -104,6 +110,8 @@ Provider 响应体复制进 summary。
 6. 如果 stream 已开始但中途停止，先检查 `onFinish` 和 `isDisconnect`，再决定是否自动重试。
 7. 用 `inspection.timeline` 串起 request、retry、stream、response 和 error，再决定是否需要找
    Provider 支持排查。
+8. 如果本地历史消失或无法清理，先在同一个 timeline 里检查 persistence 事件，再让用户重置
+   storage。
 
 ## 生产路径
 
