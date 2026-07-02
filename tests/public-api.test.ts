@@ -8,6 +8,7 @@ import {
   convertToModelMessages,
   cosineSimilarity,
   createIdGenerator,
+  createInspectionCurl,
   createUIMessageStream,
   createUIMessageStreamParser,
   createUIMessageStreamResponse,
@@ -125,9 +126,16 @@ import type {
   ImageGenerationResponseInfo,
   ImageGenerationResult,
   ImageUrlPart,
+  InspectionCurlOptions,
   InspectionErrorCategory,
   InspectionErrorSummary,
+  InspectionProviderTrace,
+  InspectionRetryRecord,
+  InspectionRetryRecordInput,
   InspectionStatus,
+  InspectionTimelineEvent,
+  InspectionTimelineEventInput,
+  InspectionTimelineEventKind,
   InspectRequestTraceOptions,
   Message,
   MessageContent,
@@ -535,6 +543,11 @@ describe('public API types', () => {
     expectTypeOf(parseSSE).returns.toEqualTypeOf<AsyncGenerator<Record<string, unknown>>>()
     expectTypeOf(classifyInspectionError).parameter(0).toEqualTypeOf<unknown>()
     expectTypeOf(classifyInspectionError).returns.toEqualTypeOf<InspectionErrorSummary | null>()
+    expectTypeOf(createInspectionCurl).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(createInspectionCurl)
+      .parameter(1)
+      .toEqualTypeOf<InspectionCurlOptions | undefined>()
+    expectTypeOf(createInspectionCurl).returns.toEqualTypeOf<string | null>()
     expectTypeOf(inspectRequestTrace)
       .parameter(0)
       .toEqualTypeOf<InspectRequestTraceOptions<unknown, unknown>>()
@@ -559,6 +572,44 @@ describe('public API types', () => {
       retryable: boolean
       hasCause: boolean
       status?: number
+    }>()
+    expectTypeOf<InspectionTimelineEventKind>().toEqualTypeOf<
+      'request' | 'response' | 'stream' | 'retry' | 'error' | 'status'
+    >()
+    expectTypeOf<InspectionTimelineEventInput>().toMatchTypeOf<{
+      kind: InspectionTimelineEventKind
+      timestamp?: Date | string | number
+      attempt?: number
+      metadata?: Record<string, unknown>
+    }>()
+    expectTypeOf<InspectionTimelineEvent>().toMatchTypeOf<{
+      kind: InspectionTimelineEventKind
+      timestamp: string
+    }>()
+    expectTypeOf<InspectionRetryRecordInput>().toMatchTypeOf<{
+      attempt: number
+      error: unknown
+      maxRetries?: number
+      delayMs?: number
+    }>()
+    expectTypeOf<InspectionRetryRecord>().toMatchTypeOf<{
+      attempt: number
+      error: InspectionErrorSummary
+      timestamp: string
+    }>()
+    expectTypeOf<InspectionProviderTrace>().toMatchTypeOf<{
+      requestKeys: string[]
+      responseKeys: string[]
+      providerId?: string
+      api?: string
+      hasStream?: boolean
+    }>()
+    expectTypeOf<InspectionCurlOptions>().toMatchTypeOf<{
+      api?: string
+      method?: string
+      headers?: unknown
+      body?: unknown
+      redactHeaders?: readonly string[]
     }>()
 
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')

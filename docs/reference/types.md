@@ -751,7 +751,63 @@ interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unknown> {
   error?: unknown
   lastRequest?: TRequest | null
   lastResponse?: TResponse | null
+  events?: readonly InspectionTimelineEventInput[]
+  retries?: readonly InspectionRetryRecordInput[]
+  curl?: boolean | InspectionCurlOptions
   now?: Date | string | number
+}
+
+type InspectionTimelineEventKind = 'request' | 'response' | 'stream' | 'retry' | 'error' | 'status'
+
+interface InspectionTimelineEventInput {
+  kind: InspectionTimelineEventKind
+  label?: string
+  timestamp?: Date | string | number
+  attempt?: number
+  status?: InspectionStatus
+  category?: InspectionErrorCategory
+  message?: string
+  metadata?: Record<string, unknown>
+}
+
+interface InspectionRetryRecordInput {
+  attempt: number
+  maxRetries?: number
+  delayMs?: number
+  error: unknown
+  timestamp?: Date | string | number
+}
+
+interface InspectionTimelineEvent extends Omit<InspectionTimelineEventInput, 'timestamp'> {
+  timestamp: string
+}
+
+interface InspectionRetryRecord {
+  attempt: number
+  maxRetries?: number
+  delayMs?: number
+  error: InspectionErrorSummary
+  timestamp: string
+}
+
+interface InspectionProviderTrace {
+  providerId?: string
+  api?: string
+  attempt?: number
+  trigger?: string
+  aiSdkTrigger?: string
+  hasStream?: boolean
+  requestKeys: string[]
+  responseKeys: string[]
+}
+
+interface InspectionCurlOptions {
+  command?: string
+  api?: string
+  method?: string
+  headers?: unknown
+  body?: unknown
+  redactHeaders?: readonly string[]
 }
 
 interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
@@ -767,6 +823,10 @@ interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
   hasRequest: boolean
   hasResponse: boolean
   hasStream?: boolean
+  providerTrace: InspectionProviderTrace
+  timeline: InspectionTimelineEvent[]
+  retries: InspectionRetryRecord[]
+  curl: string | null
   retryable: boolean
   summary: string
   timestamp: string
@@ -783,6 +843,10 @@ const snapshot = inspectRequestTrace({
   lastResponse: chat.lastResponse.value
 })
 ```
+
+Set `curl: true` to include a copyable request command with sensitive headers
+redacted. `createInspectionCurl(request, options?)` is also exported for
+standalone panels that only need the curl command.
 
 ## Retry options
 

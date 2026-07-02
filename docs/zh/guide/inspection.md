@@ -22,17 +22,45 @@ Provider 或 proxy 路由什么内容。
 
 ```vue
 <script setup lang="ts">
-import { computed } from 'vue'
-import { inspectRequestTrace, useChat } from 'vue-ai-hooks'
+import { computed, ref } from 'vue'
+import {
+  inspectRequestTrace,
+  useChat,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput
+} from 'vue-ai-hooks'
 
-const chat = useChat({ api: '/api/chat' })
+const retries = ref<InspectionRetryRecordInput[]>([])
+const streamEvents = ref<InspectionTimelineEventInput[]>([])
+const chat = useChat({
+  api: '/api/chat',
+  onRetry(error, context) {
+    retries.value.push({
+      attempt: context.attempt,
+      maxRetries: context.maxRetries,
+      error,
+      timestamp: Date.now()
+    })
+  },
+  onChunk(chunk) {
+    streamEvents.value.push({
+      kind: 'stream',
+      label: 'stream chunk',
+      timestamp: Date.now(),
+      metadata: { type: chunk.type }
+    })
+  }
+})
 
 const inspection = computed(() =>
   inspectRequestTrace({
     status: chat.status.value,
     error: chat.error.value,
     lastRequest: chat.lastRequest.value,
-    lastResponse: chat.lastResponse.value
+    lastResponse: chat.lastResponse.value,
+    retries: retries.value,
+    events: streamEvents.value,
+    curl: true
   })
 )
 
@@ -58,6 +86,10 @@ const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
 `provider`、`validation` 等适合界面渲染的类别。它只报告 `hasCause`，不会把原始
 Provider 响应体复制进 summary。
 
+同一个 snapshot 现在还包含 `timeline`、归一化后的 `retries`、紧凑的
+`providerTrace`，以及设置 `curl: true` 后生成的脱敏 `curl` 命令。只需要复制请求命令时，
+也可以单独调用导出的 `createInspectionCurl(request)`。
+
 不要在浏览器调试面板里渲染 Provider API key、原始 authorization header 或完整租户数据。
 如果后端会补这些字段，不要把它们返回给浏览器，也不要显示在用户可见日志里。
 
@@ -70,6 +102,8 @@ Provider 响应体复制进 summary。
 4. 流式聊天路由应确认 `lastResponse.hasStream` 为 `true`。
 5. 如果 `status` 进入 `error`，展示 `error.message`，并保留输入便于用户重试。
 6. 如果 stream 已开始但中途停止，先检查 `onFinish` 和 `isDisconnect`，再决定是否自动重试。
+7. 用 `inspection.timeline` 串起 request、retry、stream、response 和 error，再决定是否需要找
+   Provider 支持排查。
 
 ## 生产路径
 

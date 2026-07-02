@@ -465,6 +465,8 @@ tool calls 需要等结果回来后再进入模型上下文时可以传 `ignoreI
 分别用于单次流式补全、embedding 向量生成、自定义生成任务、自有后端图片生成路由、自有后端视频生成路由、自有后端语音生成路由、自有后端音频转写路由、自有后端文档重排路由和结构化 JSON 对象输出，接口形态与 `useChat` 保持一致。
 
 这些组合式函数也会暴露 `lastRequest`、`lastResponse` 和 `clearTrace()`，方便在界面上直接渲染最近一次 Provider 请求/响应快照，而不必把 lifecycle callback 手动同步到本地状态。默认 proxy trace 会包含解析后的 proxy `api` 和浏览器 credentials 模式。
+可以使用 `inspectRequestTrace()` 把这些 refs 组合成生产调试 snapshot，里面包含
+timeline events、归一化重试记录、紧凑 provider trace，以及可选的脱敏 `curl` 命令，便于支持排查。
 
 `useImage` 面向你自己的 `/api/image` 路由，提供 `image`、`images`、`result`、
 `generateImage()`、生命周期 trace refs、中止、重试和表单 helpers，同时把 Provider 凭据保留在服务端。
@@ -557,9 +559,10 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 ## 项目状态
 
-这是 **v0.9.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
+这是 **v0.10.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
 composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
-质量门禁。下一步重点是更清晰的调试检查、更多 Provider 覆盖和生产级增强。功能规划放在
+质量门禁。本版本进入生产级增强线，先补齐更完整的 inspection timeline、retry、provider trace
+和可复制 curl。下一步重点是任务型文档/demo 和 Provider 配方。功能规划放在
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub
 issue 只记录可复现 bug。
 

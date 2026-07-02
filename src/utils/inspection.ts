@@ -22,11 +22,73 @@ export interface InspectionErrorSummary {
   hasCause: boolean
 }
 
+export type InspectionTimelineEventKind =
+  | 'request'
+  | 'response'
+  | 'stream'
+  | 'retry'
+  | 'error'
+  | 'status'
+
+export interface InspectionTimelineEventInput {
+  kind: InspectionTimelineEventKind
+  label?: string
+  timestamp?: Date | string | number
+  attempt?: number
+  status?: InspectionStatus
+  category?: InspectionErrorCategory
+  message?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface InspectionTimelineEvent extends Omit<InspectionTimelineEventInput, 'timestamp'> {
+  timestamp: string
+}
+
+export interface InspectionRetryRecordInput {
+  attempt: number
+  maxRetries?: number
+  delayMs?: number
+  error: unknown
+  timestamp?: Date | string | number
+}
+
+export interface InspectionRetryRecord {
+  attempt: number
+  maxRetries?: number
+  delayMs?: number
+  error: InspectionErrorSummary
+  timestamp: string
+}
+
+export interface InspectionProviderTrace {
+  providerId?: string
+  api?: string
+  attempt?: number
+  trigger?: string
+  aiSdkTrigger?: string
+  hasStream?: boolean
+  requestKeys: string[]
+  responseKeys: string[]
+}
+
+export interface InspectionCurlOptions {
+  command?: string
+  api?: string
+  method?: string
+  headers?: unknown
+  body?: unknown
+  redactHeaders?: readonly string[]
+}
+
 export interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unknown> {
   status?: InspectionStatus
   error?: unknown
   lastRequest?: TRequest | null
   lastResponse?: TResponse | null
+  events?: readonly InspectionTimelineEventInput[]
+  retries?: readonly InspectionRetryRecordInput[]
+  curl?: boolean | InspectionCurlOptions
   now?: Date | string | number
 }
 
@@ -43,10 +105,26 @@ export interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unkno
   hasRequest: boolean
   hasResponse: boolean
   hasStream?: boolean
+  providerTrace: InspectionProviderTrace
+  timeline: InspectionTimelineEvent[]
+  retries: InspectionRetryRecord[]
+  curl: string | null
   retryable: boolean
   summary: string
   timestamp: string
 }
+
+const DEFAULT_REDACTED_HEADERS = [
+  'authorization',
+  'proxy-authorization',
+  'cookie',
+  'set-cookie',
+  'x-api-key',
+  'api-key',
+  'openai-api-key',
+  'anthropic-api-key',
+  'x-goog-api-key'
+]
 
 export function classifyInspectionError(error: unknown): InspectionErrorSummary | null {
   if (error == null) return null
@@ -82,6 +160,13 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
     options.status ?? (error ? 'error' : response ? 'ready' : request ? 'submitted' : 'idle')
   const hasStream = readBooleanField(response, 'hasStream')
   const retryable = error?.retryable ?? false
+  const timestamp = normalizeTimestamp(options.now)
+  const retries = normalizeRetryRecords(options.retries, timestamp)
+  const providerTrace = createInspectionProviderTrace(metadataSources, hasStream)
+  const curl =
+    options.curl === undefined || options.curl === false
+      ? null
+      : createInspectionCurl(request, options.curl === true ? {} : options.curl)
 
   return {
     status,
@@ -96,10 +181,55 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
     hasRequest: request !== null,
     hasResponse: response !== null,
     ...(hasStream !== undefined ? { hasStream } : {}),
+    providerTrace,
+    timeline: createInspectionTimeline({
+      status,
+      error,
+      request,
+      response,
+      retries,
+      events: options.events,
+      timestamp,
+      hasStream
+    }),
+    retries,
+    curl,
     retryable,
     summary: createInspectionSummary(status, error, response !== null, request !== null, hasStream),
-    timestamp: normalizeTimestamp(options.now)
+    timestamp
   }
+}
+
+export function createInspectionCurl(
+  request: unknown,
+  options: InspectionCurlOptions = {}
+): string | null {
+  const requestRecord = isRecord(request) ? request : undefined
+  const api =
+    options.api ?? readStringValue(requestRecord, 'api') ?? readStringValue(requestRecord, 'url')
+  if (!api) return null
+
+  const method = (
+    options.method ??
+    readStringValue(requestRecord, 'method') ??
+    (options.body !== undefined || requestRecord?.body !== undefined ? 'POST' : 'GET')
+  ).toUpperCase()
+  const headers = sanitizeHeaders(
+    options.headers ?? requestRecord?.headers,
+    options.redactHeaders ?? DEFAULT_REDACTED_HEADERS
+  )
+  const body = options.body ?? requestRecord?.body
+  const command = options.command ?? 'curl'
+  const parts = [`${command} -X ${quoteShell(method)} ${quoteShell(api)}`]
+
+  for (const [name, value] of headers) {
+    parts.push(`-H ${quoteShell(`${name}: ${value}`)}`)
+  }
+  if (body !== undefined) {
+    parts.push(`--data-raw ${quoteShell(formatCurlBody(body))}`)
+  }
+
+  return parts.map((part, index) => `${index === 0 ? '' : '  '}${part}`).join(' \\\n')
 }
 
 function categorizeInspectionError(options: {
@@ -152,6 +282,140 @@ function createInspectionSummary(
   return 'no request recorded'
 }
 
+function createInspectionProviderTrace(
+  metadataSources: readonly (Record<string, unknown> | undefined)[],
+  hasStream: boolean | undefined
+): InspectionProviderTrace {
+  const requestRecord = metadataSources[0]
+  const responseRecord = metadataSources[1]
+
+  return {
+    ...readStringFieldEntry(metadataSources, 'providerId', 'providerId'),
+    ...readStringFieldEntry(metadataSources, 'api', 'api'),
+    ...readNumberFieldEntry(metadataSources, 'attempt', 'attempt'),
+    ...readStringFieldEntry(metadataSources, 'trigger', 'trigger'),
+    ...readStringFieldEntry(metadataSources, 'aiSdkTrigger', 'aiSdkTrigger'),
+    ...(hasStream !== undefined ? { hasStream } : {}),
+    requestKeys: requestRecord ? Object.keys(requestRecord).sort() : [],
+    responseKeys: responseRecord ? Object.keys(responseRecord).sort() : []
+  }
+}
+
+function createInspectionTimeline(options: {
+  status: InspectionStatus
+  error: InspectionErrorSummary | null
+  request: unknown
+  response: unknown
+  retries: readonly InspectionRetryRecord[]
+  events?: readonly InspectionTimelineEventInput[]
+  timestamp: string
+  hasStream: boolean | undefined
+}): InspectionTimelineEvent[] {
+  const events: InspectionTimelineEvent[] = []
+  const requestAttempt = readNumberField(options.request, 'attempt')
+  const responseAttempt = readNumberField(options.response, 'attempt')
+
+  if (options.request !== null) {
+    events.push({
+      kind: 'request',
+      label: 'request prepared',
+      timestamp: options.timestamp,
+      status: options.status,
+      ...(requestAttempt !== undefined ? { attempt: requestAttempt } : {})
+    })
+  }
+
+  for (const retry of options.retries) {
+    events.push({
+      kind: 'retry',
+      label: `retry attempt ${retry.attempt}`,
+      timestamp: retry.timestamp,
+      attempt: retry.attempt,
+      category: retry.error.category,
+      message: retry.error.message,
+      ...(retry.delayMs !== undefined ? { metadata: { delayMs: retry.delayMs } } : {})
+    })
+  }
+
+  if (options.response !== null) {
+    events.push({
+      kind: 'response',
+      label: options.hasStream === false ? 'response received without stream' : 'response received',
+      timestamp: options.timestamp,
+      status: options.status,
+      ...(responseAttempt !== undefined ? { attempt: responseAttempt } : {})
+    })
+  }
+
+  for (const event of options.events ?? []) {
+    events.push(normalizeTimelineEvent(event, options.timestamp))
+  }
+
+  if (options.error) {
+    events.push({
+      kind: 'error',
+      label: options.error.category,
+      timestamp: options.timestamp,
+      category: options.error.category,
+      message: options.error.message
+    })
+  }
+
+  if (!events.length && options.status !== 'idle') {
+    events.push({
+      kind: 'status',
+      label: `status ${options.status}`,
+      timestamp: options.timestamp,
+      status: options.status
+    })
+  }
+
+  return sortTimeline(events)
+}
+
+function normalizeTimelineEvent(
+  event: InspectionTimelineEventInput,
+  fallbackTimestamp: string
+): InspectionTimelineEvent {
+  return {
+    ...event,
+    timestamp: normalizeTimestamp(event.timestamp ?? fallbackTimestamp)
+  }
+}
+
+function normalizeRetryRecords(
+  retries: readonly InspectionRetryRecordInput[] | undefined,
+  fallbackTimestamp: string
+): InspectionRetryRecord[] {
+  return (retries ?? []).map((retry) => {
+    const error = isInspectionErrorSummary(retry.error)
+      ? retry.error
+      : (classifyInspectionError(retry.error) ?? {
+          category: 'unknown',
+          message: 'Unknown retry error',
+          retryable: false,
+          hasCause: false
+        })
+    return {
+      attempt: retry.attempt,
+      ...(retry.maxRetries !== undefined ? { maxRetries: retry.maxRetries } : {}),
+      ...(retry.delayMs !== undefined ? { delayMs: retry.delayMs } : {}),
+      error,
+      timestamp: normalizeTimestamp(retry.timestamp ?? fallbackTimestamp)
+    }
+  })
+}
+
+function sortTimeline(events: InspectionTimelineEvent[]): InspectionTimelineEvent[] {
+  return events
+    .map((event, index) => ({ event, index }))
+    .sort((a, b) => {
+      const time = Date.parse(a.event.timestamp) - Date.parse(b.event.timestamp)
+      return time || a.index - b.index
+    })
+    .map(({ event }) => event)
+}
+
 function normalizeTimestamp(value: Date | string | number | undefined): string {
   if (value instanceof Date) return value.toISOString()
   if (typeof value === 'string') return new Date(value).toISOString()
@@ -179,6 +443,50 @@ function readStringValue(value: unknown, key: string): string | undefined {
   if (!isRecord(value)) return undefined
   const field = value[key]
   return typeof field === 'string' ? field : undefined
+}
+
+function isInspectionErrorSummary(value: unknown): value is InspectionErrorSummary {
+  return (
+    isRecord(value) &&
+    typeof value.category === 'string' &&
+    typeof value.message === 'string' &&
+    typeof value.retryable === 'boolean' &&
+    typeof value.hasCause === 'boolean'
+  )
+}
+
+function sanitizeHeaders(headers: unknown, redactedHeaders: readonly string[]): [string, string][] {
+  const redacted = new Set(redactedHeaders.map((header) => header.toLowerCase()))
+  return headerEntries(headers).map(([name, value]) => [
+    name,
+    redacted.has(name.toLowerCase()) ? '[redacted]' : value
+  ])
+}
+
+function headerEntries(headers: unknown): [string, string][] {
+  if (!headers) return []
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    return [...headers.entries()]
+  }
+  if (Array.isArray(headers)) {
+    return headers.flatMap((entry) => {
+      if (!Array.isArray(entry) || entry.length < 2) return []
+      const [name, value] = entry
+      return typeof name === 'string' ? [[name, String(value)] as [string, string]] : []
+    })
+  }
+  if (!isRecord(headers)) return []
+  return Object.entries(headers).flatMap(([name, value]) =>
+    value === undefined ? [] : ([[name, String(value)]] as [string, string][])
+  )
+}
+
+function formatCurlBody(body: unknown): string {
+  return typeof body === 'string' ? body : JSON.stringify(body)
+}
+
+function quoteShell(value: string): string {
+  return `'${value.split("'").join("'\"'\"'")}'`
 }
 
 function readStringFieldEntry(
