@@ -97,8 +97,14 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
     extraHeaders
   )
 
+  const trimTrailingSlashes = (value: string): string => {
+    let end = value.length
+    while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1
+    return value.slice(0, end)
+  }
+
   const joinUrl = (base: string, path: string): string => {
-    const b = base.replace(/\/+$/, '')
+    const b = trimTrailingSlashes(base)
     const p = path.startsWith('/') ? path : `/${path}`
     return `${b}${p}`
   }
