@@ -513,7 +513,7 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 ## 项目状态
 
-这是 **v0.5.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
+这是 **v0.6.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
 composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
 质量门禁。下一步重点是更清晰的调试检查、更多 Provider 覆盖和生产级增强。功能规划放在
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub

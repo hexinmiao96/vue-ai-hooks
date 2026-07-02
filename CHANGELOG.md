@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-02
+
+### Added
+
+- Added public `classifyInspectionError()` and `inspectRequestTrace()` helpers
+  for render-safe request inspection snapshots that combine status, error,
+  `lastRequest`, and `lastResponse` into one support-friendly shape.
+- Added English and Chinese inspection helper docs, reference type docs, roadmap
+  docs, public API checks, dist checks, and docs UX guardrails for the new
+  inspection surface.
+
+### Changed
+
+- README roadmap links now use GitHub URLs so npm package README links stay
+  valid without widening the published package file list.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.5.0] - 2026-07-01
 
 ### Added
