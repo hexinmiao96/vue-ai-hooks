@@ -16,6 +16,7 @@ npm install vue-ai-hooks
 | -------------------------------- | ----------------------------------------------------------------- |
 | See the UI without provider keys | Run the [local tool approval demo](#run-a-demo-without-api-keys)  |
 | Pick the right demo by job       | Read [Task-oriented demos](/guide/task-demos)                     |
+| Try the React migration entry    | Run the [React chat quickstart](#run-a-demo-without-api-keys)     |
 | Compare library fit              | Read [Choosing vue-ai-hooks](/guide/choosing)                     |
 | Upgrade from v0.3.x              | Read the [v0.4.0 upgrade guide](/guide/upgrade-0.4)               |
 | Upgrade from v0.2.1              | Read the [v0.3.0 upgrade guide](/guide/upgrade-0.3)               |
@@ -39,6 +40,15 @@ Open the local URL printed by Vite, then click **Run approval demo**. When no
 provider is selected and no real `VITE_OPENAI_KEY` is present, the chat example
 falls back to `local-tools`, shows a pending `chargeCard` tool call, and
 continues after `approveToolCall()` or `rejectToolCall()`.
+
+To verify the optional React entry with the same no-key provider contract, run:
+
+```bash
+pnpm example:react-chat
+```
+
+The React demo streams from a deterministic `DirectChatTransport` and shows
+`lastRequest`, `lastResponse`, usage, and stream data beside the chat panel.
 
 ## Security note before real providers
 

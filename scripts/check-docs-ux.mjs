@@ -54,6 +54,7 @@ const files = {
   examplesEnvExample: readFileSync('examples/.env.example', 'utf8'),
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
+  reactChatExample: readFileSync('examples/react-chat/App.tsx', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   videoExample: readFileSync('examples/video/App.vue', 'utf8'),
@@ -132,6 +133,7 @@ for (const snippet of [
   '[Task-oriented demos](/guide/task-demos)',
   '[Production checklist](/guide/production-checklist)',
   'pnpm example:chat',
+  'pnpm example:react-chat',
   'falls back to `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   'The browser sends provider-agnostic JSON to your own `/api/chat` route',
@@ -160,6 +162,7 @@ for (const snippet of [
   '[任务型 Demo](/zh/guide/task-demos)',
   '[生产检查清单](/zh/guide/production-checklist)',
   'pnpm example:chat',
+  'pnpm example:react-chat',
   '自动回退到 `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
   '浏览器会把框架无关的 JSON 发给你自己的 `/api/chat` 路由',
@@ -189,6 +192,8 @@ for (const snippet of [
   'AI SDK UI stream migration',
   'Production deployment readiness',
   'pnpm example:chat',
+  'pnpm example:react-chat',
+  'examples/react-chat/App.tsx',
   'pnpm example:proxy-server',
   'readUIMessageStream()',
   '[Production checklist](/guide/production-checklist)'
@@ -204,6 +209,8 @@ for (const snippet of [
   'AI SDK UI stream 迁移',
   '生产部署准备',
   'pnpm example:chat',
+  'pnpm example:react-chat',
+  'examples/react-chat/App.tsx',
   'pnpm example:proxy-server',
   'readUIMessageStream()',
   '[生产检查清单](/zh/guide/production-checklist)'
@@ -277,6 +284,16 @@ expect(
   'Chat example must fall back to DirectChatTransport-backed local-tools when no real OpenAI key is configured'
 )
 expect(
+  files.reactChatExample.includes("from 'vue-ai-hooks/react'") &&
+    files.reactChatExample.includes('DirectChatTransport') &&
+    files.reactChatExample.includes("'react-local'") &&
+    files.reactChatExample.includes('localReactStream') &&
+    files.packageJson.includes('"example:react-chat"') &&
+    files.packageJson.includes('"example:react-chat:build"') &&
+    files.packageJson.includes('pnpm example:react-chat:build'),
+  'React chat example must be runnable without provider keys and included in the examples build gate'
+)
+expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`useCompletion`, or `useObject` from `vue-ai-hooks/react`') &&
@@ -299,6 +316,10 @@ expect(
     files.zhReadme.includes('`examples/rerank`') &&
     files.readme.includes('`examples/object`') &&
     files.zhReadme.includes('`examples/object`') &&
+    files.readme.includes('`examples/react-chat`') &&
+    files.zhReadme.includes('`examples/react-chat`') &&
+    files.readme.includes('pnpm example:react-chat') &&
+    files.zhReadme.includes('pnpm example:react-chat') &&
     files.readme.includes('/docs/guide/choosing.md') &&
     files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
     files.readme.includes('/docs/guide/task-demos.md') &&
@@ -373,6 +394,9 @@ for (const snippet of [
   '# React hooks',
   '`useChat`, `useCompletion`, and `useObject`',
   'import { useChat, useCompletion, useObject } from',
+  'pnpm example:react-chat',
+  'DirectChatTransport',
+  'examples/react-chat/App.tsx',
   'CompletionBox',
   'ObjectBox',
   '`useCompletion(options)` accepts `UseReactCompletionOptions`',
@@ -392,6 +416,9 @@ for (const snippet of [
   '`useCompletion`',
   '`useObject`',
   'import { useChat, useCompletion, useObject } from',
+  'pnpm example:react-chat',
+  'DirectChatTransport',
+  'examples/react-chat/App.tsx',
   'CompletionBox',
   'ObjectBox',
   '`useCompletion(options)` 接收 `UseReactCompletionOptions`',

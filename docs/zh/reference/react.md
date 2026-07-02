@@ -10,6 +10,16 @@ transport、请求追踪和 stream 格式。
 pnpm add vue-ai-hooks react
 ```
 
+如果要在仓库里直接运行不需要 Provider key 的 quickstart：
+
+```bash
+pnpm example:react-chat
+```
+
+demo 源码在 `examples/react-chat/App.tsx`。它使用 `DirectChatTransport`
+和确定性的本地 stream，然后渲染 `lastRequest`、`lastResponse`、usage 和自定义
+stream data，方便你在接真实 `/api/chat` 路由前检查 React 请求生命周期。
+
 ```tsx
 import { useChat, useCompletion } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'

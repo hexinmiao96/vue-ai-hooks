@@ -76,7 +76,7 @@ const requiredEslintConfigSnippets = [
   "ignores: ['dist/**', 'node_modules/**', 'coverage/**', 'output/**']",
   'js.configs.recommended',
   "...vue.configs['flat/recommended']",
-  "files: ['**/*.ts']",
+  "files: ['**/*.{ts,tsx}']",
   'parser: tsParser',
   "files: ['**/*.vue']",
   'parser: vueParser',
@@ -313,9 +313,10 @@ expect(
 )
 expect(
   tsconfig.include?.includes('tests/**/*.ts') &&
+    tsconfig.include?.includes('examples/**/*.tsx') &&
     tsconfig.include?.includes('examples/**/*.vue') &&
     tsconfig.include?.includes('docs/.vitepress/config.ts'),
-  'tsconfig.json must type-check tests, examples, and docs config'
+  'tsconfig.json must type-check tests, TSX examples, Vue examples, and docs config'
 )
 expect(
   buildTsconfig.extends === './tsconfig.json',

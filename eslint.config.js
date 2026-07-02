@@ -17,11 +17,12 @@ export default [
   js.configs.recommended,
   ...vue.configs['flat/recommended'],
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         ecmaVersion: 2022,
+        ecmaFeatures: { jsx: true },
         sourceType: 'module'
       },
       globals: sharedGlobals
@@ -41,7 +42,7 @@ export default [
     }
   },
   {
-    files: ['**/*.{ts,vue}'],
+    files: ['**/*.{ts,tsx,vue}'],
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',

@@ -623,9 +623,10 @@ Before production rollout, use the
 
 ## Examples
 
-Ten runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Eleven runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
+- `examples/react-chat` — no-key React chat quickstart with `vue-ai-hooks/react`, `DirectChatTransport`, and request trace state
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
@@ -642,11 +643,17 @@ To run them:
 pnpm install
 cp .env.example .env
 pnpm example:chat
+pnpm example:react-chat
 ```
 
 `examples/chat` defaults to the no-key `local-tools` provider backed by
 `DirectChatTransport` unless you select a provider or configure a real
 `VITE_OPENAI_KEY`.
+
+`examples/react-chat` uses the same no-key transport pattern through
+`vue-ai-hooks/react`, so React consumers can verify streaming state, `stop()`,
+`lastRequest`, `lastResponse`, usage, and stream data before wiring a real
+`/api/chat` route.
 
 To run the browser chat example through the local proxy template:
 
@@ -678,13 +685,12 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.10.1** — a working foundation, not feature-complete. The core
+This is **v0.11.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
-This release starts the production-hardening line with richer inspection
-timeline, retry, provider trace, copyable curl helpers, task-oriented demo
-guides, and production rollout checklists. Next focus: provider recipes and
-agent-event adapter recipes. Feature
+This release turns the React chat quickstart into a runnable no-key example
+while keeping inspection, task-oriented demos, and production rollout guidance
+visible. Next focus: provider recipes and agent-event adapter recipes. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

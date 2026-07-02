@@ -38,9 +38,12 @@ planning.
 
 ### 0.11.x
 
-- Deepen task-oriented demo/docs flows with more runnable screens: React chat
-  quickstart, own `/api/chat` proxy, AI SDK UI stream migration, and production
-  deployment walkthroughs.
+- Shipped in 0.11.0: a runnable no-key React chat quickstart with
+  `vue-ai-hooks/react`, `DirectChatTransport`, request trace state, and
+  repository build coverage.
+- Continue deepening task-oriented demo/docs flows with more runnable screens:
+  own `/api/chat` proxy, AI SDK UI stream migration, and production deployment
+  walkthroughs.
 - Keep demos runnable without provider keys while making each demo explain the
   product job it covers.
 
