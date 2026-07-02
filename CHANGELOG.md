@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-07-02
+
+### Added
+
+- Added opt-in OpenAI-compatible upstream forwarding to
+  `examples/proxy-server` for chat, completion, and embedding routes while
+  keeping no-key local demo behavior as the default.
+- Added English and Chinese proxy recipe guides covering OpenAI-compatible
+  gateways, Ollama, vLLM, custom endpoint paths, and production proxy checks.
+
+### Changed
+
+- Updated README, getting-started, Provider, SSR, VitePress navigation, docs UX
+  checks, and proxy checks so production proxy onboarding stays visible and
+  verified.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.7.0] - 2026-07-02
 
 ### Added
