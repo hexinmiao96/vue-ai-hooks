@@ -1,6 +1,6 @@
 {
   "name": "vue-ai-hooks",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Vue 3 Composable library for building AI-powered applications, with optional React chat, completion, and object entries. useChat, useCompletion, useEmbedding, useImage, useVideo, useSpeech, useTranscription, useRerank, useObject — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "packageManager": "pnpm@8.15.9",

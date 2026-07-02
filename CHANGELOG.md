@@ -7,12 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-02
+
 ### Added
 
 - Added React `useObject` support through `vue-ai-hooks/react`, including JSON
   Schema response formats, partial object state, request traces, proxy fallback,
   retry-before-first-chunk behavior, form helpers, tests, and English/Chinese
   reference docs.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
 
 ## [0.8.0] - 2026-07-02
 
