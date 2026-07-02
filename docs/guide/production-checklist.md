@@ -51,6 +51,8 @@ storage, and operations.
 
 - Use `persist` for local-only chat history.
 - Use `serializeMessages()` and `deserializeMessages()` for server storage.
+- Follow the [server storage recipe](/guide/server-storage) when chats need
+  multi-device history, team handoff, or audit retention.
 - Validate imported history with `validateMessages()` or
   `safeValidateMessages()` before hydration.
 - Version persisted data when changing message shape.
@@ -81,7 +83,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 4. Send a chat request, abort it, then retry.
 5. Trigger one provider error and confirm the UI keeps input editable.
 6. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
-7. Confirm logs have trace ids but no provider API keys.
+7. Reload one server-stored thread and confirm messages restore with `Date`
+   values intact.
+8. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 
