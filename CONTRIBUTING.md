@@ -44,6 +44,7 @@ pnpm metadata:check # verify package metadata, README, docs navigation, and cont
 pnpm community:check # verify CODEOWNERS, issue/PR templates, support, security, and conduct files
 pnpm workflows:check # verify CI, CodeQL, and npm publish workflow guardrails
 pnpm release:cadence # reject a second npm version in the same Asia/Shanghai day
+pnpm release:status # print npm registry status and the current release window
 pnpm api:check   # verify public exports, reference docs, and VitePress guide/reference navigation
 pnpm docs:ux:check # verify docs onboarding paths, examples language routing, and demo navigation
 pnpm links:check # verify local Markdown links
@@ -145,10 +146,12 @@ Then create and push a tag matching `package.json`, for example `v0.14.0`.
 
 Release checklist:
 
-1. Update `CHANGELOG.md` and the `package.json` version.
-2. Run `pnpm release:check`; it includes the daily release cadence gate.
-3. Create a tag that exactly matches the package version, for example `v0.14.0`.
-4. Push the tag and confirm the GitHub Actions publish workflow completes.
+1. Run `pnpm release:status` and confirm the next npm version is allowed by the
+   daily release cadence.
+2. Update `CHANGELOG.md` and the `package.json` version.
+3. Run `pnpm release:check`; it includes the daily release cadence gate.
+4. Create a tag that exactly matches the package version, for example `v0.14.0`.
+5. Push the tag and confirm the GitHub Actions publish workflow completes.
    The publish workflow intentionally runs only from `v*` tags; there is no
    manual publish dispatch path.
 

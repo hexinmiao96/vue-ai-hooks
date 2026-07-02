@@ -47,6 +47,12 @@ The published npm version may lag behind `main` when the daily release cadence
 has already been used. In that case, treat `main` as the next release candidate
 only after CI, CodeQL, OpenSSF Scorecard, and `pnpm production:readiness` pass.
 
+Check the registry and release window without publishing:
+
+```bash
+pnpm release:status
+```
+
 Do not publish another npm version on the same Asia/Shanghai calendar day. The
 release cadence check is part of the local, CI, and publish paths.
 

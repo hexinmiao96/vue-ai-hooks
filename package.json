@@ -92,6 +92,7 @@
     "community:check": "node scripts/check-community-health.mjs",
     "workflows:check": "node scripts/check-workflows.mjs",
     "release:cadence": "node scripts/check-release-cadence.mjs",
+    "release:status": "node scripts/release-status.mjs",
     "docs:ux:check": "node scripts/check-docs-ux.mjs",
     "proxy:check": "node scripts/check-proxy-example.mjs",
     "threaded-chat:check": "node scripts/check-threaded-chat-demo.mjs",

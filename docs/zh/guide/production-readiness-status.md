@@ -40,6 +40,12 @@ node scripts/production-readiness-local.mjs
 
 当当天已经发过 npm 版本时，npm 上的版本可能落后于 `main`。这种情况下，只有 CI、CodeQL、OpenSSF Scorecard 和 `pnpm production:readiness` 都通过后，才把 `main` 当作下一次发布候选。
 
+不发布、不改版本，只检查 registry 和发布窗口：
+
+```bash
+pnpm release:status
+```
+
 不要在同一个 Asia/Shanghai 自然日再次发布 npm 版本。release cadence 检查已经接入本地、CI 和 publish 路径。
 
 ## 剩余非目标

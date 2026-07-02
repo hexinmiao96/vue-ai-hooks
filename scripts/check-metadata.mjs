@@ -426,6 +426,10 @@ expect(
   'release:cadence must verify the daily npm release limit'
 )
 expect(
+  packageJson.scripts?.['release:status'] === 'node scripts/release-status.mjs',
+  'release:status must report npm registry state and the release window'
+)
+expect(
   packageJson.scripts?.['release:check'] ===
     'pnpm security:audit && pnpm release:cadence && pnpm check',
   'release:check must run security audit, release cadence, and pnpm check'
@@ -704,6 +708,10 @@ expect(
 expect(
   contributing.includes('pnpm release:cadence'),
   'CONTRIBUTING.md must document the release cadence command'
+)
+expect(
+  contributing.includes('pnpm release:status'),
+  'CONTRIBUTING.md must document the release status command'
 )
 expect(
   normalizedContributing.includes(

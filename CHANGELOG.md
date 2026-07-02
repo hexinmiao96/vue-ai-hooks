@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added a daily release cadence gate so npm publishes are limited to one new
   version per Asia/Shanghai calendar day.
+- Added `release:status`.
 - Added production server storage recipes for tenant-scoped thread indexes,
   message bodies, restore smoke tests, and backend validation boundaries.
 - Added an app-owned `ChatThreadStorageAdapter` contract and HTTP adapter recipe
