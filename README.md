@@ -664,9 +664,11 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 ```
 
 To connect the same template to a real OpenAI-compatible upstream, set
-`PROXY_UPSTREAM_BASE_URL`, `PROXY_UPSTREAM_API_KEY`, and `PROXY_UPSTREAM_MODEL`
-on the Node process. The template keeps those values server-side and normalizes
-chat, completion, and embedding responses back to the browser contract.
+`PROXY_UPSTREAM_BASE_URL`, `PROXY_UPSTREAM_API_KEY`, `PROXY_UPSTREAM_MODEL`,
+`PROXY_UPSTREAM_TIMEOUT_MS`, and `PROXY_UPSTREAM_TRACE_HEADER` on the Node
+process. The template keeps those values server-side, normalizes chat,
+completion, and embedding responses back to the browser contract, and returns
+sanitized retryable errors with trace ids instead of raw upstream error bodies.
 
 The same proxy template also accepts `useChat({ baseURL })`,
 `useCompletion({ baseURL })`, `useEmbedding({ baseURL })`, and
@@ -685,12 +687,13 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.11.0** — a working foundation, not feature-complete. The core
+This is **v0.12.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
-This release turns the React chat quickstart into a runnable no-key example
-while keeping inspection, task-oriented demos, and production rollout guidance
-visible. Next focus: provider recipes and agent-event adapter recipes. Feature
+This release deepens the production proxy recipe with upstream timeout controls,
+trace header propagation, sanitized retryable errors, and clearer
+Ollama/vLLM/private gateway guidance. Next focus: agent-event adapter recipes
+and session/thread persistence. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

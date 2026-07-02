@@ -548,8 +548,10 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 ```
 
 如果要让同一个模板连接真实 OpenAI-compatible 上游，在 Node 进程上设置
-`PROXY_UPSTREAM_BASE_URL`、`PROXY_UPSTREAM_API_KEY` 和 `PROXY_UPSTREAM_MODEL`。
-模板会把这些值留在服务端，并把 chat、completion 和 embedding 响应归一化回浏览器契约。
+`PROXY_UPSTREAM_BASE_URL`、`PROXY_UPSTREAM_API_KEY`、`PROXY_UPSTREAM_MODEL`、
+`PROXY_UPSTREAM_TIMEOUT_MS` 和 `PROXY_UPSTREAM_TRACE_HEADER`。模板会把这些值留在服务端，
+把 chat、completion 和 embedding 响应归一化回浏览器契约，并返回带 trace id 的脱敏
+retryable 错误，而不是原样暴露上游错误体。
 
 同一个代理模板也支持 `useChat({ baseURL })`、`useCompletion({ baseURL })`、
 `useEmbedding({ baseURL })`、`useImage({ baseURL })`、`useVideo({ baseURL })`、`useSpeech({ baseURL })` 和
@@ -565,11 +567,11 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 
 ## 项目状态
 
-这是 **v0.11.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
+这是 **v0.12.0**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
 composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
-质量门禁。本版本把 React chat quickstart 变成可运行的不需要 key 的 demo，同时保持
-inspection、任务型 demo 和生产上线指导可见。下一步重点是 Provider 配方和 agent-event adapter
-配方。功能规划放在
+质量门禁。本版本深化生产 proxy 配方，补上上游 timeout、trace header、脱敏 retryable
+错误，以及更清晰的 Ollama/vLLM/私有网关说明。下一步重点是 agent-event adapter 配方和
+会话/thread 持久化。功能规划放在
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub
 issue 只记录可复现 bug。
 

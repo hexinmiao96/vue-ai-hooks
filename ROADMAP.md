@@ -49,10 +49,14 @@ planning.
 
 ### 0.12.x
 
-- Add provider recipe depth for local model proxy patterns such as Ollama/vLLM
-  and private OpenAI-compatible gateways.
-- Document provider-specific rate-limit, timeout, and observability boundaries
-  as host-application responsibilities.
+- Shipped in 0.12.0: proxy-server upstream timeout controls, trace header
+  propagation, sanitized retryable error responses, and checks that prevent raw
+  upstream error bodies from leaking to browser clients.
+- Shipped in 0.12.0: deeper Ollama, vLLM, and private OpenAI-compatible gateway
+  recipes that mark rate limits, timeout budgets, and observability as
+  host-application responsibilities.
+- Continue adding production deployment walkthroughs only where they keep the
+  browser contract provider-agnostic.
 
 ### Later
 

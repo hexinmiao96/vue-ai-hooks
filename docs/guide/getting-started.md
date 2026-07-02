@@ -152,8 +152,10 @@ When this works, replace the template server with your own `/api/chat`,
 
 To connect that template to a real OpenAI-compatible upstream without exposing
 keys to the browser, set `PROXY_UPSTREAM_BASE_URL`, `PROXY_UPSTREAM_API_KEY`, and
-`PROXY_UPSTREAM_MODEL` on the Node process. See [Proxy recipes](/guide/proxy-recipes)
-for OpenAI, Ollama, vLLM, and production checklist examples.
+`PROXY_UPSTREAM_MODEL` on the Node process. Add `PROXY_UPSTREAM_TIMEOUT_MS` and
+`PROXY_UPSTREAM_TRACE_HEADER` before using the route in production. See
+[Proxy recipes](/guide/proxy-recipes) for OpenAI, Ollama, vLLM, private gateway,
+timeout, trace, and production checklist examples.
 
 ## Using a different provider
 

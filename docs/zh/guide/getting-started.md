@@ -138,7 +138,8 @@ useObject({ baseURL: 'http://127.0.0.1:8787', schema })
 
 如果要让这个模板连接真实 OpenAI-compatible 上游，同时不把 key 暴露到浏览器，
 在 Node 进程上设置 `PROXY_UPSTREAM_BASE_URL`、`PROXY_UPSTREAM_API_KEY` 和
-`PROXY_UPSTREAM_MODEL`。OpenAI、Ollama、vLLM 和生产检查清单见
+`PROXY_UPSTREAM_MODEL`。生产使用前再加上 `PROXY_UPSTREAM_TIMEOUT_MS` 和
+`PROXY_UPSTREAM_TRACE_HEADER`。OpenAI、Ollama、vLLM、私有网关、timeout、trace 和生产检查清单见
 [Proxy 配方](/zh/guide/proxy-recipes)。
 
 ## 使用不同 Provider

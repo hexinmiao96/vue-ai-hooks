@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-02
+
+### Added
+
+- Added upstream proxy timeout and trace-header controls to
+  `examples/proxy-server` through `PROXY_UPSTREAM_TIMEOUT_MS` and
+  `PROXY_UPSTREAM_TRACE_HEADER`.
+- Added sanitized upstream error responses with `code`, `traceId`,
+  `upstreamStatus`, and `retryable` fields for OpenAI-compatible proxy routes.
+
+### Changed
+
+- Expanded proxy example checks to cover upstream trace propagation, timeout
+  handling, retryable HTTP errors, and raw provider error redaction.
+- Deepened English and Chinese proxy recipes for Ollama, vLLM, private
+  OpenAI-compatible gateways, timeout, rate-limit, and observability boundaries.
+- Updated README, environment examples, roadmap, and docs UX checks so the
+  production proxy recipe is visible from npm and docs.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.11.0] - 2026-07-02
 
 ### Added
