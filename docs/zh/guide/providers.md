@@ -38,6 +38,64 @@ openaiCompatible({
 
 和 `openai` 基本一致，但 `baseURL` 是必填项。适用于任何遵循 OpenAI REST 约定的服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 `/v1` shim、vLLM、LiteLLM 等。
 
+### `moonshot`
+
+```ts
+import { moonshot } from 'vue-ai-hooks'
+
+moonshot({
+  apiKey: 'sk-...',
+  defaultModel: 'kimi-k2'
+})
+```
+
+`moonshot` 默认指向 Kimi/Moonshot 的 OpenAI-compatible API：
+`https://api.moonshot.ai/v1`。它不会内置默认模型，因为模型权限可能因账号而异；请传入
+`defaultModel`，或在单次请求中传 `model`。
+
+### `zhipu`
+
+```ts
+import { zhipu } from 'vue-ai-hooks'
+
+zhipu({
+  apiKey: '...',
+  endpoint: 'bigmodel',
+  defaultModel: 'glm-4.5'
+})
+```
+
+`zhipu` 覆盖 BigModel 和 Z.ai 的 OpenAI-compatible 端点。`endpoint: 'bigmodel'`
+指向 `https://open.bigmodel.cn/api/paas/v4`，`endpoint: 'z-ai'` 指向
+`https://api.z.ai/api/paas/v4`，`*-coding` 变体用于 GLM Coding Plan 路由。私有网关仍可通过
+`baseURL` 覆盖。
+
+### `ollama`
+
+```ts
+import { ollama } from 'vue-ai-hooks'
+
+ollama({
+  defaultModel: 'qwen3:8b'
+})
+```
+
+`ollama` 默认调用本地 OpenAI compatibility server：`http://localhost:11434/v1`。
+OpenAI-compatible 协议仍会发送 API key，因此 helper 会提供一个无害的默认值 `ollama`。
+
+### `vllm`
+
+```ts
+import { vllm } from 'vue-ai-hooks'
+
+vllm({
+  defaultModel: 'served-model'
+})
+```
+
+`vllm` 默认调用本地 OpenAI-compatible server：`http://localhost:8000/v1`。如果 vLLM
+在网关之后，或服务端启用了鉴权，可以覆盖 `baseURL` 和 `apiKey`。
+
 ### `deepseek`
 
 ```ts

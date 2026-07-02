@@ -134,9 +134,13 @@ import {
   anthropic,
   deepseek,
   gemini,
+  moonshot,
+  ollama,
   openaiCompatible,
   openrouter,
-  proxyProvider
+  proxyProvider,
+  vllm,
+  zhipu
 } from 'vue-ai-hooks'
 
 // Anthropic Claude
@@ -159,8 +163,28 @@ const { messages: messages4, append: append4 } = useChat({
   provider: gemini({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
 })
 
-// 其他 OpenAI-compatible 服务（Moonshot、智谱、Ollama、vLLM 等）
+// 通过 Moonshot/Kimi OpenAI-compatible 端点调用
 const { messages: messages5, append: append5 } = useChat({
+  provider: moonshot({ apiKey: import.meta.env.VITE_MOONSHOT_API_KEY })
+})
+
+// 智谱 BigModel 或 Z.ai 端点预设
+const { messages: messages6, append: append6 } = useChat({
+  provider: zhipu({ apiKey: import.meta.env.VITE_ZHIPU_API_KEY, endpoint: 'bigmodel' })
+})
+
+// 本地 Ollama OpenAI compatibility server
+const { messages: messages7, append: append7 } = useChat({
+  provider: ollama({ defaultModel: 'qwen3:8b' })
+})
+
+// 本地或网关后的 vLLM OpenAI-compatible server
+const { messages: messages8, append: append8 } = useChat({
+  provider: vllm({ defaultModel: 'served-model' })
+})
+
+// 其他 OpenAI-compatible 服务
+const { messages: messages9, append: append9 } = useChat({
   provider: openaiCompatible({
     apiKey: 'sk-...',
     baseURL: 'https://gateway.example.com/v1'
@@ -168,7 +192,7 @@ const { messages: messages5, append: append5 } = useChat({
 })
 
 // 生产环境浏览器应用通过自己的后端或边缘路由调用
-const { messages: messages6, append: append6 } = useChat({
+const { messages: messages10, append: append10 } = useChat({
   provider: proxyProvider({
     chatUrl: '/api/ai/chat',
     headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),

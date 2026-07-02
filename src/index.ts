@@ -162,6 +162,10 @@ export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/ope
 // OpenRouter is exposed as a first-class provider entry that keeps OpenAI-compatible
 // request behavior while injecting OpenRouter-specific headers automatically.
 export { openrouter, type OpenRouterConfig } from './providers/openrouter'
+export { moonshot, type MoonshotConfig } from './providers/moonshot'
+export { zhipu, type ZhipuConfig, type ZhipuEndpoint } from './providers/zhipu'
+export { ollama, type OllamaConfig } from './providers/ollama'
+export { vllm, type VllmConfig } from './providers/vllm'
 export { gemini, type GeminiConfig } from './providers/gemini'
 export { deepseek, type DeepSeekConfig } from './providers/deepseek'
 export {

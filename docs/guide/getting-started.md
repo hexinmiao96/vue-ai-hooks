@@ -149,9 +149,13 @@ import {
   anthropic,
   deepseek,
   gemini,
+  moonshot,
+  ollama,
   openaiCompatible,
   openrouter,
-  proxyProvider
+  proxyProvider,
+  vllm,
+  zhipu
 } from 'vue-ai-hooks'
 
 // Anthropic Claude
@@ -174,8 +178,28 @@ const { messages: messages4, append: append4 } = useChat({
   provider: gemini({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
 })
 
-// Any other OpenAI-compatible service (Moonshot, Zhipu, Ollama, vLLM, ...)
+// Moonshot/Kimi via its OpenAI-compatible endpoint
 const { messages: messages5, append: append5 } = useChat({
+  provider: moonshot({ apiKey: import.meta.env.VITE_MOONSHOT_API_KEY })
+})
+
+// Zhipu BigModel or Z.ai endpoint presets
+const { messages: messages6, append: append6 } = useChat({
+  provider: zhipu({ apiKey: import.meta.env.VITE_ZHIPU_API_KEY, endpoint: 'bigmodel' })
+})
+
+// Local Ollama OpenAI compatibility server
+const { messages: messages7, append: append7 } = useChat({
+  provider: ollama({ defaultModel: 'qwen3:8b' })
+})
+
+// Local or gateway-backed vLLM OpenAI-compatible server
+const { messages: messages8, append: append8 } = useChat({
+  provider: vllm({ defaultModel: 'served-model' })
+})
+
+// Any other OpenAI-compatible service
+const { messages: messages9, append: append9 } = useChat({
   provider: openaiCompatible({
     apiKey: 'sk-...',
     baseURL: 'https://gateway.example.com/v1'
@@ -183,7 +207,7 @@ const { messages: messages5, append: append5 } = useChat({
 })
 
 // Production browser path through your own backend or edge route
-const { messages: messages6, append: append6 } = useChat({
+const { messages: messages10, append: append10 } = useChat({
   provider: proxyProvider({
     chatUrl: '/api/ai/chat',
     headers: () => ({ Authorization: `Bearer ${getSessionToken()}` }),

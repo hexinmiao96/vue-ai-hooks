@@ -26,6 +26,8 @@ import {
   isStepCount,
   jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
+  moonshot,
+  ollama,
   openai,
   openaiCompatible,
   openrouter,
@@ -42,6 +44,7 @@ import {
   toChatChunks,
   validateMessages,
   validateUIMessages,
+  vllm,
   useChat,
   useCompletion,
   useEmbedding,
@@ -52,7 +55,8 @@ import {
   useSpeech,
   useVideo,
   useTranscription,
-  usePersist
+  usePersist,
+  zhipu
 } from 'vue-ai-hooks'
 import { useChat as useReactChat } from 'vue-ai-hooks/react'
 import type {
@@ -134,6 +138,8 @@ import type {
   MessageSourcePart,
   MessageTextPart,
   MessageToolPart,
+  MoonshotConfig,
+  OllamaConfig,
   OpenAiLikeConfig,
   OpenRouterConfig,
   ObjectFinishInfo,
@@ -188,6 +194,7 @@ import type {
   VideoGenerationRequestInfo,
   VideoGenerationResponseInfo,
   VideoGenerationResult,
+  VllmConfig,
   TranscriptionRequest,
   TranscriptionRequestInfo,
   TranscriptionResponseInfo,
@@ -216,6 +223,8 @@ import type {
   ToolCallHandler,
   ToolCallHandlerContext,
   ToolResultHandlerContext,
+  ZhipuConfig,
+  ZhipuEndpoint,
   ServerResponseLike,
   UIMessageStreamPart,
   UIMessageStreamParser,
@@ -275,6 +284,10 @@ describe('public API types', () => {
   it('exports provider factories as ChatProvider-compatible values', () => {
     expectTypeOf(openai({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(openrouter({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(moonshot({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(zhipu({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(ollama()).toEqualTypeOf<ChatProvider>()
+    expectTypeOf(vllm()).toEqualTypeOf<ChatProvider>()
     expectTypeOf(gemini({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(deepseek({ apiKey: 'test-key' })).toEqualTypeOf<ChatProvider>()
     expectTypeOf(proxyProvider()).toEqualTypeOf<ChatProvider>()
@@ -291,6 +304,30 @@ describe('public API types', () => {
     expectTypeOf<OpenRouterConfig>().toMatchTypeOf<{
       apiKey: string
       siteUrl?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<MoonshotConfig>().toMatchTypeOf<{
+      apiKey: string
+      baseURL?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<ZhipuConfig>().toMatchTypeOf<{
+      apiKey: string
+      endpoint?: ZhipuEndpoint
+      baseURL?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<ZhipuEndpoint>().toEqualTypeOf<
+      'bigmodel' | 'z-ai' | 'bigmodel-coding' | 'z-ai-coding'
+    >()
+    expectTypeOf<OllamaConfig>().toMatchTypeOf<{
+      apiKey?: string
+      baseURL?: string
+      timeoutMs?: number
+    }>()
+    expectTypeOf<VllmConfig>().toMatchTypeOf<{
+      apiKey?: string
+      baseURL?: string
       timeoutMs?: number
     }>()
     expectTypeOf<GeminiConfig>().toMatchTypeOf<{
@@ -470,6 +507,10 @@ describe('public API types', () => {
 
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')
     expect(openrouter({ apiKey: 'test-key' }).id).toBe('openrouter')
+    expect(moonshot({ apiKey: 'test-key' }).id).toBe('moonshot')
+    expect(zhipu({ apiKey: 'test-key' }).id).toBe('zhipu')
+    expect(ollama().id).toBe('ollama')
+    expect(vllm().id).toBe('vllm')
     expect(gemini({ apiKey: 'test-key' }).id).toBe('gemini')
     expect(deepseek({ apiKey: 'test-key' }).id).toBe('deepseek')
     expect(proxyProvider().id).toBe('proxy')

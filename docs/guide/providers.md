@@ -46,6 +46,67 @@ Identical to `openai` but takes a `baseURL` as a required argument. Works with a
 service that follows the OpenAI REST conventions — DeepSeek, Moonshot, Zhipu,
 Ollama's `/v1` shim, vLLM, LiteLLM, etc.
 
+### `moonshot`
+
+```ts
+import { moonshot } from 'vue-ai-hooks'
+
+moonshot({
+  apiKey: 'sk-...',
+  defaultModel: 'kimi-k2'
+})
+```
+
+`moonshot` targets Kimi/Moonshot's OpenAI-compatible API at
+`https://api.moonshot.ai/v1`. It does not choose a default model for you because
+model access can differ by account, so pass `defaultModel` or a per-request
+`model`.
+
+### `zhipu`
+
+```ts
+import { zhipu } from 'vue-ai-hooks'
+
+zhipu({
+  apiKey: '...',
+  endpoint: 'bigmodel',
+  defaultModel: 'glm-4.5'
+})
+```
+
+`zhipu` covers BigModel and Z.ai OpenAI-compatible endpoints. Use `endpoint:
+'bigmodel'` for `https://open.bigmodel.cn/api/paas/v4`, `endpoint: 'z-ai'` for
+`https://api.z.ai/api/paas/v4`, or the `*-coding` variants for GLM Coding Plan
+routes. You can still pass `baseURL` for a private gateway.
+
+### `ollama`
+
+```ts
+import { ollama } from 'vue-ai-hooks'
+
+ollama({
+  defaultModel: 'qwen3:8b'
+})
+```
+
+`ollama` targets the local OpenAI compatibility server at
+`http://localhost:11434/v1`. The OpenAI-compatible protocol still sends an API
+key, so the helper supplies a harmless default key of `ollama`.
+
+### `vllm`
+
+```ts
+import { vllm } from 'vue-ai-hooks'
+
+vllm({
+  defaultModel: 'served-model'
+})
+```
+
+`vllm` targets a local OpenAI-compatible server at `http://localhost:8000/v1`.
+Override `baseURL` and `apiKey` when vLLM is behind a gateway or when the server
+was launched with authentication.
+
 ### `deepseek`
 
 ```ts
