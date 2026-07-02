@@ -1,0 +1,213 @@
+---
+title: 服务端存储配方
+description: 把 vue-ai-hooks 的 thread 索引和聊天消息保存到自有后端，同时不把 Provider key 放进浏览器。
+---
+
+# 服务端存储配方
+
+当 localStorage 不够用时使用这份配方：多设备历史、团队收件箱、审计轨迹、客服队列或合规留存。这个包只负责浏览器状态和 stream 契约；认证、tenant 隔离、数据库写入和配额仍然由你的应用负责。
+
+生产里最稳的形态是拆成两份存储：
+
+- **Thread index**：来自 `useChatThreads()` 的轻量侧边栏记录。
+- **Message body**：每个 thread 对应一份来自 `useChat()` 的序列化 `Message[]`。
+
+不要在这两份 payload 里保存 Provider 凭据或原始上游响应。
+
+## 最小路由契约
+
+| 路由                           | 用途                             | Payload helper                                  |
+| ------------------------------ | -------------------------------- | ----------------------------------------------- |
+| `GET /api/chat/threads`        | 加载侧边栏索引和 active thread。 | 取回后用 `deserializeChatThreadsState()`。      |
+| `PUT /api/chat/threads`        | 保存标题、归档和 active 状态。   | 写入前用 `serializeChatThreadsState()`。        |
+| `GET /api/chat/threads/:id`    | 加载一个 thread 的消息。         | 取回后用 `deserializeMessages()`。              |
+| `PUT /api/chat/threads/:id`    | 保存一个 thread 的消息。         | 写入前用 `serializeMessages()`。                |
+| `POST /api/chat`               | 流式返回下一条 assistant 回复。  | 发送 `threadId`，返回 `ChatChunk` 或 UI parts。 |
+| `DELETE /api/chat/threads/:id` | 服务端删除或归档 thread。        | mutation 后返回归一化 thread index。            |
+
+用 `PUT` 表达幂等保存。如果多个浏览器标签页可能同时编辑同一个 thread，加上 `If-Match`
+或单调递增的 `revision`。
+
+## 浏览器接线
+
+在挂载聊天界面前先加载服务端快照。在路由型应用里，这通常放在 route loader、页面 async
+setup，或能渲染 loading 状态的父组件里。
+
+```ts
+import {
+  deserializeChatThreadsState,
+  deserializeMessages,
+  serializeChatThreadsState,
+  serializeMessages,
+  useChat,
+  useChatThreads,
+  type Message,
+  type SerializedChatThreadsState,
+  type SerializedMessage
+} from 'vue-ai-hooks'
+
+async function loadThreadIndex() {
+  const response = await fetch('/api/chat/threads', { credentials: 'include' })
+  if (!response.ok) throw new Error('Could not load threads')
+  const raw: unknown = await response.json()
+  return deserializeChatThreadsState(raw) ?? { threads: [], activeThreadId: null }
+}
+
+async function loadThreadMessages(threadId: string): Promise<Message[]> {
+  const response = await fetch(`/api/chat/threads/${encodeURIComponent(threadId)}`, {
+    credentials: 'include'
+  })
+  if (response.status === 404) return []
+  if (!response.ok) throw new Error('Could not load messages')
+  return deserializeMessages(await response.json()) ?? []
+}
+
+async function saveThreadIndex(payload: SerializedChatThreadsState) {
+  await fetch('/api/chat/threads', {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+}
+
+async function saveThreadMessages(threadId: string, payload: SerializedMessage[]) {
+  await fetch(`/api/chat/threads/${encodeURIComponent(threadId)}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+}
+
+const initialThreadState = await loadThreadIndex()
+const threads = useChatThreads({
+  initialThreads: initialThreadState.threads,
+  initialActiveThreadId: initialThreadState.activeThreadId
+})
+
+const thread = threads.activeThread.value ?? threads.createThread({ title: 'New chat' })
+const initialMessages = await loadThreadMessages(thread.id)
+
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  initialMessages,
+  api: '/api/chat',
+  credentials: 'include'
+})
+
+async function saveCurrentThread() {
+  await Promise.all([
+    saveThreadIndex(
+      serializeChatThreadsState({
+        threads: threads.threads.value,
+        activeThreadId: threads.activeThreadId.value
+      })
+    ),
+    saveThreadMessages(thread.id, serializeMessages(chat.messages.value))
+  ])
+}
+```
+
+在重命名、归档、删除、重新生成或发送完成这类明确用户动作后保存。高频聊天可以 debounce
+保存，或只在 assistant 消息完成后持久化。
+
+## 后端校验
+
+写入前至少校验三件事：
+
+- 用户可以访问这个 tenant 和 thread。
+- payload 符合 `vue-ai-hooks` 的结构。
+- 本次写入基于预期的 revision。
+
+```ts
+import {
+  deserializeChatThreadsState,
+  deserializeMessages,
+  safeValidateMessages,
+  serializeChatThreadsState,
+  serializeMessages
+} from 'vue-ai-hooks'
+
+export async function saveThreadsRoute(request: Request) {
+  const session = await requireSession(request)
+  const raw: unknown = await request.json()
+  const restored = deserializeChatThreadsState(raw)
+
+  if (!restored) {
+    return Response.json({ error: 'invalid_thread_index' }, { status: 400 })
+  }
+
+  await assertTenantAccess(session, request)
+  await saveThreadIndex(session.tenantId, serializeChatThreadsState(restored))
+  return Response.json({ ok: true })
+}
+
+export async function saveMessagesRoute(request: Request, threadId: string) {
+  const session = await requireSession(request)
+  const raw: unknown = await request.json()
+  const restored = deserializeMessages(raw)
+
+  if (!restored) {
+    return Response.json({ error: 'invalid_messages' }, { status: 400 })
+  }
+
+  const checked = safeValidateMessages(raw, {
+    messageMetadataSchema: {
+      type: 'object',
+      additionalProperties: true
+    }
+  })
+
+  if (!checked.success) {
+    return Response.json({ error: 'invalid_message_schema' }, { status: 400 })
+  }
+
+  await assertThreadAccess(session, threadId)
+  await saveMessages(session.tenantId, threadId, serializeMessages(checked.messages))
+  return Response.json({ ok: true })
+}
+```
+
+把 `requireSession`、`assertTenantAccess`、`assertThreadAccess`、`saveThreadIndex`
+和 `saveMessages` 换成你的框架和数据库代码。这些函数必须只在服务端运行。
+
+## Chat 路由耦合
+
+`useChat({ threadId })` 会把后端 thread id 带到 chat 和 resume 请求里。用它把下一条
+assistant 回复写回同一条服务端记录：
+
+```ts
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  api: '/api/chat',
+  credentials: 'include'
+})
+```
+
+chat 路由应该：
+
+1. 校验 session 和 tenant。
+2. 读取 `threadId` 对应的历史消息。
+3. 追加请求里的用户消息。
+4. 流式返回 Provider 响应。
+5. stream 完成后保存最终归一化 messages。
+6. 只保存脱敏 trace id，不保存 Provider 凭据。
+
+如果你的运行时不能可靠地在 stream 完成后持久化，先在流式响应前保存用户消息，再用后台任务按
+`threadId` 和 trace id 对齐 assistant 消息。
+
+## 生产检查
+
+- thread id 要不可猜，或至少按 tenant 强隔离。
+- `createdAt` 和 `updatedAt` 可以用数据库 timestamp，但消息 payload 继续用
+  `serializeMessages()` 保持 Date-safe。
+- 拒绝不能通过 `deserializeMessages()` 或 `deserializeChatThreadsState()` 的 payload。
+- 重命名、归档、删除和重新生成要有乐观并发控制。
+- 不保存原始 Provider 错误、API key、请求 header 或完整 curl 输出。
+- 跑一次 restore smoke test：加载 index、加载 messages、调用 `setMessages()`、发送 prompt、
+  刷新页面并确认会话恢复。
+
+更完整的浏览器、proxy、调试检查和 rollout 项见 [生产检查清单](/zh/guide/production-checklist)。

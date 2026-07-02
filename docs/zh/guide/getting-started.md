@@ -23,6 +23,7 @@ npm install vue-ai-hooks
 | 迁移 AI SDK UI 应用          | 使用 [AI SDK 迁移指南](/zh/guide/ai-sdk-migration)    |
 | 接入自有 agent 服务          | 使用 [Agent 事件](/zh/guide/agent-events)             |
 | 验证自己的后端代理契约       | 跑 [proxy 模板](#本地试用后端代理模板)                |
+| 把聊天历史保存到后端         | 按 [服务端存储配方](/zh/guide/server-storage)         |
 | 在应用里接入聊天             | 复制 [第一个聊天应用](#第一个聊天应用)                |
 | 增加 thread 侧边栏           | 使用 [useChatThreads](/zh/reference/use-chat-threads) |
 | 选择模型 Provider            | 跳到 [使用不同 Provider](#使用不同-provider)          |

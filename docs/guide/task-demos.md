@@ -16,6 +16,7 @@ contract, then replace the local route with your app-owned backend.
 | Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue`                                           | Click **Run approval demo**, approve or reject the tool.  |
 | React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react) | Send one prompt, call `stop()`, then inspect trace state. |
 | Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                     | Create, rename, archive, restore, and reopen a thread.    |
+| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                           | Restore index and messages, send, reload, and verify.     |
 | Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                             | Confirm stream chunks arrive without browser keys.        |
 | Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                               | Convert events to `ChatChunk` or UI stream parts.         |
 | AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                       | Decode parts with `readUIMessageStream()`.                |
@@ -126,6 +127,31 @@ const chat = useChat({
 
 Verify create, rename, archive, restore, and delete before adding a server
 storage adapter. See [useChatThreads](/reference/use-chat-threads).
+
+## Server-side chat history
+
+Use this when conversations must survive device changes, team handoff, audit
+retention, or admin access. Keep the thread index and message bodies in separate
+backend records, then hydrate both before mounting chat:
+
+```ts
+import { deserializeMessages, serializeMessages, useChat } from 'vue-ai-hooks'
+
+const messages = deserializeMessages(await loadThreadMessages(thread.id)) ?? []
+
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  initialMessages: messages,
+  api: '/api/chat',
+  credentials: 'include'
+})
+
+await saveThreadMessages(thread.id, serializeMessages(chat.messages.value))
+```
+
+Verify load, send, save, reload, rename, archive, and delete with tenant-scoped
+auth before connecting a real provider. See [Server storage](/guide/server-storage).
 
 ## AI SDK UI stream migration
 

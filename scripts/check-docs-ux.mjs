@@ -20,6 +20,8 @@ const files = {
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
   proxyRecipes: readFileSync('docs/guide/proxy-recipes.md', 'utf8'),
   zhProxyRecipes: readFileSync('docs/zh/guide/proxy-recipes.md', 'utf8'),
+  serverStorage: readFileSync('docs/guide/server-storage.md', 'utf8'),
+  zhServerStorage: readFileSync('docs/zh/guide/server-storage.md', 'utf8'),
   agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
   zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
@@ -119,6 +121,11 @@ expect(
   'VitePress sidebars must expose the proxy recipes guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Server storage', link: '/guide/server-storage' }") &&
+    files.config.includes("{ text: '服务端存储', link: '/zh/guide/server-storage' }"),
+  'VitePress sidebars must expose the server storage guide in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
     files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
@@ -164,6 +171,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy recipes](/guide/proxy-recipes)',
   '[Agent events](/guide/agent-events)',
+  '[server storage recipe](/guide/server-storage)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
 ]) {
@@ -197,6 +205,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[Agent 事件](/zh/guide/agent-events)',
+  '[服务端存储配方](/zh/guide/server-storage)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
 ]) {
@@ -213,6 +222,8 @@ for (const snippet of [
   'Thread sidebar persistence',
   '[useChatThreads](/reference/use-chat-threads)',
   'threads.createThread',
+  'Server-side chat history',
+  '[Server storage](/guide/server-storage)',
   'Own `/api/chat` proxy',
   'Agent service stream adapter',
   'AI SDK UI stream migration',
@@ -236,6 +247,8 @@ for (const snippet of [
   'Thread 侧边栏持久化',
   '[useChatThreads](/zh/reference/use-chat-threads)',
   'threads.createThread',
+  '服务端聊天历史',
+  '[服务端存储](/zh/guide/server-storage)',
   '自有 `/api/chat` proxy',
   'Agent 服务 stream 适配',
   'AI SDK UI stream 迁移',
@@ -291,6 +304,8 @@ for (const snippet of [
   '## Backend proxy',
   '## Streaming contract',
   '## UI state and inspection',
+  '[server storage recipe](/guide/server-storage)',
+  'multi-device history',
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
@@ -309,6 +324,8 @@ for (const snippet of [
   '## 后端代理',
   '## 流式契约',
   '## UI 状态和检查',
+  '[服务端存储配方](/zh/guide/server-storage)',
+  '多设备历史',
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
@@ -318,6 +335,50 @@ for (const snippet of [
   expect(
     files.zhProductionChecklist.includes(snippet),
     `Chinese production checklist must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Server storage recipe',
+  'GET /api/chat/threads',
+  'PUT /api/chat/threads',
+  'GET /api/chat/threads/:id',
+  'POST /api/chat',
+  'deserializeChatThreadsState',
+  'serializeChatThreadsState',
+  'deserializeMessages',
+  'serializeMessages',
+  'safeValidateMessages',
+  'tenant',
+  'revision',
+  'restore smoke test',
+  'Do not store provider credentials'
+]) {
+  expect(
+    files.serverStorage.includes(snippet),
+    `English server storage guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 服务端存储配方',
+  'GET /api/chat/threads',
+  'PUT /api/chat/threads',
+  'GET /api/chat/threads/:id',
+  'POST /api/chat',
+  'deserializeChatThreadsState',
+  'serializeChatThreadsState',
+  'deserializeMessages',
+  'serializeMessages',
+  'safeValidateMessages',
+  'tenant',
+  'revision',
+  'restore smoke test',
+  '不要在这两份 payload 里保存 Provider 凭据'
+]) {
+  expect(
+    files.zhServerStorage.includes(snippet),
+    `Chinese server storage guide must include: ${snippet}`
   )
 }
 
@@ -405,6 +466,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
     files.readme.includes('/docs/guide/proxy-recipes.md') &&
     files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
+    files.readme.includes('/docs/guide/server-storage.md') &&
+    files.zhReadme.includes('/docs/zh/guide/server-storage.md') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
@@ -519,6 +582,7 @@ for (const snippet of [
   '0.14.x',
   'AgentEvent',
   'useChatThreads',
+  'server storage recipe',
   'inspection',
   'provider presets',
   'React',
@@ -1756,7 +1820,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {
