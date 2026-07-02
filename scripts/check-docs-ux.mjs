@@ -38,6 +38,8 @@ const files = {
   zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
   streams: readFileSync('docs/reference/streams.md', 'utf8'),
   zhStreams: readFileSync('docs/zh/reference/streams.md', 'utf8'),
+  react: readFileSync('docs/reference/react.md', 'utf8'),
+  zhReact: readFileSync('docs/zh/reference/react.md', 'utf8'),
   providers: readFileSync('docs/reference/providers.md', 'utf8'),
   zhProviders: readFileSync('docs/zh/reference/providers.md', 'utf8'),
   examples: readFileSync('docs/examples/index.md', 'utf8'),
@@ -193,6 +195,8 @@ expect(
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
+    files.readme.includes('useCompletion` from `vue-ai-hooks/react`') &&
+    files.zhReadme.includes('`useCompletion`，在 React 中复用') &&
     files.readme.includes('DirectChatTransport') &&
     files.readme.includes('DirectChatTransport({ onError })') &&
     files.zhReadme.includes('DirectChatTransport') &&
@@ -275,6 +279,33 @@ for (const snippet of [
 ]) {
   expect(files.providers.includes(snippet), `English provider reference must include: ${snippet}`)
   expect(files.zhProviders.includes(snippet), `Chinese provider reference must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# React hooks',
+  '`useChat` and `useCompletion`',
+  'import { useChat, useCompletion } from',
+  'CompletionBox',
+  '`useCompletion(options)` accepts `UseReactCompletionOptions`',
+  '`UseReactCompletionReturn` exposes plain React state and actions',
+  'complete(prompt?, options?)',
+  'Retry controls; retries only happen before the first streamed text delta'
+]) {
+  expect(files.react.includes(snippet), `English React reference must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# React hooks',
+  'React 版 `useChat` 和',
+  '`useCompletion`',
+  'import { useChat, useCompletion } from',
+  'CompletionBox',
+  '`useCompletion(options)` 接收 `UseReactCompletionOptions`',
+  '`UseReactCompletionReturn` 暴露普通 React state 和操作',
+  'complete(prompt?, options?)',
+  '只有首个文本 delta 到达前的失败会重试'
+]) {
+  expect(files.zhReact.includes(snippet), `Chinese React reference must include: ${snippet}`)
 }
 
 for (const snippet of [

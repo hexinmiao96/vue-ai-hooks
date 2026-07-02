@@ -18,6 +18,17 @@ export {
   type UseReactChatReturn
 } from './react/useChat'
 
+export {
+  useCompletion,
+  type ReactCompletionFinishInfo,
+  type ReactCompletionRequestInfo,
+  type ReactCompletionResponseInfo,
+  type ReactCompletionStatus,
+  type ReactCompletionStreamProtocol,
+  type UseReactCompletionOptions,
+  type UseReactCompletionReturn
+} from './react/useCompletion'
+
 export type {
   Message,
   ModelMessage,
@@ -42,6 +53,7 @@ export type {
   ChatResumeRequest,
   ChatChunk,
   ChatStreamProtocol,
+  CompletionRequest,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions

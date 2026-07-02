@@ -3,7 +3,8 @@
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
 > Vue 3 Composable library for building AI-powered applications.
-> Streaming-first, multi-provider, fully typed, with an optional React chat entry.
+> Streaming-first, multi-provider, fully typed, with optional React chat and
+> completion entries.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml)
@@ -15,9 +16,10 @@
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
 [Axios](https://axios-http.com) to the LLM world. Ten Vue composables, an optional
-React `useChat` subpath, pluggable providers, Server-Sent Events streaming handled
-for you. Works with OpenAI and any OpenAI-compatible service (DeepSeek, Moonshot,
-Zhipu, Ollama via its OpenAI shim, vLLM, Gemini's OpenAI-compatible endpoint, etc.).
+React `useChat` / `useCompletion` subpath, pluggable providers, Server-Sent
+Events streaming handled for you. Works with OpenAI and any OpenAI-compatible
+service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim, vLLM, Gemini's
+OpenAI-compatible endpoint, etc.).
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -45,8 +47,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Ten composables, one mental model**: `useChat`, `useCompletion`,
   `useEmbedding`, `useGeneration`, `useImage`, `useVideo`, `useSpeech`,
   `useTranscription`, `useRerank`, and `useObject`.
-- **Optional React chat support**: import `useChat` from `vue-ai-hooks/react` for
-  React streaming chat state while reusing the same providers and message types.
+- **Optional React chat and completion support**: import `useChat` or
+  `useCompletion` from `vue-ai-hooks/react` for React streaming state while
+  reusing the same providers and request types.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -130,7 +133,7 @@ const { messages, input, handleSubmit, isLoading, stop, error } = useChat({
 ### React streaming chat
 
 ```tsx
-import { useChat } from 'vue-ai-hooks/react'
+import { useChat, useCompletion } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'
 
 export function ChatPanel() {
@@ -152,6 +155,14 @@ export function ChatPanel() {
     </form>
   )
 }
+```
+
+`vue-ai-hooks/react` also exposes React `useCompletion`:
+
+```tsx
+const { completion, input, handleInputChange, handleSubmit, isLoading } = useCompletion({
+  provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+})
 ```
 
 ### Single-shot completion

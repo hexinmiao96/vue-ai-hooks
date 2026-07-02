@@ -177,6 +177,8 @@ assertEqual(esm.anthropic({ apiKey: 'test-key' }).id, 'anthropic', 'ESM anthropi
 assertEqual(new cjs.AiHooksError('test').name, 'AiHooksError', 'CJS AiHooksError instance name')
 assertEqual(typeof reactEsm.useChat, 'function', 'ESM React useChat export')
 assertEqual(typeof reactCjs.useChat, 'function', 'CJS React useChat export')
+assertEqual(typeof reactEsm.useCompletion, 'function', 'ESM React useCompletion export')
+assertEqual(typeof reactCjs.useCompletion, 'function', 'CJS React useCompletion export')
 
 const declarations = readFileSync(fromRoot('dist/index.d.ts'), 'utf8')
 for (const name of publicExports) {

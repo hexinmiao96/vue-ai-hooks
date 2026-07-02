@@ -9,8 +9,8 @@ const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
 
 const [pack] = JSON.parse(output)
 const files = new Set(pack.files.map((file) => file.path))
-const maxPackageSize = 410_000
-const maxUnpackedSize = 1_900_000
+const maxPackageSize = 430_000
+const maxUnpackedSize = 2_000_000
 
 const requiredFiles = [
   'package.json',
@@ -22,6 +22,7 @@ const requiredFiles = [
   'src/index.ts',
   'src/react.ts',
   'src/react/useChat.ts',
+  'src/react/useCompletion.ts',
   'dist/index.mjs',
   'dist/index.mjs.map',
   'dist/index.cjs',
@@ -33,7 +34,9 @@ const requiredFiles = [
   'dist/react.cjs',
   'dist/react.cjs.map',
   'dist/react.d.ts',
-  'dist/react.d.ts.map'
+  'dist/react.d.ts.map',
+  'dist/react/useCompletion.d.ts',
+  'dist/react/useCompletion.d.ts.map'
 ]
 
 const forbiddenPrefixes = [
