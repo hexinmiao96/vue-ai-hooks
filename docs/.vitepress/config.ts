@@ -50,6 +50,7 @@ const rootSidebar = {
         { text: 'useTranscription', link: '/reference/use-transcription' },
         { text: 'useRerank', link: '/reference/use-rerank' },
         { text: 'useObject', link: '/reference/use-object' },
+        { text: 'useChatThreads', link: '/reference/use-chat-threads' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
     },
@@ -115,6 +116,7 @@ const zhSidebar = {
         { text: 'useTranscription', link: '/zh/reference/use-transcription' },
         { text: 'useRerank', link: '/zh/reference/use-rerank' },
         { text: 'useObject', link: '/zh/reference/use-object' },
+        { text: 'useChatThreads', link: '/zh/reference/use-chat-threads' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]
     },

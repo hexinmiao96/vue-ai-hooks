@@ -9,7 +9,7 @@ const budgets = [
   },
   {
     file: 'dist/index.cjs',
-    maxBytes: 89_700,
+    maxBytes: 91_500,
     maxGzipBytes: 26_600
   },
   {

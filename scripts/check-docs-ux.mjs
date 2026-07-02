@@ -40,6 +40,8 @@ const files = {
   zhUseRerank: readFileSync('docs/zh/reference/use-rerank.md', 'utf8'),
   useObject: readFileSync('docs/reference/use-object.md', 'utf8'),
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
+  useChatThreads: readFileSync('docs/reference/use-chat-threads.md', 'utf8'),
+  zhUseChatThreads: readFileSync('docs/zh/reference/use-chat-threads.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
   zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
   streams: readFileSync('docs/reference/streams.md', 'utf8'),
@@ -122,6 +124,11 @@ expect(
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'useChatThreads', link: '/reference/use-chat-threads' }") &&
+    files.config.includes("{ text: 'useChatThreads', link: '/zh/reference/use-chat-threads' }"),
+  'VitePress sidebars must expose useChatThreads reference docs in English and Chinese'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
 )
@@ -139,6 +146,7 @@ for (const snippet of [
   '## Run a demo without API keys',
   '[Task-oriented demos](/guide/task-demos)',
   '[Production checklist](/guide/production-checklist)',
+  '[useChatThreads](/reference/use-chat-threads)',
   'pnpm example:chat',
   'pnpm example:react-chat',
   'falls back to `local-tools`',
@@ -171,6 +179,7 @@ for (const snippet of [
   '## 不需要 API key 的 Demo',
   '[任务型 Demo](/zh/guide/task-demos)',
   '[生产检查清单](/zh/guide/production-checklist)',
+  '[useChatThreads](/zh/reference/use-chat-threads)',
   'pnpm example:chat',
   'pnpm example:react-chat',
   '自动回退到 `local-tools`',
@@ -201,6 +210,9 @@ for (const snippet of [
   '# Task-oriented demos',
   'Vue chat with tool approval',
   'React chat quickstart',
+  'Thread sidebar persistence',
+  '[useChatThreads](/reference/use-chat-threads)',
+  'threads.createThread',
   'Own `/api/chat` proxy',
   'Agent service stream adapter',
   'AI SDK UI stream migration',
@@ -221,6 +233,9 @@ for (const snippet of [
   '# 任务型 Demo',
   'Vue 聊天 + 工具审批',
   'React 聊天最小接入',
+  'Thread 侧边栏持久化',
+  '[useChatThreads](/zh/reference/use-chat-threads)',
+  'threads.createThread',
   '自有 `/api/chat` proxy',
   'Agent 服务 stream 适配',
   'AI SDK UI stream 迁移',
@@ -501,7 +516,9 @@ for (const snippet of [
   '0.11.x',
   '0.12.x',
   '0.13.x',
+  '0.14.x',
   'AgentEvent',
+  'useChatThreads',
   'inspection',
   'provider presets',
   'React',
@@ -1448,6 +1465,25 @@ expect(
     files.useChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'English useChat docs must document Date-safe and schema-safe message persistence helpers and public types'
 )
+for (const snippet of [
+  '# useChatThreads',
+  'thread creation',
+  'active thread selection',
+  'archive',
+  'restore',
+  'delete',
+  'serializeChatThreadsState',
+  'deserializeChatThreadsState',
+  'ChatThreadsPersistOptions',
+  'UseChatThreadsReturn',
+  'lastMessagePreview',
+  'threadId: thread.id'
+]) {
+  expect(
+    files.useChatThreads.includes(snippet),
+    `English useChatThreads docs must include: ${snippet}`
+  )
+}
 expect(
   files.useChat.includes('## Structured message parts') &&
     files.useChat.includes('Message.parts') &&
@@ -1526,6 +1562,25 @@ expect(
     files.zhUseChat.includes("deserializeMessages(await loadChat('support-thread-1'))"),
   'Chinese useChat docs must document Date-safe and schema-safe message persistence helpers and public types'
 )
+for (const snippet of [
+  '# useChatThreads',
+  '创建 thread',
+  '切换当前 thread',
+  '归档',
+  '恢复',
+  '删除',
+  'serializeChatThreadsState',
+  'deserializeChatThreadsState',
+  'ChatThreadsPersistOptions',
+  'UseChatThreadsReturn',
+  'lastMessagePreview',
+  'threadId: thread.id'
+]) {
+  expect(
+    files.zhUseChatThreads.includes(snippet),
+    `Chinese useChatThreads docs must include: ${snippet}`
+  )
+}
 expect(
   files.zhUseChat.includes('## 结构化消息 parts') &&
     files.zhUseChat.includes('Message.parts') &&

@@ -59,6 +59,9 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Production chat workflows**: server-side proxy paths, resumable streams,
   thread context, request preparation hooks, custom body fields, metadata, and
   request tracing.
+- **Thread persistence**: `useChatThreads` manages local thread indexes,
+  current thread selection, rename, archive, restore, delete, and Date-safe
+  thread persistence.
 - **AI SDK-style UI and agent helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
   pruning, reusable `Chat` instances, `DefaultChatTransport`,
@@ -605,6 +608,15 @@ also preserve and check valid `Message.parts`, metadata schemas, and custom data
 part schemas for structured chat rendering. See the
 [usePersist reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-persist.md) for details.
 
+### `useChatThreads(options)`
+
+Manages a lightweight thread index for chat sidebars: active thread selection,
+rename, archive, restore, delete, recency updates, and Date-safe persistence.
+Keep message bodies separate with `useChat({ id: thread.id, persist })` or your
+server storage. See the
+[useChatThreads reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat-threads.md)
+for details.
+
 See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),
 and [public types](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/types.md) for full type definitions.
 For a product-task path through the demos, see
@@ -690,13 +702,13 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.13.0** — a working foundation, not feature-complete. The core
+This is **v0.14.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
-This release adds lightweight `AgentEvent` adapters that normalize app-owned
-agent progress, tool, source, file, error, and finish events into `ChatChunk` or
-AI SDK UI message stream parts. Next focus: session/thread persistence and
-production agent recipes. Feature
+This release adds `useChatThreads` for local thread indexes, active thread
+selection, rename, archive, restore, delete, recency updates, and Date-safe
+thread persistence. Next focus: production agent recipes and deeper server
+storage adapter patterns. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

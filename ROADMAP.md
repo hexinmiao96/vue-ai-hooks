@@ -69,12 +69,23 @@ planning.
 - Continue adding production agent recipes only where they keep planning,
   retrieval, privileged tools, secrets, and tenant data in the host backend.
 
+### 0.14.x
+
+- Shipped in 0.14.0: `useChatThreads()` for local thread indexes, active thread
+  selection, rename, archive, restore, delete, recency updates, and Date-safe
+  thread persistence.
+- Shipped in 0.14.0: thread serialization helpers for storing sidebar indexes
+  outside `localStorage` while keeping message bodies in `useChat({ persist })`
+  or server storage.
+- Continue exploring server storage adapter recipes and regenerate/branch
+  patterns without embedding a backend database abstraction in the package.
+
 ### Later
 
 - Expand React support toward shared stream helpers only where it improves
   migration confidence.
-- Add session/thread persistence upgrades for products that need saved
-  conversations, archive flows, and regenerate branches.
+- Add production agent recipes for services that need durable approvals,
+  workflow audit trails, and human-in-the-loop timelines.
 
 ## Non-goals
 

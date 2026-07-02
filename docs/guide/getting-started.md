@@ -24,6 +24,7 @@ npm install vue-ai-hooks
 | Connect an app-owned agent       | Use [Agent events](/guide/agent-events)                           |
 | Try your backend proxy contract  | Run the [proxy template](#try-the-backend-proxy-template-locally) |
 | Add chat to an app               | Copy [your first chat](#your-first-chat)                          |
+| Add a thread sidebar             | Use [useChatThreads](/reference/use-chat-threads)                 |
 | Choose a model provider          | Jump to [using a different provider](#using-a-different-provider) |
 | Check production readiness       | Use the [Production checklist](/guide/production-checklist)       |
 

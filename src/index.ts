@@ -156,6 +156,22 @@ export {
   type UseObjectOptions,
   type UseObjectReturn
 } from './composables/useObject'
+export {
+  deserializeChatThreads,
+  deserializeChatThreadsState,
+  serializeChatThreads,
+  serializeChatThreadsState,
+  useChatThreads,
+  type ChatThread,
+  type ChatThreadsPersistOptions,
+  type ChatThreadsState,
+  type CreateChatThreadInput,
+  type SerializedChatThread,
+  type SerializedChatThreadsState,
+  type UpdateChatThreadInput,
+  type UseChatThreadsOptions,
+  type UseChatThreadsReturn
+} from './composables/useChatThreads'
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'
