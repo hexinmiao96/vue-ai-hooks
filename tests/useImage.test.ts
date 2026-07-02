@@ -293,4 +293,53 @@ describe('useImage', () => {
     expect(result.value).toBeNull()
     expect(error.value).toBeNull()
   })
+
+  it('captures inspect() snapshot metadata for proxy image requests', async () => {
+    const response = {
+      image: { url: 'https://cdn.example.test/inspect.png', mediaType: 'image/png' },
+      model: 'inspect-image'
+    }
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { generateImage, inspect, clearTrace } = useImage({
+      api: '/api/image',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      generateImage('inspect prompt', { model: 'image-model', size: '512x512' })
+    ).resolves.toMatchObject({
+      image: response.image
+    })
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.providerTrace.api).toBe('/api/image')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      prompt: 'inspect prompt'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: response
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toContain('/api/image')
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

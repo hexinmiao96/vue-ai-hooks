@@ -69,25 +69,26 @@ console.log(embeddings.value)
 
 ## Return value
 
-| Property                 | Type                                                                                         | Description                                                             |
-| ------------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `embeddings`             | `Ref<number[][]>`                                                                            | The most recent embedding vectors.                                      |
-| `input`                  | `Ref<string>`                                                                                | Text binding for embedding forms.                                       |
-| `status`                 | `Ref<AiRequestStatus>`                                                                       | Request lifecycle: `ready`, `submitted`, or `error`.                    |
-| `isLoading`              | `Ref<boolean>`                                                                               | True while a request is in flight.                                      |
-| `error`                  | `Ref<Error \| null>`                                                                         | Last error.                                                             |
-| `result`                 | `Ref<EmbeddingResult \| null>`                                                               | The most recent full result, including usage stats.                     |
-| `lastRequest`            | `Ref<EmbeddingRequestInfo \| null>`                                                          | Last prepared embedding request snapshot.                               |
-| `lastResponse`           | `Ref<EmbeddingResponseInfo \| null>`                                                         | Last provider response snapshot, including the full result.             |
-| `embed(input, opts?)`    | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>`                | Generate embeddings.                                                    |
-| `stop()`                 | `() => void`                                                                                 | Abort the in-flight request.                                            |
-| `setInput(value)`        | `(string) => void`                                                                           | Replace form input manually.                                            |
-| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                                    | Wire custom inputs without `v-model`.                                   |
-| `handleSubmit(e, opts?)` | `({ preventDefault?: () => void }?, Partial<EmbeddingRequest>?) => Promise<EmbeddingResult>` | Submit `input.value`; clears input after success.                       |
-| `clearError()`           | `() => void`                                                                                 | Clear `error` and move `status` back to `ready`.                        |
-| `clearTrace()`           | `() => void`                                                                                 | Clear `lastRequest` and `lastResponse` without changing embeddings.     |
-| `clear()`                | `() => void`                                                                                 | Reset embeddings, result, and error. Also aborts the in-flight request. |
-| `abortController`        | `Ref<AbortController \| null>`                                                               | Exposed for advanced use cases.                                         |
+| Property                 | Type                                                                                         | Description                                                              |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `embeddings`             | `Ref<number[][]>`                                                                            | The most recent embedding vectors.                                       |
+| `input`                  | `Ref<string>`                                                                                | Text binding for embedding forms.                                        |
+| `status`                 | `Ref<AiRequestStatus>`                                                                       | Request lifecycle: `ready`, `submitted`, or `error`.                     |
+| `isLoading`              | `Ref<boolean>`                                                                               | True while a request is in flight.                                       |
+| `error`                  | `Ref<Error \| null>`                                                                         | Last error.                                                              |
+| `result`                 | `Ref<EmbeddingResult \| null>`                                                               | The most recent full result, including usage stats.                      |
+| `lastRequest`            | `Ref<EmbeddingRequestInfo \| null>`                                                          | Last prepared embedding request snapshot.                                |
+| `lastResponse`           | `Ref<EmbeddingResponseInfo \| null>`                                                         | Last provider response snapshot, including the full result.              |
+| `inspect()`              | `() => RequestInspectionSnapshot<EmbeddingRequestInfo, EmbeddingResponseInfo>`               | Build a production-ready debug snapshot with timeline and retry records. |
+| `embed(input, opts?)`    | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>`                | Generate embeddings.                                                     |
+| `stop()`                 | `() => void`                                                                                 | Abort the in-flight request.                                             |
+| `setInput(value)`        | `(string) => void`                                                                           | Replace form input manually.                                             |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                                    | Wire custom inputs without `v-model`.                                    |
+| `handleSubmit(e, opts?)` | `({ preventDefault?: () => void }?, Partial<EmbeddingRequest>?) => Promise<EmbeddingResult>` | Submit `input.value`; clears input after success.                        |
+| `clearError()`           | `() => void`                                                                                 | Clear `error` and move `status` back to `ready`.                         |
+| `clearTrace()`           | `() => void`                                                                                 | Clear `lastRequest` and `lastResponse` without changing embeddings.      |
+| `clear()`                | `() => void`                                                                                 | Reset embeddings, result, and error. Also aborts the in-flight request.  |
+| `abortController`        | `Ref<AbortController \| null>`                                                               | Exposed for advanced use cases.                                          |
 
 ## Vector similarity
 

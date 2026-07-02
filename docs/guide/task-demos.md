@@ -11,18 +11,20 @@ contract, then replace the local route with your app-owned backend.
 
 ## Choose by task
 
-| Product task                    | Run first                                       | Read next                                                                          | Verify before real providers                              |
-| ------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals)                | Click **Run approval demo**, approve or reject the tool.  |
-| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react)                  | Send one prompt, call `stop()`, then inspect trace state. |
-| Thread sidebar persistence      | `pnpm example:threaded-chat`                    | `examples/threaded-chat/App.vue` and [useChatThreads](/reference/use-chat-threads) | Create, rename, archive, restore, and reopen a thread.    |
-| IndexedDB local persistence    | Your bootstrap hydration logic                    | [Server storage](/guide/server-storage) and the section `IndexedDB local durability (async)` | Restore from IndexedDB, save on finish actions, refresh, and verify no data loss. |
-| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                                            | Restore index and messages, send, reload, and verify.     |
-| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                                  | Regenerate without overwriting the original answer.       |
-| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                                              | Confirm stream chunks arrive without browser keys.        |
-| Agent backend bridge            | LangChain, LangGraph, or custom backend agent   | [Agent bridge](/guide/agent-bridge) and [Agent events](/guide/agent-events)        | Convert safe events to `ChatChunk` or UI stream parts.    |
-| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                                        | Decode parts with `readUIMessageStream()`.                |
-| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)                                | Pass the checklist before putting provider keys in prod.  |
+| Product task                    | Run first                                                        | Read next                                                                                    | Verify before real providers                                                               |
+| ------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Vue chat with tool approval     | `pnpm example:chat`                                              | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals)                          | Click **Run approval demo**, approve or reject the tool.                                   |
+| React chat quickstart           | `pnpm example:react-chat`                                        | `examples/react-chat/App.tsx` and [React hooks](/reference/react)                            | Send one prompt, call `stop()`, then inspect trace state.                                  |
+| React completion quickstart     | `pnpm example:react-completion`                                  | `examples/react-completion/App.tsx` and [React hooks](/reference/react)                      | Run one completion and check request trace, then rerun with `VITE_EXAMPLE_PROVIDER=proxy`. |
+| React object quickstart         | `pnpm example:react-object`                                      | `examples/react-object/App.tsx` and [React hooks](/reference/react)                          | Run a JSON schema extraction and verify object + trace output.                             |
+| Thread sidebar persistence      | `pnpm example:threaded-chat`                                     | `examples/threaded-chat/App.vue` and [useChatThreads](/reference/use-chat-threads)           | Create, rename, archive, restore, and reopen a thread.                                     |
+| IndexedDB local persistence     | Your bootstrap hydration logic                                   | [Server storage](/guide/server-storage) and the section `IndexedDB local durability (async)` | Restore from IndexedDB, save on finish actions, refresh, and verify no data loss.          |
+| Server-side chat history        | Your app backend and database                                    | [Server storage](/guide/server-storage)                                                      | Restore index and messages, send, reload, and verify.                                      |
+| Regenerate or branch history    | Your stored thread plus `/api/chat`                              | [Regenerate branches](/guide/regenerate-branches)                                            | Regenerate without overwriting the original answer.                                        |
+| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env                  | [Proxy recipes](/guide/proxy-recipes)                                                        | Confirm stream chunks and `inspectRequestTrace()` metadata on `/api/chat`.                 |
+| Agent backend bridge            | LangChain, LangGraph, or custom backend agent                    | [Agent bridge](/guide/agent-bridge) and [Agent events](/guide/agent-events)                  | Convert safe events to `ChatChunk` or UI stream parts.                                     |
+| AI SDK UI stream migration      | `pnpm example:proxy-server` and `pnpm example:ui-message-stream` | [AI SDK migration](/guide/ai-sdk-migration)                                                  | Decode parts with `readUIMessageStream()`.                                                 |
+| Production deployment readiness | Run the local proxy and docs build checks                        | [Production checklist](/guide/production-checklist)                                          | Pass the checklist before putting provider keys in prod.                                   |
 
 ## Vue chat with tool approval
 
@@ -35,6 +37,14 @@ Open the Vite URL and click **Run approval demo**. The example uses the
 `local-tools` provider when no real provider is selected. It streams an
 assistant reply, pauses on a `chargeCard` tool call, then continues after
 `approveToolCall()` or `rejectToolCall()`.
+
+For a release smoke check without opening the browser, build the package and
+run the tool approval verifier:
+
+```bash
+pnpm build
+pnpm tool-approval:check
+```
 
 Use this as the first product demo when you need message history, structured
 `Message.parts`, approval-gated tools, abort controls, and request inspection in
@@ -55,6 +65,14 @@ pnpm example:react-chat
 Open the Vite URL and send a prompt. The demo uses `DirectChatTransport` with a
 deterministic `react-local` stream, so you can verify React state, abort
 controls, stream data, and request trace rendering before adding provider keys.
+
+To validate the same `/api/chat` bridge as Vue, run:
+
+```bash
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:react-chat
+```
+
+This keeps provider keys on the server while the same trace fields are emitted.
 
 The source lives in `examples/react-chat/App.tsx`. The React entry is a
 migration surface. It does not replace the Vue-first positioning, but it lets
@@ -87,6 +105,47 @@ export function ChatBox() {
 
 Use the same `/api/chat` route you use for Vue. Keep provider keys on the server.
 
+## React completion quickstart
+
+Run no-key completion:
+
+```bash
+pnpm example:react-completion
+```
+
+Open the Vite URL and send a completion request or click a sample prompt. This
+demo uses a deterministic local completion stream so you can verify the same
+`useCompletion` request lifecycle, `status`, `inspect()`, and request/response trace
+rendering that a proxy-backed route will surface.
+
+To validate with the app-owned backend route, run:
+
+```bash
+VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:react-completion
+```
+
+The React completion example sends provider requests to `/api/completion` when the
+proxy path is enabled.
+
+## React structured output quickstart
+
+Run no-key structured output extraction:
+
+```bash
+pnpm example:react-object
+```
+
+Open the Vite URL and submit a support prompt. The UI shows parsed `object`
+fields and stream text so you can verify schema extraction before wiring real data.
+
+To validate against the app-owned backend route, run:
+
+```bash
+VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:react-object
+```
+
+The React object example sends provider requests to `/api/object` in proxy mode.
+
 ## Own `/api/chat` proxy
 
 Run the deterministic proxy before connecting a real upstream:
@@ -94,8 +153,13 @@ Run the deterministic proxy before connecting a real upstream:
 ```bash
 pnpm example:proxy-server
 # in another terminal
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
+
+Use `proxy-route` when you want the browser-side call to hit `/api/chat` directly
+through the default proxy transport. This keeps the no-key contract identical to
+your production route shape and makes `inspectRequestTrace()` show the proxy route
+metadata directly.
 
 When that works, connect the template to an OpenAI-compatible upstream:
 
@@ -117,6 +181,8 @@ bodies:
 
 ```bash
 pnpm example:threaded-chat
+pnpm build
+pnpm threaded-chat:check
 ```
 
 ```ts
@@ -135,10 +201,11 @@ const chat = useChat({
 })
 ```
 
-Verify create, rename, archive, restore, and delete before adding a server
-storage adapter. The runnable demo uses a deterministic `DirectChatTransport`,
-`useChatThreads()` for the sidebar index, and one keyed `useChat({ persist })`
-instance per active thread. See [useChatThreads](/reference/use-chat-threads).
+Verify create, rename, archive, restore, delete, and the smoke check before
+adding a server storage adapter. The runnable demo uses a deterministic
+`DirectChatTransport`, `useChatThreads()` for the sidebar index, and one keyed
+`useChat({ persist })` instance per active thread. See
+[useChatThreads](/reference/use-chat-threads).
 
 ## IndexedDB local persistence
 
@@ -211,12 +278,20 @@ Use this when your backend already emits AI SDK UI message stream parts:
 
 ```bash
 pnpm example:proxy-server
+pnpm example:ui-message-stream
 ```
 
-POST to `/api/ui-message-stream`, then consume the stream with
-`readUIMessageStream()` or the default proxy chat transport. Keep the migration
-small: first prove that text, tool-call, and data parts decode correctly, then
-move one production route at a time.
+The demo starts `/api/ui-message-stream` with a `messages` payload, then streams and decodes
+the response with `readUIMessageStream()`. Keep migration small: first prove that text,
+tool-call, and data parts decode correctly, then move one production route at a time.
+
+For a release smoke check without opening the browser, build the package and run
+the decoded-route verifier:
+
+```bash
+pnpm build
+pnpm ui-message-stream:check
+```
 
 ## Agent backend bridge
 
@@ -229,6 +304,14 @@ only browser-safe `AgentEvent` values:
 import { readAgentEventStream } from 'vue-ai-hooks'
 
 yield * readAgentEventStream({ events: runAgent(messages), signal })
+```
+
+For a release smoke check without opening the browser, build the package and run
+the bridge verifier:
+
+```bash
+pnpm build
+pnpm agent-bridge:check
 ```
 
 If the route should speak AI SDK UI message stream instead, convert events with

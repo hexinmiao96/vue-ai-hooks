@@ -62,27 +62,28 @@ await handleSubmit(undefined, { language: 'en' })
 
 ## 返回值
 
-| 属性                             | 类型                                                                                                 | 说明                                                |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `input`                          | `Ref<string>`                                                                                        | 可绑定到表单的音频 URL、data URL 或 base64 文本。   |
-| `transcription`                  | `Ref<string>`                                                                                        | 最近一次成功转写的文本。                            |
-| `text`                           | `Ref<string>`                                                                                        | `transcription` 的别名。                            |
-| `result`                         | `Ref<TranscriptionResult \| null>`                                                                   | 完整后端结果，包括 segments 或 provider metadata。  |
-| `status`                         | `Ref<AiRequestStatus>`                                                                               | 请求生命周期：`ready`、`submitted` 或 `error`。     |
-| `isLoading`                      | `Ref<boolean>`                                                                                       | 请求进行中时为 true。                               |
-| `error`                          | `Ref<Error \| null>`                                                                                 | 最近一次非中止错误。                                |
-| `lastRequest`                    | `Ref<TranscriptionRequestInfo \| null>`                                                              | 最近一次准备完成的转写请求快照。                    |
-| `lastResponse`                   | `Ref<TranscriptionResponseInfo \| null>`                                                             | 最近一次后端响应快照，包含归一化后的结果。          |
-| `transcribe(audio?, opts?)`      | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | `transcribeAudio()` 的别名。                        |
-| `transcribeAudio(audio?, opts?)` | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | 转写音频；省略 audio 时使用 `input.value`。         |
-| `stop()`                         | `() => void`                                                                                         | 中止当前请求。                                      |
-| `setInput(value)`                | `(string) => void`                                                                                   | 手动替换音频输入。                                  |
-| `handleInputChange(e)`           | `(Event \| { target } \| string) => void`                                                            | 不使用 `v-model` 时接入自定义输入组件。             |
-| `handleSubmit(e, opts?)`         | `({ preventDefault?: () => void }?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>` | 提交 `input.value`；成功后清空 input。              |
-| `clearError()`                   | `() => void`                                                                                         | 清空 `error`，并把 `status` 恢复为 `ready`。        |
-| `clearTrace()`                   | `() => void`                                                                                         | 清空 `lastRequest` 和 `lastResponse`，不改变文本。  |
-| `clear()`                        | `() => void`                                                                                         | 重置 input、转写文本、result、error、trace 和状态。 |
-| `abortController`                | `Ref<AbortController \| null>`                                                                       | 暴露给高级集成。                                    |
+| 属性                             | 类型                                                                                                 | 说明                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `input`                          | `Ref<string>`                                                                                        | 可绑定到表单的音频 URL、data URL 或 base64 文本。                  |
+| `transcription`                  | `Ref<string>`                                                                                        | 最近一次成功转写的文本。                                           |
+| `text`                           | `Ref<string>`                                                                                        | `transcription` 的别名。                                           |
+| `result`                         | `Ref<TranscriptionResult \| null>`                                                                   | 完整后端结果，包括 segments 或 provider metadata。                 |
+| `status`                         | `Ref<AiRequestStatus>`                                                                               | 请求生命周期：`ready`、`submitted` 或 `error`。                    |
+| `isLoading`                      | `Ref<boolean>`                                                                                       | 请求进行中时为 true。                                              |
+| `error`                          | `Ref<Error \| null>`                                                                                 | 最近一次非中止错误。                                               |
+| `lastRequest`                    | `Ref<TranscriptionRequestInfo \| null>`                                                              | 最近一次准备完成的转写请求快照。                                   |
+| `lastResponse`                   | `Ref<TranscriptionResponseInfo \| null>`                                                             | 最近一次后端响应快照，包含归一化后的结果。                         |
+| `inspect()`                      | `() => RequestInspectionSnapshot<TranscriptionRequestInfo, TranscriptionResponseInfo>`               | 生成可直接用于生产排障的快照：包含 timeline、重试记录与请求/响应。 |
+| `transcribe(audio?, opts?)`      | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | `transcribeAudio()` 的别名。                                       |
+| `transcribeAudio(audio?, opts?)` | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | 转写音频；省略 audio 时使用 `input.value`。                        |
+| `stop()`                         | `() => void`                                                                                         | 中止当前请求。                                                     |
+| `setInput(value)`                | `(string) => void`                                                                                   | 手动替换音频输入。                                                 |
+| `handleInputChange(e)`           | `(Event \| { target } \| string) => void`                                                            | 不使用 `v-model` 时接入自定义输入组件。                            |
+| `handleSubmit(e, opts?)`         | `({ preventDefault?: () => void }?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>` | 提交 `input.value`；成功后清空 input。                             |
+| `clearError()`                   | `() => void`                                                                                         | 清空 `error`，并把 `status` 恢复为 `ready`。                       |
+| `clearTrace()`                   | `() => void`                                                                                         | 清空 `lastRequest` 和 `lastResponse`，不改变文本。                 |
+| `clear()`                        | `() => void`                                                                                         | 重置 input、转写文本、result、error、trace 和状态。                |
+| `abortController`                | `Ref<AbortController \| null>`                                                                       | 暴露给高级集成。                                                   |
 
 ## 说明
 

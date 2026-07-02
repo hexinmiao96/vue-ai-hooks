@@ -175,6 +175,12 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
+如果你想在这个模板里先验收默认的 `/api/*` transport 契约，改成：
+
+```bash
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 OpenAI-compatible 网关、Ollama、vLLM、自定义端点路径和生产检查清单等可复制配置，
 见 [Proxy 配方](./proxy-recipes.md)。
 

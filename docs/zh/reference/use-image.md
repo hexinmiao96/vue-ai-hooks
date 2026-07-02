@@ -63,27 +63,28 @@ await handleSubmit(undefined, { aspectRatio: '16:9' })
 
 ## 返回值
 
-| 属性                            | 类型                                                                                                     | 说明                                               |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `input`                         | `Ref<string>`                                                                                            | 可绑定到图片表单的提示词输入。                     |
-| `image`                         | `Ref<GeneratedImage \| null>`                                                                            | 最近一次成功生成的第一张图片。                     |
-| `images`                        | `Ref<GeneratedImage[]>`                                                                                  | 最近一次成功生成的全部图片。                       |
-| `result`                        | `Ref<ImageGenerationResult \| null>`                                                                     | 完整后端结果，包括 warnings 或 provider metadata。 |
-| `status`                        | `Ref<AiRequestStatus>`                                                                                   | 请求生命周期：`ready`、`submitted` 或 `error`。    |
-| `isLoading`                     | `Ref<boolean>`                                                                                           | 请求进行中时为 true。                              |
-| `error`                         | `Ref<Error \| null>`                                                                                     | 最近一次非中止错误。                               |
-| `lastRequest`                   | `Ref<ImageGenerationRequestInfo \| null>`                                                                | 最近一次准备完成的图片请求快照。                   |
-| `lastResponse`                  | `Ref<ImageGenerationResponseInfo \| null>`                                                               | 最近一次后端响应快照，包含归一化后的结果。         |
-| `generate(prompt?, opts?)`      | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | `generateImage()` 的别名。                         |
-| `generateImage(prompt?, opts?)` | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | 生成图片；省略 prompt 时使用 `input.value`。       |
-| `stop()`                        | `() => void`                                                                                             | 中止当前请求。                                     |
-| `setInput(value)`               | `(string) => void`                                                                                       | 手动替换提示词输入。                               |
-| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | 不使用 `v-model` 时接入自定义输入组件。            |
-| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>` | 提交 `input.value`；成功后清空 input。             |
-| `clearError()`                  | `() => void`                                                                                             | 清空 `error`，并把 `status` 恢复为 `ready`。       |
-| `clearTrace()`                  | `() => void`                                                                                             | 清空 `lastRequest` 和 `lastResponse`，不改变图片。 |
-| `clear()`                       | `() => void`                                                                                             | 重置 input、图片、result、error、trace 和状态。    |
-| `abortController`               | `Ref<AbortController \| null>`                                                                           | 暴露给高级集成。                                   |
+| 属性                            | 类型                                                                                                     | 说明                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `input`                         | `Ref<string>`                                                                                            | 可绑定到图片表单的提示词输入。                                     |
+| `image`                         | `Ref<GeneratedImage \| null>`                                                                            | 最近一次成功生成的第一张图片。                                     |
+| `images`                        | `Ref<GeneratedImage[]>`                                                                                  | 最近一次成功生成的全部图片。                                       |
+| `result`                        | `Ref<ImageGenerationResult \| null>`                                                                     | 完整后端结果，包括 warnings 或 provider metadata。                 |
+| `status`                        | `Ref<AiRequestStatus>`                                                                                   | 请求生命周期：`ready`、`submitted` 或 `error`。                    |
+| `isLoading`                     | `Ref<boolean>`                                                                                           | 请求进行中时为 true。                                              |
+| `error`                         | `Ref<Error \| null>`                                                                                     | 最近一次非中止错误。                                               |
+| `lastRequest`                   | `Ref<ImageGenerationRequestInfo \| null>`                                                                | 最近一次准备完成的图片请求快照。                                   |
+| `lastResponse`                  | `Ref<ImageGenerationResponseInfo \| null>`                                                               | 最近一次后端响应快照，包含归一化后的结果。                         |
+| `inspect()`                     | `() => RequestInspectionSnapshot<ImageGenerationRequestInfo, ImageGenerationResponseInfo>`               | 生成可直接用于生产排障的快照：包含 timeline、重试记录与请求/响应。 |
+| `generate(prompt?, opts?)`      | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | `generateImage()` 的别名。                                         |
+| `generateImage(prompt?, opts?)` | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | 生成图片；省略 prompt 时使用 `input.value`。                       |
+| `stop()`                        | `() => void`                                                                                             | 中止当前请求。                                                     |
+| `setInput(value)`               | `(string) => void`                                                                                       | 手动替换提示词输入。                                               |
+| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | 不使用 `v-model` 时接入自定义输入组件。                            |
+| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>` | 提交 `input.value`；成功后清空 input。                             |
+| `clearError()`                  | `() => void`                                                                                             | 清空 `error`，并把 `status` 恢复为 `ready`。                       |
+| `clearTrace()`                  | `() => void`                                                                                             | 清空 `lastRequest` 和 `lastResponse`，不改变图片。                 |
+| `clear()`                       | `() => void`                                                                                             | 重置 input、图片、result、error、trace 和状态。                    |
+| `abortController`               | `Ref<AbortController \| null>`                                                                           | 暴露给高级集成。                                                   |
 
 ## 说明
 

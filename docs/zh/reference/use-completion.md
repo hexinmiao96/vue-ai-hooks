@@ -71,6 +71,7 @@ const { complete } = useCompletion({
 | `lastRequest`                 | `Ref<CompletionRequestInfo \| null>`                                                 | 最近一次准备完成的补全请求快照。                                     |
 | `lastResponse`                | `Ref<CompletionResponseInfo \| null>`                                                | 最近一次 Provider 响应快照，包含 stream 是否已打开。                 |
 | `complete(prompt?, opts?)`    | `(string?, Partial<CompletionRequest>) => Promise<string>`                           | 运行一次补全，并 resolve 最终字符串。                                |
+| `inspect()`                   | `() => RequestInspectionSnapshot<CompletionRequestInfo, CompletionResponseInfo>`     | 生成生产环境可用的诊断快照，包含 timeline 与重试记录。               |
 | `stop()`                      | `() => void`                                                                         | 中止当前流式请求。                                                   |
 | `setInput(value)`             | `(string) => void`                                                                   | 替换输入 prompt。                                                    |
 | `handleInputChange(event)`    | `(Event \| { target?: { value?: unknown } } \| string) => void`                      | 从原生输入事件或字符串更新 `input`。                                 |

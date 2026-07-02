@@ -92,27 +92,28 @@ const { object, partialObject, submit } = useObject<Ticket>({
 
 ## Return value
 
-| Property                 | Type                                                      | Description                                                           |
-| ------------------------ | --------------------------------------------------------- | --------------------------------------------------------------------- |
-| `id`                     | `Ref<string>`                                             | Object state id selected at composable creation.                      |
-| `object`                 | `Ref<T \| null>`                                          | Final parsed object from the latest successful submit.                |
-| `partialObject`          | `Ref<DeepPartial<T> \| null>`                             | Best-effort partial object while JSON is streaming.                   |
-| `text`                   | `Ref<string>`                                             | Raw streamed JSON text.                                               |
-| `input`                  | `Ref<string>`                                             | Prompt binding for forms.                                             |
-| `status`                 | `Ref<AiRequestStatus>`                                    | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.     |
-| `isLoading`              | `Ref<boolean>`                                            | True while a request is in flight.                                    |
-| `error`                  | `Ref<Error \| null>`                                      | Last provider or parse error.                                         |
-| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                          | Last prepared structured chat request snapshot.                       |
-| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                         | Last provider response snapshot, including whether a stream opened.   |
-| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | Send a prompt and parse the final JSON object.                        |
-| `setInput(value)`        | `(string) => void`                                        | Replace prompt input manually.                                        |
-| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                 | Wire custom inputs without `v-model`.                                 |
-| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`           | Wire an object form submit; clears input after success.               |
-| `stop()`                 | `() => void`                                              | Abort the in-flight request.                                          |
-| `clearError()`           | `() => void`                                              | Clear `error` and move `status` back to `ready`.                      |
-| `clearTrace()`           | `() => void`                                              | Clear `lastRequest` and `lastResponse` without changing object state. |
-| `clear()`                | `() => void`                                              | Reset object state, `text`, `input`, and `error`.                     |
-| `abortController`        | `Ref<AbortController \| null>`                            | Exposed for advanced use cases.                                       |
+| Property                 | Type                                                                     | Description                                                                        |
+| ------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| `id`                     | `Ref<string>`                                                            | Object state id selected at composable creation.                                   |
+| `object`                 | `Ref<T \| null>`                                                         | Final parsed object from the latest successful submit.                             |
+| `partialObject`          | `Ref<DeepPartial<T> \| null>`                                            | Best-effort partial object while JSON is streaming.                                |
+| `text`                   | `Ref<string>`                                                            | Raw streamed JSON text.                                                            |
+| `input`                  | `Ref<string>`                                                            | Prompt binding for forms.                                                          |
+| `status`                 | `Ref<AiRequestStatus>`                                                   | Request lifecycle: `ready`, `submitted`, `streaming`, or `error`.                  |
+| `isLoading`              | `Ref<boolean>`                                                           | True while a request is in flight.                                                 |
+| `error`                  | `Ref<Error \| null>`                                                     | Last provider or parse error.                                                      |
+| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                                         | Last prepared structured chat request snapshot.                                    |
+| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                                        | Last provider response snapshot, including whether a stream opened.                |
+| `inspect()`              | `() => RequestInspectionSnapshot<ObjectRequestInfo, ObjectResponseInfo>` | Production-ready debug snapshot with timeline, retries, and sanitized curl output. |
+| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>`                | Send a prompt and parse the final JSON object.                                     |
+| `setInput(value)`        | `(string) => void`                                                       | Replace prompt input manually.                                                     |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                | Wire custom inputs without `v-model`.                                              |
+| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`                          | Wire an object form submit; clears input after success.                            |
+| `stop()`                 | `() => void`                                                             | Abort the in-flight request.                                                       |
+| `clearError()`           | `() => void`                                                             | Clear `error` and move `status` back to `ready`.                                   |
+| `clearTrace()`           | `() => void`                                                             | Clear `lastRequest` and `lastResponse` without changing object state.              |
+| `clear()`                | `() => void`                                                             | Reset object state, `text`, `input`, and `error`.                                  |
+| `abortController`        | `Ref<AbortController \| null>`                                           | Exposed for advanced use cases.                                                    |
 
 ## Provider support
 

@@ -281,4 +281,51 @@ describe('useSpeech', () => {
     expect(error.value).toBeNull()
     expect(status.value).toBe('ready')
   })
+
+  it('captures inspect() snapshot metadata for proxy speech requests', async () => {
+    const response = {
+      audio: { url: 'https://cdn.example.test/inspect.wav', mediaType: 'audio/wav' },
+      model: 'inspect-speech'
+    }
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { generateSpeech, inspect, clearTrace } = useSpeech({
+      api: '/api/speech',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(generateSpeech('inspect text', { model: 'speech-model' })).resolves.toEqual(
+      response
+    )
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.providerTrace.api).toBe('/api/speech')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      text: 'inspect text'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: response
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toContain('/api/speech')
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

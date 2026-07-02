@@ -390,6 +390,157 @@ describe('react useChat', () => {
     expect(result.current.messages.at(-1)?.content).toBe('partially resumed')
   })
 
+  it('captures inspect() timeline, retry and request trace metadata', async () => {
+    let calls = 0
+    const requests: ChatRequest[] = []
+    const provider: ChatProvider = {
+      id: 'react-inspect-chat',
+      async completion() {
+        return (async function* () {})()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      },
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) {
+          const error = new Error('temporary outage')
+          Object.assign(error, { status: 429 })
+          throw error
+        }
+        return (async function* () {
+          yield { content: 'streamed' }
+        })()
+      }
+    }
+
+    const { result } = renderHook(() =>
+      useChat({
+        provider,
+        maxRetries: 1,
+        defaultRequest: {
+          body: { tenantId: 'tenant_1' },
+          headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' }
+        }
+      })
+    )
+
+    await act(async () => {
+      await result.current.append('inspect this')
+    })
+
+    const snapshot = result.current.inspect()
+    expect(calls).toBe(2)
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.request).toMatchObject({
+      providerId: 'react-inspect-chat',
+      attempt: 2,
+      body: { tenantId: 'tenant_1' },
+      headers: { 'x-tenant': 'tenant_1' }
+    })
+    expect(snapshot.request?.request).toMatchObject({
+      headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' },
+      messages: [{ role: 'user', content: 'inspect this' }]
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'react-inspect-chat',
+      attempt: 2,
+      hasStream: true
+    })
+    const kinds = snapshot.timeline.map((entry) => entry.kind)
+    expect(kinds).toEqual(expect.arrayContaining(['request', 'retry', 'stream', 'response']))
+    expect(snapshot.retries).toHaveLength(1)
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      error: expect.objectContaining({
+        category: 'rate-limit',
+        status: 429
+      })
+    })
+    expect(snapshot.providerTrace).toMatchObject({
+      providerId: 'react-inspect-chat',
+      attempt: 2,
+      hasStream: true
+    })
+
+    act(() => {
+      result.current.clearTrace()
+    })
+    const cleared = result.current.inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+    expect(cleared.timeline).toEqual([
+      {
+        kind: 'status',
+        label: 'status ready',
+        timestamp: expect.any(String),
+        status: 'ready'
+      }
+    ])
+  })
+
+  it('adds runId to chat requests and preserves it during retries', async () => {
+    const requests: ChatRequest[] = []
+    let calls = 0
+    const provider: ChatProvider = {
+      id: 'react-runid-chat',
+      async completion() {
+        return (async function* () {})()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      },
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) throw new Error('temporary failure')
+        return (async function* () {
+          yield { content: 'after retry' }
+        })()
+      }
+    }
+    const onRetry = vi.fn()
+    const { result } = renderHook(() =>
+      useChat({
+        provider,
+        maxRetries: 1,
+        onRetry
+      })
+    )
+
+    await act(async () => {
+      await result.current.append('retry')
+    })
+
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(requests).toHaveLength(2)
+    expect(requests[0].runId).toBeDefined()
+    expect(requests[0].runId).toBe(requests[1].runId)
+  })
+
+  it('keeps an explicit runId when one is provided on request options', async () => {
+    const requests: ChatRequest[] = []
+    const provider: ChatProvider = {
+      ...fakeProvider([{ content: 'ok' }], requests),
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        return (async function* () {
+          yield { content: 'ok' }
+        })()
+      }
+    }
+    const { result } = renderHook(() => useChat({ provider }))
+
+    await act(async () => {
+      await result.current.append('explicit runId', { runId: 'manual-run-id' })
+    })
+
+    expect(requests[0].runId).toBe('manual-run-id')
+  })
+
   it('retries before the first chunk and reports unsupported resume providers', async () => {
     const requests: ChatRequest[] = []
     let calls = 0

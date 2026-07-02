@@ -85,18 +85,38 @@ storage, and operations.
 
 ## Local gates
 
-Run these before a release candidate:
+Run one command before a release candidate:
+
+```bash
+pnpm production:readiness
+```
+
+If your environment blocks `pnpm` wrapper execution, run:
+
+```bash
+pnpm production:readiness:local
+
+# or
+
+node scripts/production-readiness-local.mjs
+```
+
+Equivalent long form (full local gate, without security audit):
 
 ```bash
 pnpm check
-pnpm release:check
+pnpm release:cadence
+pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm links:check && pnpm examples:build && pnpm docs:build
 ```
+
+If you need the strictest publish path, run `pnpm release:check` (adds
+`pnpm security:audit` in front).
 
 For proxy changes, also run:
 
 ```bash
 pnpm example:proxy-server
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
 ## Production smoke test
@@ -107,13 +127,15 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 4. Send a chat request, abort it, then retry.
 5. Trigger one provider error and confirm the UI keeps input editable.
 6. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
-7. Reload one server-stored thread and confirm messages restore with `Date`
+7. Run `pnpm threaded-chat:check` and confirm local thread indexes and
+   per-thread message stores restore independently.
+8. Reload one server-stored thread and confirm messages restore with `Date`
    values intact.
-8. Regenerate one assistant message, branch from the same user turn, reload, and
+9. Regenerate one assistant message, branch from the same user turn, reload, and
    confirm both branches restore without duplicate `runId` writes.
-9. Approve and reject one privileged tool request, then confirm duplicate
-   `runId` submissions do not execute the tool twice.
-10. Confirm logs have trace ids but no provider API keys.
+10. Approve and reject one privileged tool request, then confirm duplicate
+    `runId` submissions do not execute the tool twice.
+11. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

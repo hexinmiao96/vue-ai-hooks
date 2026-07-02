@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, shallowRef } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
 import {
   DirectChatTransport,
   useChat,
@@ -20,7 +20,8 @@ import type {
   ToolCall
 } from 'vue-ai-hooks'
 
-type ProviderType = 'openai' | 'openrouter' | 'gemini' | 'deepseek' | 'proxy' | 'local-tools'
+type ProviderType =
+  'openai' | 'openrouter' | 'gemini' | 'deepseek' | 'proxy' | 'proxy-route' | 'local-tools'
 
 type CheckoutArgs = {
   orderId: string
@@ -43,6 +44,7 @@ type RenderedMessagePart = {
  * - `VITE_CHAT_PROVIDER=gemini` selects Gemini's OpenAI-compatible endpoint.
  * - `VITE_CHAT_PROVIDER=deepseek` selects DeepSeek's OpenAI-compatible endpoint.
  * - `VITE_CHAT_PROVIDER=proxy` selects your app backend proxy.
+ * - `VITE_CHAT_PROVIDER=proxy-route` uses default proxy transport at `/api/chat`.
  * - `VITE_CHAT_PROVIDER=local-tools` runs the tool approval demo without keys.
  * - when no provider is selected and no real OpenAI key is present, the demo
  *   starts with local-tools so the first run works without credentials.
@@ -74,12 +76,18 @@ const providerType: ProviderType =
         ? 'deepseek'
         : providerName === 'proxy'
           ? 'proxy'
-          : providerName === 'local-tools'
-            ? 'local-tools'
-            : 'openai'
+          : providerName === 'proxy-route'
+            ? 'proxy-route'
+            : providerName === 'local-tools'
+              ? 'local-tools'
+              : 'openai'
 const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
-  | RequestCredentials
-  | undefined
+  RequestCredentials | undefined
+const proxyBaseURL = (import.meta.env.VITE_PROXY_BASE_URL || '').trim()
+const proxyRouteHeaders = import.meta.env.VITE_PROXY_AUTH_TOKEN
+  ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
+  : undefined
+const useProxyRoute = providerType === 'proxy-route'
 
 const checkoutArgs: CheckoutArgs = {
   orderId: 'ord_demo_1042',
@@ -237,11 +245,9 @@ const provider =
             ? proxyProvider({
                 // Browser requests go to your app backend; upstream keys stay server-side.
                 chatUrl: import.meta.env.VITE_PROXY_CHAT_URL || '/api/ai/chat',
-                baseURL: import.meta.env.VITE_PROXY_BASE_URL,
+                baseURL: proxyBaseURL,
                 credentials: proxyCredentials,
-                headers: import.meta.env.VITE_PROXY_AUTH_TOKEN
-                  ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
-                  : undefined
+                headers: proxyRouteHeaders
               })
             : openai({
                 // Default path is https://api.openai.com/v1 if baseURL is omitted.
@@ -267,13 +273,24 @@ const {
   handleSubmit,
   stop,
   error,
-  lastRequest,
-  lastResponse,
   pendingToolCalls,
   approveToolCall,
-  rejectToolCall
+  rejectToolCall,
+  clearTrace,
+  inspect,
+  lastRequest,
+  lastResponse
 } = useChat({
-  provider,
+  ...(useProxyRoute
+    ? {
+        api: '/api/chat',
+        ...(proxyBaseURL ? { baseURL: proxyBaseURL } : {}),
+        credentials: proxyCredentials,
+        ...(proxyRouteHeaders ? { headers: proxyRouteHeaders } : {})
+      }
+    : {
+        provider
+      }),
   tools: [chargeCardTool],
   toolHandlers: {
     chargeCard(args) {
@@ -309,14 +326,42 @@ const canStartDemo = computed(() => !isLoading.value && pendingApprovals.value.l
 const canSend = computed(
   () => !isLoading.value && (input.value.trim().length > 0 || selectedFiles.value.length > 0)
 )
+const inspection = computed(() => inspect())
+const copiedStatus = ref('Copy curl')
+const inspectionSummary = computed(() => inspection.value.summary)
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
+const inspectionTimeline = computed(() => inspection.value.timeline)
+const inspectionRetries = computed(() => inspection.value.retries)
+const lastRequestJson = computed(() => JSON.stringify(lastRequest.value, null, 2))
+const lastResponseJson = computed(() => JSON.stringify(lastResponse.value, null, 2))
+
+async function copyInspectionCurl() {
+  if (!inspection.value.curl) return
+  await navigator.clipboard.writeText(inspection.value.curl)
+  copiedStatus.value = 'Copied'
+  window.setTimeout(() => {
+    copiedStatus.value = 'Copy curl'
+  }, 1200)
+}
 const traceRows = computed(() => [
-  { label: 'Provider', value: lastRequest.value?.providerId ?? provider.id },
-  { label: 'Attempt', value: lastRequest.value ? String(lastRequest.value.attempt) : 'idle' },
-  { label: 'Kind', value: lastRequest.value?.kind ?? 'chat' },
   {
-    label: 'Response',
-    value: lastResponse.value ? (lastResponse.value.hasStream ? 'stream open' : 'no stream') : '-'
-  }
+    label: 'Provider',
+    value:
+      inspection.value.providerId ??
+      (providerType === 'proxy-route' ? 'proxy-transport' : provider.id)
+  },
+  {
+    label: 'Attempt',
+    value: inspection.value.request ? String(inspection.value.request.attempt) : 'idle'
+  },
+  { label: 'Kind', value: inspection.value.request?.kind ?? 'chat' },
+  { label: 'Status', value: inspection.value.status },
+  {
+    label: 'Stream',
+    value: inspection.value.response?.hasStream ? 'stream open' : 'no stream'
+  },
+  { label: 'Timeline', value: String(inspection.value.timeline.length) },
+  { label: 'Retries', value: String(inspection.value.retries.length) }
 ])
 const renderedMessages = computed(() =>
   messages.value.map((message) => ({
@@ -452,12 +497,56 @@ async function rejectCheckout(callId: string) {
       {{ error.message }}
     </p>
     <p class="provider-badge">Provider: {{ providerType }} · chunks: {{ chunkCount }}</p>
-    <dl class="trace-panel" aria-label="last request trace">
-      <div v-for="row in traceRows" :key="row.label">
-        <dt>{{ row.label }}</dt>
-        <dd>{{ row.value }}</dd>
+    <section class="inspect-panel" aria-label="request inspection">
+      <h2>Inspection</h2>
+      <p class="inspect-summary">{{ inspectionSummary }}</p>
+      <div class="inspect-actions">
+        <button type="button" :disabled="!inspection.curl" @click="copyInspectionCurl">
+          {{ copiedStatus }}
+        </button>
+        <button type="button" @click="clearTrace">Clear trace</button>
       </div>
-    </dl>
+      <dl class="trace-panel" aria-label="inspection snapshot">
+        <div v-for="row in traceRows" :key="row.label">
+          <dt>{{ row.label }}</dt>
+          <dd>{{ row.value }}</dd>
+        </div>
+      </dl>
+      <details>
+        <summary>Timeline ({{ inspectionTimeline.length }})</summary>
+        <ul class="trace-list">
+          <li
+            v-for="event in inspectionTimeline"
+            :key="`${event.kind}-${event.timestamp}-${event.label}`"
+          >
+            {{ event.kind }}{{ event.attempt ? ` #${event.attempt}` : '' }} —
+            {{ event.label || event.message || 'event' }}
+          </li>
+        </ul>
+      </details>
+      <details>
+        <summary>Retries ({{ inspectionRetries.length }})</summary>
+        <ul class="trace-list">
+          <li v-for="retry in inspectionRetries" :key="`r-${retry.attempt}-${retry.timestamp}`">
+            #{{ retry.attempt }}: {{ retry.error.category }} — {{ retry.error.message }}
+          </li>
+        </ul>
+      </details>
+      <details>
+        <summary>Provider trace</summary>
+        <pre class="trace-code">{{ JSON.stringify(inspection.providerTrace, null, 2) }}</pre>
+      </details>
+      <details>
+        <summary>Raw request/response</summary>
+        <pre class="trace-code">lastRequest: {{ lastRequestJson }}</pre>
+        <pre class="trace-code">lastResponse: {{ lastResponseJson }}</pre>
+      </details>
+      <details>
+        <summary>Full snapshot</summary>
+        <pre class="trace-code">{{ inspectionJson }}</pre>
+      </details>
+      <pre v-if="inspection.curl" class="trace-code">curl: {{ inspection.curl }}</pre>
+    </section>
     <button class="demo-trigger" :disabled="!canStartDemo" @click="startApprovalDemo">
       Run approval demo
     </button>
@@ -813,6 +902,42 @@ button:disabled {
 }
 .error {
   color: #b00020;
+}
+.inspect-panel {
+  margin: 12px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
+.inspect-summary {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 12px;
+}
+.inspect-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.trace-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+.trace-list li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.trace-code {
+  background: #0f172a;
+  border-radius: 6px;
+  color: #d1fae5;
+  display: block;
+  margin: 0 0 12px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 .provider-badge {
   margin: 0 0 12px;

@@ -20,6 +20,7 @@ import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
@@ -92,6 +93,7 @@ export interface UseObjectReturn<T = unknown> {
   error: Ref<Error | null>
   lastRequest: Ref<ObjectRequestInfo | null>
   lastResponse: Ref<ObjectResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<ObjectRequestInfo, ObjectResponseInfo>
   submit: (prompt?: string | Message, options?: Partial<ChatRequest>) => Promise<T>
   stop: () => void
   setInput: (value: string) => void
@@ -219,6 +221,16 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<ObjectRequestInfo, ObjectResponseInfo> {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   function clearError() {
@@ -469,6 +481,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     error,
     lastRequest,
     lastResponse,
+    inspect,
     submit,
     stop,
     setInput,

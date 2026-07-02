@@ -193,4 +193,39 @@ describe('useGeneration', () => {
     expect(generation.error.value).toBeNull()
     expect(generation.result.value).toBeNull()
   })
+
+  it('captures inspect() snapshot metadata for generation requests', async () => {
+    const response = 'inspect generated text'
+    const fetcher = vi.fn(async () => response)
+    const generation = useGeneration<string, string>({
+      fetcher,
+      defaultBody: { tenantId: 'tenant_1' }
+    })
+
+    await expect(generation.generate('inspect prompt')).resolves.toBe(response)
+
+    const snapshot = generation.inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.request).toMatchObject({
+      id: expect.stringMatching(/^generation-/),
+      attempt: 1,
+      input: 'inspect prompt'
+    })
+    expect(snapshot.response).toMatchObject({
+      result: response
+    })
+    expect(snapshot.request).toMatchObject({
+      body: { tenantId: 'tenant_1' }
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toBeNull()
+
+    generation.clearTrace()
+    const cleared = generation.inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

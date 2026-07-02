@@ -271,6 +271,28 @@ pre {
   padding: 14px;
   white-space: pre-wrap;
 }
+.inspect-summary {
+  margin: 0 0 8px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.inspect-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.trace-list {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.trace-list li {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
 
 @media (max-width: 900px) {
   .app-shell {

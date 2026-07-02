@@ -214,6 +214,125 @@ describe('react useCompletion', () => {
     expect(result.current.lastRequest?.attempt).toBe(2)
   })
 
+  it('captures inspect() timeline, retry and request trace metadata', async () => {
+    let calls = 0
+    const requests: CompletionRequest[] = []
+    const provider: ChatProvider = {
+      id: 'react-inspect-completion',
+      async chat() {
+        return (async function* () {
+          yield { content: '' }
+        })()
+      },
+      async completion(request): Promise<AsyncIterable<string>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) {
+          const error = new Error('temporary outage')
+          Object.assign(error, { status: 429 })
+          throw error
+        }
+        return (async function* () {
+          yield 'ok'
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { result } = renderHook(() =>
+      useCompletion({
+        provider,
+        maxRetries: 1,
+        defaultRequest: {
+          body: { tenantId: 'tenant_1' },
+          headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' }
+        }
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete('retry please')).resolves.toBe('ok')
+    })
+
+    expect(calls).toBe(2)
+
+    const snapshot = result.current.inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.request).toMatchObject({
+      providerId: 'react-inspect-completion',
+      attempt: 2,
+      body: { tenantId: 'tenant_1' },
+      headers: {
+        'x-tenant': 'tenant_1'
+      },
+      request: expect.objectContaining({
+        prompt: 'retry please',
+        stream: true
+      })
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'react-inspect-completion',
+      attempt: 2,
+      hasStream: true
+    })
+    const kinds = snapshot.timeline.map((event) => event.kind)
+    expect(kinds).toEqual(expect.arrayContaining(['request', 'retry', 'stream', 'response']))
+    expect(snapshot.retries).toHaveLength(1)
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      error: expect.objectContaining({
+        category: 'rate-limit',
+        status: 429
+      })
+    })
+    expect(snapshot.providerTrace).toMatchObject({
+      providerId: 'react-inspect-completion',
+      attempt: 2,
+      hasStream: true
+    })
+    expect(snapshot.curl).toBeNull()
+    expect(snapshot.summary).toBe('response received')
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toMatchObject({
+      body: { tenantId: 'tenant_1' },
+      headers: { 'x-tenant': 'tenant_1' },
+      prompt: 'retry please',
+      stream: true
+    })
+  })
+
+  it('clearTrace() also clears inspect snapshot state', async () => {
+    const { result } = renderHook(() => useCompletion({ provider: completionProvider(['ok']) }))
+
+    await act(async () => {
+      await expect(result.current.complete('clear inspect')).resolves.toBe('ok')
+    })
+
+    expect(result.current.inspect().hasRequest).toBe(true)
+    expect(result.current.inspect().hasResponse).toBe(true)
+
+    act(() => {
+      result.current.clearTrace()
+    })
+
+    const snapshot = result.current.inspect()
+    expect(snapshot.hasRequest).toBe(false)
+    expect(snapshot.hasResponse).toBe(false)
+    expect(snapshot.retries).toEqual([])
+    expect(snapshot.timeline).toEqual([
+      {
+        kind: 'status',
+        label: 'status ready',
+        timestamp: expect.any(String),
+        status: 'ready'
+      }
+    ])
+  })
+
   it('marks stopped streams as aborted finishes', async () => {
     const onFinish = vi.fn()
     let resolveOnAbort: (() => void) | undefined

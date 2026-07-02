@@ -189,6 +189,12 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
+If you want to validate the default `/api/*` transport contract in this template, run:
+
+```bash
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 For copyable upstream environment recipes, including OpenAI-compatible gateways,
 Ollama, vLLM, custom endpoint paths, and a production checklist, see
 [Proxy recipes](./proxy-recipes.md).

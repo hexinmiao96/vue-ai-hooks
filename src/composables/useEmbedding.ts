@@ -12,6 +12,7 @@ import {
 } from '../utils/retry'
 import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 export { cosineSimilarity } from '../utils/embedding'
@@ -55,6 +56,7 @@ export interface UseEmbeddingReturn {
   result: Ref<EmbeddingResult | null>
   lastRequest: Ref<EmbeddingRequestInfo | null>
   lastResponse: Ref<EmbeddingResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<EmbeddingRequestInfo, EmbeddingResponseInfo>
   embed: (input: string | string[], options?: Partial<EmbeddingRequest>) => Promise<EmbeddingResult>
   stop: () => void
   setInput: (value: string) => void
@@ -120,6 +122,16 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     result.value = null
     error.value = null
     clearTrace()
+  }
+
+  function inspect(): RequestInspectionSnapshot<EmbeddingRequestInfo, EmbeddingResponseInfo> {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   function clearError() {
@@ -244,6 +256,7 @@ export function useEmbedding(options: UseEmbeddingOptions = {}): UseEmbeddingRet
     result,
     lastRequest,
     lastResponse,
+    inspect,
     embed,
     stop,
     setInput,

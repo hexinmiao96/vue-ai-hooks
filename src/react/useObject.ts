@@ -28,6 +28,12 @@ import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import {
+  inspectRequestTrace,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 
 export type ReactObjectStatus = AiRequestStatus
 
@@ -118,6 +124,7 @@ export interface UseReactObjectReturn<T = unknown> {
   ) => Promise<T>
   clearError: () => void
   clearTrace: () => void
+  inspect: () => RequestInspectionSnapshot<ReactObjectRequestInfo, ReactObjectResponseInfo>
   clear: () => void
   abortController: AbortController | null
 }
@@ -213,6 +220,8 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
   const [error, setError] = useState<Error | null>(null)
   const [lastRequest, setLastRequest] = useState<ReactObjectRequestInfo | null>(null)
   const [lastResponse, setLastResponse] = useState<ReactObjectResponseInfo | null>(null)
+  const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
+  const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const inputRef = useRef(input)
@@ -255,7 +264,50 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
+    setInspectionEvents([])
+    setInspectionRetries([])
   }, [])
+
+  const inspect = useCallback(
+    () =>
+      inspectRequestTrace({
+        status,
+        error,
+        lastRequest,
+        lastResponse,
+        events: inspectionEvents,
+        retries: inspectionRetries,
+        curl: true
+      }),
+    [error, inspectionEvents, inspectionRetries, lastRequest, lastResponse, status]
+  )
+
+  const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
+    setInspectionEvents((current) => [
+      ...current,
+      { ...event, timestamp: event.timestamp ?? new Date() }
+    ])
+  }, [])
+
+  const recordInspectionRetry = useCallback(
+    (errorToRecord: unknown, context: ReturnType<typeof createRetryContext>) => {
+      const delayMs =
+        typeof optionsRef.current.retryDelayMs === 'function'
+          ? optionsRef.current.retryDelayMs(context)
+          : (optionsRef.current.retryDelayMs ?? 0)
+      setInspectionRetries((current) => [
+        ...current,
+        {
+          attempt: context.attempt,
+          maxRetries: context.maxRetries,
+          error: errorToRecord,
+          delayMs,
+          timestamp: new Date()
+        }
+      ])
+    },
+    []
+  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -371,19 +423,43 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
     [id, provider.id, proxyRequestInfo]
   )
 
-  const reportRequest = useCallback((info: ReactObjectRequestInfo) => {
-    setLastRequest(info)
-    setLastResponse(null)
-    onRequestRef.current?.(info)
-  }, [])
+  const reportRequest = useCallback(
+    (info: ReactObjectRequestInfo) => {
+      setLastRequest(info)
+      setLastResponse(null)
+      recordInspectionEvent({
+        kind: 'request',
+        label: 'request prepared',
+        attempt: info.attempt,
+        status,
+        metadata: {
+          body: info.body,
+          headers: info.headers,
+          hasMessages: info.messages.length > 0
+        }
+      })
+      onRequestRef.current?.(info)
+    },
+    [recordInspectionEvent, status]
+  )
 
   const reportResponse = useCallback(
     (info: ReactObjectRequestInfo, stream: AsyncIterable<ChatChunk> | null | undefined) => {
       const response = { ...info, hasStream: Boolean(stream) }
       setLastResponse(response)
+      recordInspectionEvent({
+        kind: 'response',
+        label: stream ? 'response received' : 'response received without stream',
+        attempt: info.attempt,
+        status,
+        metadata: {
+          hasStream: Boolean(stream)
+        }
+      })
       onResponseRef.current?.(response)
+      return response
     },
-    []
+    [recordInspectionEvent, status]
   )
 
   const submit = useCallback(
@@ -405,6 +481,8 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
       setPartialObject(initialPartialObjectRef.current)
       setText('')
       setStatus('submitted')
+      setInspectionEvents([])
+      setInspectionRetries([])
 
       try {
         let retryAttempt = 0
@@ -453,6 +531,17 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
 
             for await (const chunk of stream) {
               if (controller.signal.aborted) break
+              if (!receivedChunk) {
+                recordInspectionEvent({
+                  kind: 'stream',
+                  label: 'stream started',
+                  attempt: retryAttempt + 1,
+                  status,
+                  metadata: {
+                    hasStream: true
+                  }
+                })
+              }
               receivedChunk = true
               setStatus((current) => (current === 'submitted' ? 'streaming' : current))
               if (chunk.content) {
@@ -498,12 +587,32 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
             throttler.flush()
             const context = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (!receivedChunk && (await canRetry(currentOptions, context))) {
+              recordInspectionEvent({
+                kind: 'retry',
+                label: 'retry planned',
+                attempt: context.attempt,
+                status,
+                metadata: {
+                  maxRetries: context.maxRetries,
+                  hasResponse: false
+                }
+              })
+              recordInspectionRetry(nextError, context)
               retryAttempt += 1
               throttler.cancel()
               await waitForRetry(currentOptions, context, controller.signal)
               continue
             }
 
+            recordInspectionEvent({
+              kind: 'error',
+              label: 'structured output failed',
+              attempt: retryAttempt + 1,
+              status: 'error',
+              metadata: {
+                message: nextError.message
+              }
+            })
             setStatus('error')
             setError(nextError)
             onErrorRef.current?.(nextError)
@@ -522,6 +631,8 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
       parsePartialObject,
       promptToMessage,
       provider,
+      recordInspectionEvent,
+      recordInspectionRetry,
       reportRequest,
       reportResponse,
       requestInfo,
@@ -565,6 +676,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
     handleSubmit,
     clearError,
     clearTrace,
+    inspect,
     clear,
     abortController
   }

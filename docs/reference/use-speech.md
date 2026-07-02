@@ -63,27 +63,28 @@ await handleSubmit(undefined, { voice: 'verse' })
 
 ## Return value
 
-| Property                       | Type                                                                                                       | Description                                                      |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `input`                        | `Ref<string>`                                                                                              | Text binding for speech forms.                                   |
-| `audio`                        | `Ref<GeneratedAudio \| null>`                                                                              | Generated audio from the latest successful run.                  |
-| `result`                       | `Ref<SpeechGenerationResult \| null>`                                                                      | Full backend result, including warnings or provider metadata.    |
-| `status`                       | `Ref<AiRequestStatus>`                                                                                     | Request lifecycle: `ready`, `submitted`, or `error`.             |
-| `isLoading`                    | `Ref<boolean>`                                                                                             | True while a request is in flight.                               |
-| `error`                        | `Ref<Error \| null>`                                                                                       | Last non-abort error.                                            |
-| `lastRequest`                  | `Ref<SpeechGenerationRequestInfo \| null>`                                                                 | Last prepared speech request snapshot.                           |
-| `lastResponse`                 | `Ref<SpeechGenerationResponseInfo \| null>`                                                                | Last backend response snapshot, including the normalized result. |
-| `generate(text?, opts?)`       | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Alias for `generateSpeech()`.                                    |
-| `generateSpeech(text?, opts?)` | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Generate speech. Uses `input.value` when text is omitted.        |
-| `speak(text?, opts?)`          | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Alias for `generateSpeech()`.                                    |
-| `stop()`                       | `() => void`                                                                                               | Abort the in-flight request.                                     |
-| `setInput(value)`              | `(string) => void`                                                                                         | Replace text input manually.                                     |
-| `handleInputChange(e)`         | `(Event \| { target } \| string) => void`                                                                  | Wire custom inputs without `v-model`.                            |
-| `handleSubmit(e, opts?)`       | `({ preventDefault?: () => void }?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>` | Submit `input.value`; clears input after success.                |
-| `clearError()`                 | `() => void`                                                                                               | Clear `error` and move `status` back to `ready`.                 |
-| `clearTrace()`                 | `() => void`                                                                                               | Clear `lastRequest` and `lastResponse` without changing audio.   |
-| `clear()`                      | `() => void`                                                                                               | Reset input, audio, result, error, trace, and status.            |
-| `abortController`              | `Ref<AbortController \| null>`                                                                             | Exposed for advanced integrations.                               |
+| Property                       | Type                                                                                                       | Description                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `input`                        | `Ref<string>`                                                                                              | Text binding for speech forms.                                           |
+| `audio`                        | `Ref<GeneratedAudio \| null>`                                                                              | Generated audio from the latest successful run.                          |
+| `result`                       | `Ref<SpeechGenerationResult \| null>`                                                                      | Full backend result, including warnings or provider metadata.            |
+| `status`                       | `Ref<AiRequestStatus>`                                                                                     | Request lifecycle: `ready`, `submitted`, or `error`.                     |
+| `isLoading`                    | `Ref<boolean>`                                                                                             | True while a request is in flight.                                       |
+| `error`                        | `Ref<Error \| null>`                                                                                       | Last non-abort error.                                                    |
+| `lastRequest`                  | `Ref<SpeechGenerationRequestInfo \| null>`                                                                 | Last prepared speech request snapshot.                                   |
+| `lastResponse`                 | `Ref<SpeechGenerationResponseInfo \| null>`                                                                | Last backend response snapshot, including the normalized result.         |
+| `inspect()`                    | `() => RequestInspectionSnapshot<SpeechGenerationRequestInfo, SpeechGenerationResponseInfo>`               | Build a production-ready debug snapshot with timeline and retry records. |
+| `generate(text?, opts?)`       | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Alias for `generateSpeech()`.                                            |
+| `generateSpeech(text?, opts?)` | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Generate speech. Uses `input.value` when text is omitted.                |
+| `speak(text?, opts?)`          | `(string?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>`                          | Alias for `generateSpeech()`.                                            |
+| `stop()`                       | `() => void`                                                                                               | Abort the in-flight request.                                             |
+| `setInput(value)`              | `(string) => void`                                                                                         | Replace text input manually.                                             |
+| `handleInputChange(e)`         | `(Event \| { target } \| string) => void`                                                                  | Wire custom inputs without `v-model`.                                    |
+| `handleSubmit(e, opts?)`       | `({ preventDefault?: () => void }?, Partial<SpeechGenerationRequest>?) => Promise<SpeechGenerationResult>` | Submit `input.value`; clears input after success.                        |
+| `clearError()`                 | `() => void`                                                                                               | Clear `error` and move `status` back to `ready`.                         |
+| `clearTrace()`                 | `() => void`                                                                                               | Clear `lastRequest` and `lastResponse` without changing audio.           |
+| `clear()`                      | `() => void`                                                                                               | Reset input, audio, result, error, trace, and status.                    |
+| `abortController`              | `Ref<AbortController \| null>`                                                                             | Exposed for advanced integrations.                                       |
 
 ## Notes
 

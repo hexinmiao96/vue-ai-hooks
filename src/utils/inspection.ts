@@ -23,12 +23,7 @@ export interface InspectionErrorSummary {
 }
 
 export type InspectionTimelineEventKind =
-  | 'request'
-  | 'response'
-  | 'stream'
-  | 'retry'
-  | 'error'
-  | 'status'
+  'request' | 'response' | 'stream' | 'retry' | 'error' | 'status'
 
 export interface InspectionTimelineEventInput {
   kind: InspectionTimelineEventKind
@@ -68,6 +63,7 @@ export interface InspectionProviderTrace {
   trigger?: string
   aiSdkTrigger?: string
   hasStream?: boolean
+  traceId?: string
   requestKeys: string[]
   responseKeys: string[]
 }
@@ -97,6 +93,7 @@ export interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unkno
   request: TRequest | null
   response: TResponse | null
   error: InspectionErrorSummary | null
+  traceId?: string
   providerId?: string
   api?: string
   attempt?: number
@@ -163,6 +160,7 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
   const timestamp = normalizeTimestamp(options.now)
   const retries = normalizeRetryRecords(options.retries, timestamp)
   const providerTrace = createInspectionProviderTrace(metadataSources, hasStream)
+  const traceId = readTraceId(metadataSources)
   const curl =
     options.curl === undefined || options.curl === false
       ? null
@@ -173,6 +171,7 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
     request,
     response,
     error,
+    ...(traceId !== undefined ? { traceId } : {}),
     ...readStringFieldEntry(metadataSources, 'providerId', 'providerId'),
     ...readStringFieldEntry(metadataSources, 'api', 'api'),
     ...readNumberFieldEntry(metadataSources, 'attempt', 'attempt'),
@@ -288,8 +287,10 @@ function createInspectionProviderTrace(
 ): InspectionProviderTrace {
   const requestRecord = metadataSources[0]
   const responseRecord = metadataSources[1]
+  const traceId = readTraceId(metadataSources)
 
   return {
+    ...(traceId ? { traceId } : {}),
     ...readStringFieldEntry(metadataSources, 'providerId', 'providerId'),
     ...readStringFieldEntry(metadataSources, 'api', 'api'),
     ...readNumberFieldEntry(metadataSources, 'attempt', 'attempt'),
@@ -315,7 +316,10 @@ function createInspectionTimeline(options: {
   const requestAttempt = readNumberField(options.request, 'attempt')
   const responseAttempt = readNumberField(options.response, 'attempt')
 
-  if (options.request !== null) {
+  const hasRequestEvent = (options.events ?? []).some((event) => event.kind === 'request')
+  const hasResponseEvent = (options.events ?? []).some((event) => event.kind === 'response')
+
+  if (options.request !== null && !hasRequestEvent) {
     events.push({
       kind: 'request',
       label: 'request prepared',
@@ -337,7 +341,7 @@ function createInspectionTimeline(options: {
     })
   }
 
-  if (options.response !== null) {
+  if (options.response !== null && !hasResponseEvent) {
     events.push({
       kind: 'response',
       label: options.hasStream === false ? 'response received without stream' : 'response received',
@@ -517,5 +521,32 @@ function readFirstField(
     if (type === 'string' && typeof field === 'string') return field
     if (type === 'number' && typeof field === 'number') return field
   }
+  return undefined
+}
+
+function readTraceId(values: readonly (Record<string, unknown> | undefined)[]): string | undefined {
+  for (const value of values) {
+    const directTraceId = readStringValue(value, 'traceId')
+    if (directTraceId) return directTraceId
+
+    const metadata = value?.metadata
+    if (isRecord(metadata)) {
+      const metadataTraceId = readStringValue(metadata, 'traceId')
+      if (metadataTraceId) return metadataTraceId
+    }
+
+    const requestMetadata = value?.requestMetadata
+    if (isRecord(requestMetadata)) {
+      const requestMetadataTraceId = readStringValue(requestMetadata, 'traceId')
+      if (requestMetadataTraceId) return requestMetadataTraceId
+    }
+
+    const body = value?.body
+    if (isRecord(body)) {
+      const bodyTraceId = readStringValue(body, 'traceId')
+      if (bodyTraceId) return bodyTraceId
+    }
+  }
+
   return undefined
 }

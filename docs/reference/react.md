@@ -131,6 +131,7 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | `id`, `messages`, `input`, `status`, `usage`, `data`, `streamData`, `isLoading`, `error` | Current chat state.                                                |
 | `lastRequest`, `lastResponse`                                                            | Last request and response trace snapshots.                         |
+| `inspect()`                                                                              | Build a production debug snapshot with timeline and retry records. |
 | `append(content, options?)`                                                              | Add or replace a user message and stream the assistant reply.      |
 | `sendMessage(content?, options?)`                                                        | AI SDK-style send helper. Omit content to submit current messages. |
 | `regenerate(options?)`, `reload()`                                                       | Regenerate from the latest user turn.                              |
@@ -155,16 +156,17 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `UseReactCompletionReturn` exposes plain React state and actions:
 
-| Return                                                      | Description                                                      |
-| ----------------------------------------------------------- | ---------------------------------------------------------------- |
-| `id`, `completion`, `input`, `status`, `isLoading`, `error` | Current completion state.                                        |
-| `lastRequest`, `lastResponse`                               | Last request and response trace snapshots.                       |
-| `complete(prompt?, options?)`                               | Run a completion. Resolves to the final text.                    |
-| `stop()`                                                    | Abort the active stream.                                         |
-| `setInput(value)`, `setCompletion(value)`                   | Controlled input and completion setters.                         |
-| `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                        |
-| `clearError()`, `clearTrace()`, `clear()`                   | Reset error, trace, or the full completion state.                |
-| `abortController`                                           | Active `AbortController`, or `null` when no stream is in flight. |
+| Return                                                      | Description                                                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| `id`, `completion`, `input`, `status`, `isLoading`, `error` | Current completion state.                                          |
+| `lastRequest`, `lastResponse`                               | Last request and response trace snapshots.                         |
+| `complete(prompt?, options?)`                               | Run a completion. Resolves to the final text.                      |
+| `inspect()`                                                 | Build a production debug snapshot with timeline and retry records. |
+| `stop()`                                                    | Abort the active stream.                                           |
+| `setInput(value)`, `setCompletion(value)`                   | Controlled input and completion setters.                           |
+| `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                          |
+| `clearError()`, `clearTrace()`, `clear()`                   | Reset error, trace, or the full completion state.                  |
+| `abortController`                                           | Active `AbortController`, or `null` when no stream is in flight.   |
 
 `useObject(options)` accepts `UseReactObjectOptions<T>`:
 
@@ -181,16 +183,17 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `UseReactObjectReturn<T>` exposes plain React state and actions:
 
-| Return                                                           | Description                                                    |
-| ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| `id`, `object`, `partialObject`, `text`, `input`                 | Current structured-output state and raw JSON text.             |
-| `status`, `isLoading`, `error`, `abortController`                | Request lifecycle state.                                       |
-| `lastRequest`, `lastResponse`                                    | Last request and response trace snapshots.                     |
-| `submit(prompt?, options?)`                                      | Run a structured request. Resolves to the final parsed object. |
-| `stop()`                                                         | Abort the active stream; aborted object requests reject.       |
-| `setInput(value)`, `setObject(value)`, `setPartialObject(value)` | Controlled state setters.                                      |
-| `handleInputChange(event)`, `handleSubmit(event, options?)`      | Form helpers for controlled React inputs.                      |
-| `clearError()`, `clearTrace()`, `clear()`                        | Reset error, trace, or the full object state.                  |
+| Return                                                           | Description                                                        |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `id`, `object`, `partialObject`, `text`, `input`                 | Current structured-output state and raw JSON text.                 |
+| `status`, `isLoading`, `error`, `abortController`                | Request lifecycle state.                                           |
+| `lastRequest`, `lastResponse`                                    | Last request and response trace snapshots.                         |
+| `inspect()`                                                      | Build a production debug snapshot with timeline and retry records. |
+| `submit(prompt?, options?)`                                      | Run a structured request. Resolves to the final parsed object.     |
+| `stop()`                                                         | Abort the active stream; aborted object requests reject.           |
+| `setInput(value)`, `setObject(value)`, `setPartialObject(value)` | Controlled state setters.                                          |
+| `handleInputChange(event)`, `handleSubmit(event, options?)`      | Form helpers for controlled React inputs.                          |
+| `clearError()`, `clearTrace()`, `clear()`                        | Reset error, trace, or the full object state.                      |
 
 The React entry intentionally does not export the Vue-only composables. Import
 the Vue APIs from the root package and React hooks from `vue-ai-hooks/react`.

@@ -58,7 +58,8 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, VERSION)
     request.onupgradeneeded = () => {
       const db = request.result
-      if (!db.objectStoreNames.contains(STORE_THREADS)) db.createObjectStore(STORE_THREADS, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(STORE_THREADS))
+        db.createObjectStore(STORE_THREADS, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(STORE_MESSAGES)) db.createObjectStore(STORE_MESSAGES)
     }
     request.onerror = () => reject(request.error)
@@ -66,7 +67,11 @@ function openDb(): Promise<IDBDatabase> {
   })
 }
 
-async function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>) {
+async function withStore<T>(
+  storeName: string,
+  mode: IDBTransactionMode,
+  fn: (store: IDBObjectStore) => IDBRequest<T>
+) {
   const db = await openDb()
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(storeName, mode)
@@ -80,15 +85,19 @@ async function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (st
 }
 
 async function loadThreadIndex(): Promise<SerializedChatThreadsState | null> {
-  const raw = await withStore<SerializedChatThreadsState | undefined>('thread-index', 'readonly', (store) =>
-    store.get('threads')
+  const raw = await withStore<SerializedChatThreadsState | undefined>(
+    'thread-index',
+    'readonly',
+    (store) => store.get('threads')
   )
   return raw ?? null
 }
 
 async function loadThreadMessages(threadId: string): Promise<SerializedMessage[] | null> {
-  const raw = await withStore<SerializedMessage[] | undefined>('thread-messages', 'readonly', (store) =>
-    store.get(`thread-messages:${threadId}` as ThreadStoreKey)
+  const raw = await withStore<SerializedMessage[] | undefined>(
+    'thread-messages',
+    'readonly',
+    (store) => store.get(`thread-messages:${threadId}` as ThreadStoreKey)
   )
   return raw ?? null
 }

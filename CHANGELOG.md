@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   services that project browser-safe `AgentEvent` streams.
 - Added a no-key threaded chat demo that pairs `useChatThreads()` with
   per-thread `useChat({ persist })` message storage.
+- Added a threaded chat smoke check for published bundle thread indexes,
+  per-thread message persistence, Date-safe restore, and archive/delete flows.
 
 ## [0.14.0] - 2026-07-02
 

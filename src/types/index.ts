@@ -239,6 +239,8 @@ export interface ChatRequest {
   id?: string
   /** Backend thread/session identifier that can differ from client-side shared state id. */
   threadId?: string
+  /** Idempotency key for one assistant attempt; used by proxy backends and inspection traces. */
+  runId?: string
   messages: ChatRequestMessage[]
   /** App-defined props forwarded to proxy/agent backends. */
   forwardedProps?: Record<string, unknown>
@@ -270,6 +272,8 @@ export interface ChatResumeRequest {
   id: string
   /** Backend thread/session identifier that can differ from client-side shared state id. */
   threadId?: string
+  /** Idempotency key for the resume attempt when supported by the provider backend. */
+  runId?: string
   /** App-defined props forwarded to proxy/agent backends. */
   forwardedProps?: Record<string, unknown>
   /** Extra JSON body fields for provider/proxy-specific resume options. */

@@ -68,32 +68,33 @@ await handleSubmit(undefined, { topN: 1 })
 
 ## 返回值
 
-| 属性                                    | 类型                                                                                                         | 说明                                                   |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------ |
-| `input`                                 | `Ref<string>`                                                                                                | 可绑定到表单的查询文本。                               |
-| `query`                                 | `Ref<string>`                                                                                                | `input` 的别名。                                       |
-| `documents`                             | `Ref<TDocument[]>`                                                                                           | 当前会发送给后端的待重排文档。                         |
-| `originalDocuments`                     | `Ref<TDocument[]>`                                                                                           | 最近一次成功重排前的原始文档。                         |
-| `rerankedDocuments`                     | `Ref<TDocument[]>`                                                                                           | 最近一次成功重排后的文档顺序。                         |
-| `ranking`                               | `Ref<RerankRankingItem<TDocument>[]>`                                                                        | 包含 `index`、`score` 和 `document` 的排序行。         |
-| `result`                                | `Ref<RerankResult<TDocument> \| null>`                                                                       | 完整后端结果，包括 provider metadata。                 |
-| `status`                                | `Ref<AiRequestStatus>`                                                                                       | 请求生命周期：`ready`、`submitted` 或 `error`。        |
-| `isLoading`                             | `Ref<boolean>`                                                                                               | 请求进行中时为 true。                                  |
-| `error`                                 | `Ref<Error \| null>`                                                                                         | 最近一次非中止错误。                                   |
-| `lastRequest`                           | `Ref<RerankRequestInfo<TDocument> \| null>`                                                                  | 最近一次准备完成的重排请求快照。                       |
-| `lastResponse`                          | `Ref<RerankResponseInfo<TDocument> \| null>`                                                                 | 最近一次后端响应快照。                                 |
-| `rerank(query?, docs?, opts?)`          | `(string?, TDocument[]?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>`            | `rerankDocuments()` 的别名。                           |
-| `rerankDocuments(query?, docs?, opts?)` | `(string?, TDocument[]?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>`            | 重排文档；省略参数时使用当前 refs。                    |
-| `stop()`                                | `() => void`                                                                                                 | 中止当前请求。                                         |
-| `setInput(value)`                       | `(string) => void`                                                                                           | 手动替换查询文本。                                     |
-| `setQuery(value)`                       | `(string) => void`                                                                                           | `setInput()` 的别名。                                  |
-| `handleInputChange(e)`                  | `(Event \| { target } \| string) => void`                                                                    | 不使用 `v-model` 时接入自定义输入组件。                |
-| `setDocuments(value)`                   | `(TDocument[]) => void`                                                                                      | 替换待重排文档数组。                                   |
-| `handleSubmit(e, opts?)`                | `({ preventDefault?: () => void }?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>` | 提交 refs；成功后清空查询。                            |
-| `clearError()`                          | `() => void`                                                                                                 | 清空 `error`，并把 `status` 恢复为 `ready`。           |
-| `clearTrace()`                          | `() => void`                                                                                                 | 清空 `lastRequest` 和 `lastResponse`，不改变结果。     |
-| `clear()`                               | `() => void`                                                                                                 | 重置查询、文档、ranking、result、error、trace 和状态。 |
-| `abortController`                       | `Ref<AbortController \| null>`                                                                               | 暴露给高级集成。                                       |
+| 属性                                    | 类型                                                                                                         | 说明                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `input`                                 | `Ref<string>`                                                                                                | 可绑定到表单的查询文本。                                           |
+| `query`                                 | `Ref<string>`                                                                                                | `input` 的别名。                                                   |
+| `documents`                             | `Ref<TDocument[]>`                                                                                           | 当前会发送给后端的待重排文档。                                     |
+| `originalDocuments`                     | `Ref<TDocument[]>`                                                                                           | 最近一次成功重排前的原始文档。                                     |
+| `rerankedDocuments`                     | `Ref<TDocument[]>`                                                                                           | 最近一次成功重排后的文档顺序。                                     |
+| `ranking`                               | `Ref<RerankRankingItem<TDocument>[]>`                                                                        | 包含 `index`、`score` 和 `document` 的排序行。                     |
+| `result`                                | `Ref<RerankResult<TDocument> \| null>`                                                                       | 完整后端结果，包括 provider metadata。                             |
+| `status`                                | `Ref<AiRequestStatus>`                                                                                       | 请求生命周期：`ready`、`submitted` 或 `error`。                    |
+| `isLoading`                             | `Ref<boolean>`                                                                                               | 请求进行中时为 true。                                              |
+| `error`                                 | `Ref<Error \| null>`                                                                                         | 最近一次非中止错误。                                               |
+| `lastRequest`                           | `Ref<RerankRequestInfo<TDocument> \| null>`                                                                  | 最近一次准备完成的重排请求快照。                                   |
+| `lastResponse`                          | `Ref<RerankResponseInfo<TDocument> \| null>`                                                                 | 最近一次后端响应快照。                                             |
+| `inspect()`                             | `() => RequestInspectionSnapshot<RerankRequestInfo<TDocument>, RerankResponseInfo<TDocument>>`               | 生成可直接用于生产排障的快照：包含 timeline、重试记录与请求/响应。 |
+| `rerank(query?, docs?, opts?)`          | `(string?, TDocument[]?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>`            | `rerankDocuments()` 的别名。                                       |
+| `rerankDocuments(query?, docs?, opts?)` | `(string?, TDocument[]?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>`            | 重排文档；省略参数时使用当前 refs。                                |
+| `stop()`                                | `() => void`                                                                                                 | 中止当前请求。                                                     |
+| `setInput(value)`                       | `(string) => void`                                                                                           | 手动替换查询文本。                                                 |
+| `setQuery(value)`                       | `(string) => void`                                                                                           | `setInput()` 的别名。                                              |
+| `handleInputChange(e)`                  | `(Event \| { target } \| string) => void`                                                                    | 不使用 `v-model` 时接入自定义输入组件。                            |
+| `setDocuments(value)`                   | `(TDocument[]) => void`                                                                                      | 替换待重排文档数组。                                               |
+| `handleSubmit(e, opts?)`                | `({ preventDefault?: () => void }?, Partial<RerankRequest<TDocument>>?) => Promise<RerankResult<TDocument>>` | 提交 refs；成功后清空查询。                                        |
+| `clearError()`                          | `() => void`                                                                                                 | 清空 `error`，并把 `status` 恢复为 `ready`。                       |
+| `clearTrace()`                          | `() => void`                                                                                                 | 清空 `lastRequest` 和 `lastResponse`，不改变结果。                 |
+| `clear()`                               | `() => void`                                                                                                 | 重置查询、文档、ranking、result、error、trace 和状态。             |
+| `abortController`                       | `Ref<AbortController \| null>`                                                                               | 暴露给高级集成。                                                   |
 
 ## 说明
 

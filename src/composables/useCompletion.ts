@@ -4,6 +4,7 @@ import { proxyProvider, type ProxyProviderConfig } from '../providers/proxy'
 import type {
   AiRequestStatus,
   CompletionRequest,
+  RetryContext,
   IdGenerator,
   RetryOptions,
   StreamThrottleOptions
@@ -14,6 +15,12 @@ import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../ut
 import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import {
+  inspectRequestTrace,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export type CompletionStreamProtocol = NonNullable<CompletionRequest['streamProtocol']>
@@ -80,6 +87,7 @@ export interface UseCompletionReturn {
     event?: { preventDefault?: () => void },
     options?: Partial<CompletionRequest>
   ) => Promise<string>
+  inspect: () => RequestInspectionSnapshot<CompletionRequestInfo, CompletionResponseInfo>
   clearError: () => void
   clearTrace: () => void
   clear: () => void
@@ -92,6 +100,8 @@ interface CompletionState extends RequestTrace<CompletionRequestInfo, Completion
   status: Ref<AiRequestStatus>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
+  inspectionEvents: Ref<InspectionTimelineEventInput[]>
+  inspectionRetries: Ref<InspectionRetryRecordInput[]>
   abortController: Ref<AbortController | null>
 }
 
@@ -111,6 +121,8 @@ function getCompletionState(
     status: ref<AiRequestStatus>('ready'),
     isLoading: ref(false),
     error: ref<Error | null>(null),
+    inspectionEvents: ref<InspectionTimelineEventInput[]>([]),
+    inspectionRetries: ref<InspectionRetryRecordInput[]>([]),
     ...createRequestTrace<CompletionRequestInfo, CompletionResponseInfo>(),
     abortController: shallowRef<AbortController | null>(null)
   }
@@ -167,9 +179,52 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     error,
     lastRequest,
     lastResponse,
-    clearTrace,
-    abortController
+    clearTrace: clearRequestTrace,
+    abortController,
+    inspectionEvents,
+    inspectionRetries
   } = state
+
+  function clearInspectionTrace() {
+    inspectionEvents.value = []
+    inspectionRetries.value = []
+  }
+
+  function recordInspectionEvent(event: InspectionTimelineEventInput) {
+    inspectionEvents.value = [
+      ...inspectionEvents.value,
+      { ...event, timestamp: event.timestamp ?? new Date() }
+    ]
+  }
+
+  function recordInspectionRetry(errorToRecord: unknown, context: RetryContext) {
+    const delayMs =
+      typeof options.retryDelayMs === 'function'
+        ? options.retryDelayMs(context)
+        : (options.retryDelayMs ?? 0)
+    inspectionRetries.value = [
+      ...inspectionRetries.value,
+      {
+        attempt: context.attempt,
+        maxRetries: context.maxRetries,
+        error: errorToRecord,
+        delayMs,
+        timestamp: new Date()
+      }
+    ]
+  }
+
+  function inspect(): RequestInspectionSnapshot<CompletionRequestInfo, CompletionResponseInfo> {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      events: inspectionEvents.value,
+      retries: inspectionRetries.value,
+      curl: true
+    })
+  }
 
   function stop() {
     if (abortController.value) abortController.value.abort()
@@ -201,6 +256,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     completion.value = ''
     input.value = ''
     error.value = null
+    status.value = 'ready'
     clearTrace()
   }
 
@@ -233,6 +289,13 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
 
   function reportRequest(info: CompletionRequestInfo) {
     state.recordRequest(info)
+    recordInspectionEvent({
+      kind: 'request',
+      label: 'request prepared',
+      attempt: info.attempt,
+      status: status.value,
+      metadata: { prompt: info.prompt }
+    })
     onRequest?.(info)
   }
 
@@ -241,7 +304,21 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
       ...info,
       hasStream: Boolean(stream)
     })
+    recordInspectionEvent({
+      kind: 'response',
+      label: stream ? 'response received' : 'response received without stream',
+      attempt: info.attempt,
+      status: status.value,
+      metadata: {
+        hasStream: Boolean(stream)
+      }
+    })
     onResponse?.(response)
+  }
+
+  function clearTrace() {
+    clearRequestTrace()
+    clearInspectionTrace()
   }
 
   async function complete(prompt?: string, requestOptions: Partial<CompletionRequest> = {}) {
@@ -256,6 +333,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     error.value = null
     completion.value = ''
     status.value = 'submitted'
+    clearInspectionTrace()
 
     try {
       let retryAttempt = 0
@@ -286,9 +364,20 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
           reportRequest(info)
           const stream = await provider.completion(request)
           reportResponse(info, stream)
+          let streamEventReported = false
           for await (const delta of stream) {
             if (controller.signal.aborted) break
             if (status.value === 'submitted') status.value = 'streaming'
+            if (!streamEventReported) {
+              streamEventReported = true
+              recordInspectionEvent({
+                kind: 'stream',
+                label: 'stream started',
+                attempt: info.attempt,
+                status: status.value,
+                metadata: { streamChunkCount: 0 }
+              })
+            }
             receivedDelta = true
             nextCompletion += delta
             if (delta) {
@@ -311,11 +400,31 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
           throttler.flush()
           const context = createRetryContext(e, retryAttempt + 1, maxRetries)
           if (!receivedDelta && (await canRetry(options, context))) {
+            recordInspectionEvent({
+              kind: 'retry',
+              label: 'retry planned',
+              attempt: context.attempt,
+              status: status.value,
+              metadata: {
+                maxRetries: context.maxRetries,
+                hasResponse: false
+              }
+            })
+            recordInspectionRetry(e, context)
             retryAttempt += 1
             throttler.cancel()
             await waitForRetry(options, context, controller.signal)
             continue
           }
+          recordInspectionEvent({
+            kind: 'error',
+            label: 'completion failed',
+            attempt: context.attempt,
+            status: 'error',
+            metadata: {
+              message: e.message
+            }
+          })
           status.value = 'error'
           error.value = e
           onError?.(e)
@@ -354,6 +463,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     handleInputChange,
     handleSubmit,
     clearError,
+    inspect,
     clearTrace,
     clear,
     abortController

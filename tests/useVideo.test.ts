@@ -306,4 +306,53 @@ describe('useVideo', () => {
     expect(result.value).toBeNull()
     expect(error.value).toBeNull()
   })
+
+  it('captures inspect() snapshot metadata for proxy video requests', async () => {
+    const response = {
+      video: { url: 'https://cdn.example.test/inspect.mp4', mediaType: 'video/mp4' },
+      videos: [{ url: 'https://cdn.example.test/inspect.mp4', mediaType: 'video/mp4' }],
+      model: 'video-model'
+    }
+    const fetcher = vi.fn(async () => jsonResponse(response))
+    const { generateVideo, inspect, clearTrace } = useVideo({
+      api: '/api/video',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      generateVideo('inspect prompt', { model: 'inspect-model', duration: 5 })
+    ).resolves.toMatchObject({
+      ...response,
+      video: response.video
+    })
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.providerTrace.api).toBe('/api/video')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      prompt: 'inspect prompt'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: {
+        model: 'video-model',
+        videos: [{ url: 'https://cdn.example.test/inspect.mp4' }]
+      }
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toContain('/api/video')
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

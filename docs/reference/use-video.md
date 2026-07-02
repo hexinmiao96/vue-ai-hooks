@@ -66,27 +66,28 @@ await handleSubmit(undefined, { aspectRatio: '9:16', duration: 4 })
 
 ## Return value
 
-| Property                        | Type                                                                                                     | Description                                                      |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `input`                         | `Ref<string>`                                                                                            | Prompt binding for video forms.                                  |
-| `video`                         | `Ref<GeneratedVideo \| null>`                                                                            | First generated video from the latest successful run.            |
-| `videos`                        | `Ref<GeneratedVideo[]>`                                                                                  | All generated videos from the latest successful run.             |
-| `result`                        | `Ref<VideoGenerationResult \| null>`                                                                     | Full backend result, including warnings or provider metadata.    |
-| `status`                        | `Ref<AiRequestStatus>`                                                                                   | Request lifecycle: `ready`, `submitted`, or `error`.             |
-| `isLoading`                     | `Ref<boolean>`                                                                                           | True while a request is in flight.                               |
-| `error`                         | `Ref<Error \| null>`                                                                                     | Last non-abort error.                                            |
-| `lastRequest`                   | `Ref<VideoGenerationRequestInfo \| null>`                                                                | Last prepared video request snapshot.                            |
-| `lastResponse`                  | `Ref<VideoGenerationResponseInfo \| null>`                                                               | Last backend response snapshot, including the normalized result. |
-| `generate(prompt?, opts?)`      | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | Alias for `generateVideo()`.                                     |
-| `generateVideo(prompt?, opts?)` | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | Generate videos. Uses `input.value` when prompt is omitted.      |
-| `stop()`                        | `() => void`                                                                                             | Abort the in-flight request.                                     |
-| `setInput(value)`               | `(string) => void`                                                                                       | Replace prompt input manually.                                   |
-| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | Wire custom inputs without `v-model`.                            |
-| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>` | Submit `input.value`; clears input after success.                |
-| `clearError()`                  | `() => void`                                                                                             | Clear `error` and move `status` back to `ready`.                 |
-| `clearTrace()`                  | `() => void`                                                                                             | Clear `lastRequest` and `lastResponse` without changing videos.  |
-| `clear()`                       | `() => void`                                                                                             | Reset input, videos, result, error, trace, and status.           |
-| `abortController`               | `Ref<AbortController \| null>`                                                                           | Exposed for advanced integrations.                               |
+| Property                        | Type                                                                                                     | Description                                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `input`                         | `Ref<string>`                                                                                            | Prompt binding for video forms.                                          |
+| `video`                         | `Ref<GeneratedVideo \| null>`                                                                            | First generated video from the latest successful run.                    |
+| `videos`                        | `Ref<GeneratedVideo[]>`                                                                                  | All generated videos from the latest successful run.                     |
+| `result`                        | `Ref<VideoGenerationResult \| null>`                                                                     | Full backend result, including warnings or provider metadata.            |
+| `status`                        | `Ref<AiRequestStatus>`                                                                                   | Request lifecycle: `ready`, `submitted`, or `error`.                     |
+| `isLoading`                     | `Ref<boolean>`                                                                                           | True while a request is in flight.                                       |
+| `error`                         | `Ref<Error \| null>`                                                                                     | Last non-abort error.                                                    |
+| `lastRequest`                   | `Ref<VideoGenerationRequestInfo \| null>`                                                                | Last prepared video request snapshot.                                    |
+| `lastResponse`                  | `Ref<VideoGenerationResponseInfo \| null>`                                                               | Last backend response snapshot, including the normalized result.         |
+| `inspect()`                     | `() => RequestInspectionSnapshot<VideoGenerationRequestInfo, VideoGenerationResponseInfo>`               | Build a production-ready debug snapshot with timeline and retry records. |
+| `generate(prompt?, opts?)`      | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | Alias for `generateVideo()`.                                             |
+| `generateVideo(prompt?, opts?)` | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | Generate videos. Uses `input.value` when prompt is omitted.              |
+| `stop()`                        | `() => void`                                                                                             | Abort the in-flight request.                                             |
+| `setInput(value)`               | `(string) => void`                                                                                       | Replace prompt input manually.                                           |
+| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | Wire custom inputs without `v-model`.                                    |
+| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>` | Submit `input.value`; clears input after success.                        |
+| `clearError()`                  | `() => void`                                                                                             | Clear `error` and move `status` back to `ready`.                         |
+| `clearTrace()`                  | `() => void`                                                                                             | Clear `lastRequest` and `lastResponse` without changing videos.          |
+| `clear()`                       | `() => void`                                                                                             | Reset input, videos, result, error, trace, and status.                   |
+| `abortController`               | `Ref<AbortController \| null>`                                                                           | Exposed for advanced integrations.                                       |
 
 ## Notes
 

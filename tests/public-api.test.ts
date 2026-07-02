@@ -829,6 +829,9 @@ describe('public API types', () => {
       .toEqualTypeOf<SetDataInput<{ progress: number; label?: string }>>()
     expectTypeOf(chat.clearError).toEqualTypeOf<() => void>()
     expectTypeOf(chat.clearTrace).toEqualTypeOf<() => void>()
+    expectTypeOf(chat.inspect).toEqualTypeOf<
+      () => RequestInspectionSnapshot<ChatRequestInfo, ChatResponseInfo>
+    >()
     expectTypeOf(chat.lastRequest).toEqualTypeOf<Ref<ChatRequestInfo | null>>()
     expectTypeOf(chat.lastResponse).toEqualTypeOf<Ref<ChatResponseInfo | null>>()
     expectTypeOf(completion).toEqualTypeOf<UseCompletionReturn>()

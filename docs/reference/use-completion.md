@@ -71,6 +71,7 @@ const { complete } = useCompletion({
 | `lastRequest`                 | `Ref<CompletionRequestInfo \| null>`                                                 | Last prepared completion request snapshot.                                              |
 | `lastResponse`                | `Ref<CompletionResponseInfo \| null>`                                                | Last provider response snapshot, including whether a stream opened.                     |
 | `complete(prompt?, opts?)`    | `(string?, Partial<CompletionRequest>) => Promise<string>`                           | Run a completion. Resolves to the final string.                                         |
+| `inspect()`                   | `() => RequestInspectionSnapshot<CompletionRequestInfo, CompletionResponseInfo>`     | Build a production-ready debug snapshot including timeline and retry history.           |
 | `stop()`                      | `() => void`                                                                         | Abort the in-flight stream.                                                             |
 | `setInput(value)`             | `(string) => void`                                                                   | Replace the input prompt.                                                               |
 | `handleInputChange(event)`    | `(Event \| { target?: { value?: unknown } } \| string) => void`                      | Update `input` from a native input event or string.                                     |

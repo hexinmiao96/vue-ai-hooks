@@ -12,6 +12,7 @@ import type { ChatProvider } from '../providers/types'
 import type {
   AiRequestStatus,
   CompletionRequest,
+  RetryContext,
   IdGenerator,
   RetryOptions,
   StreamThrottleOptions
@@ -22,6 +23,12 @@ import { cloneRequestSnapshot } from '../utils/lifecycle'
 import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import {
+  inspectRequestTrace,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 
 export type ReactCompletionStatus = AiRequestStatus
 export type ReactCompletionStreamProtocol = NonNullable<CompletionRequest['streamProtocol']>
@@ -93,6 +100,7 @@ export interface UseReactCompletionReturn {
     event?: FormEvent<HTMLFormElement> | { preventDefault?: () => void },
     options?: Partial<CompletionRequest>
   ) => Promise<string>
+  inspect: () => RequestInspectionSnapshot<ReactCompletionRequestInfo, ReactCompletionResponseInfo>
   clearError: () => void
   clearTrace: () => void
   clear: () => void
@@ -169,6 +177,8 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   const [error, setError] = useState<Error | null>(null)
   const [lastRequest, setLastRequest] = useState<ReactCompletionRequestInfo | null>(null)
   const [lastResponse, setLastResponse] = useState<ReactCompletionResponseInfo | null>(null)
+  const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
+  const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const completionRef = useRef(completion)
@@ -201,6 +211,46 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
+    setInspectionEvents([])
+    setInspectionRetries([])
+  }, [])
+
+  const inspect = useCallback(
+    () =>
+      inspectRequestTrace({
+        status,
+        error,
+        lastRequest,
+        lastResponse,
+        events: inspectionEvents,
+        retries: inspectionRetries,
+        curl: true
+      }),
+    [error, inspectionEvents, inspectionRetries, lastRequest, lastResponse, status]
+  )
+
+  const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
+    setInspectionEvents((current) => [
+      ...current,
+      { ...event, timestamp: event.timestamp ?? new Date() }
+    ])
+  }, [])
+
+  const recordInspectionRetry = useCallback((errorToRecord: unknown, context: RetryContext) => {
+    const delayMs =
+      typeof optionsRef.current.retryDelayMs === 'function'
+        ? optionsRef.current.retryDelayMs(context)
+        : (optionsRef.current.retryDelayMs ?? 0)
+    setInspectionRetries((current) => [
+      ...current,
+      {
+        attempt: context.attempt,
+        maxRetries: context.maxRetries,
+        error: errorToRecord,
+        delayMs,
+        timestamp: new Date()
+      }
+    ])
   }, [])
 
   const clearError = useCallback(() => {
@@ -257,19 +307,38 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
     [id, provider.id, proxyRequestInfo]
   )
 
-  const reportRequest = useCallback((info: ReactCompletionRequestInfo) => {
-    setLastRequest(info)
-    setLastResponse(null)
-    onRequestRef.current?.(info)
-  }, [])
+  const reportRequest = useCallback(
+    (info: ReactCompletionRequestInfo) => {
+      setLastRequest(info)
+      setLastResponse(null)
+      recordInspectionEvent({
+        kind: 'request',
+        label: 'request prepared',
+        attempt: info.attempt,
+        status,
+        metadata: { prompt: info.prompt }
+      })
+      onRequestRef.current?.(info)
+    },
+    [recordInspectionEvent, status]
+  )
 
   const reportResponse = useCallback(
     (info: ReactCompletionRequestInfo, stream: AsyncIterable<string> | null | undefined) => {
       const response = { ...info, hasStream: Boolean(stream) }
       setLastResponse(response)
+      recordInspectionEvent({
+        kind: 'response',
+        label: stream ? 'response received' : 'response received without stream',
+        attempt: info.attempt,
+        status,
+        metadata: {
+          hasStream: Boolean(stream)
+        }
+      })
       onResponseRef.current?.(response)
     },
-    []
+    [recordInspectionEvent, status]
   )
 
   const finishCompletion = useCallback((prompt: string, isAbort: boolean) => {
@@ -294,6 +363,8 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
       setError(null)
       setCompletion('')
       setStatus('submitted')
+      setInspectionEvents([])
+      setInspectionRetries([])
 
       try {
         let retryAttempt = 0
@@ -328,10 +399,23 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
             reportRequest(info)
             const stream = await provider.completion(request)
             reportResponse(info, stream)
+            let streamEventReported = false
 
             for await (const delta of stream) {
               if (controller.signal.aborted) break
               if (delta) {
+                if (!streamEventReported) {
+                  streamEventReported = true
+                  recordInspectionEvent({
+                    kind: 'stream',
+                    label: 'stream started',
+                    attempt: info.attempt,
+                    status,
+                    metadata: {
+                      streamChunkCount: 0
+                    }
+                  })
+                }
                 receivedDelta = true
                 nextCompletion += delta
                 pendingDelta += delta
@@ -356,11 +440,32 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
             throttler.flush()
             const context = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (!receivedDelta && (await canRetry(currentOptions, context))) {
+              recordInspectionEvent({
+                kind: 'retry',
+                label: 'retry planned',
+                attempt: context.attempt,
+                status,
+                metadata: {
+                  maxRetries: context.maxRetries,
+                  hasResponse: false
+                }
+              })
+              recordInspectionRetry(nextError, context)
               retryAttempt += 1
               throttler.cancel()
               await waitForRetry(currentOptions, context, controller.signal)
               continue
             }
+
+            recordInspectionEvent({
+              kind: 'error',
+              label: 'completion failed',
+              attempt: context.attempt,
+              status: 'error',
+              metadata: {
+                message: nextError.message
+              }
+            })
 
             setStatus('error')
             setError(nextError)
@@ -381,6 +486,8 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
       reportRequest,
       reportResponse,
       requestInfo,
+      recordInspectionEvent,
+      recordInspectionRetry,
       setCompletion,
       streamProtocol
     ]
@@ -417,6 +524,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
     clearError,
     clearTrace,
     clear,
+    inspect,
     abortController
   }
 }

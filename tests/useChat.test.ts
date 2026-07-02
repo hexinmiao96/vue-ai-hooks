@@ -1349,6 +1349,171 @@ describe('useChat', () => {
     expect(lastResponse.value).toBeNull()
   })
 
+  it('captures inspect() timeline, retry and request trace metadata', async () => {
+    let calls = 0
+    const provider: ChatProvider = {
+      id: 'inspect-chat',
+      async chat(): Promise<AsyncIterable<ChatChunk>> {
+        calls += 1
+        if (calls === 1) {
+          const error = new Error('temporary outage')
+          Object.assign(error, { status: 429 })
+          throw error
+        }
+        return (async function* () {
+          yield { content: 'recovered' }
+          yield {
+            usage: { promptTokens: 3, completionTokens: 2, totalTokens: 5 }
+          }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { append, inspect } = useChat({
+      provider,
+      maxRetries: 1,
+      defaultRequest: {
+        body: { tenantId: 'tenant_1' },
+        headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' }
+      }
+    })
+
+    await append('retry please')
+
+    expect(calls).toBe(2)
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.request).toMatchObject({
+      providerId: 'inspect-chat',
+      attempt: 2,
+      body: { tenantId: 'tenant_1' },
+      headers: {
+        Authorization: 'Bearer secret',
+        'x-tenant': 'tenant_1'
+      }
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'inspect-chat',
+      attempt: 2,
+      hasStream: true
+    })
+    const kinds = snapshot.timeline.map((event) => event.kind)
+    expect(kinds).toEqual(expect.arrayContaining(['request', 'retry', 'stream', 'response']))
+    expect(
+      snapshot.timeline.filter((event) => event.kind === 'request').map((event) => event.attempt)
+    ).toEqual([1, 2])
+    expect(snapshot.retries).toHaveLength(1)
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      error: expect.objectContaining({
+        category: 'rate-limit',
+        status: 429
+      })
+    })
+    expect(snapshot.providerTrace).toMatchObject({
+      providerId: 'inspect-chat',
+      attempt: 2,
+      hasStream: true
+    })
+    expect(snapshot.curl).toBeNull()
+    expect(snapshot.summary).toBe('response received')
+  })
+
+  it('adds runId to chat requests and preserves it during retries', async () => {
+    const requests: ChatRequest[] = []
+    let calls = 0
+    const provider: ChatProvider = {
+      id: 'runid-chat',
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) {
+          throw new Error('temporary outage')
+        }
+        return (async function* () {
+          yield { content: 'recovered' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { append } = useChat({ provider, maxRetries: 1 })
+
+    await append('retry to verify')
+
+    expect(requests).toHaveLength(2)
+    expect(requests[0].runId).toBeDefined()
+    expect(requests[0].runId).toBe(requests[1].runId)
+  })
+
+  it('keeps an explicit runId when one is provided on request options', async () => {
+    const requests: ChatRequest[] = []
+    const provider: ChatProvider = {
+      id: 'runid-chat-explicit',
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        return (async function* () {
+          yield { content: 'ok' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          yield ''
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { append } = useChat({ provider })
+    await append('explicit runId', { runId: 'manual-run-id' })
+
+    expect(requests[0].runId).toBe('manual-run-id')
+  })
+
+  it('clearTrace() also clears inspect snapshot state', async () => {
+    const { append, clearTrace, inspect } = useChat({
+      provider: fakeProvider([{ content: 'ok' }])
+    })
+
+    await append('clear inspect')
+
+    expect(inspect().hasRequest).toBe(true)
+    expect(inspect().hasResponse).toBe(true)
+    clearTrace()
+    const snapshot = inspect()
+
+    expect(snapshot.hasRequest).toBe(false)
+    expect(snapshot.hasResponse).toBe(false)
+    expect(snapshot.retries).toEqual([])
+    expect(snapshot.timeline).toEqual([
+      {
+        kind: 'status',
+        label: 'status ready',
+        timestamp: expect.any(String),
+        status: 'ready'
+      }
+    ])
+  })
+
   it('does not retry chat streams after a chunk was received', async () => {
     let calls = 0
     const onRetry = vi.fn()

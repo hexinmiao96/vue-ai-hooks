@@ -519,6 +519,43 @@ describe('useObject', () => {
     expect(lastResponse.value).toBeNull()
   })
 
+  it('captures inspect() snapshot metadata after structured submit', async () => {
+    const { submit, inspect, clearTrace } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Traced","priority":"high"}' }]),
+      schema
+    })
+
+    await expect(submit('Summarize and inspect')).resolves.toEqual({
+      title: 'Traced',
+      priority: 'high'
+    })
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('fake-object')
+    expect(snapshot.status).toBe('ready')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'fake-object'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'fake-object',
+      hasStream: true
+    })
+    expect(snapshot.timeline).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'request' }),
+        expect.objectContaining({ kind: 'response' })
+      ])
+    )
+    expect(snapshot.curl).toBeNull()
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
+
   it('supports form input helpers and clear()', async () => {
     const preventDefault = vi.fn()
     const requests: ChatRequest[] = []

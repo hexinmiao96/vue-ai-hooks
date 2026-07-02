@@ -355,9 +355,7 @@ export function proxyProvider(config: ProxyProviderConfig = {}): ChatProvider {
       }
 
       const data = (await response.json()) as
-        | string
-        | string[]
-        | { text?: string; completion?: string; chunks?: string[] }
+        string | string[] | { text?: string; completion?: string; chunks?: string[] }
       const chunks = completionChunks(data)
       return (async function* () {
         for (const chunk of chunks) if (chunk) yield chunk

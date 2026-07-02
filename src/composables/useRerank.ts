@@ -17,6 +17,7 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -74,6 +75,10 @@ export interface UseRerankReturn<TDocument = RerankDocument> {
   error: Ref<Error | null>
   lastRequest: Ref<RerankRequestInfo<TDocument> | null>
   lastResponse: Ref<RerankResponseInfo<TDocument> | null>
+  inspect: () => RequestInspectionSnapshot<
+    RerankRequestInfo<TDocument>,
+    RerankResponseInfo<TDocument>
+  >
   rerank: (
     query?: string,
     documents?: TDocument[],
@@ -178,6 +183,19 @@ export function useRerank<TDocument = RerankDocument>(
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    RerankRequestInfo<TDocument>,
+    RerankResponseInfo<TDocument>
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   async function resolveHeaders(requestHeaders?: HeadersInit) {
@@ -342,6 +360,7 @@ export function useRerank<TDocument = RerankDocument>(
     error,
     lastRequest,
     lastResponse,
+    inspect,
     rerank: rerankDocuments,
     rerankDocuments,
     stop,

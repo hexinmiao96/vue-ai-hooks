@@ -26,6 +26,7 @@ import type {
   ToolCall,
   IdGenerator,
   RetryOptions,
+  RetryContext,
   StreamThrottleOptions
 } from '../types'
 import { createId } from '../utils/id'
@@ -36,6 +37,12 @@ import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { validateJsonSchema } from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import {
+  inspectRequestTrace,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export interface ToolCallHandlerContext {
@@ -66,8 +73,7 @@ export interface JsonSchemaDefinition<TInput = unknown> {
 }
 
 export type ToolInputSchema<TInput = unknown> =
-  | Record<string, unknown>
-  | JsonSchemaDefinition<TInput>
+  Record<string, unknown> | JsonSchemaDefinition<TInput>
 
 export type ToolExecute<TInput = unknown, TOutput = unknown> = (
   args: TInput,
@@ -164,6 +170,7 @@ export interface ChatRequestInfo {
   api?: string
   credentials?: RequestCredentials
   request: ChatRequest | ChatResumeRequest
+  runId?: string
   messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
@@ -270,14 +277,10 @@ export interface ToolApprovalResponse {
 
 export type SetMessagesInput = Message[] | ((messages: Message[]) => Message[])
 export type SetDataInput<TData = unknown> =
-  | StreamDataPart<TData>[]
-  | ((data: StreamDataPart<TData>[]) => StreamDataPart<TData>[])
+  StreamDataPart<TData>[] | ((data: StreamDataPart<TData>[]) => StreamDataPart<TData>[])
 
 export type PruneToolCallsStrategy =
-  | 'none'
-  | 'all'
-  | 'before-last-message'
-  | `before-last-${number}-messages`
+  'none' | 'all' | 'before-last-message' | `before-last-${number}-messages`
 
 export interface PruneToolCallsRule {
   type: Exclude<PruneToolCallsStrategy, 'none'>
@@ -424,6 +427,7 @@ export interface UseChatReturn<
   error: Ref<Error | null>
   lastRequest: Ref<ChatRequestInfo | null>
   lastResponse: Ref<ChatResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<ChatRequestInfo, ChatResponseInfo>
   append: (c: string | Message, o?: AppendChatOptions<TMessageMetadata>) => Promise<void>
   sendMessage: (
     c?: string | Message | SendChatMessageInput<TMessageMetadata>,
@@ -1235,6 +1239,8 @@ interface ChatState<TData = unknown> extends RequestTrace<ChatRequestInfo, ChatR
   pendingToolCalls: Ref<ToolCall[]>
   pendingToolRequest: Ref<ChatRequest | null>
   pendingToolSendContext: SendChatContext | null
+  inspectionEvents: Ref<InspectionTimelineEventInput[]>
+  inspectionRetries: Ref<InspectionRetryRecordInput[]>
   isLoading: Ref<boolean>
   error: Ref<Error | null>
   abortController: Ref<AbortController | null>
@@ -1260,6 +1266,10 @@ function getChatState<TData = unknown>(
     pendingToolCalls: ref<ToolCall[]>([]) as Ref<ToolCall[]>,
     pendingToolRequest: shallowRef<ChatRequest | null>(null),
     pendingToolSendContext: null,
+    inspectionEvents: ref<InspectionTimelineEventInput[]>([]) as Ref<
+      InspectionTimelineEventInput[]
+    >,
+    inspectionRetries: ref<InspectionRetryRecordInput[]>([]) as Ref<InspectionRetryRecordInput[]>,
     isLoading: ref(false),
     error: ref<Error | null>(null),
     ...createRequestTrace<ChatRequestInfo, ChatResponseInfo>(),
@@ -1352,7 +1362,9 @@ export function useChat<
     error,
     lastRequest,
     lastResponse,
-    clearTrace,
+    clearTrace: clearRequestTrace,
+    inspectionEvents,
+    inspectionRetries,
     abortController
   } = state
   const persistence = persist
@@ -1402,6 +1414,14 @@ export function useChat<
     streamData.value = []
     state.bufferedStreamData = []
   }
+  function clearInspectionTrace() {
+    inspectionEvents.value = []
+    inspectionRetries.value = []
+  }
+  function clearTrace() {
+    clearRequestTrace()
+    clearInspectionTrace()
+  }
   function clearError() {
     error.value = null
     status.value = 'ready'
@@ -1429,6 +1449,17 @@ export function useChat<
     input.value = ''
     persistence?.clear()
   }
+  function inspect(): RequestInspectionSnapshot<ChatRequestInfo, ChatResponseInfo> {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      events: inspectionEvents.value,
+      retries: inspectionRetries.value,
+      curl: true
+    })
+  }
   function stop() {
     abortController.value?.abort()
     abortController.value = null
@@ -1442,6 +1473,9 @@ export function useChat<
       content: '',
       createdAt: new Date()
     }
+  }
+  function withRunId<T extends ChatRequest>(request: T): T {
+    return (request.runId ? request : { ...request, runId: createId('run') }) as T
   }
   function bytesToBase64(bytes: Uint8Array): string {
     const buffer = (
@@ -1566,6 +1600,28 @@ export function useChat<
   function normalizeError(err: unknown): Error {
     return err instanceof Error ? err : new Error(String(err))
   }
+  function recordInspectionEvent(event: InspectionTimelineEventInput) {
+    inspectionEvents.value = [
+      ...inspectionEvents.value,
+      { ...event, timestamp: event.timestamp ?? new Date() }
+    ]
+  }
+  function recordInspectionRetry(errorToRecord: unknown, context: RetryContext) {
+    const delayMs =
+      typeof options.retryDelayMs === 'function'
+        ? options.retryDelayMs(context)
+        : (options.retryDelayMs ?? 0)
+    inspectionRetries.value = [
+      ...inspectionRetries.value,
+      {
+        attempt: context.attempt,
+        maxRetries: context.maxRetries,
+        error: errorToRecord,
+        delayMs,
+        timestamp: new Date()
+      }
+    ]
+  }
   function clonePrepareMessages(
     requestMessages: ChatRequestMessage[],
     fallback: Message[] = []
@@ -1600,6 +1656,7 @@ export function useChat<
           ? (request as ChatRequest).messages.map(cloneMessage)
           : messages.value.map(cloneMessage),
       requestMetadata: request.metadata,
+      ...(request.runId ? { runId: request.runId } : {}),
       ...(request.body ? { body: { ...request.body } } : {}),
       ...(request.headers ? { headers: headersToRecord(request.headers) } : {}),
       ...(context?.trigger
@@ -1611,6 +1668,17 @@ export function useChat<
   }
   function reportRequest(info: ChatRequestInfo) {
     state.recordRequest(info)
+    recordInspectionEvent({
+      kind: 'request',
+      label: 'request prepared',
+      attempt: info.attempt,
+      status: status.value,
+      metadata: {
+        kind: info.kind,
+        trigger: info.trigger,
+        aiSdkTrigger: info.aiSdkTrigger
+      }
+    })
     onRequest?.(info)
   }
   function reportResponse(
@@ -1621,7 +1689,17 @@ export function useChat<
       ...info,
       hasStream: Boolean(stream)
     })
+    recordInspectionEvent({
+      kind: 'response',
+      label: stream ? 'response received' : 'response received without stream',
+      attempt: info.attempt,
+      status: status.value,
+      metadata: {
+        hasStream: Boolean(stream)
+      }
+    })
     onResponse?.(response)
+    return response
   }
   function finishAssistant(
     assistant: Message,
@@ -1839,8 +1917,23 @@ export function useChat<
     assistant: Message,
     chunk: ChatChunk,
     scheduleAssistant: (notifyUpdate: boolean, targetId?: string) => void,
-    scheduleStreamData: () => void
+    scheduleStreamData: () => void,
+    attempt?: number
   ) {
+    recordInspectionEvent({
+      kind: 'stream',
+      label: 'stream chunk received',
+      attempt,
+      status: status.value,
+      metadata: {
+        ...(chunk.messageId ? { messageId: chunk.messageId } : {}),
+        ...(chunk.content ? { hasContent: true } : {}),
+        ...(chunk.toolCalls?.length ? { hasToolCalls: true } : {}),
+        ...(chunk.parts?.length ? { hasParts: true } : {}),
+        ...(chunk.usage ? { hasUsage: true } : {}),
+        ...(chunk.metadata ? { hasMetadata: true } : {})
+      }
+    })
     let changedAssistant = false
     let notifyUpdate = false
     let targetId: string | undefined
@@ -1944,11 +2037,13 @@ export function useChat<
     isLoading.value = true
     error.value = null
     status.value = 'submitted'
+    clearInspectionTrace()
     try {
       while (true) {
         let receivedChunk = false
         try {
-          const stream = await openStream(controller.signal, retryAttempt + 1)
+          const attempt = retryAttempt + 1
+          const stream = await openStream(controller.signal, attempt)
           if (!stream) {
             status.value = 'ready'
             return false
@@ -1957,7 +2052,7 @@ export function useChat<
           for await (const chunk of stream) {
             if (status.value === 'submitted') status.value = 'streaming'
             receivedChunk = true
-            applyChunk(assistant, chunk, scheduleAssistant, scheduleStreamData)
+            applyChunk(assistant, chunk, scheduleAssistant, scheduleStreamData, attempt)
           }
           throttler.flush()
           status.value = 'ready'
@@ -1974,6 +2069,7 @@ export function useChat<
           throttler.flush()
           const context = createRetryContext(e, retryAttempt + 1, maxRetries)
           if (!receivedChunk && (await canRetry(options, context))) {
+            recordInspectionRetry(e, context)
             retryAttempt += 1
             throttler.cancel()
             await waitForRetry(options, context, controller.signal)
@@ -2208,7 +2304,7 @@ export function useChat<
     await runAssistantTurn(
       nextAssistant,
       {
-        ...request,
+        ...withRunId(request),
         messages: messages.value.filter((m) => m.id !== nextAssistant.id)
       },
       remainingToolRoundtrips - 1,
@@ -2289,10 +2385,10 @@ export function useChat<
     }
     await runAssistantTurn(
       assistant,
-      {
+      withRunId({
         messages: messages.value.filter((m) => m.id !== assistant.id),
         ...chatRequestOptions
-      },
+      }),
       maxToolRoundtrips,
       { trigger: 'submit-message', messageId, stepNumber: 0 }
     )
@@ -2312,10 +2408,10 @@ export function useChat<
     messages.value = [...messages.value, { ...assistant }]
     await runAssistantTurn(
       assistant,
-      {
+      withRunId({
         messages: messages.value.filter((m) => m.id !== assistant.id),
         ...chatRequestOptions
-      },
+      }),
       maxToolRoundtrips,
       { trigger: 'submit-message', stepNumber: 0 }
     )
@@ -2378,11 +2474,11 @@ export function useChat<
     messages.value = [...messages.value, { ...nextAssistant }]
     await runAssistantTurn(
       nextAssistant,
-      {
+      withRunId({
         ...request,
         ...requestOptions,
         messages: messages.value.filter((m) => m.id !== nextAssistant.id)
-      },
+      }),
       maxToolRoundtrips,
       { ...context, stepNumber: context.stepNumber + 1 }
     )
@@ -2487,10 +2583,10 @@ export function useChat<
     messages.value = [...truncated, { ...assistant }]
     await runAssistantTurn(
       assistant,
-      {
+      withRunId({
         messages: truncated,
         ...requestOptions
-      },
+      }),
       maxToolRoundtrips,
       { trigger: 'regenerate-message', messageId, stepNumber: 0 }
     )
@@ -2511,6 +2607,7 @@ export function useChat<
     error,
     lastRequest,
     lastResponse,
+    inspect,
     append,
     sendMessage,
     addToolResult,
@@ -2551,6 +2648,7 @@ export class Chat<
   declare readonly error: UseChatReturn<TData, TMessageMetadata>['error']
   declare readonly lastRequest: UseChatReturn<TData, TMessageMetadata>['lastRequest']
   declare readonly lastResponse: UseChatReturn<TData, TMessageMetadata>['lastResponse']
+  declare readonly inspect: UseChatReturn<TData, TMessageMetadata>['inspect']
   declare readonly append: UseChatReturn<TData, TMessageMetadata>['append']
   declare readonly sendMessage: UseChatReturn<TData, TMessageMetadata>['sendMessage']
   declare readonly addToolResult: UseChatReturn<TData, TMessageMetadata>['addToolResult']

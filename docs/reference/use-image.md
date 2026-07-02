@@ -64,27 +64,28 @@ await handleSubmit(undefined, { aspectRatio: '16:9' })
 
 ## Return value
 
-| Property                        | Type                                                                                                     | Description                                                      |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `input`                         | `Ref<string>`                                                                                            | Prompt binding for image forms.                                  |
-| `image`                         | `Ref<GeneratedImage \| null>`                                                                            | First generated image from the latest successful run.            |
-| `images`                        | `Ref<GeneratedImage[]>`                                                                                  | All generated images from the latest successful run.             |
-| `result`                        | `Ref<ImageGenerationResult \| null>`                                                                     | Full backend result, including warnings or provider metadata.    |
-| `status`                        | `Ref<AiRequestStatus>`                                                                                   | Request lifecycle: `ready`, `submitted`, or `error`.             |
-| `isLoading`                     | `Ref<boolean>`                                                                                           | True while a request is in flight.                               |
-| `error`                         | `Ref<Error \| null>`                                                                                     | Last non-abort error.                                            |
-| `lastRequest`                   | `Ref<ImageGenerationRequestInfo \| null>`                                                                | Last prepared image request snapshot.                            |
-| `lastResponse`                  | `Ref<ImageGenerationResponseInfo \| null>`                                                               | Last backend response snapshot, including the normalized result. |
-| `generate(prompt?, opts?)`      | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | Alias for `generateImage()`.                                     |
-| `generateImage(prompt?, opts?)` | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | Generate images. Uses `input.value` when prompt is omitted.      |
-| `stop()`                        | `() => void`                                                                                             | Abort the in-flight request.                                     |
-| `setInput(value)`               | `(string) => void`                                                                                       | Replace prompt input manually.                                   |
-| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | Wire custom inputs without `v-model`.                            |
-| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>` | Submit `input.value`; clears input after success.                |
-| `clearError()`                  | `() => void`                                                                                             | Clear `error` and move `status` back to `ready`.                 |
-| `clearTrace()`                  | `() => void`                                                                                             | Clear `lastRequest` and `lastResponse` without changing images.  |
-| `clear()`                       | `() => void`                                                                                             | Reset input, images, result, error, trace, and status.           |
-| `abortController`               | `Ref<AbortController \| null>`                                                                           | Exposed for advanced integrations.                               |
+| Property                        | Type                                                                                                     | Description                                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `input`                         | `Ref<string>`                                                                                            | Prompt binding for image forms.                                          |
+| `image`                         | `Ref<GeneratedImage \| null>`                                                                            | First generated image from the latest successful run.                    |
+| `images`                        | `Ref<GeneratedImage[]>`                                                                                  | All generated images from the latest successful run.                     |
+| `result`                        | `Ref<ImageGenerationResult \| null>`                                                                     | Full backend result, including warnings or provider metadata.            |
+| `status`                        | `Ref<AiRequestStatus>`                                                                                   | Request lifecycle: `ready`, `submitted`, or `error`.                     |
+| `isLoading`                     | `Ref<boolean>`                                                                                           | True while a request is in flight.                                       |
+| `error`                         | `Ref<Error \| null>`                                                                                     | Last non-abort error.                                                    |
+| `lastRequest`                   | `Ref<ImageGenerationRequestInfo \| null>`                                                                | Last prepared image request snapshot.                                    |
+| `lastResponse`                  | `Ref<ImageGenerationResponseInfo \| null>`                                                               | Last backend response snapshot, including the normalized result.         |
+| `inspect()`                     | `() => RequestInspectionSnapshot<ImageGenerationRequestInfo, ImageGenerationResponseInfo>`               | Build a production-ready debug snapshot with timeline and retry records. |
+| `generate(prompt?, opts?)`      | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | Alias for `generateImage()`.                                             |
+| `generateImage(prompt?, opts?)` | `(string?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>`                          | Generate images. Uses `input.value` when prompt is omitted.              |
+| `stop()`                        | `() => void`                                                                                             | Abort the in-flight request.                                             |
+| `setInput(value)`               | `(string) => void`                                                                                       | Replace prompt input manually.                                           |
+| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | Wire custom inputs without `v-model`.                                    |
+| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<ImageGenerationRequest>?) => Promise<ImageGenerationResult>` | Submit `input.value`; clears input after success.                        |
+| `clearError()`                  | `() => void`                                                                                             | Clear `error` and move `status` back to `ready`.                         |
+| `clearTrace()`                  | `() => void`                                                                                             | Clear `lastRequest` and `lastResponse` without changing images.          |
+| `clear()`                       | `() => void`                                                                                             | Reset input, images, result, error, trace, and status.                   |
+| `abortController`               | `Ref<AbortController \| null>`                                                                           | Exposed for advanced integrations.                                       |
 
 ## Notes
 

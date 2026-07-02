@@ -42,6 +42,12 @@ pnpm install
 pnpm example:chat
 ```
 
+如果你要对接自己的代理后端，可直接加上运行时环境变量（浏览器仍不保存密钥）：
+
+```bash
+VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 打开 Vite 输出的本地地址，然后点击 **Run approval demo**。当没有选择 Provider，且没有真实的
 `VITE_OPENAI_KEY` 时，聊天示例会自动回退到 `local-tools`，显示 pending `chargeCard`
 工具调用，并在执行 `approveToolCall()` 或 `rejectToolCall()` 后继续对话。
@@ -54,6 +60,13 @@ pnpm example:react-chat
 
 React demo 会从确定性的 `DirectChatTransport` 流式输出，并在聊天面板旁展示
 `lastRequest`、`lastResponse`、usage 和 stream data。
+
+如果你要迁移 completion 或结构化输出，也可继续跑：
+
+```bash
+pnpm example:react-completion
+pnpm example:react-object
+```
 
 ## 接真实 Provider 前的安全说明
 
@@ -122,7 +135,7 @@ proxy 示例同时支持默认组合式函数端点（`/api/chat`、`/api/comple
 ```bash
 pnpm example:proxy-server
 # 另开一个终端
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
 也可以把默认 transport 指到同一个本地服务：

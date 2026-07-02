@@ -32,6 +32,12 @@ import { cloneMessageSnapshot as cloneMessage, cloneRequestSnapshot } from '../u
 import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
+import {
+  inspectRequestTrace,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 
 export type ReactChatStatus = AiRequestStatus
 export type ReactSendChatTrigger = 'submit-message' | 'regenerate-message'
@@ -54,6 +60,7 @@ export interface ReactChatRequestInfo {
   api?: string
   credentials?: RequestCredentials
   request: ChatRequest | ChatResumeRequest
+  runId?: string
   messages: ChatRequestMessage[]
   requestMetadata: unknown
   body?: Record<string, unknown>
@@ -177,6 +184,7 @@ export interface UseReactChatReturn<
   ) => void
   clearError: () => void
   clearTrace: () => void
+  inspect: () => RequestInspectionSnapshot<ReactChatRequestInfo, ReactChatResponseInfo>
   clear: () => void
   abortController: AbortController | null
 }
@@ -307,6 +315,8 @@ export function useChat<
   const [error, setError] = useState<Error | null>(null)
   const [lastRequest, setLastRequest] = useState<ReactChatRequestInfo | null>(null)
   const [lastResponse, setLastResponse] = useState<ReactChatResponseInfo | null>(null)
+  const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
+  const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const idRef = useRef(id)
@@ -362,7 +372,50 @@ export function useChat<
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
+    setInspectionEvents([])
+    setInspectionRetries([])
   }, [])
+
+  const inspect = useCallback(
+    () =>
+      inspectRequestTrace({
+        status,
+        error,
+        lastRequest,
+        lastResponse,
+        events: inspectionEvents,
+        retries: inspectionRetries,
+        curl: true
+      }),
+    [error, inspectionEvents, inspectionRetries, lastRequest, lastResponse, status]
+  )
+
+  const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
+    setInspectionEvents((current) => [
+      ...current,
+      { ...event, timestamp: event.timestamp ?? new Date() }
+    ])
+  }, [])
+
+  const recordInspectionRetry = useCallback(
+    (errorToRecord: unknown, context: ReturnType<typeof createRetryContext>) => {
+      const delayMs =
+        typeof optionsRef.current.retryDelayMs === 'function'
+          ? optionsRef.current.retryDelayMs(context)
+          : (optionsRef.current.retryDelayMs ?? 0)
+      setInspectionRetries((current) => [
+        ...current,
+        {
+          attempt: context.attempt,
+          maxRetries: context.maxRetries,
+          error: errorToRecord,
+          delayMs,
+          timestamp: new Date()
+        }
+      ])
+    },
+    []
+  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -444,6 +497,9 @@ export function useChat<
     }),
     [generateRuntimeId]
   )
+  function withRunId<T extends ChatRequest>(request: T): T {
+    return (request.runId ? request : { ...request, runId: createId('run') }) as T
+  }
 
   const buildUserMessage = useCallback(
     (
@@ -487,6 +543,7 @@ export function useChat<
           ? (request as ChatRequest).messages.map(cloneMessage)
           : messagesRef.current.map(cloneMessage),
       requestMetadata: request.metadata,
+      ...(request.runId ? { runId: request.runId } : {}),
       ...(request.body ? { body: { ...request.body } } : {}),
       ...(request.headers ? { headers: headersToRecord(request.headers) } : {}),
       ...(context?.trigger
@@ -497,19 +554,43 @@ export function useChat<
     [provider.id, proxyRequestInfo]
   )
 
-  const reportRequest = useCallback((info: ReactChatRequestInfo) => {
-    setLastRequest(info)
-    setLastResponse(null)
-    onRequestRef.current?.(info)
-  }, [])
+  const reportRequest = useCallback(
+    (info: ReactChatRequestInfo) => {
+      setLastRequest(info)
+      setLastResponse(null)
+      recordInspectionEvent({
+        kind: 'request',
+        label: 'request prepared',
+        attempt: info.attempt,
+        status,
+        metadata: {
+          kind: info.kind,
+          trigger: info.trigger,
+          aiSdkTrigger: info.aiSdkTrigger
+        }
+      })
+      onRequestRef.current?.(info)
+    },
+    [recordInspectionEvent, status]
+  )
 
   const reportResponse = useCallback(
     (info: ReactChatRequestInfo, stream: AsyncIterable<ChatChunk> | null | undefined) => {
       const response = { ...info, hasStream: Boolean(stream) }
       setLastResponse(response)
+      recordInspectionEvent({
+        kind: 'response',
+        label: stream ? 'response received' : 'response received without stream',
+        attempt: info.attempt,
+        status,
+        metadata: {
+          hasStream: Boolean(stream)
+        }
+      })
       onResponseRef.current?.(response)
+      return response
     },
-    []
+    [recordInspectionEvent, status]
   )
 
   const finishAssistant = useCallback(
@@ -703,14 +784,18 @@ export function useChat<
       setIsLoading(true)
       setError(null)
       setStatus('submitted')
+      setInspectionEvents([])
+      setInspectionRetries([])
       let retryAttempt = 0
       const maxRetries = getMaxRetries(optionsRef.current)
 
       try {
         while (true) {
           let receivedChunk = false
+          let streamEventReported = false
           try {
-            const stream = await openStream(controller.signal, retryAttempt + 1)
+            const attempt = retryAttempt + 1
+            const stream = await openStream(controller.signal, attempt)
             if (!stream) {
               setStatus('ready')
               return false
@@ -722,6 +807,18 @@ export function useChat<
                 return false
               }
               setStatus('streaming')
+              if (!streamEventReported) {
+                streamEventReported = true
+                recordInspectionEvent({
+                  kind: 'stream',
+                  label: 'stream started',
+                  attempt,
+                  status,
+                  metadata: {
+                    streamChunkCount: 1
+                  }
+                })
+              }
               receivedChunk = true
               applyChunk(assistant, chunk)
             }
@@ -737,11 +834,31 @@ export function useChat<
             }
             const retryContext = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (!receivedChunk && (await canRetry(optionsRef.current, retryContext))) {
+              recordInspectionEvent({
+                kind: 'retry',
+                label: 'retry planned',
+                attempt: retryContext.attempt,
+                status,
+                metadata: {
+                  maxRetries: retryContext.maxRetries,
+                  hasResponse: false
+                }
+              })
+              recordInspectionRetry(nextError, retryContext)
               retryAttempt += 1
               await waitForRetry(optionsRef.current, retryContext, controller.signal)
               setStatus('submitted')
               continue
             }
+            recordInspectionEvent({
+              kind: 'error',
+              label: 'chat stream failed',
+              attempt: retryContext.attempt,
+              status: 'error',
+              metadata: {
+                message: nextError.message
+              }
+            })
             finishAssistant(assistant, false, true, true)
             throw reportError(nextError)
           }
@@ -752,7 +869,7 @@ export function useChat<
         setIsLoading(false)
       }
     },
-    [applyChunk, finishAssistant, reportError]
+    [applyChunk, finishAssistant, recordInspectionEvent, recordInspectionRetry, reportError, status]
   )
 
   const streamReply = useCallback(
@@ -796,10 +913,10 @@ export function useChat<
 
       await streamReply(
         assistant,
-        {
+        withRunId({
           messages: nextMessages.filter((message) => message.id !== assistant.id),
           ...chatRequestOptions
-        },
+        }),
         { trigger: 'submit-message', messageId }
       )
     },
@@ -823,10 +940,10 @@ export function useChat<
       publishMessages(nextMessages)
       await streamReply(
         assistant,
-        {
+        withRunId({
           messages: nextMessages.filter((message) => message.id !== assistant.id),
           ...chatRequestOptions
-        },
+        }),
         { trigger: 'submit-message' }
       )
     },
@@ -874,10 +991,10 @@ export function useChat<
       publishMessages(nextMessages)
       await streamReply(
         assistant,
-        {
+        withRunId({
           messages: baseMessages,
           ...requestOptions
-        },
+        }),
         { trigger: 'regenerate-message' }
       )
     },
@@ -966,6 +1083,7 @@ export function useChat<
     setData,
     clearError,
     clearTrace,
+    inspect,
     clear,
     abortController
   }

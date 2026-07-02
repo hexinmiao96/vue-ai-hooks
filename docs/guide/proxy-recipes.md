@@ -12,7 +12,7 @@ Start with the deterministic proxy template before wiring a real provider:
 ```bash
 pnpm example:proxy-server
 # in another terminal
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
 This mode does not call the network. It covers `/api/chat`, `/api/completion`,
@@ -34,6 +34,12 @@ pnpm example:proxy-server
 ```
 
 Then run the browser demo against the same app-owned route:
+
+```bash
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
+If you want to test explicit `proxyProvider` routes in this same template, use:
 
 ```bash
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat

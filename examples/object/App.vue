@@ -36,8 +36,7 @@ const providerType: ProviderType =
           ? 'local-object'
           : 'openai'
 const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
-  | RequestCredentials
-  | undefined
+  RequestCredentials | undefined
 
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))

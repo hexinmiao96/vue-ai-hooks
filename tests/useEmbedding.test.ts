@@ -566,4 +566,57 @@ describe('useEmbedding', () => {
     expect(error.value).toBeNull()
     await expect(pending).resolves.toMatchObject({ name: 'AbortError' })
   })
+
+  it('captures inspect() snapshot metadata for proxy embedding requests', async () => {
+    const response = {
+      embeddings: [[0.9, 0.1]],
+      model: 'embed-model',
+      usage: { promptTokens: 1, totalTokens: 2 }
+    }
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { embed, inspect, clearTrace } = useEmbedding({
+      api: '/api/embedding',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      embed('inspect input', {
+        model: 'embedding-model',
+        body: { route: 'inspect' }
+      })
+    ).resolves.toEqual(response)
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      input: 'inspect input'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: response
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toBeNull()
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+    expect(cleared.timeline).toEqual([
+      { kind: 'status', label: 'status ready', timestamp: expect.any(String), status: 'ready' }
+    ])
+  })
 })

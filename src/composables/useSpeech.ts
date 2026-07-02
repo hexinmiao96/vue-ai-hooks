@@ -17,6 +17,7 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -66,6 +67,10 @@ export interface UseSpeechReturn {
   error: Ref<Error | null>
   lastRequest: Ref<SpeechGenerationRequestInfo | null>
   lastResponse: Ref<SpeechGenerationResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<
+    SpeechGenerationRequestInfo,
+    SpeechGenerationResponseInfo
+  >
   generate: (
     text?: string,
     options?: Partial<SpeechGenerationRequest>
@@ -153,6 +158,19 @@ export function useSpeech(options: UseSpeechOptions = {}): UseSpeechReturn {
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    SpeechGenerationRequestInfo,
+    SpeechGenerationResponseInfo
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   async function resolveHeaders(requestHeaders?: HeadersInit) {
@@ -302,6 +320,7 @@ export function useSpeech(options: UseSpeechOptions = {}): UseSpeechReturn {
     error,
     lastRequest,
     lastResponse,
+    inspect,
     generate: generateSpeech,
     generateSpeech,
     speak: generateSpeech,

@@ -206,17 +206,19 @@ result.
 
 Before enabling the feature for real tools:
 
-1. Run `pnpm example:chat` and click **Run approval demo**.
-2. Trigger a pending `chargeCard` request and confirm the UI shows only redacted
+1. Run `pnpm build && pnpm tool-approval:check` to verify the published entry
+   can pause, approve, reject, continue, and inspect approval metadata.
+2. Run `pnpm example:chat` and click **Run approval demo**.
+3. Trigger a pending `chargeCard` request and confirm the UI shows only redacted
    fields.
-3. Approve once, reload the thread, and confirm the approval remains approved.
-4. Repeat the same approve request with the same `runId` and confirm the tool
+4. Approve once, reload the thread, and confirm the approval remains approved.
+5. Repeat the same approve request with the same `runId` and confirm the tool
    is not executed twice.
-5. Reject a second approval and confirm the model receives a tool result with a
+6. Reject a second approval and confirm the model receives a tool result with a
    safe reason.
-6. Capture `inspectRequestTrace()` and confirm `approvalId`, `toolCallId`,
+7. Capture `inspectRequestTrace()` and confirm `approvalId`, `toolCallId`,
    `runId`, and `traceId` are present without secrets.
-7. Confirm backend logs can answer who approved what, when, in which thread, and
+8. Confirm backend logs can answer who approved what, when, in which thread, and
    with which policy version.
 
 Keep the UI behind an internal flag until this smoke test passes against your

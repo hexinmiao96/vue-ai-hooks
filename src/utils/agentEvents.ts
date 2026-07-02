@@ -61,9 +61,7 @@ export type AgentEvent =
     }
 
 export type AgentEventSource =
-  | Iterable<AgentEvent>
-  | AsyncIterable<AgentEvent>
-  | ReadableStream<AgentEvent>
+  Iterable<AgentEvent> | AsyncIterable<AgentEvent> | ReadableStream<AgentEvent>
 
 export interface AgentEventAdapterOptions {
   /** Data part type for progress events. */

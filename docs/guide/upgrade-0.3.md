@@ -125,5 +125,5 @@ check, run the local template:
 
 ```bash
 pnpm example:proxy-server
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```

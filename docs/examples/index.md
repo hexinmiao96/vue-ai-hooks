@@ -31,6 +31,14 @@ For a no-key React chat flow, run `pnpm example:react-chat`. It uses the same
 provider contract through `vue-ai-hooks/react`, streams from a deterministic
 `DirectChatTransport`, and renders request trace state beside the chat panel.
 
+For a no-key React completion flow, run `pnpm example:react-completion`. It uses
+`useCompletion` in the same no-key style, with a local stream and request trace
+panel.
+
+For a no-key React structured output flow, run `pnpm example:react-object`. It
+reuses `useObject` with a local schema-driven object stream and request trace
+panel, then can switch to proxy-backed `Provider` calls.
+
 For a no-key threaded chat flow, run `pnpm example:threaded-chat`. It pairs
 `useChatThreads()` with per-thread `useChat({ persist })` storage so you can
 create, rename, archive, restore, delete, refresh, and verify local history
@@ -72,26 +80,28 @@ For a no-key structured JSON flow, run `pnpm example:object`. It uses the local
 through the same environment variables as the other browser examples.
 
 For a no-key UI message stream contract check, run `pnpm example:proxy-server`
-and POST to `/api/ui-message-stream`. It emits AI SDK UI stream parts that can be
-decoded with `readUIMessageStream()` or consumed by the default proxy chat
-transport.
+in one terminal and `pnpm example:ui-message-stream` in another. The UI demo
+posts to `/api/ui-message-stream`, displays decoded chunks from
+`readUIMessageStream()`, and shows metadata for the response.
 
 ## Which demo should I open first?
 
-| Goal                                                     | Start with                                 |
-| -------------------------------------------------------- | ------------------------------------------ |
-| Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)               |
-| Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`               |
-| Keep local history in async IndexedDB                      | [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async) |
-| Try the React chat migration entry                       | `pnpm example:react-chat`                  |
-| Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)    |
-| Turn one prompt into text                                | [Text completion](#completion-demo)        |
-| Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)    |
-| Generate an image through an app route                   | [Image generation](#image-demo)            |
-| Generate a video through an app route                    | [Video generation](#video-demo)            |
-| Generate speech through an app route                     | [Speech generation](#speech-demo)          |
-| Turn audio into text through an app route                | [Audio transcription](#transcription-demo) |
-| Rerank search results through an app route               | [Document reranking](#rerank-demo)         |
-| Extract typed JSON from a prompt                         | [Structured object output](#object-demo)   |
+| Goal                                                     | Start with                                                                           |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)                                                         |
+| Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`                                                         |
+| Keep local history in async IndexedDB                    | [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async) |
+| Try the React chat migration entry                       | `pnpm example:react-chat`                                                            |
+| Try the React completion migration entry                 | `pnpm example:react-completion`                                                      |
+| Try the React structured output migration entry          | `pnpm example:react-object`                                                          |
+| Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)                                              |
+| Turn one prompt into text                                | [Text completion](#completion-demo)                                                  |
+| Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)                                              |
+| Generate an image through an app route                   | [Image generation](#image-demo)                                                      |
+| Generate a video through an app route                    | [Video generation](#video-demo)                                                      |
+| Generate speech through an app route                     | [Speech generation](#speech-demo)                                                    |
+| Turn audio into text through an app route                | [Audio transcription](#transcription-demo)                                           |
+| Rerank search results through an app route               | [Document reranking](#rerank-demo)                                                   |
+| Extract typed JSON from a prompt                         | [Structured object output](#object-demo)                                             |
 
 <DemoShowcase locale="en" />

@@ -283,4 +283,51 @@ describe('useTranscription', () => {
     expect(error.value).toBeNull()
     expect(status.value).toBe('ready')
   })
+
+  it('captures inspect() snapshot metadata for proxy transcription requests', async () => {
+    const response = {
+      text: 'inspect transcript',
+      model: 'inspect-transcription'
+    }
+    const fetcher = vi.fn(
+      async () =>
+        new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+    )
+    const { transcribeAudio, inspect, clearTrace } = useTranscription({
+      api: '/api/transcription',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      transcribeAudio('audio://inspect', { model: 'transcription-model' })
+    ).resolves.toEqual(response)
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.providerTrace.api).toBe('/api/transcription')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      audio: 'audio://inspect'
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: response
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toContain('/api/transcription')
+
+    clearTrace()
+    const cleared = inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

@@ -16,6 +16,7 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -66,6 +67,7 @@ export interface UseTranscriptionReturn {
   error: Ref<Error | null>
   lastRequest: Ref<TranscriptionRequestInfo | null>
   lastResponse: Ref<TranscriptionResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<TranscriptionRequestInfo, TranscriptionResponseInfo>
   transcribe: (
     audio?: string,
     options?: Partial<TranscriptionRequest>
@@ -149,6 +151,19 @@ export function useTranscription(options: UseTranscriptionOptions = {}): UseTran
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    TranscriptionRequestInfo,
+    TranscriptionResponseInfo
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   async function resolveHeaders(requestHeaders?: HeadersInit) {
@@ -299,6 +314,7 @@ export function useTranscription(options: UseTranscriptionOptions = {}): UseTran
     error,
     lastRequest,
     lastResponse,
+    inspect,
     transcribe: transcribeAudio,
     transcribeAudio,
     stop,

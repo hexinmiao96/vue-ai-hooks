@@ -151,8 +151,7 @@ type MessageMetadataValidator<TMetadata extends Record<string, unknown>> = (
 ) => metadata is TMetadata
 
 type MessageMetadataSchema<TMetadata extends Record<string, unknown>> =
-  | Record<string, unknown>
-  | MessageMetadataValidator<TMetadata>
+  Record<string, unknown> | MessageMetadataValidator<TMetadata>
 ```
 
 `SerializedMessage` 是 `serializeMessages(messages)` 返回的 JSON-safe 结构：
@@ -775,6 +774,7 @@ interface InspectionProviderTrace {
   trigger?: string
   aiSdkTrigger?: string
   hasStream?: boolean
+  traceId?: string
   requestKeys: string[]
   responseKeys: string[]
 }
@@ -793,6 +793,7 @@ interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
   request: TRequest | null
   response: TResponse | null
   error: InspectionErrorSummary | null
+  traceId?: string
   providerId?: string
   api?: string
   attempt?: number
@@ -914,10 +915,7 @@ type SetMessagesInput = Message[] | ((messages: Message[]) => Message[])
 
 ```ts
 type PruneToolCallsStrategy =
-  | 'none'
-  | 'all'
-  | 'before-last-message'
-  | `before-last-${number}-messages`
+  'none' | 'all' | 'before-last-message' | `before-last-${number}-messages`
 
 interface PruneToolCallsRule {
   type: Exclude<PruneToolCallsStrategy, 'none'>

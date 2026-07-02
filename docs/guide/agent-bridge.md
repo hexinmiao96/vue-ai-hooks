@@ -223,16 +223,18 @@ consumers can use the same route through `vue-ai-hooks/react`.
 
 Before exposing the bridge:
 
-1. Start a no-key local agent run and stream one `message-delta`.
-2. Emit one retrieval `source` and confirm the browser sees only safe metadata.
-3. Emit one `tool-call`, approve it through your backend, and return a
+1. Run `pnpm build && pnpm agent-bridge:check` to verify the published entry can
+   convert safe `AgentEvent` values to `ChatChunk` and AI SDK UI stream parts.
+2. Start a no-key local agent run and stream one `message-delta`.
+3. Emit one retrieval `source` and confirm the browser sees only safe metadata.
+4. Emit one `tool-call`, approve it through your backend, and return a
    `tool-result`.
-4. Trigger one graph interrupt, persist the approval row, resume it, and confirm
+5. Trigger one graph interrupt, persist the approval row, resume it, and confirm
    the final `finish` event arrives.
-5. Repeat the same `runId` request and confirm the backend returns or resumes
+6. Repeat the same `runId` request and confirm the backend returns or resumes
    the same run instead of creating duplicates.
-6. Disconnect mid-stream, reconnect to `/api/agent/runs/:runId/events`, and
+7. Disconnect mid-stream, reconnect to `/api/agent/runs/:runId/events`, and
    confirm the UI can recover from stored state.
-7. Capture `inspectRequestTrace()` and confirm `threadId`, `branchId`, `runId`,
+8. Capture `inspectRequestTrace()` and confirm `threadId`, `branchId`, `runId`,
    and `traceId` are present without provider, LangSmith, vector store, or tool
    credentials.

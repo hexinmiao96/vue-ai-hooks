@@ -315,4 +315,53 @@ describe('useRerank', () => {
     expect(reranker.error.value).toBeNull()
     expect(reranker.status.value).toBe('ready')
   })
+
+  it('captures inspect() snapshot metadata for proxy rerank requests', async () => {
+    const response = {
+      ranking: [
+        { index: 1, score: 0.98 },
+        { index: 0, score: 0.52 }
+      ]
+    }
+    const fetcher = vi.fn(async () => jsonResponse(response))
+    const reranker = useRerank<string>({
+      api: '/api/rerank',
+      headers: { 'X-Session': 'session_1' },
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(reranker.rerank('inspect query', ['doc a', 'doc b'])).resolves.toMatchObject({
+      originalDocuments: ['doc a', 'doc b'],
+      rerankedDocuments: ['doc b', 'doc a']
+    })
+
+    const snapshot = reranker.inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.providerTrace.providerId).toBe('proxy')
+    expect(snapshot.providerTrace.api).toBe('/api/rerank')
+    expect(snapshot.request).toMatchObject({
+      providerId: 'proxy',
+      attempt: 1,
+      query: 'inspect query',
+      documents: ['doc a', 'doc b']
+    })
+    expect(snapshot.response).toMatchObject({
+      providerId: 'proxy',
+      result: {
+        originalDocuments: ['doc a', 'doc b'],
+        rerankedDocuments: ['doc b', 'doc a']
+      }
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response'])
+    )
+    expect(snapshot.curl).toContain('/api/rerank')
+
+    reranker.clearTrace()
+    const cleared = reranker.inspect()
+    expect(cleared.hasRequest).toBe(false)
+    expect(cleared.hasResponse).toBe(false)
+  })
 })

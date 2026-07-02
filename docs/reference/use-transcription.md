@@ -63,27 +63,28 @@ await handleSubmit(undefined, { language: 'en' })
 
 ## Return value
 
-| Property                         | Type                                                                                                 | Description                                                      |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `input`                          | `Ref<string>`                                                                                        | Audio URL, data URL, or base64 text binding for forms.           |
-| `transcription`                  | `Ref<string>`                                                                                        | Transcript text from the latest successful run.                  |
-| `text`                           | `Ref<string>`                                                                                        | Alias for `transcription`.                                       |
-| `result`                         | `Ref<TranscriptionResult \| null>`                                                                   | Full backend result, including segments or provider metadata.    |
-| `status`                         | `Ref<AiRequestStatus>`                                                                               | Request lifecycle: `ready`, `submitted`, or `error`.             |
-| `isLoading`                      | `Ref<boolean>`                                                                                       | True while a request is in flight.                               |
-| `error`                          | `Ref<Error \| null>`                                                                                 | Last non-abort error.                                            |
-| `lastRequest`                    | `Ref<TranscriptionRequestInfo \| null>`                                                              | Last prepared transcription request snapshot.                    |
-| `lastResponse`                   | `Ref<TranscriptionResponseInfo \| null>`                                                             | Last backend response snapshot, including the normalized result. |
-| `transcribe(audio?, opts?)`      | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | Alias for `transcribeAudio()`.                                   |
-| `transcribeAudio(audio?, opts?)` | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | Transcribe audio. Uses `input.value` when audio is omitted.      |
-| `stop()`                         | `() => void`                                                                                         | Abort the in-flight request.                                     |
-| `setInput(value)`                | `(string) => void`                                                                                   | Replace audio input manually.                                    |
-| `handleInputChange(e)`           | `(Event \| { target } \| string) => void`                                                            | Wire custom inputs without `v-model`.                            |
-| `handleSubmit(e, opts?)`         | `({ preventDefault?: () => void }?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>` | Submit `input.value`; clears input after success.                |
-| `clearError()`                   | `() => void`                                                                                         | Clear `error` and move `status` back to `ready`.                 |
-| `clearTrace()`                   | `() => void`                                                                                         | Clear `lastRequest` and `lastResponse` without changing text.    |
-| `clear()`                        | `() => void`                                                                                         | Reset input, transcription, result, error, trace, and status.    |
-| `abortController`                | `Ref<AbortController \| null>`                                                                       | Exposed for advanced integrations.                               |
+| Property                         | Type                                                                                                 | Description                                                              |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `input`                          | `Ref<string>`                                                                                        | Audio URL, data URL, or base64 text binding for forms.                   |
+| `transcription`                  | `Ref<string>`                                                                                        | Transcript text from the latest successful run.                          |
+| `text`                           | `Ref<string>`                                                                                        | Alias for `transcription`.                                               |
+| `result`                         | `Ref<TranscriptionResult \| null>`                                                                   | Full backend result, including segments or provider metadata.            |
+| `status`                         | `Ref<AiRequestStatus>`                                                                               | Request lifecycle: `ready`, `submitted`, or `error`.                     |
+| `isLoading`                      | `Ref<boolean>`                                                                                       | True while a request is in flight.                                       |
+| `error`                          | `Ref<Error \| null>`                                                                                 | Last non-abort error.                                                    |
+| `lastRequest`                    | `Ref<TranscriptionRequestInfo \| null>`                                                              | Last prepared transcription request snapshot.                            |
+| `lastResponse`                   | `Ref<TranscriptionResponseInfo \| null>`                                                             | Last backend response snapshot, including the normalized result.         |
+| `inspect()`                      | `() => RequestInspectionSnapshot<TranscriptionRequestInfo, TranscriptionResponseInfo>`               | Build a production-ready debug snapshot with timeline and retry records. |
+| `transcribe(audio?, opts?)`      | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | Alias for `transcribeAudio()`.                                           |
+| `transcribeAudio(audio?, opts?)` | `(string?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>`                          | Transcribe audio. Uses `input.value` when audio is omitted.              |
+| `stop()`                         | `() => void`                                                                                         | Abort the in-flight request.                                             |
+| `setInput(value)`                | `(string) => void`                                                                                   | Replace audio input manually.                                            |
+| `handleInputChange(e)`           | `(Event \| { target } \| string) => void`                                                            | Wire custom inputs without `v-model`.                                    |
+| `handleSubmit(e, opts?)`         | `({ preventDefault?: () => void }?, Partial<TranscriptionRequest>?) => Promise<TranscriptionResult>` | Submit `input.value`; clears input after success.                        |
+| `clearError()`                   | `() => void`                                                                                         | Clear `error` and move `status` back to `ready`.                         |
+| `clearTrace()`                   | `() => void`                                                                                         | Clear `lastRequest` and `lastResponse` without changing text.            |
+| `clear()`                        | `() => void`                                                                                         | Reset input, transcription, result, error, trace, and status.            |
+| `abortController`                | `Ref<AbortController \| null>`                                                                       | Exposed for advanced integrations.                                       |
 
 ## Notes
 

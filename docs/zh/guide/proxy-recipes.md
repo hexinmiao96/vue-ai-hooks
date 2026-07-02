@@ -11,7 +11,7 @@ SSE、补全 SSE 或 embedding JSON 返回给浏览器。
 ```bash
 pnpm example:proxy-server
 # 另开一个终端
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
 这个模式不会请求外网。它覆盖 `/api/chat`、`/api/completion`、`/api/embedding`、
@@ -32,6 +32,12 @@ pnpm example:proxy-server
 ```
 
 然后让浏览器 demo 调用同一个应用自有路由：
+
+```bash
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
+如果你要测试该模板里的显式 `proxyProvider` 路由，改为：
 
 ```bash
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat

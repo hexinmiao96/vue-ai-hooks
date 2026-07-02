@@ -66,27 +66,28 @@ await handleSubmit(undefined, { aspectRatio: '9:16', duration: 4 })
 
 ## 返回值
 
-| 属性                            | 类型                                                                                                     | 说明                                                   |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| `input`                         | `Ref<string>`                                                                                            | 视频表单的提示词绑定。                                 |
-| `video`                         | `Ref<GeneratedVideo \| null>`                                                                            | 最近一次成功生成的第一段视频。                         |
-| `videos`                        | `Ref<GeneratedVideo[]>`                                                                                  | 最近一次成功生成的全部视频。                           |
-| `result`                        | `Ref<VideoGenerationResult \| null>`                                                                     | 完整后端结果，包括 warnings 或 provider metadata。     |
-| `status`                        | `Ref<AiRequestStatus>`                                                                                   | 请求生命周期：`ready`、`submitted` 或 `error`。        |
-| `isLoading`                     | `Ref<boolean>`                                                                                           | 请求进行中时为 true。                                  |
-| `error`                         | `Ref<Error \| null>`                                                                                     | 最近一次非 abort 错误。                                |
-| `lastRequest`                   | `Ref<VideoGenerationRequestInfo \| null>`                                                                | 最近一次准备完成的视频请求快照。                       |
-| `lastResponse`                  | `Ref<VideoGenerationResponseInfo \| null>`                                                               | 最近一次后端响应快照，包含归一化后的结果。             |
-| `generate(prompt?, opts?)`      | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | `generateVideo()` 的别名。                             |
-| `generateVideo(prompt?, opts?)` | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | 生成视频；省略 prompt 时使用 `input.value`。           |
-| `stop()`                        | `() => void`                                                                                             | 中止当前请求。                                         |
-| `setInput(value)`               | `(string) => void`                                                                                       | 手动替换提示词输入。                                   |
-| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | 不使用 `v-model` 时接入自定义输入组件。                |
-| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>` | 提交 `input.value`；成功后清空 input。                 |
-| `clearError()`                  | `() => void`                                                                                             | 清空 `error`，并把 `status` 改回 `ready`。             |
-| `clearTrace()`                  | `() => void`                                                                                             | 清空 `lastRequest` 和 `lastResponse`，不改变视频结果。 |
-| `clear()`                       | `() => void`                                                                                             | 重置 input、视频、result、error、trace 和 status。     |
-| `abortController`               | `Ref<AbortController \| null>`                                                                           | 暴露给高级集成使用。                                   |
+| 属性                            | 类型                                                                                                     | 说明                                                               |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `input`                         | `Ref<string>`                                                                                            | 视频表单的提示词绑定。                                             |
+| `video`                         | `Ref<GeneratedVideo \| null>`                                                                            | 最近一次成功生成的第一段视频。                                     |
+| `videos`                        | `Ref<GeneratedVideo[]>`                                                                                  | 最近一次成功生成的全部视频。                                       |
+| `result`                        | `Ref<VideoGenerationResult \| null>`                                                                     | 完整后端结果，包括 warnings 或 provider metadata。                 |
+| `status`                        | `Ref<AiRequestStatus>`                                                                                   | 请求生命周期：`ready`、`submitted` 或 `error`。                    |
+| `isLoading`                     | `Ref<boolean>`                                                                                           | 请求进行中时为 true。                                              |
+| `error`                         | `Ref<Error \| null>`                                                                                     | 最近一次非 abort 错误。                                            |
+| `lastRequest`                   | `Ref<VideoGenerationRequestInfo \| null>`                                                                | 最近一次准备完成的视频请求快照。                                   |
+| `lastResponse`                  | `Ref<VideoGenerationResponseInfo \| null>`                                                               | 最近一次后端响应快照，包含归一化后的结果。                         |
+| `inspect()`                     | `() => RequestInspectionSnapshot<VideoGenerationRequestInfo, VideoGenerationResponseInfo>`               | 生成可直接用于生产排障的快照：包含 timeline、重试记录与请求/响应。 |
+| `generate(prompt?, opts?)`      | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | `generateVideo()` 的别名。                                         |
+| `generateVideo(prompt?, opts?)` | `(string?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>`                          | 生成视频；省略 prompt 时使用 `input.value`。                       |
+| `stop()`                        | `() => void`                                                                                             | 中止当前请求。                                                     |
+| `setInput(value)`               | `(string) => void`                                                                                       | 手动替换提示词输入。                                               |
+| `handleInputChange(e)`          | `(Event \| { target } \| string) => void`                                                                | 不使用 `v-model` 时接入自定义输入组件。                            |
+| `handleSubmit(e, opts?)`        | `({ preventDefault?: () => void }?, Partial<VideoGenerationRequest>?) => Promise<VideoGenerationResult>` | 提交 `input.value`；成功后清空 input。                             |
+| `clearError()`                  | `() => void`                                                                                             | 清空 `error`，并把 `status` 改回 `ready`。                         |
+| `clearTrace()`                  | `() => void`                                                                                             | 清空 `lastRequest` 和 `lastResponse`，不改变视频结果。             |
+| `clear()`                       | `() => void`                                                                                             | 重置 input、视频、result、error、trace 和 status。                 |
+| `abortController`               | `Ref<AbortController \| null>`                                                                           | 暴露给高级集成使用。                                               |
 
 ## 说明
 

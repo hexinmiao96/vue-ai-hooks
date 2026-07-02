@@ -42,6 +42,12 @@ pnpm install
 pnpm example:chat
 ```
 
+Or run against your own proxy endpoint with browser-safe API keys:
+
+```bash
+VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+```
+
 Open the local URL printed by Vite, then click **Run approval demo**. When no
 provider is selected and no real `VITE_OPENAI_KEY` is present, the chat example
 falls back to `local-tools`, shows a pending `chargeCard` tool call, and
@@ -55,6 +61,14 @@ pnpm example:react-chat
 
 The React demo streams from a deterministic `DirectChatTransport` and shows
 `lastRequest`, `lastResponse`, usage, and stream data beside the chat panel.
+
+If you are migrating completion or structured output flows, run these React
+migration quickstarts as well:
+
+```bash
+pnpm example:react-completion
+pnpm example:react-object
+```
 
 ## Security note before real providers
 
@@ -135,7 +149,7 @@ key:
 ```bash
 pnpm example:proxy-server
 # in another terminal
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
 You can also point the default transport at the same local server:

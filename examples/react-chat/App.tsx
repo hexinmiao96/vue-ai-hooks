@@ -1,4 +1,5 @@
-import { DirectChatTransport } from 'vue-ai-hooks'
+import { DirectChatTransport, inspectRequestTrace } from 'vue-ai-hooks'
+import { useCallback, useMemo, useState } from 'react'
 import { useChat, type ChatChunk, type ChatRequest, type Message } from 'vue-ai-hooks/react'
 
 const samplePrompts = [
@@ -28,6 +29,14 @@ function requestText(request: ChatRequest): string {
     .map((part) => part.text)
     .join('')
 }
+
+const useProxyRoute = import.meta.env.VITE_CHAT_PROVIDER === 'proxy-route'
+const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
+  RequestCredentials | undefined
+const proxyBaseURL = (import.meta.env.VITE_PROXY_BASE_URL || '').trim()
+const proxyRouteHeaders = import.meta.env.VITE_PROXY_AUTH_TOKEN
+  ? { Authorization: `Bearer ${import.meta.env.VITE_PROXY_AUTH_TOKEN}` }
+  : undefined
 
 async function* localReactStream(request: ChatRequest): AsyncIterable<ChatChunk> {
   const prompt = requestText(request)
@@ -71,24 +80,79 @@ export default function App() {
     handleSubmit,
     sendMessage,
     isLoading,
-    status,
+    status: chatStatus,
     stop,
-    error,
     clear,
     usage,
     streamData,
     lastRequest,
-    lastResponse
+    lastResponse,
+    clearTrace,
+    error: chatError
   } = useChat({
-    provider,
+    ...(useProxyRoute
+      ? {
+          api: '/api/chat',
+          ...(proxyBaseURL ? { baseURL: proxyBaseURL } : {}),
+          credentials: proxyCredentials,
+          ...(proxyRouteHeaders ? { headers: proxyRouteHeaders } : {})
+        }
+      : {
+          provider
+        }),
     initialInput: samplePrompts[0],
     defaultRequest: {
       streamProtocol: 'ui-message',
       metadata: { demo: 'react-chat' }
     }
   })
+  const [copiedStatus, setCopiedStatus] = useState('Copy curl')
+  const inspection = useMemo(
+    () =>
+      inspectRequestTrace({
+        status: chatStatus,
+        lastRequest,
+        lastResponse,
+        error: chatError,
+        curl: true
+      }),
+    [chatStatus, lastRequest, lastResponse, chatError]
+  )
+  const inspectionSummary = useMemo(() => JSON.stringify(inspection, null, 2), [inspection])
+  const copyInspectionCurl = useCallback(() => {
+    if (!inspection.curl) return
+    void navigator.clipboard.writeText(inspection.curl)
+    setCopiedStatus('Copied')
+    window.setTimeout(() => {
+      setCopiedStatus('Copy curl')
+    }, 1200)
+  }, [inspection.curl])
 
   const canSubmit = input.trim().length > 0 && !isLoading
+  const providerId = inspection.providerId ?? (useProxyRoute ? 'proxy-transport' : provider.id)
+  const inspectionRows = [
+    { label: 'Provider', value: providerId },
+    {
+      label: 'Request',
+      value: inspection.request
+        ? `${inspection.request.kind} #${inspection.request.attempt}`
+        : 'none'
+    },
+    { label: 'Status', value: inspection.status },
+    {
+      label: 'Stream',
+      value: inspection.response?.hasStream ? 'open' : 'no stream'
+    },
+    {
+      label: 'Timeline',
+      value: String(inspection.timeline.length)
+    },
+    {
+      label: 'Retries',
+      value: String(inspection.retries.length)
+    },
+    { label: 'Attempt', value: String(inspection.attempt ?? 'none') }
+  ]
 
   return (
     <main className="app-shell">
@@ -99,7 +163,7 @@ export default function App() {
             <h1>React chat quickstart</h1>
           </div>
           <div className="status-strip" aria-label="Request status">
-            <span data-status={status}>{status}</span>
+            <span data-status={chatStatus}>{chatStatus}</span>
             <span>{messages.length} messages</span>
           </div>
         </header>
@@ -154,24 +218,27 @@ export default function App() {
           </div>
         </form>
 
-        {error ? <p className="error-text">{error.message}</p> : null}
+        {chatError ? <p className="error-text">{chatError.message}</p> : null}
       </section>
 
       <aside className="inspect-panel" aria-label="Request inspection">
         <h2>Inspection</h2>
+        <p className="inspect-summary">{inspection.summary}</p>
+        <div className="inspect-actions">
+          <button type="button" disabled={!inspection.curl} onClick={copyInspectionCurl}>
+            {copiedStatus}
+          </button>
+          <button type="button" onClick={clearTrace}>
+            Clear trace
+          </button>
+        </div>
         <dl>
-          <div>
-            <dt>Provider</dt>
-            <dd>{lastRequest?.providerId ?? provider.id}</dd>
-          </div>
-          <div>
-            <dt>Last request</dt>
-            <dd>{lastRequest ? `${lastRequest.kind} #${lastRequest.attempt}` : 'none'}</dd>
-          </div>
-          <div>
-            <dt>Stream seen</dt>
-            <dd>{lastResponse ? String(lastResponse.hasStream) : 'none'}</dd>
-          </div>
+          {inspectionRows.map((row) => (
+            <div key={row.label}>
+              <dt>{row.label}</dt>
+              <dd>{row.value}</dd>
+            </div>
+          ))}
           <div>
             <dt>Usage</dt>
             <dd>{usage ? `${usage.totalTokens} tokens` : 'pending'}</dd>
@@ -181,19 +248,36 @@ export default function App() {
             <dd>{streamData.length}</dd>
           </div>
         </dl>
+        <details>
+          <summary>Timeline ({inspection.timeline.length})</summary>
+          <ul className="trace-list">
+            {inspection.timeline.map((event) => (
+              <li
+                key={`${event.kind}-${event.timestamp}-${event.message ?? event.label ?? event.category ?? event.attempt}`}
+              >
+                {event.kind}
+                {event.attempt ? ` #${event.attempt}` : ''}
+                {` — ${event.label ?? event.message ?? 'event'}`}
+              </li>
+            ))}
+          </ul>
+        </details>
+        <details>
+          <summary>Retries ({inspection.retries.length})</summary>
+          <ul className="trace-list">
+            {inspection.retries.map((retry) => (
+              <li key={`r-${retry.attempt}-${retry.timestamp}`}>
+                #{retry.attempt}: {retry.error.category} — {retry.error.message}
+              </li>
+            ))}
+          </ul>
+        </details>
+        <details>
+          <summary>Provider trace</summary>
+          <pre className="trace-code">{JSON.stringify(inspection.providerTrace, null, 2)}</pre>
+        </details>
 
-        <pre>
-          {JSON.stringify(
-            {
-              requestId: lastRequest?.id,
-              trigger: lastRequest?.trigger,
-              aiSdkTrigger: lastRequest?.aiSdkTrigger,
-              data: streamData.map((part) => ({ id: part.id, type: part.type }))
-            },
-            null,
-            2
-          )}
-        </pre>
+        <pre className="trace-code">{inspectionSummary}</pre>
       </aside>
     </main>
   )

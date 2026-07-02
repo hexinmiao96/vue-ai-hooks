@@ -144,6 +144,55 @@ describe('inspection utilities', () => {
     })
   })
 
+  it('extracts trace id from request metadata for snapshot and provider trace', () => {
+    const snapshot = inspectRequestTrace({
+      status: 'ready',
+      lastRequest: {
+        providerId: 'proxy',
+        api: '/api/chat',
+        metadata: { traceId: 'trace_123' },
+        attempt: 1
+      },
+      now: '2026-07-01T00:00:00.000Z'
+    })
+
+    expect(snapshot.traceId).toBe('trace_123')
+    expect(snapshot.providerTrace).toMatchObject({
+      providerId: 'proxy',
+      api: '/api/chat',
+      attempt: 1,
+      traceId: 'trace_123'
+    })
+  })
+
+  it('extracts trace id from request body and request metadata snapshots', () => {
+    expect(
+      inspectRequestTrace({
+        lastRequest: {
+          providerId: 'proxy',
+          body: { traceId: 'trace_body' }
+        },
+        now: '2026-07-01T00:00:00.000Z'
+      })
+    ).toMatchObject({
+      traceId: 'trace_body',
+      providerTrace: { traceId: 'trace_body' }
+    })
+
+    expect(
+      inspectRequestTrace({
+        lastRequest: {
+          providerId: 'proxy',
+          requestMetadata: { traceId: 'trace_request_metadata' }
+        },
+        now: '2026-07-01T00:00:00.000Z'
+      })
+    ).toMatchObject({
+      traceId: 'trace_request_metadata',
+      providerTrace: { traceId: 'trace_request_metadata' }
+    })
+  })
+
   it('adds retry records, stream events, provider trace, and redacted curl output', () => {
     const retryError = new AiHooksError('too many requests', { status: 429 })
     const snapshot = inspectRequestTrace({

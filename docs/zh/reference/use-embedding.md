@@ -68,25 +68,26 @@ console.log(embeddings.value)
 
 ## 返回值
 
-| 属性                     | 类型                                                                                         | 说明                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `embeddings`             | `Ref<number[][]>`                                                                            | 最近一次生成的 embedding 向量。                      |
-| `input`                  | `Ref<string>`                                                                                | 可绑定到 embedding 表单的文本输入。                  |
-| `status`                 | `Ref<AiRequestStatus>`                                                                       | 请求生命周期：`ready`、`submitted` 或 `error`。      |
-| `isLoading`              | `Ref<boolean>`                                                                               | 请求进行中时为 true。                                |
-| `error`                  | `Ref<Error \| null>`                                                                         | 最近一次错误。                                       |
-| `result`                 | `Ref<EmbeddingResult \| null>`                                                               | 最近一次完整结果，包括 usage 统计。                  |
-| `lastRequest`            | `Ref<EmbeddingRequestInfo \| null>`                                                          | 最近一次准备完成的 embedding 请求快照。              |
-| `lastResponse`           | `Ref<EmbeddingResponseInfo \| null>`                                                         | 最近一次 Provider 响应快照，包含完整结果。           |
-| `embed(input, opts?)`    | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>`                | 生成 embeddings。                                    |
-| `stop()`                 | `() => void`                                                                                 | 中止当前请求。                                       |
-| `setInput(value)`        | `(string) => void`                                                                           | 手动替换表单输入。                                   |
-| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                                    | 不使用 `v-model` 时接入自定义输入组件。              |
-| `handleSubmit(e, opts?)` | `({ preventDefault?: () => void }?, Partial<EmbeddingRequest>?) => Promise<EmbeddingResult>` | 提交 `input.value`；成功后清空 input。               |
-| `clearError()`           | `() => void`                                                                                 | 清空 `error`，并把 `status` 恢复为 `ready`。         |
-| `clearTrace()`           | `() => void`                                                                                 | 清空 `lastRequest` 和 `lastResponse`，不改变向量。   |
-| `clear()`                | `() => void`                                                                                 | 重置 embeddings、result 和 error，也会中止当前请求。 |
-| `abortController`        | `Ref<AbortController \| null>`                                                               | 暴露给高级用法。                                     |
+| 属性                     | 类型                                                                                         | 说明                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `embeddings`             | `Ref<number[][]>`                                                                            | 最近一次生成的 embedding 向量。                                          |
+| `input`                  | `Ref<string>`                                                                                | 可绑定到 embedding 表单的文本输入。                                      |
+| `status`                 | `Ref<AiRequestStatus>`                                                                       | 请求生命周期：`ready`、`submitted` 或 `error`。                          |
+| `isLoading`              | `Ref<boolean>`                                                                               | 请求进行中时为 true。                                                    |
+| `error`                  | `Ref<Error \| null>`                                                                         | 最近一次错误。                                                           |
+| `result`                 | `Ref<EmbeddingResult \| null>`                                                               | 最近一次完整结果，包括 usage 统计。                                      |
+| `lastRequest`            | `Ref<EmbeddingRequestInfo \| null>`                                                          | 最近一次准备完成的 embedding 请求快照。                                  |
+| `lastResponse`           | `Ref<EmbeddingResponseInfo \| null>`                                                         | 最近一次 Provider 响应快照，包含完整结果。                               |
+| `inspect()`              | `() => RequestInspectionSnapshot<EmbeddingRequestInfo, EmbeddingResponseInfo>`               | 生成可直接用于生产排障的快照：包含 timeline、重试记录与归一化请求/响应。 |
+| `embed(input, opts?)`    | `(string \| string[], Partial<EmbeddingRequest>) => Promise<EmbeddingResult>`                | 生成 embeddings。                                                        |
+| `stop()`                 | `() => void`                                                                                 | 中止当前请求。                                                           |
+| `setInput(value)`        | `(string) => void`                                                                           | 手动替换表单输入。                                                       |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                                    | 不使用 `v-model` 时接入自定义输入组件。                                  |
+| `handleSubmit(e, opts?)` | `({ preventDefault?: () => void }?, Partial<EmbeddingRequest>?) => Promise<EmbeddingResult>` | 提交 `input.value`；成功后清空 input。                                   |
+| `clearError()`           | `() => void`                                                                                 | 清空 `error`，并把 `status` 恢复为 `ready`。                             |
+| `clearTrace()`           | `() => void`                                                                                 | 清空 `lastRequest` 和 `lastResponse`，不改变向量。                       |
+| `clear()`                | `() => void`                                                                                 | 重置 embeddings、result 和 error，也会中止当前请求。                     |
+| `abortController`        | `Ref<AbortController \| null>`                                                               | 暴露给高级用法。                                                         |
 
 ## 向量相似度
 

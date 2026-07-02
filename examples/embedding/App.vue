@@ -34,8 +34,7 @@ const selectedProvider =
         ? 'proxy'
         : 'openai'
 const proxyCredentials = (import.meta.env.VITE_PROXY_CREDENTIALS || undefined) as
-  | RequestCredentials
-  | undefined
+  RequestCredentials | undefined
 /**
  * Build the concrete provider instance used by this example.
  * The ternary keeps provider-specific credentials and OpenRouter attribution

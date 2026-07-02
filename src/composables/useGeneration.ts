@@ -4,6 +4,7 @@ import { createId } from '../utils/id'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { mergeRequestBody } from '../utils/requestBody'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
 export interface GenerateOptions {
@@ -82,6 +83,10 @@ export interface UseGenerationReturn<
   error: Ref<Error | null>
   lastRequest: Ref<GenerationRequestInfo<TInput> | null>
   lastResponse: Ref<GenerationResponseInfo<TInput, TResult> | null>
+  inspect: () => RequestInspectionSnapshot<
+    GenerationRequestInfo<TInput>,
+    GenerationResponseInfo<TInput, TResult>
+  >
   generate: (input?: TInput, options?: GenerateOptions) => Promise<TResult>
   stop: () => void
   setInput: (value: TInput | undefined) => void
@@ -215,6 +220,19 @@ export function useGeneration<
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    GenerationRequestInfo<TInput>,
+    GenerationResponseInfo<TInput, TResult>
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   function requestInfo(
@@ -352,6 +370,7 @@ export function useGeneration<
     error,
     lastRequest,
     lastResponse,
+    inspect,
     generate,
     stop,
     setInput,

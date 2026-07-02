@@ -526,6 +526,84 @@ describe('react useObject', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
+  it('captures inspect() timeline and retry metadata', async () => {
+    let calls = 0
+    const requests: ChatRequest[] = []
+    const provider: ChatProvider = {
+      ...objectProvider([], requests),
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) {
+          const error = new Error('temporary outage')
+          Object.assign(error, { status: 429 })
+          throw error
+        }
+        return (async function* () {
+          yield { content: '{"title":"Inspect","priority":"high"}' }
+        })()
+      }
+    }
+
+    const { result } = renderHook(() =>
+      useObject<TaskSummary>({
+        provider,
+        schema,
+        schemaName: 'task_summary',
+        maxRetries: 1,
+        defaultRequest: {
+          body: { tenantId: 'tenant_1' },
+          headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' }
+        }
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.submit('inspect object')).resolves.toEqual({
+        title: 'Inspect',
+        priority: 'high'
+      })
+    })
+
+    const snapshot = result.current.inspect()
+    expect(calls).toBe(2)
+    expect(snapshot.request).toMatchObject({
+      providerId: 'react-object-fake',
+      attempt: 2,
+      body: { tenantId: 'tenant_1' },
+      headers: { 'x-tenant': 'tenant_1' }
+    })
+    expect(snapshot.request?.request).toMatchObject({
+      headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' },
+      messages: [{ role: 'user', content: 'inspect object' }]
+    })
+    expect(snapshot.response).toMatchObject({ hasStream: true })
+    const kinds = snapshot.timeline.map((entry) => entry.kind)
+    expect(kinds).toEqual(expect.arrayContaining(['request', 'retry', 'stream', 'response']))
+    expect(snapshot.retries).toHaveLength(1)
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      error: expect.objectContaining({
+        category: 'rate-limit',
+        status: 429
+      })
+    })
+
+    act(() => {
+      result.current.clearTrace()
+    })
+    const cleared = result.current.inspect()
+    expect(cleared.timeline).toEqual([
+      {
+        kind: 'status',
+        label: 'status ready',
+        timestamp: expect.any(String),
+        status: 'ready'
+      }
+    ])
+  })
+
   it('rejects stopped streams with an abort error', async () => {
     const onError = vi.fn()
     let resolveOnAbort: (() => void) | undefined

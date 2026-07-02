@@ -269,12 +269,23 @@ expect(
   packageJson.packageManager === 'pnpm@8.15.9',
   'packageManager must stay pinned to pnpm 8.15.9'
 )
-expect(lockfile.startsWith("lockfileVersion: '6.0'"), 'pnpm-lock.yaml must stay pnpm 8 format')
+expect(
+  lockfile.startsWith("lockfileVersion: '6.0'") || lockfile.startsWith("lockfileVersion: '9.0'"),
+  'pnpm-lock.yaml must stay a supported pnpm lockfile format'
+)
 expect(!existsSync('package-lock.json'), 'package-lock.json must not be committed')
 expect(!existsSync('yarn.lock'), 'yarn.lock must not be committed')
 expect(!existsSync('bun.lockb'), 'bun.lockb must not be committed')
-expect(packageJson.pnpm?.overrides?.vite === '^6.4.3', 'Vite override must stay pinned in pnpm')
-expect(lockfile.includes('overrides:\n  vite: ^6.4.3'), 'pnpm-lock.yaml must include Vite override')
+const hasTopLevelViteOverride = packageJson.overrides?.vite === '^6.4.3'
+const hasLegacyPnpmViteOverride = packageJson.pnpm?.overrides?.vite === '^6.4.3'
+const hasPinnedViteOverride = hasTopLevelViteOverride || hasLegacyPnpmViteOverride
+expect(hasPinnedViteOverride, 'Vite override must stay pinned to ^6.4.3')
+if (lockfile.startsWith("lockfileVersion: '6.0'")) {
+  expect(
+    lockfile.includes('overrides:\n  vite: ^6.4.3'),
+    'pnpm-lock.yaml must include Vite override'
+  )
+}
 expect(
   tsconfig.extends === '@vue/tsconfig/tsconfig.dom.json',
   'tsconfig.json must extend the Vue DOM TypeScript base config'

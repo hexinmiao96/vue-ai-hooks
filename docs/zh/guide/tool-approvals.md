@@ -182,13 +182,15 @@ const trace = inspectRequestTrace({
 
 开放真实工具前先验证：
 
-1. 运行 `pnpm example:chat`，点击 **Run approval demo**。
-2. 触发 pending `chargeCard` 请求，确认 UI 只展示脱敏字段。
-3. 审批通过一次，刷新 thread，确认审批状态仍为 approved。
-4. 用同一个 `runId` 重复 approve 请求，确认工具没有执行两次。
-5. 拒绝第二个审批，确认模型收到带安全原因的 tool result。
-6. 捕获 `inspectRequestTrace()`，确认包含 `approvalId`、`toolCallId`、`runId` 和
+1. 运行 `pnpm build && pnpm tool-approval:check`，确认发布入口能暂停、审批、拒绝、
+   继续生成并检查审批 metadata。
+2. 运行 `pnpm example:chat`，点击 **Run approval demo**。
+3. 触发 pending `chargeCard` 请求，确认 UI 只展示脱敏字段。
+4. 审批通过一次，刷新 thread，确认审批状态仍为 approved。
+5. 用同一个 `runId` 重复 approve 请求，确认工具没有执行两次。
+6. 拒绝第二个审批，确认模型收到带安全原因的 tool result。
+7. 捕获 `inspectRequestTrace()`，确认包含 `approvalId`、`toolCallId`、`runId` 和
    `traceId`，且没有 secret。
-7. 确认后端日志可以回答谁在何时、哪个 thread、用哪个策略版本批准了什么。
+8. 确认后端日志可以回答谁在何时、哪个 thread、用哪个策略版本批准了什么。
 
 这条 smoke test 在真实后端路由上通过前，把 UI 留在内部 flag 后面。

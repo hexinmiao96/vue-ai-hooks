@@ -28,6 +28,12 @@ pnpm example:chat
 `vue-ai-hooks/react` 复用同一套 Provider 契约，从确定性的 `DirectChatTransport`
 流式输出，并在聊天面板旁展示请求 trace 状态。
 
+如果要试不需要 key 的 React 补全流程，运行 `pnpm example:react-completion`。它复用
+`vue-ai-hooks/react` 的 `useCompletion`，默认使用本地流式补全并展示请求 trace 面板。
+
+如果要试不需要 key 的 React 结构化输出流程，运行 `pnpm example:react-object`。它复用
+`vue-ai-hooks/react` 的 `useObject`，默认使用本地 schema 驱动 object 流，并展示请求 trace。
+
 如果要试不需要 key 的 threaded chat 流程，运行 `pnpm example:threaded-chat`。它把
 `useChatThreads()` 和每个 thread 独立的 `useChat({ persist })` 存储放在一起，你可以先验证
 创建、重命名、归档、恢复、删除、刷新和本地历史恢复，再接 server storage adapter。
@@ -57,26 +63,29 @@ WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 `local-object` Provider，不需要 key；之后也可以用和其它浏览器示例相同的环境变量切到
 `proxy` 或真实 Provider。
 
-如果要检查 UI message stream 契约，运行 `pnpm example:proxy-server`，然后向
-`/api/ui-message-stream` 发 POST 请求。该路由会输出 AI SDK UI stream parts，可用
-`readUIMessageStream()` 解码，也可被默认 proxy chat transport 消费。
+如果要检查 UI message stream 契约，先在一个终端运行 `pnpm example:proxy-server`，
+再在另一个终端运行 `pnpm example:ui-message-stream`。界面会向
+`/api/ui-message-stream` 发送请求，使用 `readUIMessageStream()` 解码并展示 chunk
+明细和响应元信息。
 
 ## 先看哪个示例？
 
-| 目标                             | 从这里开始                             |
-| -------------------------------- | -------------------------------------- |
-| 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)                 |
-| 增加 thread 侧边栏和本地恢复验证 | `pnpm example:threaded-chat`           |
+| 目标                             | 从这里开始                                                                                                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)                                                                                                                                        |
+| 增加 thread 侧边栏和本地恢复验证 | `pnpm example:threaded-chat`                                                                                                                                  |
 | 保持无服务端本地历史             | [IndexedDB 本地持久化（异步）](/zh/guide/server-storage#indexeddb-%E6%9C%AC%E5%9C%B0%E6%8C%81%E4%B9%85%E5%8C%96%E9%85%8D%E7%BD%AE%E5%99%A8%E5%BC%82%E6%AD%A5) |
-| 试 React 聊天迁移入口            | `pnpm example:react-chat`              |
-| 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo) |
-| 一个提示词生成一段文本           | [文本补全](#completion-demo)           |
-| 做语义相似度比较                 | [向量相似度](#embedding-demo)          |
-| 通过应用后端生成图片             | [图片生成](#image-demo)                |
-| 通过应用后端生成视频             | [视频生成](#video-demo)                |
-| 通过应用后端生成语音             | [语音生成](#speech-demo)               |
-| 通过应用后端把音频转成文本       | [音频转写](#transcription-demo)        |
-| 通过应用后端重排搜索结果         | [文档重排](#rerank-demo)               |
-| 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo)         |
+| 试 React 聊天迁移入口            | `pnpm example:react-chat`                                                                                                                                     |
+| 试 React 补全迁移入口            | `pnpm example:react-completion`                                                                                                                               |
+| 试 React 结构化输出迁移入口      | `pnpm example:react-object`                                                                                                                                   |
+| 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo)                                                                                                                        |
+| 一个提示词生成一段文本           | [文本补全](#completion-demo)                                                                                                                                  |
+| 做语义相似度比较                 | [向量相似度](#embedding-demo)                                                                                                                                 |
+| 通过应用后端生成图片             | [图片生成](#image-demo)                                                                                                                                       |
+| 通过应用后端生成视频             | [视频生成](#video-demo)                                                                                                                                       |
+| 通过应用后端生成语音             | [语音生成](#speech-demo)                                                                                                                                      |
+| 通过应用后端把音频转成文本       | [音频转写](#transcription-demo)                                                                                                                               |
+| 通过应用后端重排搜索结果         | [文档重排](#rerank-demo)                                                                                                                                      |
+| 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo)                                                                                                                                |
 
 <DemoShowcase locale="zh" />

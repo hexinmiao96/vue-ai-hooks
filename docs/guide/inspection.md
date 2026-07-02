@@ -20,51 +20,37 @@ The main composables expose:
 `submit-user-message` and `regenerate-assistant-message`, which helps when
 debugging migration code.
 
+`useChat` also exposes `inspect()` which returns a consolidated snapshot with:
+
+- `request`, `response`, and rendered `status`
+- `timeline` for request/response/stream/retry/error events
+- normalized `retries` and categorized `error` summary
+- compact `providerTrace`
+- redacted `curl` command when `curl` generation is enabled
+
 ## Copyable debug panel
 
 ```vue
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  inspectRequestTrace,
-  useChat,
-  type InspectionRetryRecordInput,
-  type InspectionTimelineEventInput
-} from 'vue-ai-hooks'
-
-const retries = ref<InspectionRetryRecordInput[]>([])
-const streamEvents = ref<InspectionTimelineEventInput[]>([])
+import { useChat } from 'vue-ai-hooks'
 const chat = useChat({
   api: '/api/chat',
-  onRetry(error, context) {
-    retries.value.push({
-      attempt: context.attempt,
-      maxRetries: context.maxRetries,
-      error,
-      timestamp: Date.now()
-    })
-  },
-  onChunk(chunk) {
-    streamEvents.value.push({
-      kind: 'stream',
-      label: 'stream chunk',
-      timestamp: Date.now(),
-      metadata: { type: chunk.type }
-    })
-  }
+  maxRetries: 2
 })
 
-const inspection = computed(() =>
-  inspectRequestTrace({
-    status: chat.status.value,
-    error: chat.error.value,
-    lastRequest: chat.lastRequest.value,
-    lastResponse: chat.lastResponse.value,
-    retries: retries.value,
-    events: streamEvents.value,
-    curl: true
-  })
-)
+const inspection = computed(() => chat.inspect())
+const copyStatus = ref('Copy')
+
+async function copyCurl() {
+  const curl = inspection.value.curl
+  if (!curl) return
+  await navigator.clipboard.writeText(curl)
+  copyStatus.value = 'Copied'
+  window.setTimeout(() => {
+    copyStatus.value = 'Copy'
+  }, 700)
+}
 
 const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
 </script>
@@ -78,7 +64,18 @@ const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
   <details>
     <summary>Request trace</summary>
     <button type="button" @click="chat.clearTrace()">Clear trace</button>
+    <button type="button" :disabled="!inspection.curl" @click="copyCurl()">
+      {{ copyStatus }}
+    </button>
     <p>{{ inspection.summary }}</p>
+    <div v-if="inspection.timeline.length">
+      <strong>Timeline</strong>
+      <ul>
+        <li v-for="event in inspection.timeline" :key="`${event.kind}-${event.timestamp}`">
+          {{ event.kind }} - {{ event.label || event.message || inspection.summary }}
+        </li>
+      </ul>
+    </div>
     <pre>{{ inspectionJson }}</pre>
   </details>
 </template>
@@ -89,8 +86,9 @@ const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
 reports `hasCause`; it does not copy raw provider response bodies into the
 summary.
 
-The same snapshot now includes a `timeline`, normalized `retries`, a compact
-`providerTrace`, and a redacted `curl` command when `curl: true` is set.
+The same snapshot already includes a `timeline`, normalized `retries`, a compact
+`providerTrace`, and a redacted `curl` command when `curl: true` is set by
+`inspect()`.
 `createInspectionCurl(request)` is exported separately when you only need the
 copyable request command.
 

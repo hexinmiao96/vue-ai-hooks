@@ -88,27 +88,28 @@ const { object, partialObject, submit } = useObject<Ticket>({
 
 ## 返回值
 
-| 属性                     | 类型                                                      | 说明                                                         |
-| ------------------------ | --------------------------------------------------------- | ------------------------------------------------------------ |
-| `id`                     | `Ref<string>`                                             | 组合式函数创建时选定的 Object 状态 id。                      |
-| `object`                 | `Ref<T \| null>`                                          | 最近一次成功 submit 得到的最终解析对象。                     |
-| `partialObject`          | `Ref<DeepPartial<T> \| null>`                             | JSON 流式返回过程中的最佳努力部分对象。                      |
-| `text`                   | `Ref<string>`                                             | 原始流式 JSON 文本。                                         |
-| `input`                  | `Ref<string>`                                             | 可绑定到表单的提示词输入。                                   |
-| `status`                 | `Ref<AiRequestStatus>`                                    | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
-| `isLoading`              | `Ref<boolean>`                                            | 请求进行中时为 true。                                        |
-| `error`                  | `Ref<Error \| null>`                                      | 最近一次 Provider 或解析错误。                               |
-| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                          | 最近一次准备完成的结构化 chat 请求快照。                     |
-| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                         | 最近一次 Provider 响应快照，包含 stream 是否已打开。         |
-| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>` | 发送提示词并解析最终 JSON 对象。                             |
-| `setInput(value)`        | `(string) => void`                                        | 手动替换提示词输入。                                         |
-| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                 | 不使用 `v-model` 时接入自定义输入组件。                      |
-| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`           | 接入结构化输出表单；成功后清空 input。                       |
-| `stop()`                 | `() => void`                                              | 中止当前请求。                                               |
-| `clearError()`           | `() => void`                                              | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
-| `clearTrace()`           | `() => void`                                              | 清空 `lastRequest` 和 `lastResponse`，不改变对象状态。       |
-| `clear()`                | `() => void`                                              | 重置对象状态、`text`、`input` 和 `error`。                   |
-| `abortController`        | `Ref<AbortController \| null>`                            | 暴露给高级用法。                                             |
+| 属性                     | 类型                                                                     | 说明                                                         |
+| ------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `id`                     | `Ref<string>`                                                            | 组合式函数创建时选定的 Object 状态 id。                      |
+| `object`                 | `Ref<T \| null>`                                                         | 最近一次成功 submit 得到的最终解析对象。                     |
+| `partialObject`          | `Ref<DeepPartial<T> \| null>`                                            | JSON 流式返回过程中的最佳努力部分对象。                      |
+| `text`                   | `Ref<string>`                                                            | 原始流式 JSON 文本。                                         |
+| `input`                  | `Ref<string>`                                                            | 可绑定到表单的提示词输入。                                   |
+| `status`                 | `Ref<AiRequestStatus>`                                                   | 请求生命周期：`ready`、`submitted`、`streaming` 或 `error`。 |
+| `isLoading`              | `Ref<boolean>`                                                           | 请求进行中时为 true。                                        |
+| `error`                  | `Ref<Error \| null>`                                                     | 最近一次 Provider 或解析错误。                               |
+| `lastRequest`            | `Ref<ObjectRequestInfo \| null>`                                         | 最近一次准备完成的结构化 chat 请求快照。                     |
+| `lastResponse`           | `Ref<ObjectResponseInfo \| null>`                                        | 最近一次 Provider 响应快照，包含 stream 是否已打开。         |
+| `inspect()`              | `() => RequestInspectionSnapshot<ObjectRequestInfo, ObjectResponseInfo>` | 生产级诊断快照，包含 timeline、重试记录与脱敏 curl。         |
+| `submit(prompt?)`        | `(string \| Message, Partial<ChatRequest>) => Promise<T>`                | 发送提示词并解析最终 JSON 对象。                             |
+| `setInput(value)`        | `(string) => void`                                                       | 手动替换提示词输入。                                         |
+| `handleInputChange(e)`   | `(Event \| { target } \| string) => void`                                | 不使用 `v-model` 时接入自定义输入组件。                      |
+| `handleSubmit(e, opts?)` | `(Event?, Partial<ChatRequest>?) => Promise<T>`                          | 接入结构化输出表单；成功后清空 input。                       |
+| `stop()`                 | `() => void`                                                             | 中止当前请求。                                               |
+| `clearError()`           | `() => void`                                                             | 清空 `error`，并把 `status` 恢复为 `ready`。                 |
+| `clearTrace()`           | `() => void`                                                             | 清空 `lastRequest` 和 `lastResponse`，不改变对象状态。       |
+| `clear()`                | `() => void`                                                             | 重置对象状态、`text`、`input` 和 `error`。                   |
+| `abortController`        | `Ref<AbortController \| null>`                                           | 暴露给高级用法。                                             |
 
 ## Provider 支持
 

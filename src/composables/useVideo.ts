@@ -17,6 +17,7 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -67,6 +68,7 @@ export interface UseVideoReturn {
   error: Ref<Error | null>
   lastRequest: Ref<VideoGenerationRequestInfo | null>
   lastResponse: Ref<VideoGenerationResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<VideoGenerationRequestInfo, VideoGenerationResponseInfo>
   generate: (
     prompt?: string,
     options?: Partial<VideoGenerationRequest>
@@ -152,6 +154,19 @@ export function useVideo(options: UseVideoOptions = {}): UseVideoReturn {
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    VideoGenerationRequestInfo,
+    VideoGenerationResponseInfo
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   async function resolveHeaders(requestHeaders?: HeadersInit) {
@@ -304,6 +319,7 @@ export function useVideo(options: UseVideoOptions = {}): UseVideoReturn {
     error,
     lastRequest,
     lastResponse,
+    inspect,
     generate: generateVideo,
     generateVideo,
     stop,

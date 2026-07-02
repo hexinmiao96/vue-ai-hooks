@@ -641,14 +641,19 @@ For retry or compare-answer UI on stored threads, use the
 [Regenerate branches recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/regenerate-branches.md).
 Before production rollout, use the
 [Production checklist](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/production-checklist.md).
+Use `pnpm production:readiness` as a one-line pre-release gate. If your environment
+blocks pnpm execution wrappers, use either `pnpm production:readiness:local` or
+`node scripts/production-readiness-local.mjs`.
 
 ## Examples
 
-Twelve runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Fifteen runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/threaded-chat` — no-key threaded chat demo with `useChatThreads`, per-thread `useChat({ persist })`, and local restore checks
 - `examples/react-chat` — no-key React chat quickstart with `vue-ai-hooks/react`, `DirectChatTransport`, and request trace state
+- `examples/react-completion` — no-key React completion quickstart with `useCompletion` and trace state
+- `examples/react-object` — no-key React structured output quickstart with `useObject` and trace state
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
@@ -658,6 +663,7 @@ Twelve runnable examples live in [`examples/`](https://github.com/hexinmiao96/vu
 - `examples/transcription` — no-key audio transcription form with a deterministic local transcript
 - `examples/rerank` — no-key document reranking form with deterministic local ranking
 - `examples/object` — no-key structured JSON extraction demo with a local object provider
+- `examples/ui-message-stream` — no-key AI SDK UI stream migration demo that reads chunks with `readUIMessageStream()` and validates decoded chunk shapes
 
 To run them:
 
@@ -667,6 +673,8 @@ cp .env.example .env
 pnpm example:chat
 pnpm example:threaded-chat
 pnpm example:react-chat
+pnpm example:react-completion
+pnpm example:react-object
 ```
 
 `examples/chat` defaults to the no-key `local-tools` provider backed by
@@ -683,13 +691,23 @@ keys.
 `lastRequest`, `lastResponse`, usage, and stream data before wiring a real
 `/api/chat` route.
 
+`examples/react-completion` reuses `useCompletion` in the same production-safe
+shape, with an optional proxy path via `VITE_EXAMPLE_PROVIDER=proxy` and shared
+`/api/completion` checks.
+
+`examples/react-object` mirrors `useObject` production wiring for JSON Schema
+outputs, including a local object baseline and an optional `/api/object` proxy route.
+
 To run the browser chat example through the local proxy template:
 
 ```bash
 pnpm example:proxy-server
 # in another terminal
-VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
+VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
+
+Use `VITE_CHAT_PROVIDER=proxy` if you intentionally need to test the explicit
+`/api/ai/*` `proxyProvider` contract directly.
 
 To connect the same template to a real OpenAI-compatible upstream, set
 `PROXY_UPSTREAM_BASE_URL`, `PROXY_UPSTREAM_API_KEY`, `PROXY_UPSTREAM_MODEL`,

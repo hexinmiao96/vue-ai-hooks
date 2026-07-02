@@ -80,6 +80,8 @@ planning.
 - Added after 0.14.0: a no-key threaded chat demo that verifies local thread
   indexes, per-thread message persistence, rename, archive, restore, delete,
   trace state, and independent message restore before real providers.
+- Added after 0.14.0: a threaded chat smoke check in the local, CI, and publish
+  gates so the demo validates published bundle persistence, not only builds.
 - Added after 0.14.0: an IndexedDB local durability recipe in server storage
   docs for async hydration, explicit save boundaries, and smoother no-server
   migration to backend storage.

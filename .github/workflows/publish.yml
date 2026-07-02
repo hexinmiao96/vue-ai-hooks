@@ -104,6 +104,18 @@ jobs:
       - name: Proxy example
         run: pnpm proxy:check
 
+      - name: Threaded chat
+        run: pnpm threaded-chat:check
+
+      - name: UI message stream
+        run: pnpm ui-message-stream:check
+
+      - name: Tool approval
+        run: pnpm tool-approval:check
+
+      - name: Agent bridge
+        run: pnpm agent-bridge:check
+
       - name: Links
         run: pnpm links:check
 

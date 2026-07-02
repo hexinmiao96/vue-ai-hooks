@@ -199,11 +199,13 @@ Vue 应用继续使用 `useChat({ api: '/api/chat' })` 或 proxy provider。Reac
 
 开放桥接前先验证：
 
-1. 启动不需要 key 的本地 agent run，并流出一条 `message-delta`。
-2. 输出一个 retrieval `source`，确认浏览器只看到安全 metadata。
-3. 输出一个 `tool-call`，通过后端审批，再返回 `tool-result`。
-4. 触发一次 graph interrupt，持久化审批记录，resume 后确认最终 `finish` 到达。
-5. 使用同一个 `runId` 重复请求，确认后端返回或恢复同一个 run，而不是创建重复 run。
-6. 中途断开 stream，重连 `/api/agent/runs/:runId/events`，确认 UI 能从已存状态恢复。
-7. 捕获 `inspectRequestTrace()`，确认包含 `threadId`、`branchId`、`runId` 和 `traceId`，
+1. 运行 `pnpm build && pnpm agent-bridge:check`，确认发布入口可以把安全
+   `AgentEvent` 转成 `ChatChunk` 和 AI SDK UI stream parts。
+2. 启动不需要 key 的本地 agent run，并流出一条 `message-delta`。
+3. 输出一个 retrieval `source`，确认浏览器只看到安全 metadata。
+4. 输出一个 `tool-call`，通过后端审批，再返回 `tool-result`。
+5. 触发一次 graph interrupt，持久化审批记录，resume 后确认最终 `finish` 到达。
+6. 使用同一个 `runId` 重复请求，确认后端返回或恢复同一个 run，而不是创建重复 run。
+7. 中途断开 stream，重连 `/api/agent/runs/:runId/events`，确认 UI 能从已存状态恢复。
+8. 捕获 `inspectRequestTrace()`，确认包含 `threadId`、`branchId`、`runId` 和 `traceId`，
    且没有 Provider、LangSmith、vector store 或工具凭据。

@@ -17,6 +17,7 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
+import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -67,6 +68,7 @@ export interface UseImageReturn {
   error: Ref<Error | null>
   lastRequest: Ref<ImageGenerationRequestInfo | null>
   lastResponse: Ref<ImageGenerationResponseInfo | null>
+  inspect: () => RequestInspectionSnapshot<ImageGenerationRequestInfo, ImageGenerationResponseInfo>
   generate: (
     prompt?: string,
     options?: Partial<ImageGenerationRequest>
@@ -152,6 +154,19 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     error.value = null
     clearTrace()
     status.value = 'ready'
+  }
+
+  function inspect(): RequestInspectionSnapshot<
+    ImageGenerationRequestInfo,
+    ImageGenerationResponseInfo
+  > {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      curl: true
+    })
   }
 
   async function resolveHeaders(requestHeaders?: HeadersInit) {
@@ -304,6 +319,7 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     error,
     lastRequest,
     lastResponse,
+    inspect,
     generate: generateImage,
     generateImage,
     stop,
