@@ -606,6 +606,8 @@ part schemas for structured chat rendering. See the
 
 See the [reference docs](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat.md), [provider reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/providers.md),
 and [public types](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/types.md) for full type definitions.
+For a product-task path through the demos, see
+[Task-oriented demos](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/task-demos.md).
 For library fit, see [Choosing vue-ai-hooks](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/choosing.md).
 For upgrade guarantees, see the [API stability guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/api-stability.md).
 For the current release line, use the
@@ -616,6 +618,8 @@ If you are porting an AI SDK UI surface, use the
 [AI SDK migration guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/ai-sdk-migration.md).
 For copyable backend proxy environment recipes, use
 [Proxy recipes](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/proxy-recipes.md).
+Before production rollout, use the
+[Production checklist](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/production-checklist.md).
 
 ## Examples
 
@@ -674,12 +678,13 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.10.0** — a working foundation, not feature-complete. The core
+This is **v0.10.1** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
 This release starts the production-hardening line with richer inspection
-timeline, retry, provider trace, and copyable curl helpers. Next focus: more
-task-oriented docs/demos and provider recipes. Feature
+timeline, retry, provider trace, copyable curl helpers, task-oriented demo
+guides, and production rollout checklists. Next focus: provider recipes and
+agent-event adapter recipes. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

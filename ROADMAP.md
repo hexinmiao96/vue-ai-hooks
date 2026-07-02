@@ -31,16 +31,16 @@ planning.
 
 - Upgrade inspection snapshots with request timeline events, retry records,
   compact provider traces, and opt-in redacted curl commands.
-- Provide a copyable debug-panel recipe that applications can adapt to their
-  own design system.
+- Provide copyable debug-panel, task-demo, and production-checklist recipes that
+  applications can adapt to their own design system and rollout process.
 - Keep inspection output safe to render in browser UIs by default; applications
   still own tenant data and provider-specific observability.
 
 ### 0.11.x
 
-- Add task-oriented demo/docs flows: Vue chat with tool approval, React chat
+- Deepen task-oriented demo/docs flows with more runnable screens: React chat
   quickstart, own `/api/chat` proxy, AI SDK UI stream migration, and production
-  deployment checklist.
+  deployment walkthroughs.
 - Keep demos runnable without provider keys while making each demo explain the
   product job it covers.
 

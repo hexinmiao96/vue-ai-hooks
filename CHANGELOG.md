@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-07-02
+
+### Added
+
+- Added English and Chinese task-oriented demo guides that map product jobs to
+  the Vue tool approval demo, React chat quickstart, app-owned `/api/chat`
+  proxy, AI SDK UI stream migration path, and production readiness flow.
+- Added English and Chinese production checklists covering browser boundaries,
+  backend proxy responsibilities, streaming contracts, inspection, persistence,
+  local gates, smoke tests, and the bug-only GitHub issue policy.
+
+### Changed
+
+- Linked the new task demo and production checklist pages from VitePress
+  navigation, getting-started docs, README files, and docs UX checks.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.10.0] - 2026-07-02
 
 ### Added

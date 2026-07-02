@@ -8,6 +8,10 @@ const files = {
   zhChoosing: readFileSync('docs/zh/guide/choosing.md', 'utf8'),
   gettingStarted: readFileSync('docs/guide/getting-started.md', 'utf8'),
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
+  taskDemos: readFileSync('docs/guide/task-demos.md', 'utf8'),
+  zhTaskDemos: readFileSync('docs/zh/guide/task-demos.md', 'utf8'),
+  productionChecklist: readFileSync('docs/guide/production-checklist.md', 'utf8'),
+  zhProductionChecklist: readFileSync('docs/zh/guide/production-checklist.md', 'utf8'),
   upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
   zhUpgrade04: readFileSync('docs/zh/guide/upgrade-0.4.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
@@ -95,6 +99,16 @@ expect(
   'VitePress sidebars must expose the inspection guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Task demos', link: '/guide/task-demos' }") &&
+    files.config.includes("{ text: '任务型 Demo', link: '/zh/guide/task-demos' }"),
+  'VitePress sidebars must expose task demo guides in English and Chinese'
+)
+expect(
+  files.config.includes("{ text: 'Production checklist', link: '/guide/production-checklist' }") &&
+    files.config.includes("{ text: '生产检查清单', link: '/zh/guide/production-checklist' }"),
+  'VitePress sidebars must expose production checklists in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
     files.config.includes("{ text: 'Proxy 配方', link: '/zh/guide/proxy-recipes' }"),
   'VitePress sidebars must expose the proxy recipes guide in English and Chinese'
@@ -115,6 +129,8 @@ for (const snippet of [
   '[v0.3.0 upgrade guide](/guide/upgrade-0.3)',
   '[AI SDK migration guide](/guide/ai-sdk-migration)',
   '## Run a demo without API keys',
+  '[Task-oriented demos](/guide/task-demos)',
+  '[Production checklist](/guide/production-checklist)',
   'pnpm example:chat',
   'falls back to `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
@@ -141,6 +157,8 @@ for (const snippet of [
   '[v0.3.0 升级指南](/zh/guide/upgrade-0.3)',
   '[AI SDK 迁移指南](/zh/guide/ai-sdk-migration)',
   '## 不需要 API key 的 Demo',
+  '[任务型 Demo](/zh/guide/task-demos)',
+  '[生产检查清单](/zh/guide/production-checklist)',
   'pnpm example:chat',
   '自动回退到 `local-tools`',
   'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
@@ -160,6 +178,72 @@ for (const snippet of [
   expect(
     files.zhGettingStarted.includes(snippet),
     `Chinese getting started must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Task-oriented demos',
+  'Vue chat with tool approval',
+  'React chat quickstart',
+  'Own `/api/chat` proxy',
+  'AI SDK UI stream migration',
+  'Production deployment readiness',
+  'pnpm example:chat',
+  'pnpm example:proxy-server',
+  'readUIMessageStream()',
+  '[Production checklist](/guide/production-checklist)'
+]) {
+  expect(files.taskDemos.includes(snippet), `English task demos guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 任务型 Demo',
+  'Vue 聊天 + 工具审批',
+  'React 聊天最小接入',
+  '自有 `/api/chat` proxy',
+  'AI SDK UI stream 迁移',
+  '生产部署准备',
+  'pnpm example:chat',
+  'pnpm example:proxy-server',
+  'readUIMessageStream()',
+  '[生产检查清单](/zh/guide/production-checklist)'
+]) {
+  expect(files.zhTaskDemos.includes(snippet), `Chinese task demos guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Production checklist',
+  '## Browser boundary',
+  '## Backend proxy',
+  '## Streaming contract',
+  '## UI state and inspection',
+  'inspectRequestTrace()',
+  'pnpm check',
+  'pnpm release:check',
+  '## Production smoke test',
+  'GitHub issues should contain reproducible bugs only'
+]) {
+  expect(
+    files.productionChecklist.includes(snippet),
+    `English production checklist must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 生产检查清单',
+  '## 浏览器边界',
+  '## 后端代理',
+  '## 流式契约',
+  '## UI 状态和检查',
+  'inspectRequestTrace()',
+  'pnpm check',
+  'pnpm release:check',
+  '## 生产 smoke test',
+  'GitHub issue 只记录可复现 bug'
+]) {
+  expect(
+    files.zhProductionChecklist.includes(snippet),
+    `Chinese production checklist must include: ${snippet}`
   )
 }
 
@@ -217,6 +301,10 @@ expect(
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('/docs/guide/choosing.md') &&
     files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
+    files.readme.includes('/docs/guide/task-demos.md') &&
+    files.zhReadme.includes('/docs/zh/guide/task-demos.md') &&
+    files.readme.includes('/docs/guide/production-checklist.md') &&
+    files.zhReadme.includes('/docs/zh/guide/production-checklist.md') &&
     files.readme.includes('/docs/guide/upgrade-0.4.md') &&
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.4.md') &&
     files.readme.includes('/docs/guide/upgrade-0.3.md') &&
