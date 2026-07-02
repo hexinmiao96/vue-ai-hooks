@@ -217,10 +217,18 @@ export {
 } from './utils/stream'
 export {
   classifyInspectionError,
+  createInspectionCurl,
   inspectRequestTrace,
+  type InspectionCurlOptions,
   type InspectionErrorCategory,
   type InspectionErrorSummary,
+  type InspectionProviderTrace,
+  type InspectionRetryRecord,
+  type InspectionRetryRecordInput,
   type InspectionStatus,
+  type InspectionTimelineEvent,
+  type InspectionTimelineEventInput,
+  type InspectionTimelineEventKind,
   type InspectRequestTraceOptions,
   type RequestInspectionSnapshot
 } from './utils/inspection'

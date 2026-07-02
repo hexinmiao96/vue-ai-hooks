@@ -18,34 +18,43 @@ planning.
 
 ## Planned Releases
 
-### 0.5.x
+### Shipped through 0.9.x
 
-- Document the current `lastRequest`, `lastResponse`, and `clearTrace()`
-  inspection workflow.
-- Add copyable troubleshooting recipes for proxy routes, stream buffering,
-  provider failures, and tool approval failures.
-- Keep examples runnable without provider keys and make each demo explain the
+- Documented the `lastRequest`, `lastResponse`, and `clearTrace()` inspection
+  workflow.
+- Added public `inspectRequestTrace()` error classification helpers.
+- Added provider presets and proxy recipes for Moonshot, Zhipu, Ollama, vLLM,
+  and OpenAI-compatible gateways.
+- Expanded the React entry to chat, completion, and object migration hooks.
+
+### 0.10.x
+
+- Upgrade inspection snapshots with request timeline events, retry records,
+  compact provider traces, and opt-in redacted curl commands.
+- Provide a copyable debug-panel recipe that applications can adapt to their
+  own design system.
+- Keep inspection output safe to render in browser UIs by default; applications
+  still own tenant data and provider-specific observability.
+
+### 0.11.x
+
+- Add task-oriented demo/docs flows: Vue chat with tool approval, React chat
+  quickstart, own `/api/chat` proxy, AI SDK UI stream migration, and production
+  deployment checklist.
+- Keep demos runnable without provider keys while making each demo explain the
   product job it covers.
 
-### 0.6.x
+### 0.12.x
 
-- Add a first-class inspection surface for request timeline events, retry
-  attempts, response metadata, stream chunks, and sanitized error categories.
-- Provide a small debug-panel recipe that applications can copy into their own
-  design system.
-- Keep all inspection output safe to show in a browser UI by default.
-
-### 0.7.x
-
-- Expand provider presets and proxy recipes for common OpenAI-compatible
-  providers such as Moonshot, Zhipu, Ollama, vLLM, and private gateways.
+- Add provider recipe depth for local model proxy patterns such as Ollama/vLLM
+  and private OpenAI-compatible gateways.
 - Document provider-specific rate-limit, timeout, and observability boundaries
   as host-application responsibilities.
 
-### 0.8.x
+### Later
 
-- Expand React support beyond the existing chat, completion, and object hooks
-  toward shared stream helpers.
+- Expand React support toward shared stream helpers only where it improves
+  migration confidence.
 - Add agent-event adapter recipes for services that emit tool approval,
   progress, and human-in-the-loop events.
 

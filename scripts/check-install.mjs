@@ -39,7 +39,15 @@ try {
     join(tempRoot, 'esm-check.mjs'),
     `
 import { createRequire } from 'node:module'
-import { AiHooksError, deepseek, openai, openrouter, proxyProvider, useChat } from 'vue-ai-hooks'
+import {
+  AiHooksError,
+  createInspectionCurl,
+  deepseek,
+  openai,
+  openrouter,
+  proxyProvider,
+  useChat
+} from 'vue-ai-hooks'
 
 const require = createRequire(import.meta.url)
 const packageJson = require('vue-ai-hooks/package.json')
@@ -65,6 +73,9 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 if (typeof useChat !== 'function') {
   throw new Error('ESM useChat export failed')
 }
+if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
+  throw new Error('ESM createInspectionCurl export failed')
+}
 
 const reactEntry = await import('vue-ai-hooks/react')
 if (typeof reactEntry.useChat !== 'function') {
@@ -83,7 +94,13 @@ if (typeof reactEntry.useObject !== 'function') {
   writeFileSync(
     join(tempRoot, 'cjs-check.cjs'),
     `
-const { AiHooksError, anthropic, openaiCompatible, useCompletion } = require('vue-ai-hooks')
+const {
+  AiHooksError,
+  anthropic,
+  createInspectionCurl,
+  openaiCompatible,
+  useCompletion
+} = require('vue-ai-hooks')
 const packageJson = require('vue-ai-hooks/package.json')
 
 if (packageJson.name !== 'vue-ai-hooks') {
@@ -100,6 +117,9 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 }
 if (typeof useCompletion !== 'function') {
   throw new Error('CJS useCompletion export failed')
+}
+if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
+  throw new Error('CJS createInspectionCurl export failed')
 }
 
 const reactEntry = require('vue-ai-hooks/react')
@@ -119,8 +139,8 @@ if (typeof reactEntry.useObject !== 'function') {
   writeFileSync(
     join(tempRoot, 'types-check.mts'),
     `
-import { useChat, openaiCompatible } from 'vue-ai-hooks'
-import type { ChatProvider, Message, UseChatReturn } from 'vue-ai-hooks'
+import { createInspectionCurl, useChat, openaiCompatible } from 'vue-ai-hooks'
+import type { ChatProvider, InspectionTimelineEvent, Message, UseChatReturn } from 'vue-ai-hooks'
 import {
   useChat as useReactChat,
   useCompletion as useReactCompletion,
@@ -146,6 +166,13 @@ const reactObject: UseReactObjectReturn<{ answer: string }> = useReactObject({
 })
 
 chat.setMessages(initialMessages)
+const timelineEvent: InspectionTimelineEvent = {
+  kind: 'request',
+  timestamp: '2026-07-01T00:00:00.000Z'
+}
+const curl: string | null = createInspectionCurl({ api: '/api/chat' })
+void timelineEvent
+void curl
 reactChat.setMessages(initialMessages)
 reactChat.setInput('hello from react')
 reactCompletion.setInput('complete from react')

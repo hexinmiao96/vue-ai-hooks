@@ -544,6 +544,9 @@ state and trace panels can follow one pattern across chat, text, vectors, custom
 generation jobs, image generation, video generation, speech generation,
 transcription, reranking, and structured JSON. Default proxy traces include the resolved proxy `api` and
 browser credentials mode.
+Use `inspectRequestTrace()` to turn those refs into a production debug snapshot
+with timeline events, normalized retry records, a compact provider trace, and an
+opt-in redacted `curl` command for support handoff.
 
 `useObject` supports `id` for shared structured-output state across components
 and `initialValue` for seeding the first partial object. Default proxy object
@@ -671,10 +674,12 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.9.0** — a working foundation, not feature-complete. The core
+This is **v0.10.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
-Next focus: clearer inspection, more providers, and production hardening. Feature
+This release starts the production-hardening line with richer inspection
+timeline, retry, provider trace, and copyable curl helpers. Next focus: more
+task-oriented docs/demos and provider recipes. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

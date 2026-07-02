@@ -29,6 +29,7 @@ const requiredRuntimeExports = [
   'convertToModelMessages',
   'cosineSimilarity',
   'createIdGenerator',
+  'createInspectionCurl',
   'createUIMessageStream',
   'createUIMessageStreamParser',
   'createUIMessageStreamResponse',
@@ -167,6 +168,17 @@ assertEqual(
   esm.inspectRequestTrace({ lastRequest: { providerId: 'proxy' }, now: 0 }).providerId,
   'proxy',
   'ESM inspectRequestTrace provider id'
+)
+assertEqual(
+  esm.createInspectionCurl({
+    api: '/api/chat',
+    headers: { authorization: 'Bearer secret' },
+    body: { prompt: 'hello' }
+  }),
+  "curl -X 'POST' '/api/chat' \\\n" +
+    "  -H 'authorization: [redacted]' \\\n" +
+    '  --data-raw \'{"prompt":"hello"}\'',
+  'ESM createInspectionCurl redaction'
 )
 assertEqual(
   new esm.DirectChatTransport({ stream: () => [] }).id,

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-02
+
+### Added
+
+- Expanded inspection helpers with `createInspectionCurl()`, timeline events,
+  retry records, compact provider traces, opt-in redacted curl output, public
+  types, tests, and English/Chinese docs.
+
+### Changed
+
+- Updated the roadmap and README project status so the production-hardening plan
+  starts from the current `0.10.x` line instead of older already-shipped
+  milestones.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.9.0] - 2026-07-02
 
 ### Added

@@ -1,7 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   classifyInspectionError,
+  createInspectionCurl,
   inspectRequestTrace,
+  type InspectionCurlOptions,
+  type InspectionProviderTrace,
+  type InspectionRetryRecord,
+  type InspectionTimelineEvent,
   type InspectRequestTraceOptions,
   type RequestInspectionSnapshot
 } from '../src/utils/inspection'
@@ -97,10 +102,141 @@ describe('inspection utilities', () => {
       hasRequest: true,
       hasResponse: true,
       hasStream: true,
+      providerTrace: {
+        providerId: 'proxy',
+        api: '/api/chat',
+        attempt: 2,
+        trigger: 'submit-message',
+        aiSdkTrigger: 'submit-user-message',
+        hasStream: true,
+        requestKeys: ['aiSdkTrigger', 'api', 'attempt', 'body', 'providerId', 'trigger'],
+        responseKeys: [
+          'aiSdkTrigger',
+          'api',
+          'attempt',
+          'body',
+          'hasStream',
+          'providerId',
+          'trigger'
+        ]
+      },
+      timeline: [
+        {
+          kind: 'request',
+          label: 'request prepared',
+          timestamp: '2026-07-01T00:00:00.000Z',
+          status: 'streaming',
+          attempt: 2
+        },
+        {
+          kind: 'response',
+          label: 'response received',
+          timestamp: '2026-07-01T00:00:00.000Z',
+          status: 'streaming',
+          attempt: 2
+        }
+      ],
+      retries: [],
+      curl: null,
       retryable: false,
       summary: 'response received',
       timestamp: '2026-07-01T00:00:00.000Z'
     })
+  })
+
+  it('adds retry records, stream events, provider trace, and redacted curl output', () => {
+    const retryError = new AiHooksError('too many requests', { status: 429 })
+    const snapshot = inspectRequestTrace({
+      status: 'error',
+      error: retryError,
+      lastRequest: {
+        providerId: 'proxy',
+        api: '/api/chat',
+        attempt: 2,
+        headers: {
+          authorization: 'Bearer secret',
+          'x-tenant': 'tenant_1'
+        },
+        body: { message: "don't leak headers" }
+      },
+      retries: [
+        {
+          attempt: 1,
+          maxRetries: 2,
+          delayMs: 250,
+          error: retryError,
+          timestamp: '2026-07-01T00:00:01.000Z'
+        }
+      ],
+      events: [
+        {
+          kind: 'stream',
+          label: 'delta received',
+          timestamp: '2026-07-01T00:00:02.000Z',
+          attempt: 2,
+          metadata: { chunkIndex: 1 }
+        }
+      ],
+      curl: true,
+      now: '2026-07-01T00:00:03.000Z'
+    })
+
+    expect(snapshot.retries).toEqual([
+      {
+        attempt: 1,
+        maxRetries: 2,
+        delayMs: 250,
+        error: {
+          category: 'rate-limit',
+          message: 'too many requests',
+          name: 'AiHooksError',
+          status: 429,
+          retryable: true,
+          hasCause: false
+        },
+        timestamp: '2026-07-01T00:00:01.000Z'
+      }
+    ])
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual([
+      'retry',
+      'stream',
+      'request',
+      'error'
+    ])
+    expect(snapshot.providerTrace).toMatchObject({
+      providerId: 'proxy',
+      api: '/api/chat',
+      attempt: 2
+    })
+    expect(snapshot.curl).toContain("curl -X 'POST' '/api/chat'")
+    expect(snapshot.curl).toContain("-H 'authorization: [redacted]'")
+    expect(snapshot.curl).toContain("-H 'x-tenant: tenant_1'")
+    expect(snapshot.curl).toContain('--data-raw')
+    expect(snapshot.curl).not.toContain('Bearer secret')
+  })
+
+  it('creates standalone curl commands with request overrides', () => {
+    const curl = createInspectionCurl(
+      {
+        api: '/api/chat',
+        headers: [['Authorization', 'Bearer token']],
+        body: { prompt: 'hello' }
+      },
+      {
+        command: 'curl --compressed',
+        method: 'PUT',
+        headers: { cookie: 'session=secret', accept: 'application/json' },
+        body: 'raw body'
+      }
+    )
+
+    expect(curl).toBe(
+      "curl --compressed -X 'PUT' '/api/chat' \\\n" +
+        "  -H 'cookie: [redacted]' \\\n" +
+        "  -H 'accept: application/json' \\\n" +
+        "  --data-raw 'raw body'"
+    )
+    expect(createInspectionCurl({ providerId: 'direct' })).toBeNull()
   })
 
   it('summarizes missing streams and request errors', () => {
@@ -164,12 +300,19 @@ describe('inspection utilities', () => {
     type Response = Request & { hasStream: boolean }
     const options: InspectRequestTraceOptions<Request, Response> = {
       lastRequest: { providerId: 'proxy', body: { tenantId: 'tenant_1' } },
-      lastResponse: { providerId: 'proxy', body: { tenantId: 'tenant_1' }, hasStream: true }
+      lastResponse: { providerId: 'proxy', body: { tenantId: 'tenant_1' }, hasStream: true },
+      events: [{ kind: 'stream', label: 'delta' }],
+      retries: [{ attempt: 1, error: new Error('network') }],
+      curl: { api: '/api/chat' }
     }
     const snapshot = inspectRequestTrace(options)
 
     expectTypeOf(snapshot).toEqualTypeOf<RequestInspectionSnapshot<Request, Response>>()
     expect(snapshot.request?.body.tenantId).toBe('tenant_1')
     expect(snapshot.response?.hasStream).toBe(true)
+    expectTypeOf(snapshot.timeline).toEqualTypeOf<InspectionTimelineEvent[]>()
+    expectTypeOf(snapshot.retries).toEqualTypeOf<InspectionRetryRecord[]>()
+    expectTypeOf(snapshot.providerTrace).toEqualTypeOf<InspectionProviderTrace>()
+    expectTypeOf<InspectionCurlOptions>().toMatchTypeOf<{ api?: string; headers?: unknown }>()
   })
 })
