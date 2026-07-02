@@ -118,7 +118,9 @@ yield { type: 'tool-error', id: 'call_1', name: 'chargeCard', errorText: 'User r
 
 The adapter does not execute or sandbox tools. It only preserves enough ids,
 names, inputs, outputs, and error text for `useChat` and renderers to show a
-stable timeline.
+stable timeline. For durable human approval, reviewer audit trails, idempotent
+execution, and safe renderer contracts, use the
+[tool approval recipe](/guide/tool-approvals).
 
 ## Data part names
 

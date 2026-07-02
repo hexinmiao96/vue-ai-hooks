@@ -11,17 +11,17 @@ contract, then replace the local route with your app-owned backend.
 
 ## Choose by task
 
-| Product task                    | Run first                                       | Read next                                                         | Verify before real providers                              |
-| ------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
-| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue`                                           | Click **Run approval demo**, approve or reject the tool.  |
-| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react) | Send one prompt, call `stop()`, then inspect trace state. |
-| Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                     | Create, rename, archive, restore, and reopen a thread.    |
-| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                           | Restore index and messages, send, reload, and verify.     |
-| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                 | Regenerate without overwriting the original answer.       |
-| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                             | Confirm stream chunks arrive without browser keys.        |
-| Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                               | Convert events to `ChatChunk` or UI stream parts.         |
-| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                       | Decode parts with `readUIMessageStream()`.                |
-| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)               | Pass the checklist before putting provider keys in prod.  |
+| Product task                    | Run first                                       | Read next                                                           | Verify before real providers                              |
+| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
+| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals) | Click **Run approval demo**, approve or reject the tool.  |
+| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react)   | Send one prompt, call `stop()`, then inspect trace state. |
+| Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                       | Create, rename, archive, restore, and reopen a thread.    |
+| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                             | Restore index and messages, send, reload, and verify.     |
+| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                   | Regenerate without overwriting the original answer.       |
+| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                               | Confirm stream chunks arrive without browser keys.        |
+| Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                                 | Convert events to `ChatChunk` or UI stream parts.         |
+| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                         | Decode parts with `readUIMessageStream()`.                |
+| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)                 | Pass the checklist before putting provider keys in prod.  |
 
 ## Vue chat with tool approval
 
@@ -38,6 +38,10 @@ assistant reply, pauses on a `chargeCard` tool call, then continues after
 Use this as the first product demo when you need message history, structured
 `Message.parts`, approval-gated tools, abort controls, and request inspection in
 one place.
+
+Before using the pattern for privileged tools, add a backend approval record,
+idempotent `runId`, reviewer audit trail, and a narrow renderer contract. See
+[Tool approvals](/guide/tool-approvals).
 
 ## React chat quickstart
 

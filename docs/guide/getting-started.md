@@ -16,6 +16,7 @@ npm install vue-ai-hooks
 | -------------------------------- | ------------------------------------------------------------------- |
 | See the UI without provider keys | Run the [local tool approval demo](#run-a-demo-without-api-keys)    |
 | Pick the right demo by job       | Read [Task-oriented demos](/guide/task-demos)                       |
+| Add durable tool approvals       | Follow the [Tool approval recipe](/guide/tool-approvals)            |
 | Try the React migration entry    | Run the [React chat quickstart](#run-a-demo-without-api-keys)       |
 | Compare library fit              | Read [Choosing vue-ai-hooks](/guide/choosing)                       |
 | Upgrade from v0.3.x              | Read the [v0.4.0 upgrade guide](/guide/upgrade-0.4)                 |

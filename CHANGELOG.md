@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   message bodies, restore smoke tests, and backend validation boundaries.
 - Added regenerate/branch production recipes for stored threads, idempotent
   `runId` handling, branch restore smoke tests, and audit-safe retries.
+- Added durable tool approval recipes for backend-owned approval records,
+  idempotent execution, safe renderers, and human-in-the-loop audit trails.
 
 ## [0.14.0] - 2026-07-02
 

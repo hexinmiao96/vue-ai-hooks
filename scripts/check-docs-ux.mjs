@@ -24,6 +24,8 @@ const files = {
   zhServerStorage: readFileSync('docs/zh/guide/server-storage.md', 'utf8'),
   regenerateBranches: readFileSync('docs/guide/regenerate-branches.md', 'utf8'),
   zhRegenerateBranches: readFileSync('docs/zh/guide/regenerate-branches.md', 'utf8'),
+  toolApprovals: readFileSync('docs/guide/tool-approvals.md', 'utf8'),
+  zhToolApprovals: readFileSync('docs/zh/guide/tool-approvals.md', 'utf8'),
   agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
   zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
@@ -133,6 +135,11 @@ expect(
   'VitePress sidebars must expose the regenerate branch guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Tool approvals', link: '/guide/tool-approvals' }") &&
+    files.config.includes("{ text: '工具审批', link: '/zh/guide/tool-approvals' }"),
+  'VitePress sidebars must expose the tool approval guide in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
     files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
@@ -180,6 +187,7 @@ for (const snippet of [
   '[Agent events](/guide/agent-events)',
   '[server storage recipe](/guide/server-storage)',
   '[Regenerate branches recipe](/guide/regenerate-branches)',
+  '[Tool approval recipe](/guide/tool-approvals)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
 ]) {
@@ -215,6 +223,7 @@ for (const snippet of [
   '[Agent 事件](/zh/guide/agent-events)',
   '[服务端存储配方](/zh/guide/server-storage)',
   '[重新生成分支配方](/zh/guide/regenerate-branches)',
+  '[工具审批配方](/zh/guide/tool-approvals)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
 ]) {
@@ -227,6 +236,9 @@ for (const snippet of [
 for (const snippet of [
   '# Task-oriented demos',
   'Vue chat with tool approval',
+  '[Tool approvals](/guide/tool-approvals)',
+  'idempotent `runId`',
+  'narrow renderer contract',
   'React chat quickstart',
   'Thread sidebar persistence',
   '[useChatThreads](/reference/use-chat-threads)',
@@ -256,6 +268,9 @@ for (const snippet of [
 for (const snippet of [
   '# 任务型 Demo',
   'Vue 聊天 + 工具审批',
+  '[工具审批](/zh/guide/tool-approvals)',
+  '幂等 `runId`',
+  'renderer',
   'React 聊天最小接入',
   'Thread 侧边栏持久化',
   '[useChatThreads](/zh/reference/use-chat-threads)',
@@ -292,6 +307,7 @@ for (const snippet of [
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  '[tool approval recipe](/guide/tool-approvals)',
   'Production notes'
 ]) {
   expect(files.agentEvents.includes(snippet), `English agent events guide must include: ${snippet}`)
@@ -307,6 +323,7 @@ for (const snippet of [
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  '[工具审批配方](/zh/guide/tool-approvals)',
   '生产注意事项'
 ]) {
   expect(
@@ -320,6 +337,12 @@ for (const snippet of [
   '## Browser boundary',
   '## Backend proxy',
   '## Streaming contract',
+  '## Tools and approvals',
+  '[tool approval recipe](/guide/tool-approvals)',
+  'approvalId',
+  'toolCallId',
+  'privileged tools',
+  'cannot execute a tool twice',
   '## UI state and inspection',
   '[server storage recipe](/guide/server-storage)',
   '[regenerate branches recipe](/guide/regenerate-branches)',
@@ -343,6 +366,12 @@ for (const snippet of [
   '## 浏览器边界',
   '## 后端代理',
   '## 流式契约',
+  '## 工具和审批',
+  '[工具审批配方](/zh/guide/tool-approvals)',
+  'approvalId',
+  'toolCallId',
+  '特权工具',
+  '不能执行两次',
   '## UI 状态和检查',
   '[服务端存储配方](/zh/guide/server-storage)',
   '[重新生成分支配方](/zh/guide/regenerate-branches)',
@@ -461,6 +490,62 @@ for (const snippet of [
   )
 }
 
+for (const snippet of [
+  '# Tool approval recipe',
+  'GET  /api/chat/threads/:threadId/approvals',
+  'POST /api/chat/threads/:threadId/approvals',
+  'POST /api/chat/approvals/:approvalId/approve',
+  'POST /api/chat/approvals/:approvalId/reject',
+  'approvalId',
+  'toolCallId',
+  'argsSnapshot',
+  'runId',
+  'revision',
+  'traceId',
+  'ToolApprovalView',
+  'pendingToolCalls',
+  'addToolApprovalResponse',
+  'inspectRequestTrace',
+  'sendAutomaticallyWhen: false',
+  'stopWhen',
+  'idempotency key',
+  'privileged tool credentials',
+  'Production smoke test'
+]) {
+  expect(
+    files.toolApprovals.includes(snippet),
+    `English tool approval guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 工具审批配方',
+  'GET  /api/chat/threads/:threadId/approvals',
+  'POST /api/chat/threads/:threadId/approvals',
+  'POST /api/chat/approvals/:approvalId/approve',
+  'POST /api/chat/approvals/:approvalId/reject',
+  'approvalId',
+  'toolCallId',
+  'argsSnapshot',
+  'runId',
+  'revision',
+  'traceId',
+  'ToolApprovalView',
+  'pendingToolCalls',
+  'addToolApprovalResponse',
+  'inspectRequestTrace',
+  'sendAutomaticallyWhen: false',
+  'stopWhen',
+  '幂等 key',
+  '特权工具凭据',
+  'Production smoke test'
+]) {
+  expect(
+    files.zhToolApprovals.includes(snippet),
+    `Chinese tool approval guide must include: ${snippet}`
+  )
+}
+
 expect(
   !files.gettingStarted.includes('cp examples/.env.example .env') &&
     !files.zhGettingStarted.includes('cp examples/.env.example .env'),
@@ -549,6 +634,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/server-storage.md') &&
     files.readme.includes('/docs/guide/regenerate-branches.md') &&
     files.zhReadme.includes('/docs/zh/guide/regenerate-branches.md') &&
+    files.readme.includes('/docs/guide/tool-approvals.md') &&
+    files.zhReadme.includes('/docs/zh/guide/tool-approvals.md') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
@@ -666,6 +753,7 @@ for (const snippet of [
   'server storage',
   'regenerate/branch',
   'idempotent `runId`',
+  'safe approval renderer contracts',
   'inspection',
   'provider presets',
   'React',
@@ -1903,7 +1991,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {
