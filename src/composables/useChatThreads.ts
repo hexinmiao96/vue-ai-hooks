@@ -191,10 +191,15 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
         ? { lastMessagePreview: input.lastMessagePreview }
         : {})
     }
+    let activeThreadId = state.value.activeThreadId
+    if (input.active !== false && !thread.archivedAt) {
+      activeThreadId = thread.id
+    } else if (activeThreadId === thread.id) {
+      activeThreadId = null
+    }
     replaceState({
       threads: [thread, ...state.value.threads.filter((item) => item.id !== thread.id)],
-      activeThreadId:
-        input.active === false || thread.archivedAt ? state.value.activeThreadId : thread.id
+      activeThreadId
     })
     return thread
   }

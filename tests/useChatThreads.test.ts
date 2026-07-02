@@ -143,6 +143,23 @@ describe('useChatThreads', () => {
     expect(threads.activeThreadId.value).toBeNull()
   })
 
+  it('clears active state when replacing the active thread with an inactive thread', () => {
+    const threads = useChatThreads({
+      createId: () => 'thread_1',
+      now: () => date('2026-01-01T00:00:00.000Z')
+    })
+
+    threads.createThread({ title: 'Active thread' })
+    expect(threads.activeThreadId.value).toBe('thread_1')
+
+    threads.createThread({ id: 'thread_1', title: 'Inactive replacement', active: false })
+
+    expect(threads.activeThreadId.value).toBeNull()
+    expect(threads.activeThread.value).toBeNull()
+    expect(threads.threads.value).toHaveLength(1)
+    expect(threads.threads.value[0].title).toBe('Inactive replacement')
+  })
+
   it('serializes and deserializes Date-safe thread lists and state', () => {
     const source: ChatThread<{ team: string }>[] = [
       {
