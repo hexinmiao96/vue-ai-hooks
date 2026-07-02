@@ -50,6 +50,7 @@ import {
   validateUIMessages,
   vllm,
   useChat,
+  useChatThreads,
   useCompletion,
   useEmbedding,
   useGeneration,
@@ -60,6 +61,10 @@ import {
   useVideo,
   useTranscription,
   usePersist,
+  serializeChatThreads,
+  serializeChatThreadsState,
+  deserializeChatThreads,
+  deserializeChatThreadsState,
   zhipu
 } from 'vue-ai-hooks'
 import {
@@ -92,6 +97,9 @@ import type {
   ChatResumeRequest,
   ChatResponseInfo,
   ChatStreamProtocol,
+  ChatThread,
+  ChatThreadsPersistOptions,
+  ChatThreadsState,
   CompletionFinishInfo,
   CompletionRequest,
   CompletionRequestInfo,
@@ -100,6 +108,7 @@ import type {
   ContentPart,
   ConvertToModelMessagesOptions,
   CreateIdGeneratorOptions,
+  CreateChatThreadInput,
   DataPartSchema,
   DataPartSchemas,
   DataPartValidator,
@@ -204,6 +213,8 @@ import type {
   SafeValidateUIMessagesResult,
   SendChatTrigger,
   SerializedMessage,
+  SerializedChatThread,
+  SerializedChatThreadsState,
   SpeechGenerationRequest,
   SpeechGenerationRequestInfo,
   SpeechGenerationResponseInfo,
@@ -250,9 +261,12 @@ import type {
   UIMessageStreamSource,
   UIMessageStreamWriter,
   UseChatOptions,
+  UseChatThreadsOptions,
+  UseChatThreadsReturn,
   UseChatReturn,
   ValidateMessagesOptions,
   ValidateUIMessagesOptions,
+  UpdateChatThreadInput,
   UseCompletionOptions,
   UseCompletionReturn,
   UseEmbeddingOptions,
@@ -1789,6 +1803,50 @@ describe('public API types', () => {
       type: 'source',
       data: { title: 'docs' }
     }
+    const chatThread: ChatThread<{ owner: string }> = {
+      id: 'thread_1',
+      title: 'Support',
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-02T00:00:00.000Z'),
+      metadata: { owner: 'support' },
+      messageCount: 1,
+      lastMessagePreview: 'Hello'
+    }
+    const serializedChatThread: SerializedChatThread<{ owner: string }> = {
+      id: 'thread_1',
+      title: 'Support',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+      metadata: { owner: 'support' },
+      messageCount: 1,
+      lastMessagePreview: 'Hello'
+    }
+    const chatThreadsState: ChatThreadsState<{ owner: string }> = {
+      threads: [chatThread],
+      activeThreadId: 'thread_1'
+    }
+    const serializedChatThreadsState: SerializedChatThreadsState<{ owner: string }> = {
+      threads: [serializedChatThread],
+      activeThreadId: 'thread_1'
+    }
+    const createThreadInput: CreateChatThreadInput<{ owner: string }> = {
+      title: 'Support',
+      metadata: { owner: 'support' }
+    }
+    const updateThreadInput: UpdateChatThreadInput<{ owner: string }> = {
+      metadata: null,
+      lastMessagePreview: null
+    }
+    const chatThreadsPersist: ChatThreadsPersistOptions<{ owner: string }> = {
+      key: 'threads',
+      storage: null
+    }
+    const chatThreadsOptions: UseChatThreadsOptions<{ owner: string }> = {
+      initialThreads: [chatThread],
+      initialActiveThreadId: 'thread_1',
+      persist: chatThreadsPersist
+    }
+    const chatThreads = useChatThreads(chatThreadsOptions)
     const chunk: ChatChunk = {
       messageId: 'msg_server_1',
       content: 'ok',
@@ -1968,6 +2026,26 @@ describe('public API types', () => {
     expectTypeOf(status).toMatchTypeOf<ChatStatus>()
     expectTypeOf(regenerateOptions).toEqualTypeOf<RegenerateChatOptions>()
     expectTypeOf(dataPart).toEqualTypeOf<StreamDataPart>()
+    expectTypeOf(chatThread).toEqualTypeOf<ChatThread<{ owner: string }>>()
+    expectTypeOf(serializedChatThread).toEqualTypeOf<SerializedChatThread<{ owner: string }>>()
+    expectTypeOf(chatThreadsState).toEqualTypeOf<ChatThreadsState<{ owner: string }>>()
+    expectTypeOf(serializedChatThreadsState).toEqualTypeOf<
+      SerializedChatThreadsState<{ owner: string }>
+    >()
+    expectTypeOf(createThreadInput).toEqualTypeOf<CreateChatThreadInput<{ owner: string }>>()
+    expectTypeOf(updateThreadInput).toEqualTypeOf<UpdateChatThreadInput<{ owner: string }>>()
+    expectTypeOf(chatThreadsPersist).toEqualTypeOf<ChatThreadsPersistOptions<{ owner: string }>>()
+    expectTypeOf(chatThreadsOptions).toEqualTypeOf<UseChatThreadsOptions<{ owner: string }>>()
+    expectTypeOf(chatThreads).toEqualTypeOf<UseChatThreadsReturn<{ owner: string }>>()
+    expectTypeOf(useChatThreads).parameter(0).toEqualTypeOf<UseChatThreadsOptions | undefined>()
+    expectTypeOf(serializeChatThreads).parameter(0).toEqualTypeOf<ChatThread[]>()
+    expectTypeOf(serializeChatThreads).returns.toEqualTypeOf<SerializedChatThread[]>()
+    expectTypeOf(deserializeChatThreads).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(deserializeChatThreads).returns.toEqualTypeOf<ChatThread[] | null>()
+    expectTypeOf(serializeChatThreadsState).parameter(0).toEqualTypeOf<ChatThreadsState>()
+    expectTypeOf(serializeChatThreadsState).returns.toEqualTypeOf<SerializedChatThreadsState>()
+    expectTypeOf(deserializeChatThreadsState).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(deserializeChatThreadsState).returns.toEqualTypeOf<ChatThreadsState | null>()
     expectTypeOf(chunk).toEqualTypeOf<ChatChunk>()
     expectTypeOf(messagesAreValid).toEqualTypeOf<boolean>()
     expectTypeOf(finishInfo).toEqualTypeOf<ChatFinishInfo>()

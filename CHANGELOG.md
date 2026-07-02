@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-02
+
+### Added
+
+- Added `useChatThreads()` for local thread indexes with active thread
+  selection, rename, archive, restore, delete, recency updates, and Date-safe
+  persistence.
+- Added `serializeChatThreads()`, `deserializeChatThreads()`,
+  `serializeChatThreadsState()`, and `deserializeChatThreadsState()` for
+  storing thread indexes outside `localStorage`.
+- Added English and Chinese `useChatThreads` reference docs and navigation.
+
+### Changed
+
+- Expanded public API, dist, docs UX, and package checks for the new thread
+  persistence exports.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.13.0] - 2026-07-02
 
 ### Added

@@ -15,6 +15,7 @@ contract, then replace the local route with your app-owned backend.
 | ------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
 | Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue`                                           | Click **Run approval demo**, approve or reject the tool.  |
 | React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react) | Send one prompt, call `stop()`, then inspect trace state. |
+| Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                     | Create, rename, archive, restore, and reopen a thread.    |
 | Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                             | Confirm stream chunks arrive without browser keys.        |
 | Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                               | Convert events to `ChatChunk` or UI stream parts.         |
 | AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                       | Decode parts with `readUIMessageStream()`.                |
@@ -100,6 +101,31 @@ pnpm example:proxy-server
 
 The browser still talks to your app-owned proxy URL. The Node process adds the
 provider key and normalizes the response back to the browser contract.
+
+## Thread sidebar persistence
+
+Use this when the product needs saved conversations, a sidebar, archive flows,
+or a current thread indicator. Keep the thread index separate from message
+bodies:
+
+```ts
+import { useChat, useChatThreads } from 'vue-ai-hooks'
+
+const threads = useChatThreads({
+  persist: { key: 'assistant:threads', version: 1 }
+})
+
+const thread = threads.createThread({ title: 'Support case' })
+
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  persist: { key: `assistant:messages:${thread.id}`, version: 1 }
+})
+```
+
+Verify create, rename, archive, restore, and delete before adding a server
+storage adapter. See [useChatThreads](/reference/use-chat-threads).
 
 ## AI SDK UI stream migration
 
