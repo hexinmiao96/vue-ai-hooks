@@ -24,6 +24,8 @@ const requiredReactExportFields = {
 }
 const requiredRuntimeExports = [
   'AiHooksError',
+  'agentEventToChatChunk',
+  'agentEventToUIMessageStreamPart',
   'anthropic',
   'classifyInspectionError',
   'convertToModelMessages',
@@ -48,6 +50,7 @@ const requiredRuntimeExports = [
   'parseSSE',
   'pipeUIMessageStreamToResponse',
   'proxyProvider',
+  'readAgentEventStream',
   'readUIMessageStream',
   'tool',
   'toChatChunks',

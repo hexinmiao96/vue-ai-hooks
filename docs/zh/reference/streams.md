@@ -10,11 +10,67 @@ stream。
 `CreateUIMessageStreamOptions`、`CreateUIMessageStreamResponseOptions`、
 `PipeUIMessageStreamToResponseOptions`、`ServerResponseLike`、
 `UIMessageStreamPart`、`UIMessageStreamSource`、`UIMessageStreamWriter` 和
-`UIMessageStreamParser`。
+`UIMessageStreamParser`。Agent adapter 导出：
+`agentEventToChatChunk`、`agentEventToUIMessageStreamPart`、
+`readAgentEventStream`、`AgentEvent`、`AgentEventAdapterOptions`、
+`AgentEventSource` 和 `ReadAgentEventStreamOptions`。
 
 如果想做不需要 key 的可运行契约检查，先启动 `pnpm example:proxy-server`，再向
 `/api/ui-message-stream` 发 POST 请求。该路由会输出 AI SDK UI message stream parts，
 可以用 `readUIMessageStream()` 检查。
+
+## Agent 事件适配
+
+当后端 agent 输出的是产品级事件，而 UI 仍希望消费标准 `ChatChunk` 或 AI SDK UI
+message stream 契约时，使用 agent event adapters：
+
+```ts
+import {
+  agentEventToUIMessageStreamPart,
+  createUIMessageStreamResponse,
+  readAgentEventStream,
+  type AgentEvent
+} from 'vue-ai-hooks'
+
+async function* runAgent(): AsyncGenerator<AgentEvent> {
+  yield { type: 'message-delta', delta: '正在检查...' }
+  yield { type: 'progress', id: 'lookup', label: '查询账户' }
+  yield { type: 'tool-call', id: 'call_1', name: 'lookupAccount', input: { id: 'acct_1' } }
+  yield { type: 'tool-result', id: 'call_1', name: 'lookupAccount', output: { status: 'active' } }
+  yield { type: 'finish', finishReason: 'stop' }
+}
+
+for await (const chunk of readAgentEventStream({ events: runAgent() })) {
+  console.log(chunk)
+}
+
+export function POST() {
+  return createUIMessageStreamResponse({
+    stream: toParts(runAgent())
+  })
+}
+
+async function* toParts(events: AsyncIterable<AgentEvent>) {
+  for await (const event of events) {
+    yield agentEventToUIMessageStreamPart(event)
+  }
+}
+```
+
+`agentEventToChatChunk(event, options?)` 把单个 `AgentEvent` 转成 `ChatChunk`。
+`readAgentEventStream({ events, signal, ...options })` 接受 `AgentEventSource`：
+iterable、async iterable 或 `ReadableStream<AgentEvent>`。
+`agentEventToUIMessageStreamPart(event, options?)` 把单个事件转成
+`UIMessageStreamPart`，适合 proxy 路由。
+
+`AgentEventAdapterOptions` 支持：
+
+| 选项               | 类型             | 默认值                | 说明                         |
+| ------------------ | ---------------- | --------------------- | ---------------------------- |
+| `progressDataType` | `data-${string}` | `data-agent-progress` | progress 事件的 data part。  |
+| `errorDataType`    | `data-${string}` | `data-agent-error`    | 不抛出错误事件的 data part。 |
+
+任务级说明见 [Agent 事件](/zh/guide/agent-events)。
 
 ## `createUIMessageStream()`
 

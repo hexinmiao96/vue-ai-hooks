@@ -21,6 +21,7 @@ npm install vue-ai-hooks
 | Upgrade from v0.3.x              | Read the [v0.4.0 upgrade guide](/guide/upgrade-0.4)               |
 | Upgrade from v0.2.1              | Read the [v0.3.0 upgrade guide](/guide/upgrade-0.3)               |
 | Port an AI SDK UI app            | Use the [AI SDK migration guide](/guide/ai-sdk-migration)         |
+| Connect an app-owned agent       | Use [Agent events](/guide/agent-events)                           |
 | Try your backend proxy contract  | Run the [proxy template](#try-the-backend-proxy-template-locally) |
 | Add chat to an app               | Copy [your first chat](#your-first-chat)                          |
 | Choose a model provider          | Jump to [using a different provider](#using-a-different-provider) |

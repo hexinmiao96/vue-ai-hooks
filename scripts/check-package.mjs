@@ -9,8 +9,8 @@ const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
 
 const [pack] = JSON.parse(output)
 const files = new Set(pack.files.map((file) => file.path))
-const maxPackageSize = 455_000
-const maxUnpackedSize = 2_125_000
+const maxPackageSize = 465_000
+const maxUnpackedSize = 2_185_000
 
 const requiredFiles = [
   'package.json',
@@ -24,12 +24,15 @@ const requiredFiles = [
   'src/react/useChat.ts',
   'src/react/useCompletion.ts',
   'src/react/useObject.ts',
+  'src/utils/agentEvents.ts',
   'dist/index.mjs',
   'dist/index.mjs.map',
   'dist/index.cjs',
   'dist/index.cjs.map',
   'dist/index.d.ts',
   'dist/index.d.ts.map',
+  'dist/utils/agentEvents.d.ts',
+  'dist/utils/agentEvents.d.ts.map',
   'dist/react.mjs',
   'dist/react.mjs.map',
   'dist/react.cjs',

@@ -21,6 +21,7 @@ npm install vue-ai-hooks
 | 从 v0.3.x 升级               | 阅读 [v0.4.0 升级指南](/zh/guide/upgrade-0.4)       |
 | 从 v0.2.1 升级               | 阅读 [v0.3.0 升级指南](/zh/guide/upgrade-0.3)       |
 | 迁移 AI SDK UI 应用          | 使用 [AI SDK 迁移指南](/zh/guide/ai-sdk-migration)  |
+| 接入自有 agent 服务          | 使用 [Agent 事件](/zh/guide/agent-events)           |
 | 验证自己的后端代理契约       | 跑 [proxy 模板](#本地试用后端代理模板)              |
 | 在应用里接入聊天             | 复制 [第一个聊天应用](#第一个聊天应用)              |
 | 选择模型 Provider            | 跳到 [使用不同 Provider](#使用不同-provider)        |

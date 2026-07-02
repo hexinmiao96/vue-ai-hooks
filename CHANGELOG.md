@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-02
+
+### Added
+
+- Added lightweight `AgentEvent` adapters for app-owned agent services:
+  `agentEventToChatChunk()`, `agentEventToUIMessageStreamPart()`, and
+  `readAgentEventStream()`.
+- Added English and Chinese agent-event guides that show custom provider and
+  proxy-route wiring for progress, tool, source, file, error, and finish events.
+
+### Changed
+
+- Expanded stream reference docs, task-oriented demo docs, README files, public
+  API checks, and dist checks so agent-event adapters are documented and
+  verified as public API.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.12.0] - 2026-07-02
 
 ### Added

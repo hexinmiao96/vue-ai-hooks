@@ -58,12 +58,23 @@ planning.
 - Continue adding production deployment walkthroughs only where they keep the
   browser contract provider-agnostic.
 
+### 0.13.x
+
+- Shipped in 0.13.0: lightweight `AgentEvent` adapters that convert app-owned
+  agent progress, tool, source, file, error, and finish events into `ChatChunk`
+  values or AI SDK UI message stream parts.
+- Shipped in 0.13.0: English and Chinese agent-event guides for custom
+  providers, proxy routes, tool approval timelines, data-part naming, and
+  production boundaries.
+- Continue adding production agent recipes only where they keep planning,
+  retrieval, privileged tools, secrets, and tenant data in the host backend.
+
 ### Later
 
 - Expand React support toward shared stream helpers only where it improves
   migration confidence.
-- Add agent-event adapter recipes for services that emit tool approval,
-  progress, and human-in-the-loop events.
+- Add session/thread persistence upgrades for products that need saved
+  conversations, archive flows, and regenerate branches.
 
 ## Non-goals
 
