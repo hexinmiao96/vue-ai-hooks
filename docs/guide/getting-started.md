@@ -23,6 +23,7 @@ npm install vue-ai-hooks
 | Upgrade from v0.2.1              | Read the [v0.3.0 upgrade guide](/guide/upgrade-0.3)                 |
 | Port an AI SDK UI app            | Use the [AI SDK migration guide](/guide/ai-sdk-migration)           |
 | Connect an app-owned agent       | Use [Agent events](/guide/agent-events)                             |
+| Bridge LangChain or LangGraph    | Use the [Agent bridge recipe](/guide/agent-bridge)                  |
 | Try your backend proxy contract  | Run the [proxy template](#try-the-backend-proxy-template-locally)   |
 | Persist chats on your backend    | Follow the [server storage recipe](/guide/server-storage)           |
 | Add regenerate or branch flows   | Follow the [Regenerate branches recipe](/guide/regenerate-branches) |

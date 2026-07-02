@@ -11,6 +11,10 @@ adapter is intentionally small: it does not plan, retrieve, sandbox tools, or
 store threads. It only converts your agent events into the stream contracts that
 `useChat`, custom transports, and proxy routes already understand.
 
+If you need to connect LangChain, LangGraph, or a custom backend agent runtime,
+start with the [Agent bridge recipe](/guide/agent-bridge), then use this page
+for the low-level adapter API.
+
 ## Event contract
 
 Start with a narrow event stream from your server:

@@ -11,17 +11,17 @@ contract, then replace the local route with your app-owned backend.
 
 ## Choose by task
 
-| Product task                    | Run first                                       | Read next                                                           | Verify before real providers                              |
-| ------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
-| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals) | Click **Run approval demo**, approve or reject the tool.  |
-| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react)   | Send one prompt, call `stop()`, then inspect trace state. |
-| Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                       | Create, rename, archive, restore, and reopen a thread.    |
-| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                             | Restore index and messages, send, reload, and verify.     |
-| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                   | Regenerate without overwriting the original answer.       |
-| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                               | Confirm stream chunks arrive without browser keys.        |
-| Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                                 | Convert events to `ChatChunk` or UI stream parts.         |
-| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                         | Decode parts with `readUIMessageStream()`.                |
-| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)                 | Pass the checklist before putting provider keys in prod.  |
+| Product task                    | Run first                                       | Read next                                                                   | Verify before real providers                              |
+| ------------------------------- | ----------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals)         | Click **Run approval demo**, approve or reject the tool.  |
+| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react)           | Send one prompt, call `stop()`, then inspect trace state. |
+| Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                               | Create, rename, archive, restore, and reopen a thread.    |
+| Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                                     | Restore index and messages, send, reload, and verify.     |
+| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                           | Regenerate without overwriting the original answer.       |
+| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                                       | Confirm stream chunks arrive without browser keys.        |
+| Agent backend bridge            | LangChain, LangGraph, or custom backend agent   | [Agent bridge](/guide/agent-bridge) and [Agent events](/guide/agent-events) | Convert safe events to `ChatChunk` or UI stream parts.    |
+| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                                 | Decode parts with `readUIMessageStream()`.                |
+| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)                         | Pass the checklist before putting provider keys in prod.  |
 
 ## Vue chat with tool approval
 
@@ -194,11 +194,12 @@ POST to `/api/ui-message-stream`, then consume the stream with
 small: first prove that text, tool-call, and data parts decode correctly, then
 move one production route at a time.
 
-## Agent service stream adapter
+## Agent backend bridge
 
-Use this when your own backend already emits progress, tool approval, tool
-result, source, file, or final usage events. Keep the agent service on the
-server, then expose only browser-safe `AgentEvent` values:
+Use this when LangChain, LangGraph, or your own backend agent emits progress,
+tool approval, tool result, source, file, or final usage events. Keep planning,
+retrieval, memory, checkpoints, and privileged tools on the server, then expose
+only browser-safe `AgentEvent` values:
 
 ```ts
 import { readAgentEventStream } from 'vue-ai-hooks'
@@ -208,7 +209,9 @@ yield * readAgentEventStream({ events: runAgent(messages), signal })
 
 If the route should speak AI SDK UI message stream instead, convert events with
 `agentEventToUIMessageStreamPart()` and return them through
-`createUIMessageStreamResponse()`. See [Agent events](/guide/agent-events).
+`createUIMessageStreamResponse()`. See [Agent bridge](/guide/agent-bridge) for
+LangChain/LangGraph projection boundaries and [Agent events](/guide/agent-events)
+for the low-level adapter.
 
 ## Done criteria
 

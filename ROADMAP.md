@@ -87,9 +87,9 @@ planning.
 
 - Expand React support toward shared stream helpers only where it improves
   migration confidence.
-- Add production agent recipes for services that need durable approvals,
-  workflow audit trails, human-in-the-loop timelines, idempotent tool execution,
-  and safe approval renderer contracts.
+- Add production agent bridge recipes for services that need LangChain,
+  LangGraph, durable approvals, workflow audit trails, human-in-the-loop
+  timelines, idempotent tool execution, and safe approval renderer contracts.
 
 ## Non-goals
 

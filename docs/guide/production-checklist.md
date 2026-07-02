@@ -28,6 +28,11 @@ storage, and operations.
 - Forward abort signals to the provider when your runtime supports it.
 - Disable buffering in serverless, CDN, and reverse-proxy layers for SSE routes.
 - Add provider-specific timeout and retry policy at the backend boundary.
+- Follow the [agent bridge recipe](/guide/agent-bridge) when `/api/chat` talks
+  to LangChain, LangGraph, or a custom agent service instead of a direct model
+  provider.
+- Keep agent checkpoints, retrieved documents, vector store credentials,
+  LangSmith keys, and privileged tool state on the server.
 
 ## Streaming contract
 

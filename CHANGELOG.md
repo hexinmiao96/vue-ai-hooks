@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `runId` handling, branch restore smoke tests, and audit-safe retries.
 - Added durable tool approval recipes for backend-owned approval records,
   idempotent execution, safe renderers, and human-in-the-loop audit trails.
+- Added backend agent bridge recipes for LangChain, LangGraph, and custom agent
+  services that project browser-safe `AgentEvent` streams.
 
 ## [0.14.0] - 2026-07-02
 
