@@ -15,6 +15,7 @@ npm install vue-ai-hooks
 | If you want to...                | Start here                                                        |
 | -------------------------------- | ----------------------------------------------------------------- |
 | See the UI without provider keys | Run the [local tool approval demo](#run-a-demo-without-api-keys)  |
+| Pick the right demo by job       | Read [Task-oriented demos](/guide/task-demos)                     |
 | Compare library fit              | Read [Choosing vue-ai-hooks](/guide/choosing)                     |
 | Upgrade from v0.3.x              | Read the [v0.4.0 upgrade guide](/guide/upgrade-0.4)               |
 | Upgrade from v0.2.1              | Read the [v0.3.0 upgrade guide](/guide/upgrade-0.3)               |
@@ -22,6 +23,7 @@ npm install vue-ai-hooks
 | Try your backend proxy contract  | Run the [proxy template](#try-the-backend-proxy-template-locally) |
 | Add chat to an app               | Copy [your first chat](#your-first-chat)                          |
 | Choose a model provider          | Jump to [using a different provider](#using-a-different-provider) |
+| Check production readiness       | Use the [Production checklist](/guide/production-checklist)       |
 
 ## Run a demo without API keys
 
@@ -224,6 +226,8 @@ const { messages: messages10, append: append10 } = useChat({
 ## Next steps
 
 - [Examples](/examples/) — choose the right composable by product task
+- [Task-oriented demos](/guide/task-demos) — map product jobs to runnable demos
+- [Production checklist](/guide/production-checklist) — browser, proxy, stream, and inspection readiness
 - [Providers](/guide/providers) — how to add your own
 - [Inspection](/guide/inspection) — inspect request traces and provider failures
 - [useChat reference](/reference/use-chat) — full API

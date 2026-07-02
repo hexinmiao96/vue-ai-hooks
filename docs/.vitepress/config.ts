@@ -13,6 +13,7 @@ const rootSidebar = {
       text: 'Introduction',
       items: [
         { text: 'Getting started', link: '/guide/getting-started' },
+        { text: 'Task demos', link: '/guide/task-demos' },
         { text: 'Choosing vue-ai-hooks', link: '/guide/choosing' },
         { text: 'Upgrade to v0.4.0', link: '/guide/upgrade-0.4' },
         { text: 'Upgrade to v0.3.0', link: '/guide/upgrade-0.3' },
@@ -20,6 +21,7 @@ const rootSidebar = {
         { text: 'Providers', link: '/guide/providers' },
         { text: 'Proxy recipes', link: '/guide/proxy-recipes' },
         { text: 'Inspection', link: '/guide/inspection' },
+        { text: 'Production checklist', link: '/guide/production-checklist' },
         { text: 'API stability', link: '/guide/api-stability' },
         { text: 'SSR and Nuxt', link: '/guide/ssr' },
         { text: 'Testing', link: '/guide/testing' },
@@ -75,6 +77,7 @@ const zhSidebar = {
       text: '入门',
       items: [
         { text: '快速开始', link: '/zh/guide/getting-started' },
+        { text: '任务型 Demo', link: '/zh/guide/task-demos' },
         { text: '选择 vue-ai-hooks', link: '/zh/guide/choosing' },
         { text: '升级到 v0.4.0', link: '/zh/guide/upgrade-0.4' },
         { text: '升级到 v0.3.0', link: '/zh/guide/upgrade-0.3' },
@@ -82,6 +85,7 @@ const zhSidebar = {
         { text: 'Provider', link: '/zh/guide/providers' },
         { text: 'Proxy 配方', link: '/zh/guide/proxy-recipes' },
         { text: '调试检查', link: '/zh/guide/inspection' },
+        { text: '生产检查清单', link: '/zh/guide/production-checklist' },
         { text: 'API 稳定性', link: '/zh/guide/api-stability' },
         { text: 'SSR 和 Nuxt', link: '/zh/guide/ssr' },
         { text: '测试', link: '/zh/guide/testing' },

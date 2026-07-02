@@ -12,16 +12,18 @@ npm install vue-ai-hooks
 
 ## 先选一条路径
 
-| 你想做什么                   | 从这里开始                                         |
-| ---------------------------- | -------------------------------------------------- |
-| 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)     |
-| 比较库的适用边界             | 阅读 [选择 vue-ai-hooks](/zh/guide/choosing)       |
-| 从 v0.3.x 升级               | 阅读 [v0.4.0 升级指南](/zh/guide/upgrade-0.4)      |
-| 从 v0.2.1 升级               | 阅读 [v0.3.0 升级指南](/zh/guide/upgrade-0.3)      |
-| 迁移 AI SDK UI 应用          | 使用 [AI SDK 迁移指南](/zh/guide/ai-sdk-migration) |
-| 验证自己的后端代理契约       | 跑 [proxy 模板](#本地试用后端代理模板)             |
-| 在应用里接入聊天             | 复制 [第一个聊天应用](#第一个聊天应用)             |
-| 选择模型 Provider            | 跳到 [使用不同 Provider](#使用不同-provider)       |
+| 你想做什么                   | 从这里开始                                          |
+| ---------------------------- | --------------------------------------------------- |
+| 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)      |
+| 按产品任务选择 demo          | 阅读 [任务型 Demo](/zh/guide/task-demos)            |
+| 比较库的适用边界             | 阅读 [选择 vue-ai-hooks](/zh/guide/choosing)        |
+| 从 v0.3.x 升级               | 阅读 [v0.4.0 升级指南](/zh/guide/upgrade-0.4)       |
+| 从 v0.2.1 升级               | 阅读 [v0.3.0 升级指南](/zh/guide/upgrade-0.3)       |
+| 迁移 AI SDK UI 应用          | 使用 [AI SDK 迁移指南](/zh/guide/ai-sdk-migration)  |
+| 验证自己的后端代理契约       | 跑 [proxy 模板](#本地试用后端代理模板)              |
+| 在应用里接入聊天             | 复制 [第一个聊天应用](#第一个聊天应用)              |
+| 选择模型 Provider            | 跳到 [使用不同 Provider](#使用不同-provider)        |
+| 检查生产上线准备             | 使用 [生产检查清单](/zh/guide/production-checklist) |
 
 ## 不需要 API key 的 Demo
 
@@ -209,6 +211,8 @@ const { messages: messages10, append: append10 } = useChat({
 ## 下一步
 
 - [示例](/zh/examples/) - 按产品任务选择合适的组合式函数
+- [任务型 Demo](/zh/guide/task-demos) - 把产品任务映射到可运行示例
+- [生产检查清单](/zh/guide/production-checklist) - 检查浏览器、proxy、stream 和调试面板 readiness
 - [Provider](/zh/guide/providers) - 如何添加自己的 Provider
 - [调试检查](/zh/guide/inspection) - 检查 request trace 和 Provider 失败
 - [useChat 参考](/zh/reference/use-chat) - 完整 API
