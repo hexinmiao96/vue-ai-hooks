@@ -613,6 +613,8 @@ make storage restore and cleanup failures observable. See the
 
 Manages a lightweight thread index for chat sidebars: active thread selection,
 rename, archive, restore, delete, recency updates, and Date-safe persistence.
+`persistenceError` reports the last thread-index storage failure without
+including thread payloads or message bodies.
 Keep message bodies separate with `useChat({ id: thread.id, persist })` or your
 server storage. See the
 [useChatThreads reference](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/use-chat-threads.md)

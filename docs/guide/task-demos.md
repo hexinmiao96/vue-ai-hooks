@@ -204,7 +204,9 @@ const chat = useChat({
 Verify create, rename, archive, restore, delete, and the smoke check before
 adding a server storage adapter. The runnable demo uses a deterministic
 `DirectChatTransport`, `useChatThreads()` for the sidebar index, and one keyed
-`useChat({ persist })` instance per active thread. See
+`useChat({ persist })` instance per active thread. It also renders
+`persistenceError` when the thread index cannot load, save, or clear from
+storage. See
 [useChatThreads](/reference/use-chat-threads).
 
 ## IndexedDB local persistence

@@ -68,6 +68,7 @@ const files = {
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
   threadedChatExample: readFileSync('examples/threaded-chat/App.vue', 'utf8'),
   threadedChatPanel: readFileSync('examples/threaded-chat/ThreadChatPanel.vue', 'utf8'),
+  threadedChatCheck: readFileSync('scripts/check-threaded-chat-demo.mjs', 'utf8'),
   reactChatExample: readFileSync('examples/react-chat/App.tsx', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
@@ -679,6 +680,8 @@ expect(
   files.threadedChatExample.includes("import { useChatThreads } from 'vue-ai-hooks'") &&
     files.threadedChatExample.includes('ThreadChatPanel') &&
     files.threadedChatExample.includes('THREAD_INDEX_KEY') &&
+    files.threadedChatExample.includes('threadStorageError') &&
+    files.threadedChatExample.includes('clearPersistenceError()') &&
     files.threadedChatExample.includes('archiveActiveThread') &&
     files.threadedChatExample.includes('restoreThread') &&
     files.threadedChatPanel.includes('DirectChatTransport') &&
@@ -689,8 +692,10 @@ expect(
     files.threadedChatPanel.includes('thread-checkpoint') &&
     files.packageJson.includes('"example:threaded-chat"') &&
     files.packageJson.includes('"example:threaded-chat:build"') &&
-    files.packageJson.includes('pnpm example:threaded-chat:build'),
-  'Threaded chat example must pair useChatThreads with per-thread useChat({ persist }) and be included in the examples build gate'
+    files.packageJson.includes('pnpm example:threaded-chat:build') &&
+    files.threadedChatCheck.includes('persistenceError') &&
+    files.threadedChatCheck.includes('clearPersistenceError()'),
+  'Threaded chat example must pair useChatThreads with per-thread useChat({ persist }), expose persistence diagnostics, and be included in the examples build gate'
 )
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
@@ -1841,6 +1846,9 @@ for (const snippet of [
   'deserializeChatThreadsState',
   'ChatThreadsPersistOptions',
   'UseChatThreadsReturn',
+  'ChatThreadsPersistenceErrorInfo',
+  'persistenceError',
+  'clearPersistenceError()',
   'lastMessagePreview',
   'threadId: thread.id'
 ]) {
@@ -1940,6 +1948,9 @@ for (const snippet of [
   'deserializeChatThreadsState',
   'ChatThreadsPersistOptions',
   'UseChatThreadsReturn',
+  'ChatThreadsPersistenceErrorInfo',
+  'persistenceError',
+  'clearPersistenceError()',
   'lastMessagePreview',
   'threadId: thread.id'
 ]) {

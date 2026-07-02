@@ -188,7 +188,8 @@ const chat = useChat({
 
 先验证 create、rename、archive、restore、delete 和 smoke check，再接 server storage
 adapter。这个可运行 demo 使用确定性的 `DirectChatTransport`、`useChatThreads()`
-侧边栏索引，以及当前 thread 独立的 `useChat({ persist })`。详见
+侧边栏索引，以及当前 thread 独立的 `useChat({ persist })`。当 thread 索引无法
+从 storage 加载、保存或清除时，demo 也会渲染 `persistenceError`。详见
 [useChatThreads](/zh/reference/use-chat-threads)。
 
 ## IndexedDB 本地持久化

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   runner deprecation warnings in CI and release jobs.
 - Added opt-in persistence load and clear error callbacks.
 - Recorded chat persistence failures in `inspect().timeline`.
+- Added `useChatThreads().persistenceError` for thread-index storage failures.
 
 ## [0.14.0] - 2026-07-02
 

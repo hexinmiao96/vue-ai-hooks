@@ -163,6 +163,8 @@ export {
   serializeChatThreadsState,
   useChatThreads,
   type ChatThread,
+  type ChatThreadsPersistenceErrorInfo,
+  type ChatThreadsPersistenceErrorPhase,
   type ChatThreadsPersistOptions,
   type ChatThreadsState,
   type CreateChatThreadInput,

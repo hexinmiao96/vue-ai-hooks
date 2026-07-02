@@ -79,6 +79,17 @@ export interface ChatThreadsPersistOptions<
   onClearError?: UsePersistOptions<ChatThreadsState<TMetadata>>['onClearError']
 }
 
+export type ChatThreadsPersistenceErrorPhase = 'load' | 'save' | 'clear'
+
+export interface ChatThreadsPersistenceErrorInfo {
+  phase: ChatThreadsPersistenceErrorPhase
+  key: string
+  version?: number
+  message: string
+  name?: string
+  timestamp: Date
+}
+
 export interface UseChatThreadsOptions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -97,6 +108,7 @@ export interface UseChatThreadsReturn<
   archivedThreads: ComputedRef<ChatThread<TMetadata>[]>
   activeThreadId: ComputedRef<string | null>
   activeThread: ComputedRef<ChatThread<TMetadata> | null>
+  persistenceError: ComputedRef<ChatThreadsPersistenceErrorInfo | null>
   createThread: (input?: CreateChatThreadInput<TMetadata>) => ChatThread<TMetadata>
   setActiveThread: (id: string | null) => void
   renameThread: (id: string, title: string) => ChatThread<TMetadata> | null
@@ -113,6 +125,7 @@ export interface UseChatThreadsReturn<
   deleteThread: (id: string) => ChatThread<TMetadata> | null
   clearThreads: () => void
   clearPersistedThreads: () => void
+  clearPersistenceError: () => void
 }
 
 interface MutableChatThreadsState<
@@ -127,6 +140,8 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
 ): UseChatThreadsReturn<TMetadata> {
   const makeId = options.createId ?? createId
   const now = options.now ?? (() => new Date())
+  const persistOptions = options.persist
+  const lastPersistenceError = ref<ChatThreadsPersistenceErrorInfo | null>(null)
   const state = ref(
     normalizeThreadsState(
       {
@@ -136,16 +151,16 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
       now
     )
   ) as Ref<MutableChatThreadsState<TMetadata>>
-  const persistence = options.persist
+  const persistence = persistOptions
     ? usePersist(state, {
-        key: options.persist.key,
-        version: options.persist.version,
-        storage: options.persist.storage,
-        serialize: options.persist.serialize ?? serializeChatThreadsState,
-        deserialize: options.persist.deserialize ?? ((raw) => deserializeChatThreadsState(raw)),
-        onError: options.persist.onError,
-        onLoadError: options.persist.onLoadError,
-        onClearError: options.persist.onClearError
+        key: persistOptions.key,
+        version: persistOptions.version,
+        storage: persistOptions.storage,
+        serialize: persistOptions.serialize ?? serializeChatThreadsState,
+        deserialize: persistOptions.deserialize ?? ((raw) => deserializeChatThreadsState(raw)),
+        onError: handlePersistenceError('save', persistOptions.onError),
+        onLoadError: handlePersistenceError('load', persistOptions.onLoadError),
+        onClearError: handlePersistenceError('clear', persistOptions.onClearError)
       })
     : null
 
@@ -159,6 +174,7 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
         (thread) => thread.id === state.value.activeThreadId && !thread.archivedAt
       ) ?? null
   )
+  const persistenceError = computed(() => lastPersistenceError.value)
 
   function createThread(input: CreateChatThreadInput<TMetadata> = {}) {
     const timestamp = input.createdAt ?? now()
@@ -272,6 +288,29 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
     persistence?.clear()
   }
 
+  function clearPersistenceError() {
+    lastPersistenceError.value = null
+  }
+
+  function handlePersistenceError(
+    phase: ChatThreadsPersistenceErrorPhase,
+    handler?: (err: Error) => void
+  ) {
+    return (error: Error) => {
+      if (persistOptions) {
+        lastPersistenceError.value = {
+          phase,
+          key: persistOptions.key,
+          ...(persistOptions.version !== undefined ? { version: persistOptions.version } : {}),
+          message: error.message,
+          ...(error.name ? { name: error.name } : {}),
+          timestamp: cloneDate(now())
+        }
+      }
+      handler?.(error)
+    }
+  }
+
   function replaceState(next: MutableChatThreadsState<TMetadata>) {
     state.value = normalizeThreadsState(next, now)
   }
@@ -282,6 +321,7 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
     archivedThreads,
     activeThreadId,
     activeThread,
+    persistenceError,
     createThread,
     setActiveThread,
     renameThread,
@@ -291,7 +331,8 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
     restoreThread,
     deleteThread,
     clearThreads,
-    clearPersistedThreads
+    clearPersistedThreads,
+    clearPersistenceError
   }
 }
 

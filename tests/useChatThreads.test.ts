@@ -238,7 +238,8 @@ describe('useChatThreads', () => {
     const badLoadStorage = memoryStorage()
     badLoadStorage.setItem('threads:v1', 'not-json')
 
-    useChatThreads({
+    const loadedThreads = useChatThreads({
+      now: () => date('2026-01-04T00:00:00.000Z'),
       persist: {
         key: 'threads',
         version: 1,
@@ -248,6 +249,14 @@ describe('useChatThreads', () => {
     })
 
     expect(loadErrors).toHaveLength(1)
+    expect(loadedThreads.persistenceError.value).toMatchObject({
+      phase: 'load',
+      key: 'threads',
+      version: 1,
+      message: expect.any(String),
+      name: 'SyntaxError',
+      timestamp: date('2026-01-04T00:00:00.000Z')
+    })
 
     const failingStorage: Storage = {
       ...memoryStorage(),
@@ -259,6 +268,7 @@ describe('useChatThreads', () => {
       }
     } as Storage
     const threads = useChatThreads({
+      now: () => date('2026-01-05T00:00:00.000Z'),
       persist: {
         key: 'threads',
         version: 1,
@@ -270,10 +280,31 @@ describe('useChatThreads', () => {
 
     threads.createThread({ title: 'Support' })
     await nextTick()
-    threads.clearPersistedThreads()
 
     expect(saveErrors[0]?.message).toBe('quota')
+    expect(threads.persistenceError.value).toMatchObject({
+      phase: 'save',
+      key: 'threads',
+      version: 1,
+      message: 'quota',
+      name: 'Error',
+      timestamp: date('2026-01-05T00:00:00.000Z')
+    })
+
+    threads.clearPersistenceError()
+    expect(threads.persistenceError.value).toBeNull()
+
+    threads.clearPersistedThreads()
+
     expect(clearErrors[0]?.message).toBe('remove failed')
+    expect(threads.persistenceError.value).toMatchObject({
+      phase: 'clear',
+      key: 'threads',
+      version: 1,
+      message: 'remove failed',
+      name: 'Error',
+      timestamp: date('2026-01-05T00:00:00.000Z')
+    })
   })
 
   it('normalizes duplicate and invalid initial threads', () => {

@@ -11,8 +11,9 @@ Public exports: `useChatThreads`, `serializeChatThreads`,
 `deserializeChatThreads`, `serializeChatThreadsState`,
 `deserializeChatThreadsState`, `ChatThread`, `SerializedChatThread`,
 `ChatThreadsState`, `SerializedChatThreadsState`, `CreateChatThreadInput`,
-`UpdateChatThreadInput`, `ChatThreadsPersistOptions`, `UseChatThreadsOptions`,
-and `UseChatThreadsReturn`.
+`UpdateChatThreadInput`, `ChatThreadsPersistenceErrorInfo`,
+`ChatThreadsPersistenceErrorPhase`, `ChatThreadsPersistOptions`,
+`UseChatThreadsOptions`, and `UseChatThreadsReturn`.
 
 ## Usage
 
@@ -59,6 +60,7 @@ of `UsePersistOptions`.
 | `archivedThreads`         | `ComputedRef<ChatThread[]>`                                                             | Archived threads.                                   |
 | `activeThreadId`          | `ComputedRef<string \| null>`                                                           | Current active thread id.                           |
 | `activeThread`            | `ComputedRef<ChatThread \| null>`                                                       | Current non-archived active thread.                 |
+| `persistenceError`        | `ComputedRef<ChatThreadsPersistenceErrorInfo \| null>`                                  | Last thread-index storage failure, safe to render.  |
 | `createThread(input?)`    | `(input?: CreateChatThreadInput) => ChatThread`                                         | Creates a thread and activates it by default.       |
 | `setActiveThread(id)`     | `(id: string \| null) => void`                                                          | Activates a non-archived thread or clears active.   |
 | `renameThread(id, title)` | `(id: string, title: string) => ChatThread \| null`                                     | Renames a thread; blank titles are ignored.         |
@@ -69,6 +71,12 @@ of `UsePersistOptions`.
 | `deleteThread(id)`        | `(id: string) => ChatThread \| null`                                                    | Deletes a thread and clears active if needed.       |
 | `clearThreads()`          | `() => void`                                                                            | Removes all thread state.                           |
 | `clearPersistedThreads()` | `() => void`                                                                            | Removes only the persisted storage entry.           |
+| `clearPersistenceError()` | `() => void`                                                                            | Clears the last thread-index storage error summary. |
+
+`persistenceError` is set when `persist.onLoadError`, `persist.onError`, or
+`persist.onClearError` fires. The summary includes `phase`, `key`, optional
+`version`, `message`, optional `name`, and `timestamp`; it does not include the
+thread payload, message bodies, provider credentials, or raw error causes.
 
 ## Thread shape
 

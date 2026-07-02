@@ -28,6 +28,7 @@ const activeThread = computed(() => threads.activeThread.value)
 const visibleThreads = computed(() => threads.visibleThreads.value)
 const archivedThreads = computed(() => threads.archivedThreads.value)
 const hasArchivedThreads = computed(() => archivedThreads.value.length > 0)
+const threadStorageError = computed(() => threads.persistenceError.value)
 
 watch(
   () => activeThread.value?.id,
@@ -134,6 +135,15 @@ function formatThreadTime(thread: ChatThread<ThreadMetadata>) {
           <button class="primary-button" type="submit">Create</button>
         </div>
       </form>
+
+      <div v-if="threadStorageError" class="storage-alert" role="status">
+        <span>
+          Thread storage {{ threadStorageError.phase }} failed: {{ threadStorageError.message }}
+        </span>
+        <button type="button" class="ghost-button" @click="threads.clearPersistenceError()">
+          Dismiss
+        </button>
+      </div>
 
       <section class="thread-list-section" aria-labelledby="active-threads-title">
         <h2 id="active-threads-title" class="section-title">Active</h2>
@@ -255,6 +265,18 @@ function formatThreadTime(thread: ChatThread<ThreadMetadata>) {
 .title-edit {
   display: grid;
   gap: 8px;
+}
+
+.storage-alert {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #f1b8a8;
+  border-radius: 8px;
+  color: #651f13;
+  background: #fff4f0;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .field-label,

@@ -153,6 +153,29 @@ async function checkThreadIndexAndMessages() {
     JSON.stringify(restoredSupportMessages) !== JSON.stringify(restoredBillingMessages),
     'per-thread message stores should not collapse into one history'
   )
+
+  const diagnostics = useChatThreads({
+    persist: {
+      key: 'threaded-chat-smoke:broken-index',
+      version: 1,
+      storage: failingStorage()
+    },
+    now: fixedNow('2026-07-02T10:00:00.000Z')
+  })
+  diagnostics.createThread({ id: 'thread_diagnostics', title: 'Diagnostics' })
+  await nextTick()
+  expect(
+    diagnostics.persistenceError.value?.phase === 'save' &&
+      diagnostics.persistenceError.value.key === 'threaded-chat-smoke:broken-index' &&
+      diagnostics.persistenceError.value.version === 1 &&
+      diagnostics.persistenceError.value.message === 'quota',
+    'useChatThreads() should expose render-safe persistence error diagnostics'
+  )
+  diagnostics.clearPersistenceError()
+  expect(
+    diagnostics.persistenceError.value === null,
+    'clearPersistenceError() should clear thread persistence diagnostics'
+  )
 }
 
 function createThreadProvider(responseText) {
@@ -192,6 +215,15 @@ function memoryStorage() {
     },
     setItem(key, value) {
       data.set(key, value)
+    }
+  }
+}
+
+function failingStorage() {
+  return {
+    ...memoryStorage(),
+    setItem() {
+      throw new Error('quota')
     }
   }
 }

@@ -98,6 +98,8 @@ import type {
   ChatResponseInfo,
   ChatStreamProtocol,
   ChatThread,
+  ChatThreadsPersistenceErrorInfo,
+  ChatThreadsPersistenceErrorPhase,
   ChatThreadsPersistOptions,
   ChatThreadsState,
   CompletionFinishInfo,
@@ -1840,6 +1842,16 @@ describe('public API types', () => {
       metadata: null,
       lastMessagePreview: null
     }
+    const chatThreadsErrorPhase: ChatThreadsPersistenceErrorPhase = 'save'
+    const chatThreadsPersistenceError: ChatThreadsPersistenceErrorInfo = {
+      phase: chatThreadsErrorPhase,
+      key: 'threads',
+      version: 1,
+      message: 'quota',
+      name: 'Error',
+      timestamp: new Date()
+    }
+    expectTypeOf(chatThreadsPersistenceError).toEqualTypeOf<ChatThreadsPersistenceErrorInfo>()
     const chatThreadsPersist: ChatThreadsPersistOptions<{ owner: string }> = {
       key: 'threads',
       storage: null,
@@ -1856,6 +1868,10 @@ describe('public API types', () => {
       persist: chatThreadsPersist
     }
     const chatThreads = useChatThreads(chatThreadsOptions)
+    expectTypeOf(
+      chatThreads.persistenceError.value
+    ).toEqualTypeOf<ChatThreadsPersistenceErrorInfo | null>()
+    chatThreads.clearPersistenceError()
     const chunk: ChatChunk = {
       messageId: 'msg_server_1',
       content: 'ok',
