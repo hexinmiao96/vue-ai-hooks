@@ -187,7 +187,7 @@
     "vitest": "^3.2.6",
     "vue": "^3.4.0",
     "vue-eslint-parser": "^10.4.1",
-    "vue-tsc": "^2.0.0"
+    "vue-tsc": "^3.3.6"
   },
   "engines": {
     "node": ">=18.18.0"
