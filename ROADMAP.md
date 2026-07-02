@@ -93,6 +93,9 @@ planning.
   `revision`, replayed `runId`, `branch_revision_conflict`, and
   `run_in_progress` handling without embedding a backend database abstraction in
   the package.
+- Added after 0.14.0: durable tool approval decision contracts for replayed
+  `runId`, stale `revision`, `approval_revision_conflict`, and no-second-tool
+  execution smoke coverage.
 - Continue validating these production recipes through local and CI gates before
   the next release.
 
@@ -101,8 +104,8 @@ planning.
 - Expand React support toward shared stream helpers only where it improves
   migration confidence.
 - Add production agent bridge recipes for services that need LangChain,
-  LangGraph, durable approvals, workflow audit trails, human-in-the-loop
-  timelines, idempotent tool execution, and safe approval renderer contracts.
+  LangGraph, workflow audit trails, and human-in-the-loop timelines.
+- Keep improving safe approval renderer contracts for agent bridge handoffs.
 
 ## Non-goals
 

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `branch_revision_conflict`, `run_in_progress`, and replayed `runId` handling.
 - Added durable tool approval recipes for backend-owned approval records,
   idempotent execution, safe renderers, and human-in-the-loop audit trails.
+- Tightened tool approval checks for replayed `runId`, stale `revision`, and
+  `approval_revision_conflict`.
 - Added backend agent bridge recipes for LangChain, LangGraph, and custom agent
   services that project browser-safe `AgentEvent` streams.
 - Added a no-key threaded chat demo that pairs `useChatThreads()` with

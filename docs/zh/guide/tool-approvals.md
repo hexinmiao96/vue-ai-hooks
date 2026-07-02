@@ -81,6 +81,31 @@ approve 和 reject 路由应返回浏览器要传给 `addToolApprovalResponse()`
 
 后端可以在审批通过后立即执行工具，也可以先记录审批决策，再交给 worker 执行。两种方式都要向聊天 UI 返回稳定的结果或拒绝原因。
 
+## 决策契约
+
+approve 和 reject 路由要同时满足幂等和 revision 安全：
+
+| 场景                      | 响应契约                                                               |
+| ------------------------- | ---------------------------------------------------------------------- |
+| 新决策被接受              | `200`、`status: "accepted"`、更新后的 `revision`，以及安全结果或原因。 |
+| 相同 `runId` 被重放       | `200`、`status: "replayed"`、相同结果或原因，且不发生第二次执行。      |
+| 新 run id 携带旧 revision | `409`、`error: "approval_revision_conflict"`，以及 `latestRevision`。  |
+| 审批已经是最终状态        | `409`、`error: "approval_already_final"`、当前决策和 trace id。        |
+| 审批已过期或取消          | `200`、`status: "expired"` 或 `"cancelled"`，以及安全的拒绝原因。      |
+
+审批人打开的是旧页面时，返回冲突，不要执行工具：
+
+```json
+{
+  "error": "approval_revision_conflict",
+  "approvalId": "appr_123",
+  "latestRevision": 4,
+  "traceId": "trace_abc"
+}
+```
+
+一个 `runId` 最多触发一次工具执行。重放请求应返回已保存的决策 payload，这样浏览器在网络失败后可以安全重试。
+
 ## Renderer contract
 
 用很窄的 UI contract 渲染 `pendingToolCalls`。展示数据要脱敏且可预测：
@@ -183,7 +208,7 @@ const trace = inspectRequestTrace({
 开放真实工具前先验证：
 
 1. 运行 `pnpm build && pnpm tool-approval:check`，确认发布入口能暂停、审批、拒绝、
-   继续生成并检查审批 metadata。
+   继续生成、检查审批 metadata、重放相同 `runId`，并拒绝过期 `revision`。
 2. 运行 `pnpm example:chat`，点击 **Run approval demo**。
 3. 触发 pending `chargeCard` 请求，确认 UI 只展示脱敏字段。
 4. 审批通过一次，刷新 thread，确认审批状态仍为 approved。

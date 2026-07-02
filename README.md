@@ -742,11 +742,11 @@ persistence, retries, stream data, metadata, shared state, and quality gates.
 This release adds `useChatThreads` for local thread indexes, active thread
 selection, rename, archive, restore, delete, recency updates, and Date-safe
 thread persistence. Current follow-up work is focused on production agent bridge
-recipes, durable tool approval workflows, regenerate/branch workflows, and the
+recipes, approval decision contracts, regenerate/branch workflows, and the
 [server storage recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/server-storage.md)
 for tenant-scoped thread indexes, message bodies, and app-owned storage adapter
 contracts, with regenerate/branch conflict handling for `revision`, `runId`, and
-restore smoke tests. Feature planning lives in
+restore smoke tests, plus approval replay/conflict checks. Feature planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.
 

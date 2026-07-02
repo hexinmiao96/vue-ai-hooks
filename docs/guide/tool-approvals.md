@@ -93,6 +93,33 @@ The backend may execute the tool immediately after approval, or it can record
 the approval decision and let a worker execute the tool. In both cases, return a
 stable result or rejection reason to the chat UI.
 
+## Decision contract
+
+Make approve and reject routes idempotent and revision-safe:
+
+| Scenario                         | Response contract                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| Fresh decision accepted          | `200`, `status: "accepted"`, updated `revision`, and safe result or reason.  |
+| Same `runId` replayed            | `200`, `status: "replayed"`, same result or reason, and no second execution. |
+| Stale `revision` with new run id | `409`, `error: "approval_revision_conflict"`, and `latestRevision`.          |
+| Approval already final           | `409`, `error: "approval_already_final"`, current decision, and trace id.    |
+| Approval expired or cancelled    | `200`, `status: "expired"` or `"cancelled"`, with a safe rejection reason.   |
+
+For a stale reviewer tab, return a conflict instead of executing the tool:
+
+```json
+{
+  "error": "approval_revision_conflict",
+  "approvalId": "appr_123",
+  "latestRevision": 4,
+  "traceId": "trace_abc"
+}
+```
+
+One `runId` should create at most one tool execution. Replayed requests should
+return the stored decision payload so the browser can safely retry after a
+network failure.
+
 ## Renderer contract
 
 Render tool calls from `pendingToolCalls` with a narrow UI contract. Keep the
@@ -207,7 +234,8 @@ result.
 Before enabling the feature for real tools:
 
 1. Run `pnpm build && pnpm tool-approval:check` to verify the published entry
-   can pause, approve, reject, continue, and inspect approval metadata.
+   can pause, approve, reject, continue, inspect approval metadata, replay the
+   same `runId`, and reject stale `revision` values.
 2. Run `pnpm example:chat` and click **Run approval demo**.
 3. Trigger a pending `chargeCard` request and confirm the UI shows only redacted
    fields.

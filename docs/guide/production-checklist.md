@@ -53,6 +53,8 @@ storage, and operations.
   render a request, but it must not become the authority for privileged tools.
 - Make approval execution idempotent so repeated requests with the same `runId`
   cannot execute a tool twice.
+- Reject stale approval `revision` values with `approval_revision_conflict`
+  before any tool execution begins.
 - Render only whitelisted, redacted fields in approval UI. Never show raw tool
   arguments, provider credentials, stack traces, or upstream error bodies.
 
@@ -139,7 +141,8 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
     a second regenerate while one is streaming and confirm `run_in_progress` or
     same-`runId` resume behavior.
 11. Approve and reject one privileged tool request, then confirm duplicate
-    `runId` submissions do not execute the tool twice.
+    `runId` submissions do not execute the tool twice and stale approval
+    `revision` values return `approval_revision_conflict`.
 12. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy

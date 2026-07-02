@@ -571,6 +571,11 @@ for (const snippet of [
   'sendAutomaticallyWhen: false',
   'stopWhen',
   'idempotency key',
+  'Decision contract',
+  'approval_revision_conflict',
+  'latestRevision',
+  'status: "replayed"',
+  'One `runId` should create at most one tool execution',
   'privileged tool credentials',
   'Production smoke test'
 ]) {
@@ -599,6 +604,11 @@ for (const snippet of [
   'sendAutomaticallyWhen: false',
   'stopWhen',
   '幂等 key',
+  '决策契约',
+  'approval_revision_conflict',
+  'latestRevision',
+  'status: "replayed"',
+  '一个 `runId` 最多触发一次工具执行',
   '特权工具凭据',
   'Production smoke test'
 ]) {

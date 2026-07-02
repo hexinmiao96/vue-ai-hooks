@@ -15,6 +15,7 @@ console.log('Tool approval demo check passed.')
 
 async function checkApprovedToolDecision() {
   const requests = []
+  const approvals = createDurableApprovalStore()
   const chat = useChat({
     id: 'tool-approval-smoke-approved',
     provider: createApprovalProvider(requests, 'Approved through backend decision.'),
@@ -35,19 +36,36 @@ async function checkApprovedToolDecision() {
     'approval flow should pause before adding a tool result'
   )
 
+  const approval = approvals.upsertPending({
+    approvalId: 'appr_smoke_1',
+    threadId: 'thread_tool_approval_smoke',
+    toolCallId: 'call_charge_1',
+    toolName: 'chargeCard',
+    runId: 'approval_run_smoke_1',
+    revision: 3,
+    traceId: 'trace_approval_smoke_1'
+  })
+  const decision = approvals.approve({
+    approvalId: approval.approvalId,
+    runId: approval.runId,
+    revision: approval.revision,
+    traceId: approval.traceId
+  })
+  expect(decision.status === 'accepted', 'first approval request should be accepted')
+
   await chat.addToolApprovalResponse(
     {
       id: 'call_charge_1',
       approved: true,
-      reason: 'reviewer approved'
+      result: decision.result
     },
     {
       body: {
-        approvalId: 'appr_smoke_1',
+        approvalId: decision.approvalId,
         toolCallId: 'call_charge_1',
-        runId: 'approval_run_smoke_1',
-        revision: 4,
-        traceId: 'trace_approval_smoke_1'
+        runId: decision.runId,
+        revision: decision.revision,
+        traceId: decision.traceId
       },
       headers: { Authorization: 'Bearer approval-secret' }
     }
@@ -79,6 +97,33 @@ async function checkApprovedToolDecision() {
     'inspect() should expose the approval trace id'
   )
   expect(!curl.includes('approval-secret'), 'inspect curl should not expose provider secrets')
+
+  const replayed = approvals.approve({
+    approvalId: approval.approvalId,
+    runId: approval.runId,
+    revision: approval.revision,
+    traceId: approval.traceId
+  })
+  expect(
+    replayed.status === 'replayed' &&
+      replayed.result.receiptId === decision.result.receiptId &&
+      approvals.executionCount === 1,
+    'replayed approval runId should return the same result without a second execution'
+  )
+
+  const staleRevision = approvals.approve({
+    approvalId: approval.approvalId,
+    runId: 'approval_run_smoke_conflict',
+    revision: approval.revision,
+    traceId: approval.traceId
+  })
+  expect(
+    staleRevision.httpStatus === 409 &&
+      staleRevision.error === 'approval_revision_conflict' &&
+      staleRevision.latestRevision === decision.revision &&
+      approvals.executionCount === 1,
+    'stale approval revision should return a conflict without executing the tool'
+  )
 }
 
 async function checkRejectedToolDecision() {
@@ -139,6 +184,74 @@ function createApprovalProvider(requests, responseText) {
         model: 'tool-approval-smoke',
         usage: { promptTokens: 0, totalTokens: 0 }
       }
+    }
+  }
+}
+
+function createDurableApprovalStore() {
+  const records = new Map()
+  const decisionsByRunId = new Map()
+  let executionCount = 0
+
+  return {
+    get executionCount() {
+      return executionCount
+    },
+    upsertPending(input) {
+      const record = {
+        approvalId: input.approvalId,
+        threadId: input.threadId,
+        toolCallId: input.toolCallId,
+        toolName: input.toolName,
+        runId: input.runId,
+        revision: input.revision,
+        traceId: input.traceId,
+        decision: 'pending'
+      }
+      records.set(record.approvalId, record)
+      return { ...record }
+    },
+    approve(input) {
+      const replayed = decisionsByRunId.get(input.runId)
+      if (replayed) return { ...replayed, status: 'replayed' }
+
+      const record = records.get(input.approvalId)
+      if (!record) {
+        return {
+          status: 'missing',
+          httpStatus: 404,
+          error: 'approval_not_found'
+        }
+      }
+
+      if (input.revision !== record.revision) {
+        return {
+          status: 'conflict',
+          httpStatus: 409,
+          error: 'approval_revision_conflict',
+          latestRevision: record.revision
+        }
+      }
+
+      executionCount += 1
+      record.decision = 'approved'
+      record.revision += 1
+
+      const decision = {
+        status: 'accepted',
+        approvalId: record.approvalId,
+        toolCallId: record.toolCallId,
+        approved: true,
+        result: {
+          status: 'approved',
+          receiptId: `receipt_${executionCount}`
+        },
+        runId: input.runId,
+        revision: record.revision,
+        traceId: input.traceId
+      }
+      decisionsByRunId.set(input.runId, decision)
+      return decision
     }
   }
 }
