@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tightened the publish workflow release cadence check so already-published
   package versions fail before `npm publish`, while local readiness checks stay
   repeatable after a release.
+- Updated GitHub Actions setup actions to Node 24-backed versions to avoid
+  runner deprecation warnings in CI and release jobs.
 
 ## [0.14.0] - 2026-07-02
 

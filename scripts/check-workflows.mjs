@@ -20,13 +20,17 @@ expect(
   supportedNodeVersions[0] === `${minimumNodeMajor}.x`,
   'Supported Node matrix must start at the package engines.node minimum major'
 )
-expect(workflows.ci.includes('uses: actions/setup-node@v4'), 'CI workflow must set up Node')
+expect(
+  workflows.ci.includes('uses: actions/checkout@v5'),
+  'CI workflow must use actions/checkout@v5'
+)
+expect(workflows.ci.includes('uses: actions/setup-node@v5'), 'CI workflow must set up Node')
 expect(
   hasYamlValue(workflows.ci, 'node-version', `[${supportedNodeVersions.join(', ')}]`),
   'CI workflow must test the supported Node version matrix'
 )
 expect(hasYamlValue(workflows.ci, 'cache', 'pnpm'), 'CI workflow must cache pnpm dependencies')
-expect(workflows.ci.includes('uses: pnpm/action-setup@v4'), 'CI workflow must set up pnpm')
+expect(workflows.ci.includes('uses: pnpm/action-setup@v6'), 'CI workflow must set up pnpm')
 expect(
   hasYamlValue(workflows.ci, 'version', pnpmVersion),
   'CI workflow pnpm version must match packageManager'
@@ -78,7 +82,11 @@ expect(
   'Publish workflow must not allow manual publish dispatch'
 )
 expect(
-  workflows.publish.includes('uses: actions/setup-node@v4'),
+  workflows.publish.includes('uses: actions/checkout@v5'),
+  'Publish workflow must use actions/checkout@v5'
+)
+expect(
+  workflows.publish.includes('uses: actions/setup-node@v5'),
   'Publish workflow must set up Node'
 )
 expect(
@@ -86,7 +94,7 @@ expect(
   'Publish workflow must use the newest supported Node version'
 )
 expect(
-  workflows.publish.includes('uses: pnpm/action-setup@v4'),
+  workflows.publish.includes('uses: pnpm/action-setup@v6'),
   'Publish workflow must set up pnpm'
 )
 expect(
@@ -170,6 +178,10 @@ expect(
   workflows.codeql.includes('security-events: write'),
   'CodeQL workflow must allow security-events write'
 )
+expect(
+  workflows.codeql.includes('uses: actions/checkout@v5'),
+  'CodeQL workflow must use actions/checkout@v5'
+)
 expect(workflows.codeql.includes('github/codeql-action/init@v4'), 'CodeQL init action must use v4')
 expect(
   workflows.codeql.includes('github/codeql-action/analyze@v4'),
@@ -223,8 +235,8 @@ for (const permission of [
   expect(workflows.scorecard.includes(permission), `Scorecard workflow must include ${permission}`)
 }
 expect(
-  workflows.scorecard.includes('uses: actions/checkout@v4'),
-  'Scorecard workflow must use actions/checkout@v4'
+  workflows.scorecard.includes('uses: actions/checkout@v5'),
+  'Scorecard workflow must use actions/checkout@v5'
 )
 expect(
   workflows.scorecard.includes('persist-credentials: false'),
