@@ -20,6 +20,8 @@ const files = {
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
   proxyRecipes: readFileSync('docs/guide/proxy-recipes.md', 'utf8'),
   zhProxyRecipes: readFileSync('docs/zh/guide/proxy-recipes.md', 'utf8'),
+  agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
+  zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
   zhInspection: readFileSync('docs/zh/guide/inspection.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
@@ -115,6 +117,11 @@ expect(
   'VitePress sidebars must expose the proxy recipes guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
+    files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
+  'VitePress sidebars must expose the agent-event guide in English and Chinese'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
 )
@@ -148,6 +155,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TIMEOUT_MS',
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy recipes](/guide/proxy-recipes)',
+  '[Agent events](/guide/agent-events)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
 ]) {
@@ -179,6 +187,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TIMEOUT_MS',
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy 配方](/zh/guide/proxy-recipes)',
+  '[Agent 事件](/zh/guide/agent-events)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
 ]) {
@@ -193,6 +202,7 @@ for (const snippet of [
   'Vue chat with tool approval',
   'React chat quickstart',
   'Own `/api/chat` proxy',
+  'Agent service stream adapter',
   'AI SDK UI stream migration',
   'Production deployment readiness',
   'pnpm example:chat',
@@ -200,6 +210,8 @@ for (const snippet of [
   'examples/react-chat/App.tsx',
   'pnpm example:proxy-server',
   'readUIMessageStream()',
+  'readAgentEventStream',
+  'agentEventToUIMessageStreamPart()',
   '[Production checklist](/guide/production-checklist)'
 ]) {
   expect(files.taskDemos.includes(snippet), `English task demos guide must include: ${snippet}`)
@@ -210,6 +222,7 @@ for (const snippet of [
   'Vue 聊天 + 工具审批',
   'React 聊天最小接入',
   '自有 `/api/chat` proxy',
+  'Agent 服务 stream 适配',
   'AI SDK UI stream 迁移',
   '生产部署准备',
   'pnpm example:chat',
@@ -217,9 +230,44 @@ for (const snippet of [
   'examples/react-chat/App.tsx',
   'pnpm example:proxy-server',
   'readUIMessageStream()',
+  'readAgentEventStream',
+  'agentEventToUIMessageStreamPart()',
   '[生产检查清单](/zh/guide/production-checklist)'
 ]) {
   expect(files.zhTaskDemos.includes(snippet), `Chinese task demos guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Agent event adapters',
+  'AgentEvent',
+  'readAgentEventStream',
+  'agentEventToChatChunk',
+  'agentEventToUIMessageStreamPart',
+  'createUIMessageStreamResponse',
+  'tool-call',
+  'tool-result',
+  'data-agent-progress',
+  'Production notes'
+]) {
+  expect(files.agentEvents.includes(snippet), `English agent events guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Agent 事件适配',
+  'AgentEvent',
+  'readAgentEventStream',
+  'agentEventToChatChunk',
+  'agentEventToUIMessageStreamPart',
+  'createUIMessageStreamResponse',
+  'tool-call',
+  'tool-result',
+  'data-agent-progress',
+  '生产注意事项'
+]) {
+  expect(
+    files.zhAgentEvents.includes(snippet),
+    `Chinese agent events guide must include: ${snippet}`
+  )
 }
 
 for (const snippet of [
@@ -452,6 +500,8 @@ for (const snippet of [
   '0.10.x',
   '0.11.x',
   '0.12.x',
+  '0.13.x',
+  'AgentEvent',
   'inspection',
   'provider presets',
   'React',
@@ -1034,9 +1084,13 @@ expect(
   files.streams.includes('pnpm example:proxy-server') &&
     files.streams.includes('/api/ui-message-stream') &&
     files.streams.includes('readUIMessageStream()') &&
+    files.streams.includes('readAgentEventStream') &&
+    files.streams.includes('agentEventToUIMessageStreamPart') &&
     files.zhStreams.includes('pnpm example:proxy-server') &&
     files.zhStreams.includes('/api/ui-message-stream') &&
     files.zhStreams.includes('readUIMessageStream()') &&
+    files.zhStreams.includes('readAgentEventStream') &&
+    files.zhStreams.includes('agentEventToUIMessageStreamPart') &&
     files.readme.includes('/api/ui-message-stream') &&
     files.zhReadme.includes('/api/ui-message-stream') &&
     files.proxyServer.includes("uiMessageStream: new Set(['/api/ui-message-stream'") &&

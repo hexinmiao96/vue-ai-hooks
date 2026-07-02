@@ -216,6 +216,15 @@ export {
   type UIMessageStreamWriter
 } from './utils/stream'
 export {
+  agentEventToChatChunk,
+  agentEventToUIMessageStreamPart,
+  readAgentEventStream,
+  type AgentEvent,
+  type AgentEventAdapterOptions,
+  type AgentEventSource,
+  type ReadAgentEventStreamOptions
+} from './utils/agentEvents'
+export {
   classifyInspectionError,
   createInspectionCurl,
   inspectRequestTrace,

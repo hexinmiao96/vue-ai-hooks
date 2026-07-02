@@ -59,10 +59,11 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Production chat workflows**: server-side proxy paths, resumable streams,
   thread context, request preparation hooks, custom body fields, metadata, and
   request tracing.
-- **AI SDK-style UI helpers**: `sendMessage`, tool output/approval aliases,
+- **AI SDK-style UI and agent helpers**: `sendMessage`, tool output/approval aliases,
   file attachments, structured `Message.parts`, custom stream data, and message
   pruning, reusable `Chat` instances, `DefaultChatTransport`,
-  `DirectChatTransport`, plus reusable UI stream decoding utilities.
+  `DirectChatTransport`, reusable UI stream decoding utilities, and lightweight
+  `AgentEvent` adapters for app-owned agent streams.
 - **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
   approval gates, active tool filtering, stop conditions, and per-step request
   preparation.
@@ -616,6 +617,8 @@ If you are coming from `0.2.1`, read the
 [v0.3.0 upgrade guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/upgrade-0.3.md).
 If you are porting an AI SDK UI surface, use the
 [AI SDK migration guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/ai-sdk-migration.md).
+If you are connecting an app-owned agent service, use the
+[Agent events guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-events.md).
 For copyable backend proxy environment recipes, use
 [Proxy recipes](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/proxy-recipes.md).
 Before production rollout, use the
@@ -687,13 +690,13 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.12.0** — a working foundation, not feature-complete. The core
+This is **v0.13.0** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
-This release deepens the production proxy recipe with upstream timeout controls,
-trace header propagation, sanitized retryable errors, and clearer
-Ollama/vLLM/private gateway guidance. Next focus: agent-event adapter recipes
-and session/thread persistence. Feature
+This release adds lightweight `AgentEvent` adapters that normalize app-owned
+agent progress, tool, source, file, error, and finish events into `ChatChunk` or
+AI SDK UI message stream parts. Next focus: session/thread persistence and
+production agent recipes. Feature
 planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.

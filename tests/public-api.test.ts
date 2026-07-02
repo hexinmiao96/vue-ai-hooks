@@ -2,6 +2,8 @@ import { ref, type Ref } from 'vue'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   AiHooksError,
+  agentEventToChatChunk,
+  agentEventToUIMessageStreamPart,
   anthropic,
   Chat,
   classifyInspectionError,
@@ -36,6 +38,7 @@ import {
   pipeUIMessageStreamToResponse,
   pruneMessages,
   proxyProvider,
+  readAgentEventStream,
   readUIMessageStream,
   safeValidateMessages,
   safeValidateUIMessages,
@@ -65,6 +68,9 @@ import {
   useObject as useReactObject
 } from 'vue-ai-hooks/react'
 import type {
+  AgentEvent,
+  AgentEventAdapterOptions,
+  AgentEventSource,
   AiRequestStatus,
   AiSdkSendChatTrigger,
   AddToolOutputOptions,
@@ -175,6 +181,7 @@ import type {
   CreateUIMessageStreamOptions,
   CreateUIMessageStreamResponseOptions,
   PipeUIMessageStreamToResponseOptions,
+  ReadAgentEventStreamOptions,
   RegenerateChatOptions,
   ReadUIMessageStreamOptions,
   RerankDocument,
@@ -488,6 +495,31 @@ describe('public API types', () => {
       | AsyncIterable<UIMessageStreamPart>
       | ReadableStream<UIMessageStreamPart>
     >()
+    const agentEvent: AgentEvent = {
+      type: 'tool-call',
+      id: 'call_1',
+      name: 'lookup',
+      input: { q: 'vue' }
+    }
+    const agentOptions: AgentEventAdapterOptions = { progressDataType: 'data-agent-progress' }
+    const agentSource: AgentEventSource = [agentEvent]
+    const readAgentOptions: ReadAgentEventStreamOptions = { events: agentSource, ...agentOptions }
+    expectTypeOf(agentEvent).toMatchTypeOf<AgentEvent>()
+    expectTypeOf(agentOptions).toEqualTypeOf<AgentEventAdapterOptions>()
+    expectTypeOf(agentSource).toMatchTypeOf<AgentEventSource>()
+    expectTypeOf(readAgentOptions).toEqualTypeOf<ReadAgentEventStreamOptions>()
+    expectTypeOf(agentEventToChatChunk).parameter(0).toEqualTypeOf<AgentEvent>()
+    expectTypeOf(agentEventToChatChunk)
+      .parameter(1)
+      .toEqualTypeOf<AgentEventAdapterOptions | undefined>()
+    expectTypeOf(agentEventToChatChunk).returns.toEqualTypeOf<ChatChunk>()
+    expectTypeOf(agentEventToUIMessageStreamPart).parameter(0).toEqualTypeOf<AgentEvent>()
+    expectTypeOf(agentEventToUIMessageStreamPart)
+      .parameter(1)
+      .toEqualTypeOf<AgentEventAdapterOptions | undefined>()
+    expectTypeOf(agentEventToUIMessageStreamPart).returns.toEqualTypeOf<UIMessageStreamPart>()
+    expectTypeOf(readAgentEventStream).parameter(0).toEqualTypeOf<ReadAgentEventStreamOptions>()
+    expectTypeOf(readAgentEventStream).returns.toEqualTypeOf<AsyncGenerator<ChatChunk>>()
     expectTypeOf(createUIMessageStream).parameter(0).toEqualTypeOf<CreateUIMessageStreamOptions>()
     expectTypeOf(createUIMessageStream).returns.toEqualTypeOf<ReadableStream<UIMessageStreamPart>>()
     expectTypeOf<CreateUIMessageStreamOptions['execute']>().toEqualTypeOf<
