@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added React `useObject` support through `vue-ai-hooks/react`, including JSON
+  Schema response formats, partial object state, request traces, proxy fallback,
+  retry-before-first-chunk behavior, form helpers, tests, and English/Chinese
+  reference docs.
+
 ## [0.8.0] - 2026-07-02
 
 ### Added

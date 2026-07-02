@@ -195,8 +195,8 @@ expect(
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
-    files.readme.includes('useCompletion` from `vue-ai-hooks/react`') &&
-    files.zhReadme.includes('`useCompletion`，在 React 中复用') &&
+    files.readme.includes('`useCompletion`, or `useObject` from `vue-ai-hooks/react`') &&
+    files.zhReadme.includes('`useCompletion` 或 `useObject`，在 React 中复用') &&
     files.readme.includes('DirectChatTransport') &&
     files.readme.includes('DirectChatTransport({ onError })') &&
     files.zhReadme.includes('DirectChatTransport') &&
@@ -283,12 +283,16 @@ for (const snippet of [
 
 for (const snippet of [
   '# React hooks',
-  '`useChat` and `useCompletion`',
-  'import { useChat, useCompletion } from',
+  '`useChat`, `useCompletion`, and `useObject`',
+  'import { useChat, useCompletion, useObject } from',
   'CompletionBox',
+  'ObjectBox',
   '`useCompletion(options)` accepts `UseReactCompletionOptions`',
   '`UseReactCompletionReturn` exposes plain React state and actions',
+  '`useObject(options)` accepts `UseReactObjectOptions<T>`',
+  '`UseReactObjectReturn<T>` exposes plain React state and actions',
   'complete(prompt?, options?)',
+  'submit(prompt?, options?)',
   'Retry controls; retries only happen before the first streamed text delta'
 ]) {
   expect(files.react.includes(snippet), `English React reference must include: ${snippet}`)
@@ -296,13 +300,18 @@ for (const snippet of [
 
 for (const snippet of [
   '# React hooks',
-  'React 版 `useChat` 和',
+  'React 版 `useChat`、',
   '`useCompletion`',
-  'import { useChat, useCompletion } from',
+  '`useObject`',
+  'import { useChat, useCompletion, useObject } from',
   'CompletionBox',
+  'ObjectBox',
   '`useCompletion(options)` 接收 `UseReactCompletionOptions`',
   '`UseReactCompletionReturn` 暴露普通 React state 和操作',
+  '`useObject(options)` 接收 `UseReactObjectOptions<T>`',
+  '`UseReactObjectReturn<T>` 暴露普通 React state 和操作',
   'complete(prompt?, options?)',
+  'submit(prompt?, options?)',
   '只有首个文本 delta 到达前的失败会重试'
 ]) {
   expect(files.zhReact.includes(snippet), `Chinese React reference must include: ${snippet}`)

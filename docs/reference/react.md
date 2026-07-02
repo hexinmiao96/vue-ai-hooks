@@ -1,8 +1,9 @@
 # React hooks
 
 `vue-ai-hooks/react` is the optional React entry. It currently exposes React
-`useChat` and `useCompletion` for streaming React UIs while reusing the same
-providers, proxy transport, request tracing, and stream formats as the Vue entry.
+`useChat`, `useCompletion`, and `useObject` for streaming React UIs while reusing
+the same providers, proxy transport, request tracing, and stream formats as the
+Vue entry.
 
 Install React in the consuming app only when you use this subpath:
 
@@ -57,10 +58,47 @@ export function CompletionBox() {
 }
 ```
 
+For JSON Schema-backed structured output:
+
+```tsx
+import { useObject } from 'vue-ai-hooks/react'
+import { openai } from 'vue-ai-hooks'
+
+interface Ticket {
+  title: string
+  priority: 'low' | 'high'
+}
+
+export function ObjectBox() {
+  const { object, partialObject, input, handleInputChange, handleSubmit, isLoading, error } =
+    useObject<Ticket>({
+      provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY }),
+      schemaName: 'ticket',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          priority: { type: 'string', enum: ['low', 'high'] }
+        },
+        required: ['title', 'priority']
+      }
+    })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <textarea value={input} onChange={handleInputChange} />
+      <button disabled={isLoading || !input.trim()}>Extract</button>
+      <output>{object ? object.title : partialObject?.title}</output>
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
+```
+
 ## API
 
 ```ts
-import { useChat, useCompletion } from 'vue-ai-hooks/react'
+import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 ```
 
 `useChat(options)` accepts `UseReactChatOptions`:
@@ -116,6 +154,32 @@ import { useChat, useCompletion } from 'vue-ai-hooks/react'
 | `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                        |
 | `clearError()`, `clearTrace()`, `clear()`                   | Reset error, trace, or the full completion state.                |
 | `abortController`                                           | Active `AbortController`, or `null` when no stream is in flight. |
+
+`useObject(options)` accepts `UseReactObjectOptions<T>`:
+
+| Option                                                                   | Description                                                                          |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `provider` / `transport`                                                 | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`.      |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`              | Proxy transport options used when no provider is passed. Defaults to `/api/object`.  |
+| `schema`, `schemaName`, `schemaDescription`, `strict`                    | JSON Schema response format sent through each `ChatRequest`.                         |
+| `initialInput`, `initialObject`, `initialValue`                          | Initial React state; `initialValue` seeds `partialObject`.                           |
+| `defaultRequest`, `id`, `generateId`                                     | Defaults merged into requests and stable ids for trace snapshots.                    |
+| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onError` | Lifecycle callbacks for streamed chunks, parsed partials, traces, and final objects. |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                   | Retry controls; retries only happen before the first streamed chunk arrives.         |
+| `throttleMs`, `experimental_throttle`                                    | Minimum wait in ms between React state updates during fast streams.                  |
+
+`UseReactObjectReturn<T>` exposes plain React state and actions:
+
+| Return                                                           | Description                                                    |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- |
+| `id`, `object`, `partialObject`, `text`, `input`                 | Current structured-output state and raw JSON text.             |
+| `status`, `isLoading`, `error`, `abortController`                | Request lifecycle state.                                       |
+| `lastRequest`, `lastResponse`                                    | Last request and response trace snapshots.                     |
+| `submit(prompt?, options?)`                                      | Run a structured request. Resolves to the final parsed object. |
+| `stop()`                                                         | Abort the active stream; aborted object requests reject.       |
+| `setInput(value)`, `setObject(value)`, `setPartialObject(value)` | Controlled state setters.                                      |
+| `handleInputChange(event)`, `handleSubmit(event, options?)`      | Form helpers for controlled React inputs.                      |
+| `clearError()`, `clearTrace()`, `clear()`                        | Reset error, trace, or the full object state.                  |
 
 The React entry intentionally does not export the Vue-only composables. Import
 the Vue APIs from the root package and React hooks from `vue-ai-hooks/react`.

@@ -58,7 +58,11 @@ import {
   usePersist,
   zhipu
 } from 'vue-ai-hooks'
-import { useChat as useReactChat, useCompletion as useReactCompletion } from 'vue-ai-hooks/react'
+import {
+  useChat as useReactChat,
+  useCompletion as useReactCompletion,
+  useObject as useReactObject
+} from 'vue-ai-hooks/react'
 import type {
   AiRequestStatus,
   AiSdkSendChatTrigger,
@@ -260,7 +264,12 @@ import type {
   UseReactCompletionOptions,
   UseReactCompletionReturn,
   ReactCompletionRequestInfo,
-  ReactCompletionResponseInfo
+  ReactCompletionResponseInfo,
+  UseReactObjectOptions,
+  UseReactObjectReturn,
+  ReactObjectDeepPartial,
+  ReactObjectRequestInfo,
+  ReactObjectResponseInfo
 } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
@@ -279,9 +288,14 @@ describe('public API types', () => {
   it('exports the React subpath without changing the Vue root entry', () => {
     const reactOptions: UseReactChatOptions = { provider }
     const reactCompletionOptions: UseReactCompletionOptions = { provider }
+    const reactObjectOptions: UseReactObjectOptions<{ answer: string }> = {
+      provider,
+      schema: { type: 'object', properties: { answer: { type: 'string' } } }
+    }
 
     expect(typeof useReactChat).toBe('function')
     expect(typeof useReactCompletion).toBe('function')
+    expect(typeof useReactObject).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
     expectTypeOf<UseReactChatReturn>().toMatchTypeOf<{
       messages: Message[]
@@ -301,6 +315,26 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactCompletionReturn['lastResponse']
     >().toEqualTypeOf<ReactCompletionResponseInfo | null>()
+    expectTypeOf(reactObjectOptions).toMatchTypeOf<UseReactObjectOptions<{ answer: string }>>()
+    expectTypeOf<ReturnType<typeof useReactObject<{ answer: string }>>>().toEqualTypeOf<
+      UseReactObjectReturn<{ answer: string }>
+    >()
+    expectTypeOf<UseReactObjectReturn<{ answer: string }>>().toMatchTypeOf<{
+      object: { answer: string } | null
+      partialObject: ReactObjectDeepPartial<{ answer: string }> | null
+      submit: (
+        prompt?: string | Message,
+        options?: Partial<ChatRequest>
+      ) => Promise<{
+        answer: string
+      }>
+    }>()
+    expectTypeOf<
+      UseReactObjectReturn<{ answer: string }>['lastRequest']
+    >().toEqualTypeOf<ReactObjectRequestInfo | null>()
+    expectTypeOf<
+      UseReactObjectReturn<{ answer: string }>['lastResponse']
+    >().toEqualTypeOf<ReactObjectResponseInfo | null>()
   })
 
   it('exports provider factories as ChatProvider-compatible values', () => {

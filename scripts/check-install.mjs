@@ -73,6 +73,9 @@ if (typeof reactEntry.useChat !== 'function') {
 if (typeof reactEntry.useCompletion !== 'function') {
   throw new Error('ESM React useCompletion export failed')
 }
+if (typeof reactEntry.useObject !== 'function') {
+  throw new Error('ESM React useObject export failed')
+}
 `
   )
   run('node', ['esm-check.mjs'], { cwd: tempRoot })
@@ -106,6 +109,9 @@ if (typeof reactEntry.useChat !== 'function') {
 if (typeof reactEntry.useCompletion !== 'function') {
   throw new Error('CJS React useCompletion export failed')
 }
+if (typeof reactEntry.useObject !== 'function') {
+  throw new Error('CJS React useObject export failed')
+}
 `
   )
   run('node', ['cjs-check.cjs'], { cwd: tempRoot })
@@ -115,8 +121,16 @@ if (typeof reactEntry.useCompletion !== 'function') {
     `
 import { useChat, openaiCompatible } from 'vue-ai-hooks'
 import type { ChatProvider, Message, UseChatReturn } from 'vue-ai-hooks'
-import { useChat as useReactChat, useCompletion as useReactCompletion } from 'vue-ai-hooks/react'
-import type { UseReactChatReturn, UseReactCompletionReturn } from 'vue-ai-hooks/react'
+import {
+  useChat as useReactChat,
+  useCompletion as useReactCompletion,
+  useObject as useReactObject
+} from 'vue-ai-hooks/react'
+import type {
+  UseReactChatReturn,
+  UseReactCompletionReturn,
+  UseReactObjectReturn
+} from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
   apiKey: 'test-key',
@@ -126,11 +140,16 @@ const initialMessages: Message[] = [{ id: 'msg_1', role: 'user', content: 'hello
 const chat: UseChatReturn = useChat({ provider, initialMessages })
 const reactChat: UseReactChatReturn = useReactChat({ provider, initialMessages })
 const reactCompletion: UseReactCompletionReturn = useReactCompletion({ provider })
+const reactObject: UseReactObjectReturn<{ answer: string }> = useReactObject({
+  provider,
+  schema: { type: 'object', properties: { answer: { type: 'string' } } }
+})
 
 chat.setMessages(initialMessages)
 reactChat.setMessages(initialMessages)
 reactChat.setInput('hello from react')
 reactCompletion.setInput('complete from react')
+reactObject.setInput('object from react')
 `
   )
   run(
