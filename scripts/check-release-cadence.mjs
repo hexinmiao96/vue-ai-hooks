@@ -5,6 +5,7 @@ const releaseTimeZone = 'Asia/Shanghai'
 const packageJson = JSON.parse(readFileSync('package.json', 'utf8'))
 const packageName = packageJson.name
 const packageVersion = process.env.RELEASE_CADENCE_PACKAGE_VERSION ?? packageJson.version
+const requireUnpublished = process.env.RELEASE_CADENCE_REQUIRE_UNPUBLISHED === 'true'
 const now = process.env.RELEASE_CADENCE_NOW ? new Date(process.env.RELEASE_CADENCE_NOW) : new Date()
 const today = formatDay(now)
 const registry = readRegistryInfo(packageName)
@@ -12,6 +13,16 @@ const publishedTimes = registry.time && typeof registry.time === 'object' ? regi
 const currentPublishedAt = parseDate(publishedTimes[packageVersion])
 
 if (currentPublishedAt) {
+  if (requireUnpublished) {
+    console.error(
+      [
+        `Release cadence check failed: ${packageName}@${packageVersion} is already published.`,
+        `Published at: ${currentPublishedAt.toISOString()}.`,
+        `Bump package.json before publishing a new npm version.`
+      ].join('\n')
+    )
+    process.exit(1)
+  }
   console.log(
     `Release cadence check passed: ${packageName}@${packageVersion} is already published.`
   )

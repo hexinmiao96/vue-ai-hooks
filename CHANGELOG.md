@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   per-thread `useChat({ persist })` message storage.
 - Added a threaded chat smoke check for published bundle thread indexes,
   per-thread message persistence, Date-safe restore, and archive/delete flows.
+- Tightened the publish workflow release cadence check so already-published
+  package versions fail before `npm publish`, while local readiness checks stay
+  repeatable after a release.
 
 ## [0.14.0] - 2026-07-02
 

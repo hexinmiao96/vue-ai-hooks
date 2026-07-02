@@ -153,6 +153,10 @@ expect(
   'Publish workflow must enforce the daily npm release cadence'
 )
 expect(
+  workflows.publish.includes("RELEASE_CADENCE_REQUIRE_UNPUBLISHED: 'true'"),
+  'Publish workflow must reject versions that are already published'
+)
+expect(
   !workflows.publish.includes('NPM_TOKEN'),
   'Publish workflow must not use long-lived NPM_TOKEN secrets'
 )

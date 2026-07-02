@@ -43,6 +43,8 @@ jobs:
 
       - name: Release cadence
         run: pnpm release:cadence
+        env:
+          RELEASE_CADENCE_REQUIRE_UNPUBLISHED: 'true'
 
       - name: Security audit
         run: pnpm security:audit
