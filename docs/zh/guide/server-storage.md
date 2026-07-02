@@ -28,6 +28,87 @@ description: 把 vue-ai-hooks 的 thread 索引和聊天消息保存到自有后
 用 `PUT` 表达幂等保存。如果多个浏览器标签页可能同时编辑同一个 thread，加上 `If-Match`
 或单调递增的 `revision`。
 
+## 客户端适配器契约
+
+Storage adapter 应留在你的应用里，不进入 `vue-ai-hooks` 公共 API。真正需要稳定的是一组
+很小的契约：加载/保存 thread index，加载/保存单个 thread 的 messages，并在写入时带上
+`revision` / `runId`，让后端可以拒绝过期写入或重复 mutation。
+
+```ts
+import type { SerializedChatThreadsState, SerializedMessage } from 'vue-ai-hooks'
+
+interface ChatThreadStorageAdapter {
+  loadThreadIndex(): Promise<SerializedChatThreadsState | null>
+  saveThreadIndex(
+    payload: SerializedChatThreadsState,
+    options?: { revision?: string | number }
+  ): Promise<{ revision?: string | number }>
+  loadThreadMessages(threadId: string): Promise<SerializedMessage[] | null>
+  saveThreadMessages(
+    threadId: string,
+    payload: SerializedMessage[],
+    options?: { revision?: string | number; runId?: string }
+  ): Promise<{ revision?: string | number }>
+  deleteThread(
+    threadId: string,
+    options?: { revision?: string | number }
+  ): Promise<SerializedChatThreadsState | null>
+}
+```
+
+可复制的 HTTP adapter 可以保持和框架无关：
+
+```ts
+import type { SerializedChatThreadsState, SerializedMessage } from 'vue-ai-hooks'
+
+function createHttpThreadStorageAdapter(options: {
+  baseUrl?: string
+  fetcher?: typeof fetch
+}): ChatThreadStorageAdapter {
+  const baseUrl = options.baseUrl ?? '/api/chat'
+  const fetcher = options.fetcher ?? fetch
+
+  async function json<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await fetcher(`${baseUrl}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers: { 'content-type': 'application/json', ...init?.headers }
+    })
+    if (!response.ok) throw new Error(`storage_${response.status}`)
+    return (await response.json()) as T
+  }
+
+  return {
+    loadThreadIndex: () => json<SerializedChatThreadsState | null>('/threads'),
+    saveThreadIndex: (payload, write) =>
+      json<{ revision?: string | number }>('/threads', {
+        method: 'PUT',
+        headers: write?.revision ? { 'if-match': String(write.revision) } : undefined,
+        body: JSON.stringify(payload)
+      }),
+    loadThreadMessages: (threadId) =>
+      json<SerializedMessage[] | null>(`/threads/${encodeURIComponent(threadId)}`),
+    saveThreadMessages: (threadId, payload, write) =>
+      json<{ revision?: string | number }>(`/threads/${encodeURIComponent(threadId)}`, {
+        method: 'PUT',
+        headers: {
+          ...(write?.revision ? { 'if-match': String(write.revision) } : {}),
+          ...(write?.runId ? { 'x-run-id': write.runId } : {})
+        },
+        body: JSON.stringify(payload)
+      }),
+    deleteThread: (threadId, write) =>
+      json<SerializedChatThreadsState | null>(`/threads/${encodeURIComponent(threadId)}`, {
+        method: 'DELETE',
+        headers: write?.revision ? { 'if-match': String(write.revision) } : undefined
+      })
+  }
+}
+```
+
+在明确生命周期边界调用这个 adapter。请求签名、tenant 校验、加密、留存策略和数据库专属重试
+应保留在服务端。
+
 ## IndexedDB 本地持久化适配器（异步）
 
 `persist` 的运行时实现使用的是浏览器 `Storage` 接口，属于同步接口，不能直接接原生

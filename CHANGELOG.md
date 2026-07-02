@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   version per Asia/Shanghai calendar day.
 - Added production server storage recipes for tenant-scoped thread indexes,
   message bodies, restore smoke tests, and backend validation boundaries.
+- Added an app-owned `ChatThreadStorageAdapter` contract and HTTP adapter recipe
+  for production thread/message persistence.
 - Added regenerate/branch production recipes for stored threads, idempotent
   `runId` handling, branch restore smoke tests, and audit-safe retries.
 - Added durable tool approval recipes for backend-owned approval records,

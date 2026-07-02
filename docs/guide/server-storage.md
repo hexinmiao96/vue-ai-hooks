@@ -31,6 +31,88 @@ Do not store provider credentials or raw upstream responses in either payload.
 Use `PUT` as an idempotent save. Add `If-Match` or a monotonically increasing
 `revision` when multiple browser tabs can edit the same thread.
 
+## Client adapter contract
+
+Keep the storage adapter in your app, not in `vue-ai-hooks`. The useful contract
+is small: load and save the thread index, load and save one thread's messages,
+and carry `revision` / `runId` through writes so your backend can reject stale or
+duplicate mutations.
+
+```ts
+import type { SerializedChatThreadsState, SerializedMessage } from 'vue-ai-hooks'
+
+interface ChatThreadStorageAdapter {
+  loadThreadIndex(): Promise<SerializedChatThreadsState | null>
+  saveThreadIndex(
+    payload: SerializedChatThreadsState,
+    options?: { revision?: string | number }
+  ): Promise<{ revision?: string | number }>
+  loadThreadMessages(threadId: string): Promise<SerializedMessage[] | null>
+  saveThreadMessages(
+    threadId: string,
+    payload: SerializedMessage[],
+    options?: { revision?: string | number; runId?: string }
+  ): Promise<{ revision?: string | number }>
+  deleteThread(
+    threadId: string,
+    options?: { revision?: string | number }
+  ): Promise<SerializedChatThreadsState | null>
+}
+```
+
+A copyable HTTP adapter can stay framework-agnostic:
+
+```ts
+import type { SerializedChatThreadsState, SerializedMessage } from 'vue-ai-hooks'
+
+function createHttpThreadStorageAdapter(options: {
+  baseUrl?: string
+  fetcher?: typeof fetch
+}): ChatThreadStorageAdapter {
+  const baseUrl = options.baseUrl ?? '/api/chat'
+  const fetcher = options.fetcher ?? fetch
+
+  async function json<T>(path: string, init?: RequestInit): Promise<T> {
+    const response = await fetcher(`${baseUrl}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers: { 'content-type': 'application/json', ...init?.headers }
+    })
+    if (!response.ok) throw new Error(`storage_${response.status}`)
+    return (await response.json()) as T
+  }
+
+  return {
+    loadThreadIndex: () => json<SerializedChatThreadsState | null>('/threads'),
+    saveThreadIndex: (payload, write) =>
+      json<{ revision?: string | number }>('/threads', {
+        method: 'PUT',
+        headers: write?.revision ? { 'if-match': String(write.revision) } : undefined,
+        body: JSON.stringify(payload)
+      }),
+    loadThreadMessages: (threadId) =>
+      json<SerializedMessage[] | null>(`/threads/${encodeURIComponent(threadId)}`),
+    saveThreadMessages: (threadId, payload, write) =>
+      json<{ revision?: string | number }>(`/threads/${encodeURIComponent(threadId)}`, {
+        method: 'PUT',
+        headers: {
+          ...(write?.revision ? { 'if-match': String(write.revision) } : {}),
+          ...(write?.runId ? { 'x-run-id': write.runId } : {})
+        },
+        body: JSON.stringify(payload)
+      }),
+    deleteThread: (threadId, write) =>
+      json<SerializedChatThreadsState | null>(`/threads/${encodeURIComponent(threadId)}`, {
+        method: 'DELETE',
+        headers: write?.revision ? { 'if-match': String(write.revision) } : undefined
+      })
+  }
+}
+```
+
+Use this adapter at explicit lifecycle boundaries. Keep request signing, tenant
+checks, encryption, retention, and database-specific retries on the server.
+
 ## IndexedDB local durability adapter (async)
 
 `persist` in the runtime uses the browser `Storage` interface and is synchronous,

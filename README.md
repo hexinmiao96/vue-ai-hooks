@@ -744,7 +744,8 @@ selection, rename, archive, restore, delete, recency updates, and Date-safe
 thread persistence. Current follow-up work is focused on production agent bridge
 recipes, durable tool approval workflows, regenerate/branch workflows, and the
 [server storage recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/server-storage.md)
-for tenant-scoped thread indexes and message bodies. Feature planning lives in
+for tenant-scoped thread indexes, message bodies, and app-owned storage adapter
+contracts. Feature planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.
 

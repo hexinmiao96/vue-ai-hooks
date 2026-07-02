@@ -600,7 +600,7 @@ retryable 错误，而不是原样暴露上游错误体。
 composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
 质量门禁。本版本新增 `useChatThreads`，用于本地 thread 索引、当前 thread、重命名、
 归档、恢复、删除、最近更新时间和 Date-safe thread 持久化。当前后续工作聚焦生产 agent
-桥接配方、持久工具审批工作流、重新生成/分支工作流，以及面向 tenant 级 thread index 和 message body 的
+桥接配方、持久工具审批工作流、重新生成/分支工作流，以及面向 tenant 级 thread index、message body 和应用自有 storage adapter contract 的
 [服务端存储配方](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/server-storage.md)。功能规划放在
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub
 issue 只记录可复现 bug。

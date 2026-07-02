@@ -85,11 +85,14 @@ planning.
 - Added after 0.14.0: an IndexedDB local durability recipe in server storage
   docs for async hydration, explicit save boundaries, and smoother no-server
   migration to backend storage.
+- Added after 0.14.0: an app-owned `ChatThreadStorageAdapter` contract and
+  copyable HTTP adapter recipe for tenant-scoped thread indexes, message
+  bodies, `revision`, and idempotent `runId` writes without adding a backend
+  abstraction to the package.
 - Continue exploring regenerate/branch patterns without embedding a backend
   database abstraction in the package.
-- In progress after 0.14.0: production server storage and regenerate/branch
-  recipes for tenant-scoped thread indexes, message bodies, restore smoke tests,
-  idempotent `runId` handling, and concurrency boundaries.
+- In progress after 0.14.0: continue hardening regenerate/branch recipes for
+  restore smoke tests, idempotent `runId` handling, and concurrency boundaries.
 
 ### Later
 
