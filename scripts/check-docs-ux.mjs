@@ -383,6 +383,8 @@ for (const snippet of [
   'pnpm release:check',
   '## Production smoke test',
   'without duplicate `runId` writes',
+  'branch_revision_conflict',
+  'run_in_progress',
   'GitHub issues should contain reproducible bugs only'
 ]) {
   expect(
@@ -416,6 +418,8 @@ for (const snippet of [
   'pnpm release:check',
   '## 生产 smoke test',
   '没有重复写入相同 `runId`',
+  'branch_revision_conflict',
+  'run_in_progress',
   'GitHub issue 只记录可复现 bug'
 ]) {
   expect(
@@ -497,6 +501,12 @@ for (const snippet of [
   'inspectRequestTrace',
   'safeValidateMessages()',
   'idempotent key',
+  'Conflict and idempotency contract',
+  'branch_revision_conflict',
+  'latestRevision',
+  'run_in_progress',
+  'status: "replayed"',
+  'creates at most one assistant message',
   'tenant',
   'Do not store provider credentials',
   'Restore smoke test',
@@ -525,6 +535,12 @@ for (const snippet of [
   'inspectRequestTrace',
   'safeValidateMessages()',
   '幂等 key',
+  '冲突和幂等契约',
+  'branch_revision_conflict',
+  'latestRevision',
+  'run_in_progress',
+  'status: "replayed"',
+  '一个 `runId` 最多创建一条 assistant',
   'tenant',
   'branch 或 message JSON 里保存 Provider 凭据',
   'Restore smoke test',

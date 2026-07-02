@@ -89,10 +89,12 @@ planning.
   copyable HTTP adapter recipe for tenant-scoped thread indexes, message
   bodies, `revision`, and idempotent `runId` writes without adding a backend
   abstraction to the package.
-- Continue exploring regenerate/branch patterns without embedding a backend
-  database abstraction in the package.
-- In progress after 0.14.0: continue hardening regenerate/branch recipes for
-  restore smoke tests, idempotent `runId` handling, and concurrency boundaries.
+- Added after 0.14.0: regenerate/branch conflict contracts for stale
+  `revision`, replayed `runId`, `branch_revision_conflict`, and
+  `run_in_progress` handling without embedding a backend database abstraction in
+  the package.
+- Continue validating these production recipes through local and CI gates before
+  the next release.
 
 ### Later
 

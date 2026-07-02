@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for production thread/message persistence.
 - Added regenerate/branch production recipes for stored threads, idempotent
   `runId` handling, branch restore smoke tests, and audit-safe retries.
+- Added regenerate/branch conflict contracts for stale `revision`,
+  `branch_revision_conflict`, `run_in_progress`, and replayed `runId` handling.
 - Added durable tool approval recipes for backend-owned approval records,
   idempotent execution, safe renderers, and human-in-the-loop audit trails.
 - Added backend agent bridge recipes for LangChain, LangGraph, and custom agent

@@ -135,9 +135,12 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
    values intact.
 9. Regenerate one assistant message, branch from the same user turn, reload, and
    confirm both branches restore without duplicate `runId` writes.
-10. Approve and reject one privileged tool request, then confirm duplicate
+10. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
+    a second regenerate while one is streaming and confirm `run_in_progress` or
+    same-`runId` resume behavior.
+11. Approve and reject one privileged tool request, then confirm duplicate
     `runId` submissions do not execute the tool twice.
-11. Confirm logs have trace ids but no provider API keys.
+12. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

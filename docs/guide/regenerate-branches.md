@@ -87,6 +87,77 @@ The backend should return the active branch pointer before the browser calls
 `useChat().regenerate()`, or it can combine branch creation and provider
 streaming behind your `/api/chat` route.
 
+## Conflict and idempotency contract
+
+Treat branch writes like database writes, not UI-only state. A production
+regenerate route should return one of these browser-safe outcomes:
+
+| Case                         | HTTP status | Response fields                                              | Browser action                                      |
+| ---------------------------- | ----------- | ------------------------------------------------------------ | --------------------------------------------------- |
+| Fresh write accepted         | `200`       | `branchId`, `runId`, `revision`, `status: "accepted"`        | Start or continue `chat.regenerate()`.              |
+| Same `runId` replayed        | `200`       | `branchId`, `runId`, `revision`, `status: "replayed"`        | Reuse the stored run; do not create a new message.  |
+| Stale branch revision        | `409`       | `error: "branch_revision_conflict"`, `latestRevision`        | Reload branch state before offering retry.          |
+| Existing run still streaming | `409`       | `error: "run_in_progress"`, `runId`, `resumeUrl` or trace id | Resume or show "still running"; do not start again. |
+| Run failed or was aborted    | `200`       | `branchId`, `runId`, `status: "failed" \| "aborted"`         | Show retry with a fresh `runId`.                    |
+
+Example stale-revision response:
+
+```json
+{
+  "error": "branch_revision_conflict",
+  "threadId": "thread_support_1",
+  "branchId": "branch_9p8",
+  "expectedRevision": 8,
+  "latestRevision": 9,
+  "retryable": true
+}
+```
+
+Handle it by aborting any stale stream, loading the latest branch, and retrying
+only after the user confirms the newer context:
+
+```ts
+async function regenerateWithConflictHandling(sourceMessageId: string) {
+  const runId = crypto.randomUUID()
+  const next = await createRegenerateRun({
+    threadId: branch.threadId,
+    branchId: branch.branchId,
+    sourceMessageId,
+    runId,
+    reason: 'manual-regenerate',
+    revision: branch.revision
+  })
+
+  if (next.status === 'replayed') {
+    await loadStoredRun(next.runId)
+    return
+  }
+
+  await chat.regenerate({
+    messageId: sourceMessageId,
+    body: {
+      threadId: next.threadId,
+      branchId: next.branchId,
+      sourceMessageId,
+      runId: next.runId,
+      revision: next.revision
+    }
+  })
+}
+
+async function onRegenerateConflict(conflict: { branchId: string; latestRevision: number }) {
+  chat.stop()
+  const latest = await loadBranch(branch.threadId, conflict.branchId)
+  branch.revision = conflict.latestRevision
+  chat.setMessages(deserializeMessages(latest.messages) ?? [])
+}
+```
+
+The exact helper names are app-owned. The invariant is stable: one `runId`
+creates at most one assistant message, stale `revision` values never overwrite a
+newer branch, and conflict responses never include provider credentials or raw
+upstream bodies.
+
 ## Browser wiring
 
 Hydrate the selected branch, prune only for the provider request, and keep the
@@ -199,6 +270,11 @@ Before exposing the UI:
    `threadId`, `branchId`, `runId`, and no provider secrets.
 7. Repeat the regenerate request with the same `runId` and confirm the backend
    returns the same run instead of creating duplicate assistant messages.
+8. Send a stale `revision` and confirm the backend returns
+   `branch_revision_conflict` with `latestRevision`; the browser should reload
+   branch messages before retrying.
+9. Start a second regenerate while the first run is still streaming and confirm
+   `run_in_progress` is returned or the stream resumes from the same `runId`.
 
 If this smoke test fails, keep the feature behind an internal flag. Broken
 branch restore is harder to repair after real users start depending on it.

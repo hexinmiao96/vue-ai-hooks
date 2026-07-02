@@ -81,6 +81,75 @@ POST /api/chat
 后端可以先返回 active branch 指针，再由浏览器调用 `useChat().regenerate()`；也可以把
 分支创建和 provider streaming 合并在自己的 `/api/chat` 路由里。
 
+## 冲突和幂等契约
+
+Branch 写入要按数据库写入处理，而不是只当 UI state。生产里的 regenerate 路由应返回下面
+这些浏览器安全的结果之一：
+
+| 场景                    | HTTP status | Response fields                                              | 浏览器动作                                    |
+| ----------------------- | ----------- | ------------------------------------------------------------ | --------------------------------------------- |
+| 新写入被接受            | `200`       | `branchId`, `runId`, `revision`, `status: "accepted"`        | 启动或继续 `chat.regenerate()`。              |
+| 同一个 `runId` 重放     | `200`       | `branchId`, `runId`, `revision`, `status: "replayed"`        | 复用已存 run；不要创建新的 message。          |
+| branch revision 过期    | `409`       | `error: "branch_revision_conflict"`, `latestRevision`        | 重新加载 branch state，再让用户确认是否重试。 |
+| 已有 run 仍在 streaming | `409`       | `error: "run_in_progress"`, `runId`, `resumeUrl` 或 trace id | 恢复或展示“仍在运行”；不要重复启动。          |
+| run 失败或已中止        | `200`       | `branchId`, `runId`, `status: "failed" \| "aborted"`         | 用新的 `runId` 展示重试入口。                 |
+
+过期 revision 的响应示例：
+
+```json
+{
+  "error": "branch_revision_conflict",
+  "threadId": "thread_support_1",
+  "branchId": "branch_9p8",
+  "expectedRevision": 8,
+  "latestRevision": 9,
+  "retryable": true
+}
+```
+
+浏览器处理方式是：先中止过期 stream，加载最新 branch，再让用户确认是否基于新上下文重试：
+
+```ts
+async function regenerateWithConflictHandling(sourceMessageId: string) {
+  const runId = crypto.randomUUID()
+  const next = await createRegenerateRun({
+    threadId: branch.threadId,
+    branchId: branch.branchId,
+    sourceMessageId,
+    runId,
+    reason: 'manual-regenerate',
+    revision: branch.revision
+  })
+
+  if (next.status === 'replayed') {
+    await loadStoredRun(next.runId)
+    return
+  }
+
+  await chat.regenerate({
+    messageId: sourceMessageId,
+    body: {
+      threadId: next.threadId,
+      branchId: next.branchId,
+      sourceMessageId,
+      runId: next.runId,
+      revision: next.revision
+    }
+  })
+}
+
+async function onRegenerateConflict(conflict: { branchId: string; latestRevision: number }) {
+  chat.stop()
+  const latest = await loadBranch(branch.threadId, conflict.branchId)
+  branch.revision = conflict.latestRevision
+  chat.setMessages(deserializeMessages(latest.messages) ?? [])
+}
+```
+
+这些 helper 名称由应用自己决定；不变的是三个约束：一个 `runId` 最多创建一条 assistant
+message；过期 `revision` 不能覆盖更新的 branch；冲突响应不能包含 Provider 凭据或原始上游
+响应 body。
+
 ## 浏览器接入
 
 先恢复当前 branch，只在请求 provider 前裁剪上下文，持久化副本保持完整：
@@ -186,6 +255,10 @@ branch，还是只作为临时对比 run 存在。
    且没有 Provider secret。
 7. 使用同一个 `runId` 重复重新生成请求，确认后端返回同一个 run，而不是创建重复
    assistant 消息。
+8. 发送过期 `revision`，确认后端返回 `branch_revision_conflict` 和 `latestRevision`；
+   浏览器应先重新加载 branch messages，再允许重试。
+9. 在第一个 run 仍在 streaming 时启动第二次 regenerate，确认返回 `run_in_progress`，
+   或从同一个 `runId` 安全恢复 stream。
 
 如果这条 smoke test 失败，先把功能留在内部 flag 后面。真实用户开始依赖后，再修复错误的
 branch 恢复成本会高很多。

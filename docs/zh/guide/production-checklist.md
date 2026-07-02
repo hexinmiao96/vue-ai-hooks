@@ -118,8 +118,10 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
 8. 刷新一个服务端存储的 thread，确认 messages 恢复后仍保留 `Date` 值。
 9. 重新生成一条 assistant 消息，从同一条 user 消息创建 branch，刷新后确认两个分支都能恢复，
    且没有重复写入相同 `runId`。
-10. 分别审批通过和拒绝一个特权工具请求，确认重复提交相同 `runId` 不会执行两次。
-11. 确认日志里有 trace id，但没有 Provider API key。
+10. 发送过期 branch `revision`，确认返回 `branch_revision_conflict`；在一个 run streaming
+    时启动第二次 regenerate，确认返回 `run_in_progress` 或安全恢复同一个 `runId`。
+11. 分别审批通过和拒绝一个特权工具请求，确认重复提交相同 `runId` 不会执行两次。
+12. 确认日志里有 trace id，但没有 Provider API key。
 
 ## Issue 规则
 
