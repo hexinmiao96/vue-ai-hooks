@@ -4,6 +4,7 @@ import {
   AiHooksError,
   anthropic,
   Chat,
+  classifyInspectionError,
   convertToModelMessages,
   cosineSimilarity,
   createIdGenerator,
@@ -21,6 +22,7 @@ import {
   generateId,
   hasToolCall,
   experimental_useObject,
+  inspectRequestTrace,
   isStepCount,
   jsonSchema,
   lastAssistantMessageIsCompleteWithToolCalls,
@@ -115,6 +117,10 @@ import type {
   ImageGenerationResponseInfo,
   ImageGenerationResult,
   ImageUrlPart,
+  InspectionErrorCategory,
+  InspectionErrorSummary,
+  InspectionStatus,
+  InspectRequestTraceOptions,
   Message,
   MessageContent,
   MessageDataPart,
@@ -159,6 +165,7 @@ import type {
   RerankRequestInfo,
   RerankResponseInfo,
   RerankResult,
+  RequestInspectionSnapshot,
   RetryContext,
   RetryOptions,
   ResumeChatOptions,
@@ -433,6 +440,33 @@ describe('public API types', () => {
     expectTypeOf(parseSSE).parameter(0).toEqualTypeOf<Response>()
     expectTypeOf(parseSSE).parameter(1).toEqualTypeOf<AbortSignal | undefined>()
     expectTypeOf(parseSSE).returns.toEqualTypeOf<AsyncGenerator<Record<string, unknown>>>()
+    expectTypeOf(classifyInspectionError).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(classifyInspectionError).returns.toEqualTypeOf<InspectionErrorSummary | null>()
+    expectTypeOf(inspectRequestTrace)
+      .parameter(0)
+      .toEqualTypeOf<InspectRequestTraceOptions<unknown, unknown>>()
+    expectTypeOf(inspectRequestTrace).returns.toEqualTypeOf<
+      RequestInspectionSnapshot<unknown, unknown>
+    >()
+    expectTypeOf<InspectionStatus>().toEqualTypeOf<AiRequestStatus | 'idle'>()
+    expectTypeOf<InspectionErrorCategory>().toEqualTypeOf<
+      | 'abort'
+      | 'authentication'
+      | 'authorization'
+      | 'rate-limit'
+      | 'timeout'
+      | 'network'
+      | 'provider'
+      | 'validation'
+      | 'unknown'
+    >()
+    expectTypeOf<InspectionErrorSummary>().toMatchTypeOf<{
+      category: InspectionErrorCategory
+      message: string
+      retryable: boolean
+      hasCause: boolean
+      status?: number
+    }>()
 
     expect(openai({ apiKey: 'test-key' }).id).toBe('openai-compatible')
     expect(openrouter({ apiKey: 'test-key' }).id).toBe('openrouter')

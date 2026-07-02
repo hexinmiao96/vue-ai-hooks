@@ -709,6 +709,81 @@ try {
 Use `status` for HTTP-aware retry or user messaging decisions. Use `cause` only
 for diagnostics because providers may store raw upstream response bodies there.
 
+## Inspection helpers
+
+`classifyInspectionError(error)` turns unknown thrown values into a render-safe
+`InspectionErrorSummary`:
+
+```ts
+type InspectionErrorCategory =
+  | 'abort'
+  | 'authentication'
+  | 'authorization'
+  | 'rate-limit'
+  | 'timeout'
+  | 'network'
+  | 'provider'
+  | 'validation'
+  | 'unknown'
+
+interface InspectionErrorSummary {
+  category: InspectionErrorCategory
+  message: string
+  name?: string
+  status?: number
+  retryable: boolean
+  hasCause: boolean
+}
+```
+
+The raw `cause` is intentionally not copied into the summary. Use `hasCause` to
+show that deeper diagnostics exist without rendering provider response bodies or
+tenant data in a browser panel.
+
+`inspectRequestTrace(options)` combines existing `lastRequest`, `lastResponse`,
+`status`, and `error` values into one `RequestInspectionSnapshot`:
+
+```ts
+type InspectionStatus = AiRequestStatus | 'idle'
+
+interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unknown> {
+  status?: InspectionStatus
+  error?: unknown
+  lastRequest?: TRequest | null
+  lastResponse?: TResponse | null
+  now?: Date | string | number
+}
+
+interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
+  status: InspectionStatus
+  request: TRequest | null
+  response: TResponse | null
+  error: InspectionErrorSummary | null
+  providerId?: string
+  api?: string
+  attempt?: number
+  trigger?: string
+  aiSdkTrigger?: string
+  hasRequest: boolean
+  hasResponse: boolean
+  hasStream?: boolean
+  retryable: boolean
+  summary: string
+  timestamp: string
+}
+```
+
+```ts
+import { inspectRequestTrace } from 'vue-ai-hooks'
+
+const snapshot = inspectRequestTrace({
+  status: chat.status.value,
+  error: chat.error.value,
+  lastRequest: chat.lastRequest.value,
+  lastResponse: chat.lastResponse.value
+})
+```
+
 ## Retry options
 
 `UseChatOptions`, `UseCompletionOptions`, `UseEmbeddingOptions`,

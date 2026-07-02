@@ -196,6 +196,7 @@ const { messages: messages6, append: append6 } = useChat({
 
 - [Examples](/examples/) — choose the right composable by product task
 - [Providers](/guide/providers) — how to add your own
+- [Inspection](/guide/inspection) — inspect request traces and provider failures
 - [useChat reference](/reference/use-chat) — full API
 - [useCompletion reference](/reference/use-completion)
 - [useEmbedding reference](/reference/use-embedding)
