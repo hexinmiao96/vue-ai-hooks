@@ -1,8 +1,8 @@
 # React hooks
 
-`vue-ai-hooks/react` 是可选 React 入口。目前它提供 React 版 `useChat` 和
-`useCompletion`，用于流式 React UI，同时复用根入口里的 Provider、proxy transport、
-请求追踪和 stream 格式。
+`vue-ai-hooks/react` 是可选 React 入口。目前它提供 React 版 `useChat`、
+`useCompletion` 和 `useObject`，用于流式 React UI，同时复用根入口里的 Provider、proxy
+transport、请求追踪和 stream 格式。
 
 只有使用这个子路径时，消费侧应用才需要安装 React：
 
@@ -57,10 +57,47 @@ export function CompletionBox() {
 }
 ```
 
+JSON Schema 结构化输出可以使用：
+
+```tsx
+import { useObject } from 'vue-ai-hooks/react'
+import { openai } from 'vue-ai-hooks'
+
+interface Ticket {
+  title: string
+  priority: 'low' | 'high'
+}
+
+export function ObjectBox() {
+  const { object, partialObject, input, handleInputChange, handleSubmit, isLoading, error } =
+    useObject<Ticket>({
+      provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY }),
+      schemaName: 'ticket',
+      schema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string' },
+          priority: { type: 'string', enum: ['low', 'high'] }
+        },
+        required: ['title', 'priority']
+      }
+    })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <textarea value={input} onChange={handleInputChange} />
+      <button disabled={isLoading || !input.trim()}>提取</button>
+      <output>{object ? object.title : partialObject?.title}</output>
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
+```
+
 ## API
 
 ```ts
-import { useChat, useCompletion } from 'vue-ai-hooks/react'
+import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 ```
 
 `useChat(options)` 接收 `UseReactChatOptions`：
@@ -116,6 +153,32 @@ import { useChat, useCompletion } from 'vue-ai-hooks/react'
 | `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控 React 输入框和表单 helper。                |
 | `clearError()`, `clearTrace()`, `clear()`                   | 重置错误、trace 或完整补全状态。                |
 | `abortController`                                           | 当前 `AbortController`，没有流进行时为 `null`。 |
+
+`useObject(options)` 接收 `UseReactObjectOptions<T>`：
+
+| 选项                                                                     | 说明                                                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `provider` / `transport`                                                 | `ChatProvider`，可以是 `openai()`、Provider preset 或 `proxyProvider()`。 |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`              | 没有传 provider 时使用的 proxy transport 配置；默认 `/api/object`。       |
+| `schema`, `schemaName`, `schemaDescription`, `strict`                    | 每次 `ChatRequest` 携带的 JSON Schema response format。                   |
+| `initialInput`, `initialObject`, `initialValue`                          | 初始 React 状态；`initialValue` 会填充 `partialObject`。                  |
+| `defaultRequest`, `id`, `generateId`                                     | 合并到请求里的默认值，以及 trace 快照使用的稳定 id。                      |
+| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onError` | 流式 chunk、已解析 partial、trace 和最终对象生命周期回调。                |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                   | 重试控制；只有首个 chunk 到达前的失败会重试。                             |
+| `throttleMs`, `experimental_throttle`                                    | 快速流式响应期间 React state 更新的最小间隔。                             |
+
+`UseReactObjectReturn<T>` 暴露普通 React state 和操作：
+
+| 返回值                                                           | 说明                                        |
+| ---------------------------------------------------------------- | ------------------------------------------- |
+| `id`, `object`, `partialObject`, `text`, `input`                 | 当前结构化输出状态和原始 JSON 文本。        |
+| `status`, `isLoading`, `error`, `abortController`                | 请求生命周期状态。                          |
+| `lastRequest`, `lastResponse`                                    | 最近一次请求和响应追踪快照。                |
+| `submit(prompt?, options?)`                                      | 执行结构化请求，resolve 最终解析对象。      |
+| `stop()`                                                         | 中止当前流；被中止的 object 请求会 reject。 |
+| `setInput(value)`, `setObject(value)`, `setPartialObject(value)` | 受控状态 setter。                           |
+| `handleInputChange(event)`, `handleSubmit(event, options?)`      | 受控 React 输入框和表单 helper。            |
+| `clearError()`, `clearTrace()`, `clear()`                        | 重置错误、trace 或完整 object 状态。        |
 
 React 入口不会导出 Vue-only composables。Vue API 从根包导入，React hooks 从
 `vue-ai-hooks/react` 导入。

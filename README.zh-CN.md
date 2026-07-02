@@ -3,7 +3,7 @@
 [English](./README.md) | 简体中文
 
 > 用于构建 AI 应用的 Vue 3 组合式函数库。
-> 流式优先、多 Provider、完整类型支持，并提供可选 React 聊天和补全入口。
+> 流式优先、多 Provider、完整类型支持，并提供可选 React 聊天、补全和结构化对象入口。
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![CI](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml/badge.svg)](https://github.com/hexinmiao96/vue-ai-hooks/actions/workflows/ci.yml)
@@ -13,7 +13,7 @@
 [![TypeScript](https://img.shields.io/badge/typescript-strict-3178c6.svg)](https://www.typescriptlang.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
-`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供十个 Vue 组合式函数、可选的 React `useChat` / `useCompletion` 子入口、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
+`vue-ai-hooks` 把你在 [VueUse](https://vueuse.org) 或 [Axios](https://axios-http.com) 中熟悉的开发体验带到 LLM 应用里。它提供十个 Vue 组合式函数、可选的 React `useChat` / `useCompletion` / `useObject` 子入口、可插拔 Provider，并帮你处理 Server-Sent Events 流式响应。支持 OpenAI 以及任何 OpenAI-compatible 服务，例如 DeepSeek、Moonshot、智谱、Ollama 的 OpenAI shim、vLLM、Gemini 的 OpenAI-compatible 端点等。
 
 ```ts
 import { useChat, openai } from 'vue-ai-hooks'
@@ -41,8 +41,8 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 - **十个组合式函数，一套心智模型**：`useChat`、`useCompletion`、`useEmbedding`、
   `useGeneration`、`useImage`、`useVideo`、`useSpeech`、`useTranscription`、
   `useRerank` 和 `useObject`。
-- **可选 React 聊天和补全支持**：从 `vue-ai-hooks/react` 导入 `useChat` 或
-  `useCompletion`，在 React 中复用同一套 Provider 和请求类型管理流式状态。
+- **可选 React 聊天、补全和结构化对象支持**：从 `vue-ai-hooks/react` 导入
+  `useChat`、`useCompletion` 或 `useObject`，在 React 中复用同一套 Provider 和请求类型管理流式状态。
 - **流式优先的 Vue 状态**：内置 SSE 解析、AbortController、节流、重试、生命周期回调、
   同 id 共享状态，以及统一的 `status`/`error` 控制。
 - **Provider 和代理覆盖**：OpenAI、Gemini、OpenRouter、Anthropic、后端代理、Azure OpenAI、
@@ -116,7 +116,7 @@ const { messages, input, handleSubmit, isLoading, stop, error } = useChat({
 ### React 流式聊天
 
 ```tsx
-import { useChat, useCompletion } from 'vue-ai-hooks/react'
+import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'
 
 export function ChatPanel() {
@@ -145,6 +145,25 @@ export function ChatPanel() {
 ```tsx
 const { completion, input, handleInputChange, handleSubmit, isLoading } = useCompletion({
   provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY })
+})
+```
+
+React 中的结构化 JSON 可以使用同一套 Provider 契约：
+
+```tsx
+const { object, partialObject, input, handleInputChange, handleSubmit } = useObject<{
+  title: string
+  priority: 'low' | 'high'
+}>({
+  provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY }),
+  schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string' },
+      priority: { type: 'string', enum: ['low', 'high'] }
+    },
+    required: ['title', 'priority']
+  }
 })
 ```
 

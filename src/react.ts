@@ -29,6 +29,17 @@ export {
   type UseReactCompletionReturn
 } from './react/useCompletion'
 
+export {
+  useObject,
+  type ReactObjectDeepPartial,
+  type ReactObjectFinishInfo,
+  type ReactObjectRequestInfo,
+  type ReactObjectResponseInfo,
+  type ReactObjectStatus,
+  type UseReactObjectOptions,
+  type UseReactObjectReturn
+} from './react/useObject'
+
 export type {
   Message,
   ModelMessage,
@@ -54,6 +65,7 @@ export type {
   ChatChunk,
   ChatStreamProtocol,
   CompletionRequest,
+  ResponseFormat,
   RetryContext,
   RetryOptions,
   StreamThrottleOptions

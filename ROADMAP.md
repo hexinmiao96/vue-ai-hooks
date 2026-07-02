@@ -11,8 +11,8 @@ planning.
 2. Make docs and demos easier to follow by product task, not only by API name.
 3. Add provider presets and production proxy recipes for common OpenAI-compatible
    services while keeping browser keys out of production apps.
-4. Grow the React entry from a chat migration bridge toward focused parity for
-   completion, object output, and shared stream helpers.
+4. Grow the React entry from chat/completion/object migration hooks toward
+   focused parity for the most common remaining hooks.
 5. Strengthen tool approval and agent-event adapter patterns without turning the
    package into a full agent framework.
 
@@ -44,8 +44,8 @@ planning.
 
 ### 0.8.x
 
-- Expand React support beyond the existing chat and completion hooks toward
-  object output and shared stream helpers.
+- Expand React support beyond the existing chat, completion, and object hooks
+  toward shared stream helpers.
 - Add agent-event adapter recipes for services that emit tool approval,
   progress, and human-in-the-loop events.
 
