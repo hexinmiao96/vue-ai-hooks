@@ -38,6 +38,19 @@ storage, and operations.
   `/api/transcription`, and `/api/rerank`.
 - Test aborts, disconnects, and retry-before-first-chunk behavior.
 
+## Tools and approvals
+
+- Follow the [tool approval recipe](/guide/tool-approvals) before exposing
+  privileged tools for billing, account changes, data access, or infrastructure.
+- Store approval records outside message JSON with `approvalId`, `toolCallId`,
+  `runId`, reviewer, decision, redacted arguments, trace id, and policy version.
+- Treat approve and reject routes as backend-owned operations. The browser can
+  render a request, but it must not become the authority for privileged tools.
+- Make approval execution idempotent so repeated requests with the same `runId`
+  cannot execute a tool twice.
+- Render only whitelisted, redacted fields in approval UI. Never show raw tool
+  arguments, provider credentials, stack traces, or upstream error bodies.
+
 ## UI state and inspection
 
 - Render `status`, `isLoading`, `error`, and `stop()` states in the UI.
@@ -90,7 +103,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
    values intact.
 8. Regenerate one assistant message, branch from the same user turn, reload, and
    confirm both branches restore without duplicate `runId` writes.
-9. Confirm logs have trace ids but no provider API keys.
+9. Approve and reject one privileged tool request, then confirm duplicate
+   `runId` submissions do not execute the tool twice.
+10. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

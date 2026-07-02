@@ -16,6 +16,7 @@ npm install vue-ai-hooks
 | ---------------------------- | ----------------------------------------------------- |
 | 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)        |
 | 按产品任务选择 demo          | 阅读 [任务型 Demo](/zh/guide/task-demos)              |
+| 增加持久工具审批             | 按 [工具审批配方](/zh/guide/tool-approvals)           |
 | 试 React 迁移入口            | 跑 [React 聊天 quickstart](#不需要-api-key-的-demo)   |
 | 比较库的适用边界             | 阅读 [选择 vue-ai-hooks](/zh/guide/choosing)          |
 | 从 v0.3.x 升级               | 阅读 [v0.4.0 升级指南](/zh/guide/upgrade-0.4)         |

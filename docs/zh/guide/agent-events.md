@@ -111,7 +111,8 @@ yield { type: 'tool-error', id: 'call_1', name: 'chargeCard', errorText: 'User r
 ```
 
 adapter 不执行工具，也不提供沙箱。它只保留足够的 id、名称、输入、输出和错误文本，
-让 `useChat` 和渲染器能展示稳定 timeline。
+让 `useChat` 和渲染器能展示稳定 timeline。持久人工审批、审批人审计轨迹、幂等执行和安全
+renderer contract 见 [工具审批配方](/zh/guide/tool-approvals)。
 
 ## Data part 命名
 

@@ -88,7 +88,8 @@ planning.
 - Expand React support toward shared stream helpers only where it improves
   migration confidence.
 - Add production agent recipes for services that need durable approvals,
-  workflow audit trails, and human-in-the-loop timelines.
+  workflow audit trails, human-in-the-loop timelines, idempotent tool execution,
+  and safe approval renderer contracts.
 
 ## Non-goals
 

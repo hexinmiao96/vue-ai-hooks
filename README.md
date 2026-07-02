@@ -631,6 +631,8 @@ If you are porting an AI SDK UI surface, use the
 [AI SDK migration guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/ai-sdk-migration.md).
 If you are connecting an app-owned agent service, use the
 [Agent events guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-events.md).
+For durable human approval around privileged tools, use the
+[Tool approval recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/tool-approvals.md).
 For copyable backend proxy environment recipes, use
 [Proxy recipes](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/proxy-recipes.md).
 For retry or compare-answer UI on stored threads, use the
@@ -710,7 +712,7 @@ persistence, retries, stream data, metadata, shared state, and quality gates.
 This release adds `useChatThreads` for local thread indexes, active thread
 selection, rename, archive, restore, delete, recency updates, and Date-safe
 thread persistence. Current follow-up work is focused on production agent
-recipes, regenerate/branch workflows, and the
+recipes, durable tool approval workflows, regenerate/branch workflows, and the
 [server storage recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/server-storage.md)
 for tenant-scoped thread indexes and message bodies. Feature planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
