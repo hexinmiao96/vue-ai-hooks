@@ -17,6 +17,7 @@ contract, then replace the local route with your app-owned backend.
 | React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react) | Send one prompt, call `stop()`, then inspect trace state. |
 | Thread sidebar persistence      | No-key chat plus local storage                  | [useChatThreads](/reference/use-chat-threads)                     | Create, rename, archive, restore, and reopen a thread.    |
 | Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                           | Restore index and messages, send, reload, and verify.     |
+| Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                 | Regenerate without overwriting the original answer.       |
 | Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                             | Confirm stream chunks arrive without browser keys.        |
 | Agent service stream adapter    | Your backend agent event stream                 | [Agent events](/guide/agent-events)                               | Convert events to `ChatChunk` or UI stream parts.         |
 | AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                       | Decode parts with `readUIMessageStream()`.                |
@@ -152,6 +153,29 @@ await saveThreadMessages(thread.id, serializeMessages(chat.messages.value))
 
 Verify load, send, save, reload, rename, archive, and delete with tenant-scoped
 auth before connecting a real provider. See [Server storage](/guide/server-storage).
+
+## Regenerate or branch history
+
+Use this after server storage is in place and users need to retry an assistant
+turn, compare another answer, or branch from a message. Keep the old assistant
+message immutable, create a `runId` for each provider attempt, and store the new
+answer on the selected `branchId`:
+
+```ts
+await chat.regenerate({
+  messageId: 'msg_assistant_42',
+  body: {
+    threadId,
+    branchId,
+    sourceMessageId: 'msg_assistant_42',
+    runId: crypto.randomUUID(),
+    revision
+  }
+})
+```
+
+Verify branch restore, idempotent regenerate, and safe request inspection before
+enabling the UI. See [Regenerate branches](/guide/regenerate-branches).
 
 ## AI SDK UI stream migration
 

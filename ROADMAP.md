@@ -79,9 +79,9 @@ planning.
   or server storage.
 - Continue exploring server storage adapter recipes and regenerate/branch
   patterns without embedding a backend database abstraction in the package.
-- In progress after 0.14.0: production server storage recipe for tenant-scoped
-  thread indexes, message bodies, restore smoke tests, and concurrency
-  boundaries.
+- In progress after 0.14.0: production server storage and regenerate/branch
+  recipes for tenant-scoped thread indexes, message bodies, restore smoke tests,
+  idempotent `runId` handling, and concurrency boundaries.
 
 ### Later
 

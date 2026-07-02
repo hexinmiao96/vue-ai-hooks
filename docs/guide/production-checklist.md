@@ -53,11 +53,14 @@ storage, and operations.
 - Use `serializeMessages()` and `deserializeMessages()` for server storage.
 - Follow the [server storage recipe](/guide/server-storage) when chats need
   multi-device history, team handoff, or audit retention.
+- Follow the [regenerate branches recipe](/guide/regenerate-branches) before
+  exposing retry, compare-answer, or branch-from-message UI.
 - Validate imported history with `validateMessages()` or
   `safeValidateMessages()` before hydration.
 - Version persisted data when changing message shape.
 - Decide whether thread rename, archive, delete, and branch/regenerate behavior
-  live in your app backend before exposing them in UI.
+  live in your app backend before exposing them in UI. Do not overwrite old
+  assistant messages when regenerating.
 
 ## Local gates
 
@@ -85,7 +88,9 @@ VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:
 6. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
 7. Reload one server-stored thread and confirm messages restore with `Date`
    values intact.
-8. Confirm logs have trace ids but no provider API keys.
+8. Regenerate one assistant message, branch from the same user turn, reload, and
+   confirm both branches restore without duplicate `runId` writes.
+9. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 
