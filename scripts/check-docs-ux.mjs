@@ -14,6 +14,8 @@ const files = {
   zhUpgrade03: readFileSync('docs/zh/guide/upgrade-0.3.md', 'utf8'),
   aiSdkMigration: readFileSync('docs/guide/ai-sdk-migration.md', 'utf8'),
   zhAiSdkMigration: readFileSync('docs/zh/guide/ai-sdk-migration.md', 'utf8'),
+  proxyRecipes: readFileSync('docs/guide/proxy-recipes.md', 'utf8'),
+  zhProxyRecipes: readFileSync('docs/zh/guide/proxy-recipes.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
   zhInspection: readFileSync('docs/zh/guide/inspection.md', 'utf8'),
   useChat: readFileSync('docs/reference/use-chat.md', 'utf8'),
@@ -91,6 +93,11 @@ expect(
   'VitePress sidebars must expose the inspection guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
+    files.config.includes("{ text: 'Proxy 配方', link: '/zh/guide/proxy-recipes' }"),
+  'VitePress sidebars must expose the proxy recipes guide in English and Chinese'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
 )
@@ -115,6 +122,10 @@ for (const snippet of [
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
+  'PROXY_UPSTREAM_BASE_URL',
+  'PROXY_UPSTREAM_API_KEY',
+  'PROXY_UPSTREAM_MODEL',
+  '[Proxy recipes](/guide/proxy-recipes)',
   '[Examples](/examples/)',
   '[Inspection](/guide/inspection)'
 ]) {
@@ -137,6 +148,10 @@ for (const snippet of [
   "useTranscription({ baseURL: 'http://127.0.0.1:8787' })",
   "useRerank({ baseURL: 'http://127.0.0.1:8787' })",
   "useObject({ baseURL: 'http://127.0.0.1:8787', schema })",
+  'PROXY_UPSTREAM_BASE_URL',
+  'PROXY_UPSTREAM_API_KEY',
+  'PROXY_UPSTREAM_MODEL',
+  '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[示例](/zh/examples/)',
   '[调试检查](/zh/guide/inspection)'
 ]) {
@@ -204,6 +219,10 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
+    files.readme.includes('/docs/guide/proxy-recipes.md') &&
+    files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
+    files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
+    files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes(
       '[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)'
     ) &&
@@ -349,6 +368,48 @@ for (const snippet of [
   '本包刻意不负责什么'
 ]) {
   expect(files.zhChoosing.includes(snippet), `Chinese choosing guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Proxy recipes',
+  'Production browser apps should call app-owned routes',
+  '## No-key local check',
+  'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
+  '## OpenAI-compatible upstream',
+  'PROXY_UPSTREAM_BASE_URL=https://api.openai.com/v1',
+  'PROXY_UPSTREAM_API_KEY=$OPENAI_API_KEY',
+  'PROXY_UPSTREAM_MODEL=gpt-4.1-mini',
+  '## Local Ollama or vLLM',
+  'PROXY_UPSTREAM_BASE_URL=http://127.0.0.1:11434/v1',
+  'PROXY_UPSTREAM_CHAT_PATH=/chat/completions',
+  '## Client wiring',
+  "useChat({ baseURL: 'http://127.0.0.1:8787' })",
+  'proxyProvider({',
+  '## Production checklist',
+  'Keep provider keys in server-only environment variables'
+]) {
+  expect(files.proxyRecipes.includes(snippet), `English proxy recipes must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# Proxy 配方',
+  '生产环境的浏览器应用应调用应用自己的后端路由',
+  '## 不需要 key 的本地检查',
+  'VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat',
+  '## OpenAI-compatible 上游',
+  'PROXY_UPSTREAM_BASE_URL=https://api.openai.com/v1',
+  'PROXY_UPSTREAM_API_KEY=$OPENAI_API_KEY',
+  'PROXY_UPSTREAM_MODEL=gpt-4.1-mini',
+  '## 本地 Ollama 或 vLLM',
+  'PROXY_UPSTREAM_BASE_URL=http://127.0.0.1:11434/v1',
+  'PROXY_UPSTREAM_CHAT_PATH=/chat/completions',
+  '## 客户端接入',
+  "useChat({ baseURL: 'http://127.0.0.1:8787' })",
+  'proxyProvider({',
+  '## 生产检查清单',
+  'Provider key 只放在服务端环境变量里'
+]) {
+  expect(files.zhProxyRecipes.includes(snippet), `Chinese proxy recipes must include: ${snippet}`)
 }
 
 for (const snippet of [

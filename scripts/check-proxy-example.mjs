@@ -1,11 +1,16 @@
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:http'
 
 const port = 18878
-const baseURL = `http://127.0.0.1:${port}`
-let server
+const upstreamPort = 18879
+const upstreamProxyPort = 18880
+let baseURL = `http://127.0.0.1:${port}`
+let defaultServer
+let upstreamServer
+let upstreamProxyServer
 
 try {
-  server = await startProxyServer()
+  defaultServer = await startProxyServer(port)
   await checkChatRoute('/api/chat', 'default-chat')
   await checkChatRoute('/api/ai/chat', 'legacy-chat')
   await checkResumeRoute('/api/chat/default-chat/stream')
@@ -19,15 +24,37 @@ try {
   await checkRerankRoute()
   await checkObjectRoute()
   await checkUIMessageStreamRoute()
-  console.log('Proxy example check passed for default and legacy routes.')
+  upstreamServer = await startFakeUpstream()
+  baseURL = `http://127.0.0.1:${upstreamProxyPort}`
+  upstreamProxyServer = await startProxyServer(upstreamProxyPort, {
+    PROXY_UPSTREAM_BASE_URL: `http://127.0.0.1:${upstreamPort}/v1`,
+    PROXY_UPSTREAM_API_KEY: 'test-upstream-key',
+    PROXY_UPSTREAM_MODEL: 'fake-upstream-model'
+  })
+  await checkUpstreamChatRoute()
+  await checkUpstreamCompletionRoute()
+  await checkUpstreamEmbeddingRoute()
+  console.log('Proxy example check passed for default, legacy, and upstream routes.')
 } finally {
-  server?.kill()
+  defaultServer?.kill()
+  upstreamProxyServer?.kill()
+  upstreamServer?.close()
 }
 
-function startProxyServer() {
+function startProxyServer(proxyPort, env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ['examples/proxy-server/server.mjs'], {
-      env: { ...process.env, PORT: String(port) },
+      env: {
+        ...process.env,
+        PROXY_UPSTREAM_BASE_URL: '',
+        PROXY_UPSTREAM_API_KEY: '',
+        PROXY_UPSTREAM_MODEL: '',
+        PROXY_UPSTREAM_CHAT_PATH: '',
+        PROXY_UPSTREAM_COMPLETION_PATH: '',
+        PROXY_UPSTREAM_EMBEDDING_PATH: '',
+        ...env,
+        PORT: String(proxyPort)
+      },
       stdio: ['ignore', 'pipe', 'pipe']
     })
     let output = ''
@@ -38,7 +65,7 @@ function startProxyServer() {
 
     child.stdout.on('data', (chunk) => {
       output += String(chunk)
-      if (output.includes(`http://127.0.0.1:${port}`)) {
+      if (output.includes(`http://127.0.0.1:${proxyPort}`)) {
         clearTimeout(timeout)
         resolve(child)
       }
@@ -50,6 +77,69 @@ function startProxyServer() {
       clearTimeout(timeout)
       reject(new Error(`Proxy example exited early with code ${code}:\n${output}`))
     })
+  })
+}
+
+function startFakeUpstream() {
+  const server = createServer(async (request, response) => {
+    if (request.method !== 'POST' || request.headers.authorization !== 'Bearer test-upstream-key') {
+      sendFakeJson(response, 401, { error: 'missing test authorization' })
+      return
+    }
+
+    const body = await readFakeJson(request)
+    if (!body.model) {
+      sendFakeJson(response, 400, { error: 'missing model' })
+      return
+    }
+
+    if (request.url === '/v1/chat/completions') {
+      sendFakeJson(response, 200, {
+        id: 'fake-chat-response',
+        model: body.model,
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: `Upstream chat response: ${latestFakeText(body.messages)}`
+            },
+            finish_reason: 'stop'
+          }
+        ],
+        usage: { prompt_tokens: 7, completion_tokens: 5, total_tokens: 12 }
+      })
+      return
+    }
+
+    if (request.url === '/v1/completions') {
+      sendFakeJson(response, 200, {
+        id: 'fake-completion-response',
+        model: body.model,
+        choices: [{ text: `Upstream completion: ${body.prompt || 'empty prompt'}` }],
+        usage: { prompt_tokens: 3, completion_tokens: 4, total_tokens: 7 }
+      })
+      return
+    }
+
+    if (request.url === '/v1/embeddings') {
+      const inputs = Array.isArray(body.input) ? body.input : [body.input]
+      sendFakeJson(response, 200, {
+        model: body.model,
+        data: inputs.map((_, index) => ({
+          object: 'embedding',
+          index,
+          embedding: [index + 0.1, index + 0.2, index + 0.3]
+        })),
+        usage: { prompt_tokens: inputs.length, total_tokens: inputs.length }
+      })
+      return
+    }
+
+    sendFakeJson(response, 404, { error: 'not found' })
+  })
+
+  return new Promise((resolve) => {
+    server.listen(upstreamPort, '127.0.0.1', () => resolve(server))
   })
 }
 
@@ -241,6 +331,48 @@ async function checkUIMessageStreamRoute() {
   )
 }
 
+async function checkUpstreamChatRoute() {
+  const events = await postSse('/api/chat', {
+    id: 'upstream-chat',
+    model: 'request-chat-model',
+    messages: [{ role: 'user', content: 'hello upstream' }]
+  })
+  expect(
+    events.some((event) => event.content === 'Upstream chat response: hello upstream'),
+    '/api/chat should normalize OpenAI-compatible chat responses'
+  )
+  expect(
+    events.some(
+      (event) =>
+        event.metadata?.provider === 'openai-compatible' &&
+        event.metadata?.upstreamModel === 'request-chat-model'
+    ),
+    '/api/chat should include sanitized upstream metadata'
+  )
+
+  const replay = await getSse('/api/chat/upstream-chat/stream')
+  expect(
+    replay.some((event) => event.content === 'Upstream chat response: hello upstream'),
+    '/api/chat/:id/stream should replay upstream chat responses'
+  )
+}
+
+async function checkUpstreamCompletionRoute() {
+  const events = await postSse('/api/completion', { prompt: 'write release notes' })
+  expect(
+    events.map((event) => event.text || '').join('') === 'Upstream completion: write release notes',
+    '/api/completion should normalize OpenAI-compatible completion responses'
+  )
+}
+
+async function checkUpstreamEmbeddingRoute() {
+  const response = await postJson('/api/embedding', { input: ['alpha', 'beta'] })
+  expect(response.model === 'fake-upstream-model', '/api/embedding should use the env model')
+  expect(response.embeddings?.length === 2, '/api/embedding should normalize upstream vectors')
+  expect(response.embeddings?.[1]?.[0] === 1.1, '/api/embedding should preserve vector values')
+  expect(response.usage?.totalTokens === 2, '/api/embedding should normalize upstream usage')
+}
+
 async function postJson(path, body) {
   const response = await fetch(`${baseURL}${path}`, {
     method: 'POST',
@@ -278,4 +410,21 @@ function parseSse(text) {
 
 function expect(condition, message) {
   if (!condition) throw new Error(message)
+}
+
+async function readFakeJson(request) {
+  let raw = ''
+  for await (const chunk of request) raw += chunk
+  return raw ? JSON.parse(raw) : {}
+}
+
+function sendFakeJson(response, status, data) {
+  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
+  response.end(JSON.stringify(data))
+}
+
+function latestFakeText(messages) {
+  if (!Array.isArray(messages)) return ''
+  const message = [...messages].reverse().find((item) => item?.role === 'user')
+  return typeof message?.content === 'string' ? message.content : ''
 }

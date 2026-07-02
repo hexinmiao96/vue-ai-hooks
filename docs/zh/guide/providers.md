@@ -175,6 +175,9 @@ pnpm example:proxy-server
 VITE_CHAT_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:chat
 ```
 
+OpenAI-compatible 网关、Ollama、vLLM、自定义端点路径和生产检查清单等可复制配置，
+见 [Proxy 配方](./proxy-recipes.md)。
+
 同一个模板也支持默认组合式函数 URL（`/api/chat`、`/api/completion`、
 `/api/embedding`、`/api/image`、`/api/video`、`/api/speech`、`/api/transcription`、`/api/rerank` 和 `/api/object`）。当你省略
 `provider`，直接在 `useChat`、`useCompletion`、`useEmbedding`、`useImage`、
