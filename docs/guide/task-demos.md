@@ -11,13 +11,13 @@ contract, then replace the local route with your app-owned backend.
 
 ## Choose by task
 
-| Product task                    | Run first                                       | Read next                                           | Verify before real providers                             |
-| ------------------------------- | ----------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
-| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue`                             | Click **Run approval demo**, approve or reject the tool. |
-| React chat quickstart           | Use `vue-ai-hooks/react` in a small React app   | [React hooks](/reference/react)                     | Send one prompt, call `stop()`, then inspect `error`.    |
-| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)               | Confirm stream chunks arrive without browser keys.       |
-| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)         | Decode parts with `readUIMessageStream()`.               |
-| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist) | Pass the checklist before putting provider keys in prod. |
+| Product task                    | Run first                                       | Read next                                                         | Verify before real providers                              |
+| ------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------- |
+| Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue`                                           | Click **Run approval demo**, approve or reject the tool.  |
+| React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react) | Send one prompt, call `stop()`, then inspect trace state. |
+| Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                             | Confirm stream chunks arrive without browser keys.        |
+| AI SDK UI stream migration      | POST to `/api/ui-message-stream`                | [AI SDK migration](/guide/ai-sdk-migration)                       | Decode parts with `readUIMessageStream()`.                |
+| Production deployment readiness | Run the local proxy and docs build checks       | [Production checklist](/guide/production-checklist)               | Pass the checklist before putting provider keys in prod.  |
 
 ## Vue chat with tool approval
 
@@ -37,9 +37,19 @@ one place.
 
 ## React chat quickstart
 
-The React entry is a migration surface. It does not replace the Vue-first
-positioning, but it lets React consumers reuse the same provider and proxy
-contracts:
+Run the React quickstart without provider keys:
+
+```bash
+pnpm example:react-chat
+```
+
+Open the Vite URL and send a prompt. The demo uses `DirectChatTransport` with a
+deterministic `react-local` stream, so you can verify React state, abort
+controls, stream data, and request trace rendering before adding provider keys.
+
+The source lives in `examples/react-chat/App.tsx`. The React entry is a
+migration surface. It does not replace the Vue-first positioning, but it lets
+React consumers reuse the same provider and proxy contracts:
 
 ```tsx
 import { useChat } from 'vue-ai-hooks/react'

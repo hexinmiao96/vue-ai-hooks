@@ -24,6 +24,10 @@ pnpm example:chat
 `local-tools` Provider，流式输出回复，在 `chargeCard` 工具调用处暂停，并在审批或拒绝后继续。
 先用这条路径确认 UI，再接真实 Provider key 或后端代理。
 
+如果要试不需要 key 的 React 聊天流程，运行 `pnpm example:react-chat`。它通过
+`vue-ai-hooks/react` 复用同一套 Provider 契约，从确定性的 `DirectChatTransport`
+流式输出，并在聊天面板旁展示请求 trace 状态。
+
 要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
 `/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/video`、
 `/api/speech`、`/api/rerank`、`/api/transcription`、`/api/object` 和
@@ -55,6 +59,7 @@ WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 | 目标                             | 从这里开始                             |
 | -------------------------------- | -------------------------------------- |
 | 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)                 |
+| 试 React 聊天迁移入口            | `pnpm example:react-chat`              |
 | 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo) |
 | 一个提示词生成一段文本           | [文本补全](#completion-demo)           |
 | 做语义相似度比较                 | [向量相似度](#embedding-demo)          |

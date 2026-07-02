@@ -11,6 +11,17 @@ Install React in the consuming app only when you use this subpath:
 pnpm add vue-ai-hooks react
 ```
 
+To run the repository quickstart without provider keys:
+
+```bash
+pnpm example:react-chat
+```
+
+The demo source is `examples/react-chat/App.tsx`. It uses
+`DirectChatTransport` with a deterministic local stream, then renders
+`lastRequest`, `lastResponse`, usage, and custom stream data so you can inspect
+the React request lifecycle before connecting a real `/api/chat` route.
+
 ```tsx
 import { useChat, useCompletion } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'

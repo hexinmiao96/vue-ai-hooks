@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-02
+
+### Added
+
+- Added a runnable no-key React chat quickstart at `examples/react-chat`,
+  powered by `vue-ai-hooks/react` and `DirectChatTransport`, with streaming
+  messages, abort controls, usage, stream data, and request trace state.
+
+### Changed
+
+- Added `pnpm example:react-chat` and `pnpm example:react-chat:build` to the
+  local example workflow and full `examples:build` gate.
+- Updated English and Chinese README, getting-started docs, example pages,
+  task-oriented demo guides, React reference docs, roadmap, and docs UX checks
+  so the React quickstart is discoverable as a real runnable demo.
+- Repository lint, typecheck, and format scripts now include TSX example files.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.10.1] - 2026-07-02
 
 ### Added

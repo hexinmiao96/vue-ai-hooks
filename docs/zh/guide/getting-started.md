@@ -16,6 +16,7 @@ npm install vue-ai-hooks
 | ---------------------------- | --------------------------------------------------- |
 | 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)      |
 | 按产品任务选择 demo          | 阅读 [任务型 Demo](/zh/guide/task-demos)            |
+| 试 React 迁移入口            | 跑 [React 聊天 quickstart](#不需要-api-key-的-demo) |
 | 比较库的适用边界             | 阅读 [选择 vue-ai-hooks](/zh/guide/choosing)        |
 | 从 v0.3.x 升级               | 阅读 [v0.4.0 升级指南](/zh/guide/upgrade-0.4)       |
 | 从 v0.2.1 升级               | 阅读 [v0.3.0 升级指南](/zh/guide/upgrade-0.3)       |
@@ -38,6 +39,15 @@ pnpm example:chat
 打开 Vite 输出的本地地址，然后点击 **Run approval demo**。当没有选择 Provider，且没有真实的
 `VITE_OPENAI_KEY` 时，聊天示例会自动回退到 `local-tools`，显示 pending `chargeCard`
 工具调用，并在执行 `approveToolCall()` 或 `rejectToolCall()` 后继续对话。
+
+如果要用同一套 no-key Provider 契约验证可选 React 入口，运行：
+
+```bash
+pnpm example:react-chat
+```
+
+React demo 会从确定性的 `DirectChatTransport` 流式输出，并在聊天面板旁展示
+`lastRequest`、`lastResponse`、usage 和 stream data。
 
 ## 接真实 Provider 前的安全说明
 

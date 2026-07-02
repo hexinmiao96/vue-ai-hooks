@@ -12,6 +12,8 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "useDefineForClassFields": true,
     "declaration": true,
     "declarationMap": true,
@@ -24,13 +26,14 @@
       "vue-ai-hooks": ["src/index.ts"],
       "vue-ai-hooks/react": ["src/react.ts"]
     },
-    "types": ["node", "vitest/globals", "vite/client"]
+    "types": ["node", "react", "react-dom", "vitest/globals", "vite/client"]
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "tests/**/*.ts",
     "examples/**/*.ts",
+    "examples/**/*.tsx",
     "examples/**/*.vue",
     "vite.config.ts",
     "vitest.config.ts",
