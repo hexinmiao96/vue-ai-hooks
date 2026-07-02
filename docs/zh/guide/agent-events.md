@@ -9,6 +9,9 @@ description: 把应用自有 agent 事件归一成 ChatChunk stream 或 AI SDK U
 这类产品事件时，用这页。这个 adapter 刻意保持很小：它不做规划、检索、工具沙箱或
 thread 存储，只把你的 agent 事件转换成 `useChat`、自定义 transport 和 proxy 路由已经能消费的 stream 契约。
 
+如果要接 LangChain、LangGraph 或自研后端 agent runtime，先看
+[后端 Agent 桥接配方](/zh/guide/agent-bridge)，再用本页确认底层 adapter API。
+
 ## 事件契约
 
 先让服务端输出一个窄的事件流：

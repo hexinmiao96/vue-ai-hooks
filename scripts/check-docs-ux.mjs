@@ -26,6 +26,8 @@ const files = {
   zhRegenerateBranches: readFileSync('docs/zh/guide/regenerate-branches.md', 'utf8'),
   toolApprovals: readFileSync('docs/guide/tool-approvals.md', 'utf8'),
   zhToolApprovals: readFileSync('docs/zh/guide/tool-approvals.md', 'utf8'),
+  agentBridge: readFileSync('docs/guide/agent-bridge.md', 'utf8'),
+  zhAgentBridge: readFileSync('docs/zh/guide/agent-bridge.md', 'utf8'),
   agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
   zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
@@ -140,6 +142,11 @@ expect(
   'VitePress sidebars must expose the tool approval guide in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'Agent bridge', link: '/guide/agent-bridge' }") &&
+    files.config.includes("{ text: '后端 Agent 桥接', link: '/zh/guide/agent-bridge' }"),
+  'VitePress sidebars must expose the agent bridge guide in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
     files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
@@ -185,6 +192,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy recipes](/guide/proxy-recipes)',
   '[Agent events](/guide/agent-events)',
+  '[Agent bridge recipe](/guide/agent-bridge)',
   '[server storage recipe](/guide/server-storage)',
   '[Regenerate branches recipe](/guide/regenerate-branches)',
   '[Tool approval recipe](/guide/tool-approvals)',
@@ -221,6 +229,7 @@ for (const snippet of [
   'PROXY_UPSTREAM_TRACE_HEADER',
   '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[Agent 事件](/zh/guide/agent-events)',
+  '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
   '[服务端存储配方](/zh/guide/server-storage)',
   '[重新生成分支配方](/zh/guide/regenerate-branches)',
   '[工具审批配方](/zh/guide/tool-approvals)',
@@ -250,7 +259,11 @@ for (const snippet of [
   'sourceMessageId',
   'runId: crypto.randomUUID()',
   'Own `/api/chat` proxy',
-  'Agent service stream adapter',
+  'Agent backend bridge',
+  '[Agent bridge](/guide/agent-bridge)',
+  'LangChain',
+  'LangGraph',
+  'checkpoints',
   'AI SDK UI stream migration',
   'Production deployment readiness',
   'pnpm example:chat',
@@ -282,7 +295,11 @@ for (const snippet of [
   'sourceMessageId',
   'runId: crypto.randomUUID()',
   '自有 `/api/chat` proxy',
-  'Agent 服务 stream 适配',
+  'Agent 后端桥接',
+  '[后端 Agent 桥接](/zh/guide/agent-bridge)',
+  'LangChain',
+  'LangGraph',
+  'checkpoint',
   'AI SDK UI stream 迁移',
   '生产部署准备',
   'pnpm example:chat',
@@ -307,6 +324,7 @@ for (const snippet of [
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  '[Agent bridge recipe](/guide/agent-bridge)',
   '[tool approval recipe](/guide/tool-approvals)',
   'Production notes'
 ]) {
@@ -323,6 +341,7 @@ for (const snippet of [
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
   '[工具审批配方](/zh/guide/tool-approvals)',
   '生产注意事项'
 ]) {
@@ -336,6 +355,10 @@ for (const snippet of [
   '# Production checklist',
   '## Browser boundary',
   '## Backend proxy',
+  '[agent bridge recipe](/guide/agent-bridge)',
+  'LangChain',
+  'LangGraph',
+  'LangSmith keys',
   '## Streaming contract',
   '## Tools and approvals',
   '[tool approval recipe](/guide/tool-approvals)',
@@ -365,6 +388,10 @@ for (const snippet of [
   '# 生产检查清单',
   '## 浏览器边界',
   '## 后端代理',
+  '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
+  'LangChain',
+  'LangGraph',
+  'LangSmith key',
   '## 流式契约',
   '## 工具和审批',
   '[工具审批配方](/zh/guide/tool-approvals)',
@@ -546,6 +573,59 @@ for (const snippet of [
   )
 }
 
+for (const snippet of [
+  '# Agent bridge recipe',
+  'streamEvents',
+  "version: 'v3'",
+  'streamMode',
+  'messages',
+  'updates',
+  'tools',
+  'interrupt/resume',
+  'AgentEvent',
+  'POST /api/agent/runs',
+  'GET  /api/agent/runs/:runId/events',
+  'POST /api/agent/runs/:runId/resume',
+  'runLangChainAgent',
+  'runLangGraphAgent',
+  'readAgentEventStream',
+  'agentEventToUIMessageStreamPart',
+  'createUIMessageStreamResponse',
+  'LangSmith',
+  'runId',
+  'Smoke test'
+]) {
+  expect(files.agentBridge.includes(snippet), `English agent bridge guide must include: ${snippet}`)
+}
+
+for (const snippet of [
+  '# 后端 Agent 桥接配方',
+  'streamEvents',
+  "version: 'v3'",
+  'streamMode',
+  'messages',
+  'updates',
+  'tools',
+  'interrupt/resume',
+  'AgentEvent',
+  'POST /api/agent/runs',
+  'GET  /api/agent/runs/:runId/events',
+  'POST /api/agent/runs/:runId/resume',
+  'runLangChainAgent',
+  'runLangGraphAgent',
+  'readAgentEventStream',
+  'agentEventToUIMessageStreamPart',
+  'createUIMessageStreamResponse',
+  'LangSmith',
+  'runId',
+  'Smoke test'
+]) {
+  expect(
+    files.zhAgentBridge.includes(snippet),
+    `Chinese agent bridge guide must include: ${snippet}`
+  )
+}
+
 expect(
   !files.gettingStarted.includes('cp examples/.env.example .env') &&
     !files.zhGettingStarted.includes('cp examples/.env.example .env'),
@@ -628,6 +708,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/upgrade-0.3.md') &&
     files.readme.includes('/docs/guide/ai-sdk-migration.md') &&
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
+    files.readme.includes('/docs/guide/agent-bridge.md') &&
+    files.zhReadme.includes('/docs/zh/guide/agent-bridge.md') &&
     files.readme.includes('/docs/guide/proxy-recipes.md') &&
     files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
     files.readme.includes('/docs/guide/server-storage.md') &&
@@ -749,6 +831,8 @@ for (const snippet of [
   '0.13.x',
   '0.14.x',
   'AgentEvent',
+  'LangChain',
+  'LangGraph',
   'useChatThreads',
   'server storage',
   'regenerate/branch',
@@ -1991,7 +2075,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {
