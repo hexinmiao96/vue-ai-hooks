@@ -1,0 +1,61 @@
+---
+title: Production readiness status
+description: Current production-readiness coverage, evidence, and remaining release boundaries for vue-ai-hooks.
+---
+
+# Production readiness status
+
+Use this page to check whether the current library direction matches the
+production-hardening roadmap. It is an evidence map, not a feature wishlist.
+GitHub issues remain reserved for reproducible bugs.
+
+## Status matrix
+
+| Area                    | Current status            | Evidence                                                                                     |
+| ----------------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
+| Inspection              | Ready for app adoption    | `inspect()`, `inspectRequestTrace()`, timeline, retry records, provider trace, redacted curl |
+| Task demos              | Ready for onboarding      | Vue approval demo, React chat/completion/object demos, proxy, AI SDK stream, checklist       |
+| Provider presets        | Ready behind app proxies  | OpenAI-compatible, DeepSeek, OpenRouter, Gemini, Anthropic, Moonshot, Zhipu, Ollama, vLLM    |
+| React support           | Migration bridge          | `vue-ai-hooks/react` exposes `useChat`, `useCompletion`, and `useObject`                     |
+| Tool approval           | Ready as backend contract | Durable approval record, renderer contract, replayed `runId`, stale `revision` conflicts     |
+| Threads and persistence | Ready as app-owned model  | `useChatThreads`, server storage recipe, IndexedDB recipe, regenerate branch contracts       |
+| Agent bridge            | Ready as projection layer | `AgentEvent`, LangChain/LangGraph recipes, AI SDK UI stream part conversion                  |
+
+## Required gates
+
+Run the full local readiness gate before a release candidate:
+
+```bash
+pnpm production:readiness
+```
+
+If the package manager wrapper is blocked in your environment, run the local
+Node entry:
+
+```bash
+node scripts/production-readiness-local.mjs
+```
+
+The gate covers format, secrets, source hygiene, lint, typecheck, test hygiene,
+coverage, build, dist, size, pack, install, changelog, metadata, community
+health, workflows, API docs, docs UX, proxy, threaded chat, UI message stream,
+tool approval, agent bridge, markdown links, examples, and docs build.
+
+## Release boundary
+
+The published npm version may lag behind `main` when the daily release cadence
+has already been used. In that case, treat `main` as the next release candidate
+only after CI, CodeQL, OpenSSF Scorecard, and `pnpm production:readiness` pass.
+
+Do not publish another npm version on the same Asia/Shanghai calendar day. The
+release cadence check is part of the local, CI, and publish paths.
+
+## Remaining non-goals
+
+- Do not store provider keys, vector store credentials, or privileged tool
+  secrets in the browser.
+- Do not turn this package into a backend agent framework.
+- Do not add React hooks only for symmetry; keep React support focused on
+  migration confidence.
+- Do not track feature planning in GitHub issues. Use `ROADMAP.md`,
+  discussions, or pull requests.

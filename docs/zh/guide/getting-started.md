@@ -243,6 +243,7 @@ const { messages: messages10, append: append10 } = useChat({
 - [示例](/zh/examples/) - 按产品任务选择合适的组合式函数
 - [任务型 Demo](/zh/guide/task-demos) - 把产品任务映射到可运行示例
 - [生产检查清单](/zh/guide/production-checklist) - 检查浏览器、proxy、stream 和调试面板 readiness
+- [生产可用性状态](/zh/guide/production-readiness-status) - 查看已交付范围、门禁和发布边界
 - [Provider](/zh/guide/providers) - 如何添加自己的 Provider
 - [调试检查](/zh/guide/inspection) - 检查 request trace 和 Provider 失败
 - [useChat 参考](/zh/reference/use-chat) - 完整 API

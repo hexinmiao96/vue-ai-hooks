@@ -260,6 +260,7 @@ const { messages: messages10, append: append10 } = useChat({
 - [Examples](/examples/) — choose the right composable by product task
 - [Task-oriented demos](/guide/task-demos) — map product jobs to runnable demos
 - [Production checklist](/guide/production-checklist) — browser, proxy, stream, and inspection readiness
+- [Production readiness status](/guide/production-readiness-status) — shipped coverage, gates, and release boundaries
 - [Providers](/guide/providers) — how to add your own
 - [Inspection](/guide/inspection) — inspect request traces and provider failures
 - [useChat reference](/reference/use-chat) — full API

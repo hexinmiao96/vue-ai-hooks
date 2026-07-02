@@ -12,6 +12,8 @@ const files = {
   zhTaskDemos: readFileSync('docs/zh/guide/task-demos.md', 'utf8'),
   productionChecklist: readFileSync('docs/guide/production-checklist.md', 'utf8'),
   zhProductionChecklist: readFileSync('docs/zh/guide/production-checklist.md', 'utf8'),
+  productionReadinessStatus: readFileSync('docs/guide/production-readiness-status.md', 'utf8'),
+  zhProductionReadinessStatus: readFileSync('docs/zh/guide/production-readiness-status.md', 'utf8'),
   upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
   zhUpgrade04: readFileSync('docs/zh/guide/upgrade-0.4.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
@@ -125,6 +127,15 @@ expect(
   'VitePress sidebars must expose production checklists in English and Chinese'
 )
 expect(
+  files.config.includes(
+    "{ text: 'Readiness status', link: '/guide/production-readiness-status' }"
+  ) &&
+    files.config.includes(
+      "{ text: '生产可用性状态', link: '/zh/guide/production-readiness-status' }"
+    ),
+  'VitePress sidebars must expose production readiness status pages in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
     files.config.includes("{ text: 'Proxy 配方', link: '/zh/guide/proxy-recipes' }"),
   'VitePress sidebars must expose the proxy recipes guide in English and Chinese'
@@ -177,6 +188,7 @@ for (const snippet of [
   '## Run a demo without API keys',
   '[Task-oriented demos](/guide/task-demos)',
   '[Production checklist](/guide/production-checklist)',
+  '[Production readiness status](/guide/production-readiness-status)',
   '[useChatThreads](/reference/use-chat-threads)',
   'pnpm example:chat',
   'pnpm example:react-chat',
@@ -214,6 +226,7 @@ for (const snippet of [
   '## 不需要 API key 的 Demo',
   '[任务型 Demo](/zh/guide/task-demos)',
   '[生产检查清单](/zh/guide/production-checklist)',
+  '[生产可用性状态](/zh/guide/production-readiness-status)',
   '[useChatThreads](/zh/reference/use-chat-threads)',
   'pnpm example:chat',
   'pnpm example:react-chat',
@@ -425,6 +438,58 @@ for (const snippet of [
   expect(
     files.zhProductionChecklist.includes(snippet),
     `Chinese production checklist must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Production readiness status',
+  'GitHub issues remain reserved for reproducible bugs',
+  '## Status matrix',
+  'Inspection',
+  'Task demos',
+  'Provider presets',
+  'React support',
+  'Migration bridge',
+  'Tool approval',
+  'Threads and persistence',
+  'Agent bridge',
+  'pnpm production:readiness',
+  'node scripts/production-readiness-local.mjs',
+  'CI, CodeQL, OpenSSF Scorecard',
+  'daily release cadence',
+  'Do not publish another npm version on the same Asia/Shanghai calendar day',
+  'Do not turn this package into a backend agent framework',
+  'Do not add React hooks only for symmetry'
+]) {
+  expect(
+    files.productionReadinessStatus.includes(snippet),
+    `English production readiness status must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 生产可用性状态',
+  'issue 仍然只记录可复现 bug',
+  '## 状态矩阵',
+  '调试检查',
+  '任务型 demo',
+  'Provider preset',
+  'React 支持',
+  '迁移桥定位',
+  '工具审批',
+  '线程和持久化',
+  'Agent 桥接',
+  'pnpm production:readiness',
+  'node scripts/production-readiness-local.mjs',
+  'CI、CodeQL、OpenSSF Scorecard',
+  'release cadence',
+  '同一个 Asia/Shanghai 自然日',
+  '不把这个包做成后端 Agent 框架',
+  '不为了对称而扩 React hook'
+]) {
+  expect(
+    files.zhProductionReadinessStatus.includes(snippet),
+    `Chinese production readiness status must include: ${snippet}`
   )
 }
 
@@ -2172,7 +2237,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

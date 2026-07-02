@@ -96,6 +96,9 @@ planning.
 - Added after 0.14.0: durable tool approval decision contracts for replayed
   `runId`, stale `revision`, `approval_revision_conflict`, and no-second-tool
   execution smoke coverage.
+- Added after 0.14.0: production readiness status pages that map inspection,
+  demos, provider presets, React migration, approvals, threads, persistence, and
+  agent bridge work to verifiable gates.
 - Continue validating these production recipes through local and CI gates before
   the next release.
 
