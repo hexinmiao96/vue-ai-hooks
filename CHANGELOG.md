@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added a daily release cadence gate so npm publishes are limited to one new
+  version per Asia/Shanghai calendar day.
+
 ## [0.14.0] - 2026-07-02
 
 ### Added

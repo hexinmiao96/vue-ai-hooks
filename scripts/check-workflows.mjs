@@ -149,6 +149,10 @@ expect(
   'Publish workflow must verify tag matches package version'
 )
 expect(
+  workflows.publish.includes('pnpm release:cadence'),
+  'Publish workflow must enforce the daily npm release cadence'
+)
+expect(
   !workflows.publish.includes('NPM_TOKEN'),
   'Publish workflow must not use long-lived NPM_TOKEN secrets'
 )
