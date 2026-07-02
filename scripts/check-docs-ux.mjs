@@ -66,6 +66,8 @@ const files = {
   examplesEnvExample: readFileSync('examples/.env.example', 'utf8'),
   packageJson: readFileSync('package.json', 'utf8'),
   chatExample: readFileSync('examples/chat/App.vue', 'utf8'),
+  threadedChatExample: readFileSync('examples/threaded-chat/App.vue', 'utf8'),
+  threadedChatPanel: readFileSync('examples/threaded-chat/ThreadChatPanel.vue', 'utf8'),
   reactChatExample: readFileSync('examples/react-chat/App.tsx', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
@@ -250,6 +252,8 @@ for (const snippet of [
   'narrow renderer contract',
   'React chat quickstart',
   'Thread sidebar persistence',
+  'pnpm example:threaded-chat',
+  'examples/threaded-chat/App.vue',
   '[useChatThreads](/reference/use-chat-threads)',
   'threads.createThread',
   'Server-side chat history',
@@ -286,6 +290,8 @@ for (const snippet of [
   'renderer',
   'React 聊天最小接入',
   'Thread 侧边栏持久化',
+  'pnpm example:threaded-chat',
+  'examples/threaded-chat/App.vue',
   '[useChatThreads](/zh/reference/use-chat-threads)',
   'threads.createThread',
   '服务端聊天历史',
@@ -670,6 +676,23 @@ expect(
   'React chat example must be runnable without provider keys and included in the examples build gate'
 )
 expect(
+  files.threadedChatExample.includes("import { useChatThreads } from 'vue-ai-hooks'") &&
+    files.threadedChatExample.includes('ThreadChatPanel') &&
+    files.threadedChatExample.includes('THREAD_INDEX_KEY') &&
+    files.threadedChatExample.includes('archiveActiveThread') &&
+    files.threadedChatExample.includes('restoreThread') &&
+    files.threadedChatPanel.includes('DirectChatTransport') &&
+    files.threadedChatPanel.includes("'thread-local'") &&
+    files.threadedChatPanel.includes('useChat({') &&
+    files.threadedChatPanel.includes('persist: {') &&
+    files.threadedChatPanel.includes('vue-ai-hooks:threaded-chat:messages') &&
+    files.threadedChatPanel.includes('thread-checkpoint') &&
+    files.packageJson.includes('"example:threaded-chat"') &&
+    files.packageJson.includes('"example:threaded-chat:build"') &&
+    files.packageJson.includes('pnpm example:threaded-chat:build'),
+  'Threaded chat example must pair useChatThreads with per-thread useChat({ persist }) and be included in the examples build gate'
+)
+expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
     files.zhReadme.includes('不需要 key 的 `local-tools` Provider') &&
     files.readme.includes('`useCompletion`, or `useObject` from `vue-ai-hooks/react`') &&
@@ -694,8 +717,12 @@ expect(
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('`examples/react-chat`') &&
     files.zhReadme.includes('`examples/react-chat`') &&
+    files.readme.includes('`examples/threaded-chat`') &&
+    files.zhReadme.includes('`examples/threaded-chat`') &&
     files.readme.includes('pnpm example:react-chat') &&
     files.zhReadme.includes('pnpm example:react-chat') &&
+    files.readme.includes('pnpm example:threaded-chat') &&
+    files.zhReadme.includes('pnpm example:threaded-chat') &&
     files.readme.includes('/docs/guide/choosing.md') &&
     files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
     files.readme.includes('/docs/guide/task-demos.md') &&
@@ -1167,6 +1194,9 @@ expect(
 )
 expect(
   files.packageJson.includes('"example:image"') &&
+    files.packageJson.includes('"example:threaded-chat"') &&
+    files.packageJson.includes('"example:threaded-chat:build"') &&
+    files.packageJson.includes('pnpm example:threaded-chat:build') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&
     files.packageJson.includes('"example:video"') &&
@@ -1184,7 +1214,7 @@ expect(
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the image, video, speech, transcription, rerank, and object examples'
+  'package scripts must expose and build the threaded chat, image, video, speech, transcription, rerank, and object examples'
 )
 
 expect(
@@ -1199,6 +1229,9 @@ expect(
 for (const snippet of [
   '## Run the no-key demo first',
   'pnpm example:chat',
+  'pnpm example:threaded-chat',
+  'useChatThreads()',
+  'per-thread `useChat({ persist })`',
   'deterministic `local-tools` provider',
   'click **Run approval demo**',
   '`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and',
@@ -1223,6 +1256,7 @@ for (const snippet of [
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
+  'Add thread sidebar and local restore checks',
   'Test an AI SDK UI stream backend route',
   '[UI message stream route](#stream-demo)',
   'Generate an image through an app route',
@@ -1244,6 +1278,9 @@ for (const snippet of [
 for (const snippet of [
   '## 先跑不需要 key 的 Demo',
   'pnpm example:chat',
+  'pnpm example:threaded-chat',
+  'useChatThreads()',
+  '每个 thread 独立的 `useChat({ persist })`',
   '确定性的',
   '`local-tools` Provider',
   '点击 **Run approval demo**',
@@ -1270,6 +1307,7 @@ for (const snippet of [
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
+  '增加 thread 侧边栏和本地恢复验证',
   '测试 AI SDK UI stream 后端路由',
   '[UI message stream 路由](#stream-demo)',
   '通过应用后端生成图片',

@@ -31,6 +31,11 @@ For a no-key React chat flow, run `pnpm example:react-chat`. It uses the same
 provider contract through `vue-ai-hooks/react`, streams from a deterministic
 `DirectChatTransport`, and renders request trace state beside the chat panel.
 
+For a no-key threaded chat flow, run `pnpm example:threaded-chat`. It pairs
+`useChatThreads()` with per-thread `useChat({ persist })` storage so you can
+create, rename, archive, restore, delete, refresh, and verify local history
+before adding a server storage adapter.
+
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
 default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/rerank`,
 `/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and
@@ -71,6 +76,7 @@ transport.
 | Goal                                                     | Start with                                 |
 | -------------------------------------------------------- | ------------------------------------------ |
 | Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)               |
+| Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`               |
 | Try the React chat migration entry                       | `pnpm example:react-chat`                  |
 | Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)    |
 | Turn one prompt into text                                | [Text completion](#completion-demo)        |
