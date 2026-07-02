@@ -30,8 +30,8 @@ importers:
         specifier: ^8.60.1
         version: 8.62.1(eslint@9.39.4)(typescript@5.9.3)
       '@vitejs/plugin-vue':
-        specifier: ^5.0.0
-        version: 5.2.4(vite@6.4.3)(vue@3.5.39)
+        specifier: ^6.0.7
+        version: 6.0.7(vite@6.4.3)(vue@3.5.39)
       '@vitest/coverage-v8':
         specifier: ^3.2.6
         version: 3.2.6(vitest@3.2.6)
@@ -809,6 +809,10 @@ packages:
     dev: true
     optional: true
 
+  /@rolldown/pluginutils@1.0.1:
+    resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+    dev: true
+
   /@rollup/rollup-android-arm-eabi@4.62.2:
     resolution: {integrity: sha512-6o7ZLZK+BeenkZCFNDXqpbjw9bD6nuWonvS/lwQJp7NoVVxm6p3qE7qQ5jGuBjiFsgvqjD8mZAU5oWxTmbOeOg==}
     cpu: [arm]
@@ -1278,6 +1282,18 @@ packages:
       vite: ^6.4.3
       vue: ^3.2.25
     dependencies:
+      vite: 6.4.3(@types/node@20.19.43)
+      vue: 3.5.39(typescript@5.9.3)
+    dev: true
+
+  /@vitejs/plugin-vue@6.0.7(vite@6.4.3)(vue@3.5.39):
+    resolution: {integrity: sha512-km+p+XdSz9Sxm5rqUbqcSfZYaAniKxWBj1KURl+Jr7UaPvvX7BmaWMdP69I5rrFDeQGyxAG7NXdc57vz+snhWg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      vite: ^6.4.3
+      vue: ^3.2.25
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
       vite: 6.4.3(@types/node@20.19.43)
       vue: 3.5.39(typescript@5.9.3)
     dev: true
