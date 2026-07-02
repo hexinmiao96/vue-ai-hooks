@@ -321,7 +321,18 @@ useChat({
 })
 ```
 
-Use `openaiCompatible` directly for other OpenAI-compatible gateways.
+OpenAI-compatible presets are available for common local and hosted routes:
+
+```ts
+import { moonshot, ollama, vllm, zhipu } from 'vue-ai-hooks'
+
+moonshot({ apiKey: import.meta.env.VITE_MOONSHOT_API_KEY, defaultModel: 'kimi-k2' })
+zhipu({ apiKey: import.meta.env.VITE_ZHIPU_API_KEY, endpoint: 'bigmodel' })
+ollama({ defaultModel: 'qwen3:8b' })
+vllm({ defaultModel: 'served-model' })
+```
+
+Use `openaiCompatible` directly for unlisted OpenAI-compatible gateways.
 
 For OpenRouter specifically, the dedicated helper is shorter:
 

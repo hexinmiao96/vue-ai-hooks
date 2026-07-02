@@ -215,6 +215,50 @@ expect(
 )
 
 for (const snippet of [
+  'moonshot({ apiKey:',
+  'zhipu({ apiKey:',
+  "ollama({ defaultModel: 'qwen3:8b' })",
+  "vllm({ defaultModel: 'served-model' })"
+]) {
+  expect(files.readme.includes(snippet), `English README must include provider preset: ${snippet}`)
+  expect(
+    files.gettingStarted.includes(snippet),
+    `English getting started must include provider preset: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  'moonshot({ apiKey:',
+  'zhipu({ apiKey:',
+  "ollama({ defaultModel: 'qwen3:8b' })",
+  "vllm({ defaultModel: 'served-model' })"
+]) {
+  expect(
+    files.zhReadme.includes(snippet),
+    `Chinese README must include provider preset: ${snippet}`
+  )
+  expect(
+    files.zhGettingStarted.includes(snippet),
+    `Chinese getting started must include provider preset: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '`moonshot(config)`',
+  '`zhipu(config)`',
+  '`ollama(config)`',
+  '`vllm(config)`',
+  '`MoonshotConfig`',
+  '`ZhipuConfig`',
+  '`ZhipuEndpoint`',
+  '`OllamaConfig`',
+  '`VllmConfig`'
+]) {
+  expect(files.providers.includes(snippet), `English provider reference must include: ${snippet}`)
+  expect(files.zhProviders.includes(snippet), `Chinese provider reference must include: ${snippet}`)
+}
+
+for (const snippet of [
   '# Roadmap',
   'GitHub issues are reserved for',
   'reproducible bugs',
@@ -1347,7 +1391,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

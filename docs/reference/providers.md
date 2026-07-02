@@ -7,7 +7,8 @@ Use the provider guide for integration examples. Use this page when you need the
 exact config surface.
 
 Public TypeScript config types: `OpenAiLikeConfig`, `OpenRouterConfig`,
-`GeminiConfig`, `DeepSeekConfig`, `FallbackProviderConfig`,
+`GeminiConfig`, `DeepSeekConfig`, `MoonshotConfig`, `ZhipuConfig`,
+`ZhipuEndpoint`, `OllamaConfig`, `VllmConfig`, `FallbackProviderConfig`,
 `FallbackProviderContext`, `FallbackProviderKind`, `ProxyProviderConfig`,
 `DefaultChatTransportOptions`, `DefaultChatTransportPrepareSendMessagesRequest`,
 `DefaultChatTransportPrepareSendMessagesRequestOptions`,
@@ -126,6 +127,125 @@ your own OpenAI-compatible gateway.
 Streaming and non-streaming chat responses both preserve model tool calls as
 `ChatChunk.toolCalls`, so `useChat` can drive the same tool workflow regardless
 of transport mode.
+
+## `moonshot(config)`
+
+Kimi/Moonshot wrapper around its OpenAI-compatible API.
+
+```ts
+import { moonshot } from 'vue-ai-hooks'
+
+const provider = moonshot({
+  apiKey: import.meta.env.VITE_MOONSHOT_API_KEY,
+  defaultModel: 'kimi-k2'
+})
+```
+
+| Option           | Type           | Default                      | Description                                          |
+| ---------------- | -------------- | ---------------------------- | ---------------------------------------------------- |
+| `apiKey`         | `string`       | required                     | Moonshot API key. Keep it server-side in production. |
+| `baseURL`        | `string`       | `https://api.moonshot.ai/v1` | Override for proxies or compatible gateways.         |
+| `headers`        | `HeadersInit`  | `{}`                         | Extra headers sent on every request.                 |
+| `defaultModel`   | `string`       | -                            | Model used when a request omits `model`.             |
+| `chatPath`       | `string`       | `/chat/completions`          | Chat endpoint path.                                  |
+| `completionPath` | `string`       | `/completions`               | Completion endpoint path.                            |
+| `embeddingPath`  | `string`       | `/embeddings`                | Embeddings endpoint path.                            |
+| `timeoutMs`      | `number`       | -                            | Request timeout in milliseconds.                     |
+| `fetch`          | `typeof fetch` | global `fetch`               | Custom fetch implementation.                         |
+
+The returned provider has `id: 'moonshot'`.
+
+## `zhipu(config)`
+
+Zhipu/BigModel/Z.ai wrapper around OpenAI-compatible API roots.
+
+```ts
+import { zhipu } from 'vue-ai-hooks'
+
+const provider = zhipu({
+  apiKey: import.meta.env.VITE_ZHIPU_API_KEY,
+  endpoint: 'bigmodel',
+  defaultModel: 'glm-4.5'
+})
+```
+
+`ZhipuEndpoint` is `'bigmodel' | 'z-ai' | 'bigmodel-coding' | 'z-ai-coding'`.
+
+| Option           | Type            | Default             | Description                                       |
+| ---------------- | --------------- | ------------------- | ------------------------------------------------- |
+| `apiKey`         | `string`        | required            | Zhipu API key. Keep it server-side in production. |
+| `endpoint`       | `ZhipuEndpoint` | `'bigmodel'`        | Built-in endpoint preset.                         |
+| `baseURL`        | `string`        | endpoint-dependent  | Override for proxies or compatible gateways.      |
+| `headers`        | `HeadersInit`   | `{}`                | Extra headers sent on every request.              |
+| `defaultModel`   | `string`        | -                   | Model used when a request omits `model`.          |
+| `chatPath`       | `string`        | `/chat/completions` | Chat endpoint path.                               |
+| `completionPath` | `string`        | `/completions`      | Completion endpoint path.                         |
+| `embeddingPath`  | `string`        | `/embeddings`       | Embeddings endpoint path.                         |
+| `timeoutMs`      | `number`        | -                   | Request timeout in milliseconds.                  |
+| `fetch`          | `typeof fetch`  | global `fetch`      | Custom fetch implementation.                      |
+
+Endpoint defaults:
+
+| Endpoint            | Base URL                                      |
+| ------------------- | --------------------------------------------- |
+| `'bigmodel'`        | `https://open.bigmodel.cn/api/paas/v4`        |
+| `'z-ai'`            | `https://api.z.ai/api/paas/v4`                |
+| `'bigmodel-coding'` | `https://open.bigmodel.cn/api/coding/paas/v4` |
+| `'z-ai-coding'`     | `https://api.z.ai/api/coding/paas/v4`         |
+
+The returned provider has `id: 'zhipu'`.
+
+## `ollama(config)`
+
+Ollama wrapper around its local OpenAI-compatible API.
+
+```ts
+import { ollama } from 'vue-ai-hooks'
+
+const provider = ollama({
+  defaultModel: 'qwen3:8b'
+})
+```
+
+| Option           | Type           | Default                     | Description                                    |
+| ---------------- | -------------- | --------------------------- | ---------------------------------------------- |
+| `apiKey`         | `string`       | `ollama`                    | Placeholder key sent for client compatibility. |
+| `baseURL`        | `string`       | `http://localhost:11434/v1` | Override for remote Ollama hosts or proxies.   |
+| `headers`        | `HeadersInit`  | `{}`                        | Extra headers sent on every request.           |
+| `defaultModel`   | `string`       | -                           | Model used when a request omits `model`.       |
+| `chatPath`       | `string`       | `/chat/completions`         | Chat endpoint path.                            |
+| `completionPath` | `string`       | `/completions`              | Completion endpoint path.                      |
+| `embeddingPath`  | `string`       | `/embeddings`               | Embeddings endpoint path.                      |
+| `timeoutMs`      | `number`       | -                           | Request timeout in milliseconds.               |
+| `fetch`          | `typeof fetch` | global `fetch`              | Custom fetch implementation.                   |
+
+The returned provider has `id: 'ollama'`.
+
+## `vllm(config)`
+
+vLLM wrapper around an OpenAI-compatible server.
+
+```ts
+import { vllm } from 'vue-ai-hooks'
+
+const provider = vllm({
+  defaultModel: 'served-model'
+})
+```
+
+| Option           | Type           | Default                    | Description                                    |
+| ---------------- | -------------- | -------------------------- | ---------------------------------------------- |
+| `apiKey`         | `string`       | `vllm`                     | API key configured on the vLLM server, if any. |
+| `baseURL`        | `string`       | `http://localhost:8000/v1` | Override for remote vLLM servers or proxies.   |
+| `headers`        | `HeadersInit`  | `{}`                       | Extra headers sent on every request.           |
+| `defaultModel`   | `string`       | -                          | Model used when a request omits `model`.       |
+| `chatPath`       | `string`       | `/chat/completions`        | Chat endpoint path.                            |
+| `completionPath` | `string`       | `/completions`             | Completion endpoint path.                      |
+| `embeddingPath`  | `string`       | `/embeddings`              | Embeddings endpoint path.                      |
+| `timeoutMs`      | `number`       | -                          | Request timeout in milliseconds.               |
+| `fetch`          | `typeof fetch` | global `fetch`             | Custom fetch implementation.                   |
+
+The returned provider has `id: 'vllm'`.
 
 ## `deepseek(config)`
 

@@ -6,7 +6,8 @@ Provider 工厂会创建 `useChat`、`useCompletion`、`useEmbedding` 和 `useOb
 集成示例请看 Provider 指南；如果需要精确配置项，请看本页。
 
 公开 TypeScript 配置类型：`OpenAiLikeConfig`、`OpenRouterConfig`、
-`GeminiConfig`、`DeepSeekConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
+`GeminiConfig`、`DeepSeekConfig`、`MoonshotConfig`、`ZhipuConfig`、`ZhipuEndpoint`、
+`OllamaConfig`、`VllmConfig`、`FallbackProviderConfig`、`FallbackProviderContext`、
 `FallbackProviderKind`、`ProxyProviderConfig`、`DefaultChatTransportOptions`、
 `DefaultChatTransportPrepareSendMessagesRequest`、
 `DefaultChatTransportPrepareSendMessagesRequestOptions`、
@@ -120,6 +121,125 @@ const provider = openaiCompatible({
 
 流式和非流式 chat 响应都会把模型工具调用保留为 `ChatChunk.toolCalls`，因此
 `useChat` 在不同 transport 模式下可以复用同一套工具流程。
+
+## `moonshot(config)`
+
+基于 Kimi/Moonshot OpenAI-compatible API 的封装。
+
+```ts
+import { moonshot } from 'vue-ai-hooks'
+
+const provider = moonshot({
+  apiKey: import.meta.env.VITE_MOONSHOT_API_KEY,
+  defaultModel: 'kimi-k2'
+})
+```
+
+| 选项             | 类型           | 默认值                       | 说明                                     |
+| ---------------- | -------------- | ---------------------------- | ---------------------------------------- |
+| `apiKey`         | `string`       | 必填                         | Moonshot API key。生产环境请放在服务端。 |
+| `baseURL`        | `string`       | `https://api.moonshot.ai/v1` | 代理或兼容网关地址。                     |
+| `headers`        | `HeadersInit`  | `{}`                         | 每个请求都会带上的额外 headers。         |
+| `defaultModel`   | `string`       | -                            | 请求未指定 `model` 时使用的模型。        |
+| `chatPath`       | `string`       | `/chat/completions`          | Chat 端点路径。                          |
+| `completionPath` | `string`       | `/completions`               | Completion 端点路径。                    |
+| `embeddingPath`  | `string`       | `/embeddings`                | Embeddings 端点路径。                    |
+| `timeoutMs`      | `number`       | -                            | 请求超时时间，单位毫秒。                 |
+| `fetch`          | `typeof fetch` | 全局 `fetch`                 | 自定义 fetch 实现。                      |
+
+返回的 Provider 使用 `id: 'moonshot'`。
+
+## `zhipu(config)`
+
+基于智谱 BigModel / Z.ai OpenAI-compatible API 的封装。
+
+```ts
+import { zhipu } from 'vue-ai-hooks'
+
+const provider = zhipu({
+  apiKey: import.meta.env.VITE_ZHIPU_API_KEY,
+  endpoint: 'bigmodel',
+  defaultModel: 'glm-4.5'
+})
+```
+
+`ZhipuEndpoint` 是 `'bigmodel' | 'z-ai' | 'bigmodel-coding' | 'z-ai-coding'`。
+
+| 选项             | 类型            | 默认值              | 说明                                 |
+| ---------------- | --------------- | ------------------- | ------------------------------------ |
+| `apiKey`         | `string`        | 必填                | 智谱 API key。生产环境请放在服务端。 |
+| `endpoint`       | `ZhipuEndpoint` | `'bigmodel'`        | 内置端点预设。                       |
+| `baseURL`        | `string`        | 取决于 endpoint     | 代理或兼容网关地址。                 |
+| `headers`        | `HeadersInit`   | `{}`                | 每个请求都会带上的额外 headers。     |
+| `defaultModel`   | `string`        | -                   | 请求未指定 `model` 时使用的模型。    |
+| `chatPath`       | `string`        | `/chat/completions` | Chat 端点路径。                      |
+| `completionPath` | `string`        | `/completions`      | Completion 端点路径。                |
+| `embeddingPath`  | `string`        | `/embeddings`       | Embeddings 端点路径。                |
+| `timeoutMs`      | `number`        | -                   | 请求超时时间，单位毫秒。             |
+| `fetch`          | `typeof fetch`  | 全局 `fetch`        | 自定义 fetch 实现。                  |
+
+端点默认值：
+
+| Endpoint            | Base URL                                      |
+| ------------------- | --------------------------------------------- |
+| `'bigmodel'`        | `https://open.bigmodel.cn/api/paas/v4`        |
+| `'z-ai'`            | `https://api.z.ai/api/paas/v4`                |
+| `'bigmodel-coding'` | `https://open.bigmodel.cn/api/coding/paas/v4` |
+| `'z-ai-coding'`     | `https://api.z.ai/api/coding/paas/v4`         |
+
+返回的 Provider 使用 `id: 'zhipu'`。
+
+## `ollama(config)`
+
+基于 Ollama 本地 OpenAI-compatible API 的封装。
+
+```ts
+import { ollama } from 'vue-ai-hooks'
+
+const provider = ollama({
+  defaultModel: 'qwen3:8b'
+})
+```
+
+| 选项             | 类型           | 默认值                      | 说明                              |
+| ---------------- | -------------- | --------------------------- | --------------------------------- |
+| `apiKey`         | `string`       | `ollama`                    | 为兼容客户端发送的占位 key。      |
+| `baseURL`        | `string`       | `http://localhost:11434/v1` | 远程 Ollama host 或代理地址。     |
+| `headers`        | `HeadersInit`  | `{}`                        | 每个请求都会带上的额外 headers。  |
+| `defaultModel`   | `string`       | -                           | 请求未指定 `model` 时使用的模型。 |
+| `chatPath`       | `string`       | `/chat/completions`         | Chat 端点路径。                   |
+| `completionPath` | `string`       | `/completions`              | Completion 端点路径。             |
+| `embeddingPath`  | `string`       | `/embeddings`               | Embeddings 端点路径。             |
+| `timeoutMs`      | `number`       | -                           | 请求超时时间，单位毫秒。          |
+| `fetch`          | `typeof fetch` | 全局 `fetch`                | 自定义 fetch 实现。               |
+
+返回的 Provider 使用 `id: 'ollama'`。
+
+## `vllm(config)`
+
+基于 vLLM OpenAI-compatible server 的封装。
+
+```ts
+import { vllm } from 'vue-ai-hooks'
+
+const provider = vllm({
+  defaultModel: 'served-model'
+})
+```
+
+| 选项             | 类型           | 默认值                     | 说明                                |
+| ---------------- | -------------- | -------------------------- | ----------------------------------- |
+| `apiKey`         | `string`       | `vllm`                     | vLLM 服务端配置的 API key，如果有。 |
+| `baseURL`        | `string`       | `http://localhost:8000/v1` | 远程 vLLM server 或代理地址。       |
+| `headers`        | `HeadersInit`  | `{}`                       | 每个请求都会带上的额外 headers。    |
+| `defaultModel`   | `string`       | -                          | 请求未指定 `model` 时使用的模型。   |
+| `chatPath`       | `string`       | `/chat/completions`        | Chat 端点路径。                     |
+| `completionPath` | `string`       | `/completions`             | Completion 端点路径。               |
+| `embeddingPath`  | `string`       | `/embeddings`              | Embeddings 端点路径。               |
+| `timeoutMs`      | `number`       | -                          | 请求超时时间，单位毫秒。            |
+| `fetch`          | `typeof fetch` | 全局 `fetch`               | 自定义 fetch 实现。                 |
+
+返回的 Provider 使用 `id: 'vllm'`。
 
 ## `deepseek(config)`
 

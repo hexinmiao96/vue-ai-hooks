@@ -39,6 +39,8 @@ const requiredRuntimeExports = [
   'generateId',
   'inspectRequestTrace',
   'jsonSchema',
+  'moonshot',
+  'ollama',
   'openai',
   'openaiCompatible',
   'openrouter',
@@ -49,6 +51,7 @@ const requiredRuntimeExports = [
   'tool',
   'toChatChunks',
   'validateMessages',
+  'vllm',
   'useChat',
   'useCompletion',
   'useEmbedding',
@@ -57,7 +60,8 @@ const requiredRuntimeExports = [
   'useSpeech',
   'useTranscription',
   'useVideo',
-  'usePersist'
+  'usePersist',
+  'zhipu'
 ]
 const publicExports = extractExports(readFileSync(fromRoot('src/index.ts'), 'utf8'))
 const reactPublicExports = extractExports(readFileSync(fromRoot('src/react.ts'), 'utf8'))
@@ -148,6 +152,10 @@ for (const name of requiredRuntimeExports) {
 
 assertEqual(esm.openai({ apiKey: 'test-key' }).id, 'openai-compatible', 'ESM openai provider id')
 assertEqual(esm.deepseek({ apiKey: 'test-key' }).id, 'deepseek', 'ESM deepseek provider id')
+assertEqual(esm.moonshot({ apiKey: 'test-key' }).id, 'moonshot', 'ESM moonshot provider id')
+assertEqual(esm.zhipu({ apiKey: 'test-key' }).id, 'zhipu', 'ESM zhipu provider id')
+assertEqual(esm.ollama().id, 'ollama', 'ESM ollama provider id')
+assertEqual(esm.vllm().id, 'vllm', 'ESM vllm provider id')
 assertEqual(cjs.openrouter({ apiKey: 'test-key' }).id, 'openrouter', 'CJS openrouter provider id')
 assertEqual(esm.proxyProvider().id, 'proxy', 'ESM proxy provider id')
 assertEqual(

@@ -305,7 +305,18 @@ useChat({
 })
 ```
 
-其他 OpenAI-compatible 网关仍可以直接使用 `openaiCompatible`。
+常见本地或托管 OpenAI-compatible 路由有内置预设：
+
+```ts
+import { moonshot, ollama, vllm, zhipu } from 'vue-ai-hooks'
+
+moonshot({ apiKey: import.meta.env.VITE_MOONSHOT_API_KEY, defaultModel: 'kimi-k2' })
+zhipu({ apiKey: import.meta.env.VITE_ZHIPU_API_KEY, endpoint: 'bigmodel' })
+ollama({ defaultModel: 'qwen3:8b' })
+vllm({ defaultModel: 'served-model' })
+```
+
+其他未列出的 OpenAI-compatible 网关仍可以直接使用 `openaiCompatible`。
 
 如果是 OpenRouter，可以直接使用内置 helper：
 
