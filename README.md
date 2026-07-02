@@ -644,9 +644,10 @@ Before production rollout, use the
 
 ## Examples
 
-Eleven runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Twelve runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
+- `examples/threaded-chat` — no-key threaded chat demo with `useChatThreads`, per-thread `useChat({ persist })`, and local restore checks
 - `examples/react-chat` — no-key React chat quickstart with `vue-ai-hooks/react`, `DirectChatTransport`, and request trace state
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
@@ -664,12 +665,18 @@ To run them:
 pnpm install
 cp .env.example .env
 pnpm example:chat
+pnpm example:threaded-chat
 pnpm example:react-chat
 ```
 
 `examples/chat` defaults to the no-key `local-tools` provider backed by
 `DirectChatTransport` unless you select a provider or configure a real
 `VITE_OPENAI_KEY`.
+
+`examples/threaded-chat` uses `useChatThreads()` for the sidebar and a keyed
+`useChat({ persist })` instance per active thread, so you can create, rename,
+archive, restore, delete, refresh, and verify message restore without provider
+keys.
 
 `examples/react-chat` uses the same no-key transport pattern through
 `vue-ai-hooks/react`, so React consumers can verify streaming state, `stop()`,

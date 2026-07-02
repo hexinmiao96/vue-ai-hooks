@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   idempotent execution, safe renderers, and human-in-the-loop audit trails.
 - Added backend agent bridge recipes for LangChain, LangGraph, and custom agent
   services that project browser-safe `AgentEvent` streams.
+- Added a no-key threaded chat demo that pairs `useChatThreads()` with
+  per-thread `useChat({ persist })` message storage.
 
 ## [0.14.0] - 2026-07-02
 

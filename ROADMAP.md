@@ -77,6 +77,9 @@ planning.
 - Shipped in 0.14.0: thread serialization helpers for storing sidebar indexes
   outside `localStorage` while keeping message bodies in `useChat({ persist })`
   or server storage.
+- Added after 0.14.0: a no-key threaded chat demo that verifies local thread
+  indexes, per-thread message persistence, rename, archive, restore, delete,
+  trace state, and independent message restore before real providers.
 - Continue exploring server storage adapter recipes and regenerate/branch
   patterns without embedding a backend database abstraction in the package.
 - In progress after 0.14.0: production server storage and regenerate/branch

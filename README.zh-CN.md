@@ -518,9 +518,10 @@ Date-safe 持久化。消息正文继续用 `useChat({ id: thread.id, persist })
 
 ## 示例
 
-十一个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
+十二个可运行示例位于 [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples)：
 
 - `examples/chat`：支持 Provider 切换、结构化 `Message.parts` 和本地工具审批演示的流式聊天 UI
+- `examples/threaded-chat`：不需要 key 的 threaded chat demo，包含 `useChatThreads`、每个 thread 独立的 `useChat({ persist })` 和本地恢复验证
 - `examples/react-chat`：不需要 key 的 React 聊天 quickstart，包含 `vue-ai-hooks/react`、`DirectChatTransport` 和请求 trace 状态
 - `examples/proxy-server`：本地后端代理模板，覆盖默认 `/api/*` 路由、显式 `/api/ai/*` 契约和 UI message stream 路由
 - `examples/completion`：单次补全表单
@@ -538,11 +539,16 @@ Date-safe 持久化。消息正文继续用 `useChat({ id: thread.id, persist })
 pnpm install
 cp .env.example .env
 pnpm example:chat
+pnpm example:threaded-chat
 pnpm example:react-chat
 ```
 
 `examples/chat` 默认使用由 `DirectChatTransport` 驱动、不需要 key 的 `local-tools` Provider；
 只有显式选择 Provider 或配置真实 `VITE_OPENAI_KEY` 时才会请求外部模型服务。
+
+`examples/threaded-chat` 用 `useChatThreads()` 管理侧边栏，并给当前 thread 挂载独立
+`useChat({ persist })`；你可以在不配置 Provider key 的情况下创建、重命名、归档、恢复、
+删除、刷新页面，并确认消息只恢复到对应 thread。
 
 `examples/react-chat` 通过 `vue-ai-hooks/react` 复用同样的不需要 key 的 transport 模式，
 React 消费者可以先验证流式 state、`stop()`、`lastRequest`、`lastResponse`、usage 和
