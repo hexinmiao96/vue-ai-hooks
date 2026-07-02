@@ -68,6 +68,9 @@ storage, and operations.
 ## Persistence and threads
 
 - Use `persist` for local-only chat history.
+- If you use IndexedDB instead of server storage in a product stage, keep restore
+  asynchronous (before chat UI renders) and persist only on explicit boundaries
+  (`onFinish`, rename, archive, delete).
 - Use `serializeMessages()` and `deserializeMessages()` for server storage.
 - Follow the [server storage recipe](/guide/server-storage) when chats need
   multi-device history, team handoff, or audit retention.

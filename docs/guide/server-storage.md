@@ -31,6 +31,126 @@ Do not store provider credentials or raw upstream responses in either payload.
 Use `PUT` as an idempotent save. Add `If-Match` or a monotonically increasing
 `revision` when multiple browser tabs can edit the same thread.
 
+## IndexedDB local durability adapter (async)
+
+`persist` in the runtime uses the browser `Storage` interface and is synchronous,
+so it cannot be pointed directly at native IndexedDB. If you need no-server
+durable history (for PWA/offline mode, quick MVP, or demos), keep hydration and
+save explicit and async:
+
+```ts
+import {
+  deserializeChatThreadsState,
+  deserializeMessages,
+  serializeChatThreadsState,
+  serializeMessages,
+  useChat,
+  useChatThreads,
+  type Message,
+  type SerializedChatThreadsState,
+  type SerializedMessage
+} from 'vue-ai-hooks'
+
+type ThreadStoreKey = `thread-messages:${string}`
+
+const DB_NAME = 'assistant-cache-v1'
+const VERSION = 1
+const STORE_THREADS = 'thread-index'
+const STORE_MESSAGES = 'thread-messages'
+
+function openDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, VERSION)
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(STORE_THREADS)) db.createObjectStore(STORE_THREADS, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(STORE_MESSAGES)) db.createObjectStore(STORE_MESSAGES)
+    }
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+  })
+}
+
+async function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>) {
+  const db = await openDb()
+  return new Promise<T>((resolve, reject) => {
+    const tx = db.transaction(storeName, mode)
+    const store = tx.objectStore(storeName)
+    const request = fn(store)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+    tx.oncomplete = () => db.close()
+    tx.onabort = () => reject(tx.error)
+  })
+}
+
+async function loadThreadIndex(): Promise<SerializedChatThreadsState | null> {
+  const raw = await withStore<SerializedChatThreadsState | undefined>('thread-index', 'readonly', (store) =>
+    store.get('threads')
+  )
+  return raw ?? null
+}
+
+async function loadThreadMessages(threadId: string): Promise<SerializedMessage[] | null> {
+  const raw = await withStore<SerializedMessage[] | undefined>('thread-messages', 'readonly', (store) =>
+    store.get(`thread-messages:${threadId}` as ThreadStoreKey)
+  )
+  return raw ?? null
+}
+
+async function saveThreadIndex(payload: SerializedChatThreadsState) {
+  await withStore('thread-index', 'readwrite', (store) => {
+    store.put({ ...payload, id: 'threads' })
+  })
+}
+
+async function saveThreadMessages(threadId: string, messages: SerializedMessage[]) {
+  await withStore('thread-messages', 'readwrite', (store) => {
+    store.put(messages, `thread-messages:${threadId}` as ThreadStoreKey)
+  })
+}
+
+const initialThreadState = deserializeChatThreadsState(await loadThreadIndex()) ?? {
+  threads: [],
+  activeThreadId: null
+}
+
+const threads = useChatThreads({
+  initialThreads: initialThreadState.threads,
+  initialActiveThreadId: initialThreadState.activeThreadId
+})
+
+const thread = threads.activeThread.value ?? threads.createThread({ title: 'New chat' })
+const initialMessages = deserializeMessages(await loadThreadMessages(thread.id)) ?? []
+
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  initialMessages,
+  api: '/api/chat',
+  credentials: 'include',
+  onFinish: async () => {
+    await saveThreadIndex(
+      serializeChatThreadsState({
+        threads: threads.threads.value,
+        activeThreadId: threads.activeThreadId.value
+      })
+    )
+    await saveThreadMessages(thread.id, serializeMessages(chat.messages.value))
+  }
+})
+```
+
+Persist only at explicit boundaries, not on every keystroke:
+
+- `onFinish` for stream completion
+- thread rename/archive/delete handlers
+- explicit "new thread" action
+
+If save fails, keep a local retry queue in memory and fallback to `localStorage`
+only for low-risk metadata so users can still recover in storage-pressure
+conditions.
+
 ## Browser wiring
 
 Load the server snapshot before mounting the chat surface. In a routed app, this
@@ -214,6 +334,8 @@ background job keyed by `threadId` and trace id.
 - Reject payloads that fail `deserializeMessages()` or
   `deserializeChatThreadsState()`.
 - Use optimistic concurrency for rename, archive, delete, and regenerate.
+- For no-server durability, keep IndexedDB hydration async and save only on
+  explicit lifecycle boundaries (finish, rename, archive, delete).
 - Do not save raw provider errors, API keys, request headers, or full curl
   output.
 - Run one restore smoke test: load index, load messages, call `setMessages()`,

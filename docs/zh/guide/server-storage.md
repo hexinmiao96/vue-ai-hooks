@@ -28,6 +28,123 @@ description: 把 vue-ai-hooks 的 thread 索引和聊天消息保存到自有后
 用 `PUT` 表达幂等保存。如果多个浏览器标签页可能同时编辑同一个 thread，加上 `If-Match`
 或单调递增的 `revision`。
 
+## IndexedDB 本地持久化适配器（异步）
+
+`persist` 的运行时实现使用的是浏览器 `Storage` 接口，属于同步接口，不能直接接原生
+IndexedDB。若你的场景是不接服务端、但需要离线或 PWA 持久化，可改为“显式异步存取”：
+
+```ts
+import {
+  deserializeChatThreadsState,
+  deserializeMessages,
+  serializeChatThreadsState,
+  serializeMessages,
+  useChat,
+  useChatThreads,
+  type Message,
+  type SerializedChatThreadsState,
+  type SerializedMessage
+} from 'vue-ai-hooks'
+
+type ThreadStoreKey = `thread-messages:${string}`
+
+const DB_NAME = 'assistant-cache-v1'
+const VERSION = 1
+const STORE_THREADS = 'thread-index'
+const STORE_MESSAGES = 'thread-messages'
+
+function openDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, VERSION)
+    request.onupgradeneeded = () => {
+      const db = request.result
+      if (!db.objectStoreNames.contains(STORE_THREADS)) db.createObjectStore(STORE_THREADS, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(STORE_MESSAGES)) db.createObjectStore(STORE_MESSAGES)
+    }
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(request.result)
+  })
+}
+
+async function withStore<T>(storeName: string, mode: IDBTransactionMode, fn: (store: IDBObjectStore) => IDBRequest<T>) {
+  const db = await openDb()
+  return new Promise<T>((resolve, reject) => {
+    const tx = db.transaction(storeName, mode)
+    const store = tx.objectStore(storeName)
+    const request = fn(store)
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => reject(request.error)
+    tx.oncomplete = () => db.close()
+    tx.onabort = () => reject(tx.error)
+  })
+}
+
+async function loadThreadIndex(): Promise<SerializedChatThreadsState | null> {
+  const raw = await withStore<SerializedChatThreadsState | undefined>('thread-index', 'readonly', (store) =>
+    store.get('threads')
+  )
+  return raw ?? null
+}
+
+async function loadThreadMessages(threadId: string): Promise<SerializedMessage[] | null> {
+  const raw = await withStore<SerializedMessage[] | undefined>('thread-messages', 'readonly', (store) =>
+    store.get(`thread-messages:${threadId}` as ThreadStoreKey)
+  )
+  return raw ?? null
+}
+
+async function saveThreadIndex(payload: SerializedChatThreadsState) {
+  await withStore('thread-index', 'readwrite', (store) => {
+    store.put({ ...payload, id: 'threads' })
+  })
+}
+
+async function saveThreadMessages(threadId: string, messages: SerializedMessage[]) {
+  await withStore('thread-messages', 'readwrite', (store) => {
+    store.put(messages, `thread-messages:${threadId}` as ThreadStoreKey)
+  })
+}
+
+const initialThreadState = deserializeChatThreadsState(await loadThreadIndex()) ?? {
+  threads: [],
+  activeThreadId: null
+}
+
+const threads = useChatThreads({
+  initialThreads: initialThreadState.threads,
+  initialActiveThreadId: initialThreadState.activeThreadId
+})
+
+const thread = threads.activeThread.value ?? threads.createThread({ title: 'New chat' })
+const initialMessages = deserializeMessages(await loadThreadMessages(thread.id)) ?? []
+
+const chat = useChat({
+  id: thread.id,
+  threadId: thread.id,
+  initialMessages,
+  api: '/api/chat',
+  credentials: 'include',
+  onFinish: async () => {
+    await saveThreadIndex(
+      serializeChatThreadsState({
+        threads: threads.threads.value,
+        activeThreadId: threads.activeThreadId.value
+      })
+    )
+    await saveThreadMessages(thread.id, serializeMessages(chat.messages.value))
+  }
+})
+```
+
+仅在生命周期边界入库，避免每次输入都刷盘：
+
+- `onFinish`（stream 完成）
+- thread rename/archive/delete 操作
+- 新建/切换 thread 时手动触发存储
+
+如遇写入失败，建议把失败写入队列，次次启动时重试；遇到配额异常可以降级到仅保留
+低风险 metadata 的本地兜底（如 thread 标题和 activeId），保证页面仍可用。
+
 ## 浏览器接线
 
 在挂载聊天界面前先加载服务端快照。在路由型应用里，这通常放在 route loader、页面 async
@@ -205,6 +322,8 @@ chat 路由应该：
 - `createdAt` 和 `updatedAt` 可以用数据库 timestamp，但消息 payload 继续用
   `serializeMessages()` 保持 Date-safe。
 - 拒绝不能通过 `deserializeMessages()` 或 `deserializeChatThreadsState()` 的 payload。
+- 仅本地场景下，用 IndexedDB 时把恢复逻辑放在异步 hydration 阶段，写库操作放在
+  stream 完成、rename、archive、delete 这类明确边界。
 - 重命名、归档、删除和重新生成要有乐观并发控制。
 - 不保存原始 Provider 错误、API key、请求 header 或完整 curl 输出。
 - 跑一次 restore smoke test：加载 index、加载 messages、调用 `setMessages()`、发送 prompt、

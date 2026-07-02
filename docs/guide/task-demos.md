@@ -16,6 +16,7 @@ contract, then replace the local route with your app-owned backend.
 | Vue chat with tool approval     | `pnpm example:chat`                             | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals)                | Click **Run approval demo**, approve or reject the tool.  |
 | React chat quickstart           | `pnpm example:react-chat`                       | `examples/react-chat/App.tsx` and [React hooks](/reference/react)                  | Send one prompt, call `stop()`, then inspect trace state. |
 | Thread sidebar persistence      | `pnpm example:threaded-chat`                    | `examples/threaded-chat/App.vue` and [useChatThreads](/reference/use-chat-threads) | Create, rename, archive, restore, and reopen a thread.    |
+| IndexedDB local persistence    | Your bootstrap hydration logic                    | [Server storage](/guide/server-storage) and the section `IndexedDB local durability (async)` | Restore from IndexedDB, save on finish actions, refresh, and verify no data loss. |
 | Server-side chat history        | Your app backend and database                   | [Server storage](/guide/server-storage)                                            | Restore index and messages, send, reload, and verify.     |
 | Regenerate or branch history    | Your stored thread plus `/api/chat`             | [Regenerate branches](/guide/regenerate-branches)                                  | Regenerate without overwriting the original answer.       |
 | Own `/api/chat` proxy           | `pnpm example:proxy-server` plus proxy chat env | [Proxy recipes](/guide/proxy-recipes)                                              | Confirm stream chunks arrive without browser keys.        |
@@ -138,6 +139,23 @@ Verify create, rename, archive, restore, and delete before adding a server
 storage adapter. The runnable demo uses a deterministic `DirectChatTransport`,
 `useChatThreads()` for the sidebar index, and one keyed `useChat({ persist })`
 instance per active thread. See [useChatThreads](/reference/use-chat-threads).
+
+## IndexedDB local persistence
+
+If backend rollout is not ready yet, use IndexedDB for durable local recovery and
+then switch to server storage later. `persist` stays localStorage-only, so run an
+explicit async hydration and save layer:
+
+1. On app load, read thread index and messages from IndexedDB.
+2. Pass restored data as `initialThreads`, `initialActiveThreadId`, and
+   `initialMessages`.
+3. On `onFinish`, thread rename, archive, restore, and delete, write snapshot rows
+   back to IndexedDB.
+
+This keeps your first production candidate testable without a database while still
+preparing the same thread/message shape used by the server-storage recipe.
+
+See [IndexedDB local durability (async)](/guide/server-storage#indexeddb-local-durability-async).
 
 ## Server-side chat history
 

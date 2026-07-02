@@ -32,6 +32,9 @@ pnpm example:chat
 `useChatThreads()` 和每个 thread 独立的 `useChat({ persist })` 存储放在一起，你可以先验证
 创建、重命名、归档、恢复、删除、刷新和本地历史恢复，再接 server storage adapter。
 
+如要先上线无服务端方案的本地版本，再做服务端接入，可以先看 [IndexedDB 本地持久化（异步）](/zh/guide/server-storage#indexeddb-%E6%9C%AC%E5%9C%B0%E6%8C%81%E4%B9%85%E5%8C%96%E9%85%8D%E7%BD%AE%E5%99%A8%E5%BC%82%E6%AD%A5)。
+该方案在启动时异步恢复 thread/index 与 messages，并在明确生命周期动作后回写。
+
 要验证后端契约，运行 `pnpm example:proxy-server`。它同时接受默认的
 `/api/chat`、`/api/completion`、`/api/embedding`、`/api/image`、`/api/video`、
 `/api/speech`、`/api/rerank`、`/api/transcription`、`/api/object` 和
@@ -64,6 +67,7 @@ WAV；设置 `VITE_PROXY_BASE_URL` 后会切到 proxy `/api/speech` 路由。
 | -------------------------------- | -------------------------------------- |
 | 做聊天界面、结构化片段或工具审批 | [流式对话](#chat-demo)                 |
 | 增加 thread 侧边栏和本地恢复验证 | `pnpm example:threaded-chat`           |
+| 保持无服务端本地历史             | [IndexedDB 本地持久化（异步）](/zh/guide/server-storage#indexeddb-%E6%9C%AC%E5%9C%B0%E6%8C%81%E4%B9%85%E5%8C%96%E9%85%8D%E7%BD%AE%E5%99%A8%E5%BC%82%E6%AD%A5) |
 | 试 React 聊天迁移入口            | `pnpm example:react-chat`              |
 | 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo) |
 | 一个提示词生成一段文本           | [文本补全](#completion-demo)           |

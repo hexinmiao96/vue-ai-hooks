@@ -36,6 +36,11 @@ For a no-key threaded chat flow, run `pnpm example:threaded-chat`. It pairs
 create, rename, archive, restore, delete, refresh, and verify local history
 before adding a server storage adapter.
 
+For no-server production pilots, follow the [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async)
+recipe after this step. It shows how to pre-load and flush thread state through
+an async local store while keeping the same thread/message shape used by server
+storage.
+
 To test the backend contract, run `pnpm example:proxy-server`. It accepts the
 default `/api/chat`, `/api/completion`, `/api/embedding`, `/api/rerank`,
 `/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and
@@ -77,6 +82,7 @@ transport.
 | -------------------------------------------------------- | ------------------------------------------ |
 | Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)               |
 | Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`               |
+| Keep local history in async IndexedDB                      | [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async) |
 | Try the React chat migration entry                       | `pnpm example:react-chat`                  |
 | Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)    |
 | Turn one prompt into text                                | [Text completion](#completion-demo)        |

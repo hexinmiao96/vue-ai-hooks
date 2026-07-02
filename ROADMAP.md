@@ -80,8 +80,11 @@ planning.
 - Added after 0.14.0: a no-key threaded chat demo that verifies local thread
   indexes, per-thread message persistence, rename, archive, restore, delete,
   trace state, and independent message restore before real providers.
-- Continue exploring server storage adapter recipes and regenerate/branch
-  patterns without embedding a backend database abstraction in the package.
+- Added after 0.14.0: an IndexedDB local durability recipe in server storage
+  docs for async hydration, explicit save boundaries, and smoother no-server
+  migration to backend storage.
+- Continue exploring regenerate/branch patterns without embedding a backend
+  database abstraction in the package.
 - In progress after 0.14.0: production server storage and regenerate/branch
   recipes for tenant-scoped thread indexes, message bodies, restore smoke tests,
   idempotent `runId` handling, and concurrency boundaries.
