@@ -3,7 +3,9 @@ import { usePersist, type UsePersistOptions } from './usePersist'
 import { createId } from '../utils/id'
 import type { IdGenerator } from '../types'
 
-export interface ChatThread<TMetadata extends Record<string, unknown> = Record<string, unknown>> {
+type ThreadMetadata = Record<string, unknown>
+
+export interface ChatThread<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id: string
   title: string
   createdAt: Date
@@ -14,9 +16,7 @@ export interface ChatThread<TMetadata extends Record<string, unknown> = Record<s
   lastMessagePreview?: string
 }
 
-export interface SerializedChatThread<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface SerializedChatThread<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id: string
   title: string
   createdAt: string
@@ -27,23 +27,17 @@ export interface SerializedChatThread<
   lastMessagePreview?: string
 }
 
-export interface ChatThreadsState<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface ChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: ChatThread<TMetadata>[]
   activeThreadId: string | null
 }
 
-export interface SerializedChatThreadsState<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface SerializedChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: SerializedChatThread<TMetadata>[]
   activeThreadId: string | null
 }
 
-export interface CreateChatThreadInput<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface CreateChatThreadInput<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id?: string
   title?: string
   createdAt?: Date
@@ -55,9 +49,7 @@ export interface CreateChatThreadInput<
   active?: boolean
 }
 
-export interface UpdateChatThreadInput<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface UpdateChatThreadInput<TMetadata extends ThreadMetadata = ThreadMetadata> {
   title?: string
   updatedAt?: Date
   archivedAt?: Date | null
@@ -66,9 +58,7 @@ export interface UpdateChatThreadInput<
   lastMessagePreview?: string | null
 }
 
-export interface ChatThreadsPersistOptions<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface ChatThreadsPersistOptions<TMetadata extends ThreadMetadata = ThreadMetadata> {
   key: string
   version?: number
   storage?: Storage | null
@@ -90,9 +80,7 @@ export interface ChatThreadsPersistenceErrorInfo {
   timestamp: Date
 }
 
-export interface UseChatThreadsOptions<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface UseChatThreadsOptions<TMetadata extends ThreadMetadata = ThreadMetadata> {
   initialThreads?: ChatThread<TMetadata>[]
   initialActiveThreadId?: string | null
   persist?: ChatThreadsPersistOptions<TMetadata>
@@ -100,9 +88,7 @@ export interface UseChatThreadsOptions<
   now?: () => Date
 }
 
-export interface UseChatThreadsReturn<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+export interface UseChatThreadsReturn<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: ComputedRef<ChatThread<TMetadata>[]>
   visibleThreads: ComputedRef<ChatThread<TMetadata>[]>
   archivedThreads: ComputedRef<ChatThread<TMetadata>[]>
@@ -128,14 +114,12 @@ export interface UseChatThreadsReturn<
   clearPersistenceError: () => void
 }
 
-interface MutableChatThreadsState<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
-> {
+interface MutableChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: ChatThread<TMetadata>[]
   activeThreadId: string | null
 }
 
-export function useChatThreads<TMetadata extends Record<string, unknown> = Record<string, unknown>>(
+export function useChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
   options: UseChatThreadsOptions<TMetadata> = {}
 ): UseChatThreadsReturn<TMetadata> {
   const makeId = options.createId ?? createId
@@ -191,15 +175,14 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
         ? { lastMessagePreview: input.lastMessagePreview }
         : {})
     }
-    let activeThreadId = state.value.activeThreadId
-    if (input.active !== false && !thread.archivedAt) {
-      activeThreadId = thread.id
-    } else if (activeThreadId === thread.id) {
-      activeThreadId = null
-    }
     replaceState({
       threads: [thread, ...state.value.threads.filter((item) => item.id !== thread.id)],
-      activeThreadId
+      activeThreadId:
+        input.active === false && state.value.activeThreadId === thread.id
+          ? null
+          : input.active === false || thread.archivedAt
+            ? state.value.activeThreadId
+            : thread.id
     })
     return thread
   }
@@ -341,9 +324,9 @@ export function useChatThreads<TMetadata extends Record<string, unknown> = Recor
   }
 }
 
-export function serializeChatThreads<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
->(threads: ChatThread<TMetadata>[]): SerializedChatThread<TMetadata>[] {
+export function serializeChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
+  threads: ChatThread<TMetadata>[]
+): SerializedChatThread<TMetadata>[] {
   return threads.map((thread) => ({
     id: thread.id,
     title: thread.title,
@@ -358,9 +341,9 @@ export function serializeChatThreads<
   }))
 }
 
-export function deserializeChatThreads<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
->(raw: unknown): ChatThread<TMetadata>[] | null {
+export function deserializeChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
+  raw: unknown
+): ChatThread<TMetadata>[] | null {
   if (!Array.isArray(raw)) return null
   const threads: ChatThread<TMetadata>[] = []
   for (const item of raw) {
@@ -371,18 +354,18 @@ export function deserializeChatThreads<
   return threads
 }
 
-export function serializeChatThreadsState<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
->(state: ChatThreadsState<TMetadata>): SerializedChatThreadsState<TMetadata> {
+export function serializeChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata>(
+  state: ChatThreadsState<TMetadata>
+): SerializedChatThreadsState<TMetadata> {
   return {
     threads: serializeChatThreads(state.threads),
     activeThreadId: state.activeThreadId
   }
 }
 
-export function deserializeChatThreadsState<
-  TMetadata extends Record<string, unknown> = Record<string, unknown>
->(raw: unknown): ChatThreadsState<TMetadata> | null {
+export function deserializeChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata>(
+  raw: unknown
+): ChatThreadsState<TMetadata> | null {
   if (!raw || typeof raw !== 'object') return null
   const record = raw as Record<string, unknown>
   const threads = deserializeChatThreads<TMetadata>(record.threads)
@@ -396,7 +379,7 @@ export function deserializeChatThreadsState<
   )
 }
 
-function normalizeThreadsState<TMetadata extends Record<string, unknown>>(
+function normalizeThreadsState<TMetadata extends ThreadMetadata>(
   state: ChatThreadsState<TMetadata>,
   now: () => Date
 ): MutableChatThreadsState<TMetadata> {
@@ -418,7 +401,7 @@ function normalizeThreadsState<TMetadata extends Record<string, unknown>>(
   }
 }
 
-function normalizeThread<TMetadata extends Record<string, unknown>>(
+function normalizeThread<TMetadata extends ThreadMetadata>(
   thread: ChatThread<TMetadata>,
   fallbackDate: Date
 ): ChatThread<TMetadata> | null {
@@ -440,7 +423,7 @@ function normalizeThread<TMetadata extends Record<string, unknown>>(
   }
 }
 
-function deserializeChatThread<TMetadata extends Record<string, unknown>>(
+function deserializeChatThread<TMetadata extends ThreadMetadata>(
   raw: unknown
 ): ChatThread<TMetadata> | null {
   if (!raw || typeof raw !== 'object') return null
@@ -466,7 +449,7 @@ function deserializeChatThread<TMetadata extends Record<string, unknown>>(
   }
 }
 
-function sortedThreads<TMetadata extends Record<string, unknown>>(
+function sortedThreads<TMetadata extends ThreadMetadata>(
   threads: ChatThread<TMetadata>[]
 ): ChatThread<TMetadata>[] {
   return [...threads].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
