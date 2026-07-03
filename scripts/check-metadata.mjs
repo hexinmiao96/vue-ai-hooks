@@ -302,8 +302,8 @@ expect(
 )
 expect(packageJson.engines?.node === '>=18.18.0', 'Node engine floor must stay >=18.18.0')
 expect(
-  packageJson.packageManager === 'pnpm@8.15.9',
-  'packageManager must stay pinned to pnpm 8.15.9'
+  packageJson.packageManager === 'pnpm@11.7.0',
+  'packageManager must stay pinned to pnpm 11.7.0'
 )
 expect(
   lockfile.startsWith("lockfileVersion: '6.0'") || lockfile.startsWith("lockfileVersion: '9.0'"),

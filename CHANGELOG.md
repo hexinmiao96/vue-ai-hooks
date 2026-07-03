@@ -39,6 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repeatable after a release.
 - Release notes keep the active publishing contract visible:
   `prepublishOnly` now delegates to `release:check`.
+- Updated GitHub workflows to pnpm 11 to match `pnpm-lock.yaml` format
+  version `9.0` used in this release.
 - Updated GitHub Actions setup actions to Node 24-backed versions to avoid
   runner deprecation warnings in CI and release jobs.
 - Added opt-in persistence load and clear error callbacks.
