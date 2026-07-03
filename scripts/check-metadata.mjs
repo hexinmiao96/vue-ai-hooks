@@ -680,7 +680,7 @@ expect(
   contributing.includes('Node.js 18.18 or newer'),
   'CONTRIBUTING.md must document Node.js 18.18+'
 )
-expect(contributing.includes('pnpm 8.15.9'), 'CONTRIBUTING.md must document pnpm 8.15.9')
+expect(contributing.includes('pnpm 11.7.0'), 'CONTRIBUTING.md must document pnpm 11.7.0')
 expect(
   contributing.includes('pnpm format:check'),
   'CONTRIBUTING.md must document the format check command'

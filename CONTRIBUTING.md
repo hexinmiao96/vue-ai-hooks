@@ -7,7 +7,7 @@ reports, and discussion.
 
 Node.js 18.18 or newer is required. CI runs the full gate on Node 18, 20, 22, and
 24 so the declared engine range stays honest.
-This repo pins pnpm through `packageManager`; use Corepack or pnpm 8.15.9 so
+This repo pins pnpm through `packageManager`; use Corepack or pnpm 11.7.0 so
 the lockfile format stays stable across local development, CI, and publishing.
 
 ```bash
@@ -142,7 +142,7 @@ Configure npm with these trusted publisher settings before pushing a release tag
 - Workflow filename: `publish.yml`
 - Allowed action: `npm publish`
 
-Then create and push a tag matching `package.json`, for example `v0.14.1`.
+Then create and push a tag matching `package.json`, for example `v0.14.2`.
 
 Release checklist:
 
@@ -150,7 +150,7 @@ Release checklist:
    daily release cadence.
 2. Update `CHANGELOG.md` and the `package.json` version.
 3. Run `pnpm release:check`; it includes the daily release cadence gate.
-4. Create a tag that exactly matches the package version, for example `v0.14.1`.
+4. Create a tag that exactly matches the package version, for example `v0.14.2`.
 5. Push the tag and confirm the GitHub Actions publish workflow completes.
    The publish workflow intentionally runs only from `v*` tags; there is no
    manual publish dispatch path.

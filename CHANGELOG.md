@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No unreleased changes pending.
 
+## [0.14.2] - 2026-07-03
+
+### Changed
+
+- Updated publish tooling compatibility for this release by aligning workflow
+  pnpm setup and package metadata checks to pnpm 11.7.0, matching
+  `pnpm-lock.yaml` format `9.0`.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+
 ## [0.14.1] - 2026-07-03
 
 ### Changed
