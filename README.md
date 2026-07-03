@@ -49,9 +49,10 @@ The AI-in-Vue story is currently fragmented. Compare the relevant layers by fit:
   `useTranscription`, `useRerank`, `useObject`, `useChatThreads`,
   `useAgentContext`, `useAgentCapabilities`, `useAgentRun`, and
   `usePromptSuggestions`.
-- **Optional React chat, completion, and object support**: import `useChat`,
-  `useCompletion`, or `useObject` from `vue-ai-hooks/react` for React streaming
-  state while reusing the same providers and request types.
+- **Optional React support**: import `useChat`, `useCompletion`, `useImage`,
+  `useVideo`, `useObject`, `usePromptSuggestions`, and `useAgentRun` from
+  `vue-ai-hooks/react` for React streaming state while reusing the same providers
+  and request types.
 - **Streaming-first Vue state**: SSE parsing, AbortController, throttling,
   retries, lifecycle callbacks, shared state by id, and consistent
   `status`/`error` controls.
@@ -69,8 +70,9 @@ The AI-in-Vue story is currently fragmented. Compare the relevant layers by fit:
 - **Agent capabilities**: `useAgentCapabilities` reads app-owned `/info`
   endpoints and turns declared runtime support into stable `supports` flags for
   adaptive UI.
-- **Prompt suggestions**: `usePromptSuggestions` normalizes static or
-  app-loaded suggestion chips for chat composers without taking over your UI.
+- **Prompt suggestions**: `usePromptSuggestions` normalizes static, app-loaded,
+  or surface-filtered built-in task starter recipe chips for chat composers
+  without taking over your UI.
 - **Agent run state**: `useAgentRun` manages app-owned agent event streams,
   pending interrupts, resume requests, normalized messages, and stream data
   without adopting a copilot UI framework.
@@ -172,6 +174,8 @@ export function ChatPanel() {
   )
 }
 ```
+
+For this area, `useCompletion`, or `useObject` from `vue-ai-hooks/react` reuse the same provider contracts in React.
 
 `vue-ai-hooks/react` also exposes React `useCompletion`:
 
@@ -657,6 +661,9 @@ If you are connecting an app-owned agent service, use the
 [Agent events guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-events.md).
 For LangChain, LangGraph, or custom backend agent runtimes, use the
 [Agent bridge recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-bridge.md).
+When you need copyable Nuxt/Nitro, Next.js, Hono, or Fetch route shapes for that
+projection, start with the
+[Agent route templates](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-route-templates.md).
 For durable human approval around privileged tools, use the
 [Tool approval recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/tool-approvals.md).
 For copyable backend proxy environment recipes, use
@@ -671,7 +678,7 @@ blocks pnpm execution wrappers, use either `pnpm production:readiness:local` or
 
 ## Examples
 
-Fifteen runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
+Eighteen runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
 Start with one path instead of reading the full list:
 
@@ -679,6 +686,9 @@ Start with one path instead of reading the full list:
 | ------------------------------------ | ---------------------------- | ----------------------------------------------------- |
 | Vue chat, tool approval, app context | `pnpm example:chat`          | **Run approval demo**, local stream, approval/reject  |
 | Thread sidebar and local restore     | `pnpm example:threaded-chat` | Create, rename, archive, restore, refresh             |
+| Headless agent approval run          | `pnpm example:agent-run`     | Interrupt, resume, same-run replay, inspection trace  |
+| React image generation / editing     | `pnpm example:react-image`   | Deterministic local image output and editable request |
+| React video generation               | `pnpm example:react-video`   | Deterministic local storyboard and request trace      |
 | React migration surface              | `pnpm example:react-chat`    | Stream, stop, request trace, usage, stream data       |
 | Media or retrieval routes            | `pnpm example:image`         | Deterministic local result, then optional proxy route |
 | Backend proxy contract               | `pnpm example:proxy-server`  | `/api/*`, `/api/ai/*`, and `/api/ui-message-stream`   |
@@ -688,12 +698,16 @@ Start with one path instead of reading the full list:
 1. Start with `pnpm example:chat` to validate stream state + approval flow.
 2. Run `pnpm example:proxy-server`, then test the same demo through `VITE_CHAT_PROVIDER=proxy-route` to validate API contracts.
 3. Run `pnpm example:threaded-chat` before introducing persistent storage to verify thread restore rules.
+4. Run `pnpm example:agent-run` before wiring a backend agent to verify interrupt/resume and inspectable run ids.
 
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/threaded-chat` — no-key threaded chat demo with `useChatThreads`, per-thread `useChat({ persist })`, and local restore checks
+- `examples/agent-run` — no-key `useAgentRun` demo with approval interrupts, same-`runId` replay safety, and inspection snapshots
 - `examples/react-chat` — no-key React chat quickstart with `vue-ai-hooks/react`, `DirectChatTransport`, and request trace state
 - `examples/react-completion` — no-key React completion quickstart with `useCompletion` and trace state
 - `examples/react-object` — no-key React structured output quickstart with `useObject` and trace state
+- `examples/react-image` — no-key React image generation and editing quickstart with deterministic local SVG baseline and proxy toggle
+- `examples/react-video` — no-key React video generation quickstart with deterministic local storyboard output and proxy toggle
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
@@ -712,9 +726,12 @@ pnpm install
 cp .env.example .env
 pnpm example:chat
 pnpm example:threaded-chat
+pnpm example:agent-run
 pnpm example:react-chat
 pnpm example:react-completion
 pnpm example:react-object
+pnpm example:react-image
+pnpm example:react-video
 ```
 
 `examples/chat` defaults to the no-key `local-tools` provider backed by
@@ -725,6 +742,11 @@ pnpm example:react-object
 `useChat({ persist })` instance per active thread, so you can create, rename,
 archive, restore, delete, refresh, and verify message restore without provider
 keys.
+
+`examples/agent-run` uses `useAgentRun()` with a deterministic local event
+stream. It pauses on an `approvePlan` interrupt, resumes with the same run id,
+shows raw `AgentEvent` timeline entries, and exercises `inspect()` /
+`clearTrace()` before you connect LangChain, LangGraph, or a custom backend.
 
 `examples/react-chat` uses the same no-key transport pattern through
 `vue-ai-hooks/react`, so React consumers can verify streaming state, `stop()`,
@@ -737,6 +759,14 @@ shape, with an optional proxy path via `VITE_EXAMPLE_PROVIDER=proxy` and shared
 
 `examples/react-object` mirrors `useObject` production wiring for JSON Schema
 outputs, including a local object baseline and an optional `/api/object` proxy route.
+
+`examples/react-image` reuses `useImage` to verify image generation/editing before wiring
+`/api/image`. In no-key mode it emits a deterministic SVG; when `VITE_EXAMPLE_PROVIDER=proxy`
+is set it posts to your local `/api/image` route.
+
+`examples/react-video` reuses `useVideo` to verify app-owned video requests before wiring
+`/api/video`. In no-key mode it emits a deterministic storyboard SVG; when
+`VITE_EXAMPLE_PROVIDER=proxy` is set it posts to your local `/api/video` route.
 
 To run the browser chat example through the local proxy template:
 
@@ -773,7 +803,7 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.14.0** — a working foundation, not feature-complete. The core
+This is **v0.14.1** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
 This release adds `useChatThreads` for local thread indexes, active thread

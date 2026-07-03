@@ -32,6 +32,286 @@ export type PromptSuggestionInput<
       metadata?: TMetadata
     }
 
+export type PromptSuggestionRecipeLocale = 'en' | 'zh'
+
+export type PromptSuggestionRecipeCategory =
+  'summarize' | 'review' | 'plan' | 'verify' | 'handoff' | 'debug' | 'approval'
+
+export type PromptSuggestionRecipeSurface =
+  'chat' | 'thread' | 'agent' | 'backend' | 'tool-approval' | 'release' | 'media' | 'code'
+
+export const promptSuggestionRecipeIds = [
+  'summarize-thread',
+  'find-risks',
+  'plan-next-steps',
+  'write-test-plan',
+  'draft-handoff',
+  'inspect-trace',
+  'review-code-change',
+  'verify-release-gates',
+  'design-agent-route',
+  'prepare-tool-approval',
+  'compare-thread-branches',
+  'draft-media-prompt',
+  'triage-provider-error'
+] as const
+
+export type PromptSuggestionRecipeId = (typeof promptSuggestionRecipeIds)[number]
+
+export interface PromptSuggestionRecipe {
+  id: PromptSuggestionRecipeId
+  category: PromptSuggestionRecipeCategory
+  surfaces: readonly PromptSuggestionRecipeSurface[]
+  title: string
+  prompt: string
+  description: string
+}
+
+export interface PromptSuggestionRecipeMetadata extends Record<string, unknown> {
+  kind: 'task-starter'
+  recipe: PromptSuggestionRecipeId
+  category: PromptSuggestionRecipeCategory
+  surfaces: readonly PromptSuggestionRecipeSurface[]
+  locale: PromptSuggestionRecipeLocale
+}
+
+export interface CreatePromptSuggestionRecipesOptions<
+  TMetadata extends Record<string, unknown> = Record<string, never>
+> {
+  locale?: PromptSuggestionRecipeLocale
+  include?: readonly PromptSuggestionRecipeId[]
+  exclude?: readonly PromptSuggestionRecipeId[]
+  categories?: readonly PromptSuggestionRecipeCategory[]
+  surfaces?: readonly PromptSuggestionRecipeSurface[]
+  metadata?: TMetadata | ((recipe: PromptSuggestionRecipe) => TMetadata)
+}
+
+const promptSuggestionRecipeCatalog: Record<
+  PromptSuggestionRecipeLocale,
+  readonly PromptSuggestionRecipe[]
+> = {
+  en: [
+    {
+      id: 'summarize-thread',
+      category: 'summarize',
+      surfaces: ['chat', 'thread'],
+      title: 'Summarize thread',
+      prompt: 'Summarize the current conversation, decisions, and unresolved questions.',
+      description: 'Create a short status snapshot before continuing.'
+    },
+    {
+      id: 'find-risks',
+      category: 'review',
+      surfaces: ['chat', 'thread', 'release'],
+      title: 'Find risks',
+      prompt: 'Find the top risks, missing checks, and unclear assumptions in this work.',
+      description: 'Use before handoff, release, or approval.'
+    },
+    {
+      id: 'plan-next-steps',
+      category: 'plan',
+      surfaces: ['chat', 'thread', 'agent'],
+      title: 'Plan next steps',
+      prompt: 'Turn the current context into a short execution plan with validation steps.',
+      description: 'Move from discussion to concrete work.'
+    },
+    {
+      id: 'write-test-plan',
+      category: 'verify',
+      surfaces: ['code', 'release'],
+      title: 'Write test plan',
+      prompt: 'Write focused test cases for the expected behavior and failure cases.',
+      description: 'Convert a requirement into verifiable checks.'
+    },
+    {
+      id: 'draft-handoff',
+      category: 'handoff',
+      surfaces: ['thread', 'release'],
+      title: 'Draft handoff',
+      prompt:
+        'Write a handoff note with context, completed work, remaining risks, and commands run.',
+      description: 'Prepare the next person or session to continue safely.'
+    },
+    {
+      id: 'inspect-trace',
+      category: 'debug',
+      surfaces: ['chat', 'agent', 'backend'],
+      title: 'Inspect trace',
+      prompt:
+        'Inspect the latest request, response, stream events, and errors before proposing a fix.',
+      description: 'Start debugging from observable runtime evidence.'
+    },
+    {
+      id: 'review-code-change',
+      category: 'review',
+      surfaces: ['code', 'release'],
+      title: 'Review code change',
+      prompt:
+        'Review the current code change for behavioral regressions, missing tests, and API compatibility risks.',
+      description: 'Use before merging or publishing a library change.'
+    },
+    {
+      id: 'verify-release-gates',
+      category: 'verify',
+      surfaces: ['release'],
+      title: 'Verify release gates',
+      prompt: 'List the release gates to run and what each one proves before publishing.',
+      description: 'Keep release readiness tied to concrete commands.'
+    },
+    {
+      id: 'design-agent-route',
+      category: 'plan',
+      surfaces: ['agent', 'backend'],
+      title: 'Design agent route',
+      prompt:
+        'Design the /api/chat or agent route contract, including request body, stream format, abort handling, and secret boundaries.',
+      description: 'Start backend integration from the route contract.'
+    },
+    {
+      id: 'prepare-tool-approval',
+      category: 'approval',
+      surfaces: ['agent', 'tool-approval'],
+      title: 'Prepare tool approval',
+      prompt:
+        'Draft a durable tool approval flow with approvalId, toolCallId, runId, reviewer decision, and idempotency checks.',
+      description: 'Use before exposing privileged tools.'
+    },
+    {
+      id: 'compare-thread-branches',
+      category: 'review',
+      surfaces: ['thread'],
+      title: 'Compare branches',
+      prompt:
+        'Compare the current answer with an alternate branch and summarize differences, risks, and the next action.',
+      description: 'Review regenerate or branch outcomes before choosing one.'
+    },
+    {
+      id: 'draft-media-prompt',
+      category: 'plan',
+      surfaces: ['media'],
+      title: 'Draft media prompt',
+      prompt:
+        'Rewrite this prompt for image or video generation with subject, style, constraints, and safety limits.',
+      description: 'Turn a rough idea into a safer media generation prompt.'
+    },
+    {
+      id: 'triage-provider-error',
+      category: 'debug',
+      surfaces: ['chat', 'backend'],
+      title: 'Triage provider error',
+      prompt:
+        'Triage the provider error from request trace, status, upstream response, retry state, and user-safe message.',
+      description: 'Debug failed provider calls from observable evidence.'
+    }
+  ],
+  zh: [
+    {
+      id: 'summarize-thread',
+      category: 'summarize',
+      surfaces: ['chat', 'thread'],
+      title: '总结上下文',
+      prompt: '总结当前对话里的结论、已完成事项和未解决问题。',
+      description: '继续推进前先得到简短状态快照。'
+    },
+    {
+      id: 'find-risks',
+      category: 'review',
+      surfaces: ['chat', 'thread', 'release'],
+      title: '找风险',
+      prompt: '找出当前工作的主要风险、缺失检查和不明确假设。',
+      description: '适合交接、发布或审批前使用。'
+    },
+    {
+      id: 'plan-next-steps',
+      category: 'plan',
+      surfaces: ['chat', 'thread', 'agent'],
+      title: '规划下一步',
+      prompt: '把当前上下文整理成简短执行计划，并列出验证方式。',
+      description: '把讨论推进成可执行工作。'
+    },
+    {
+      id: 'write-test-plan',
+      category: 'verify',
+      surfaces: ['code', 'release'],
+      title: '写测试计划',
+      prompt: '为预期行为和失败场景写出聚焦的测试用例。',
+      description: '把需求转成可验证检查。'
+    },
+    {
+      id: 'draft-handoff',
+      category: 'handoff',
+      surfaces: ['thread', 'release'],
+      title: '写交接说明',
+      prompt: '写一段交接说明，包含背景、已完成工作、剩余风险和已运行命令。',
+      description: '让下一个人或下一轮会话可以安全接上。'
+    },
+    {
+      id: 'inspect-trace',
+      category: 'debug',
+      surfaces: ['chat', 'agent', 'backend'],
+      title: '检查 trace',
+      prompt: '先检查最近一次请求、响应、流事件和错误，再提出修复方案。',
+      description: '从可观测运行证据开始排障。'
+    },
+    {
+      id: 'review-code-change',
+      category: 'review',
+      surfaces: ['code', 'release'],
+      title: '审查代码改动',
+      prompt: '审查当前代码改动里的行为回归、缺失测试和 API 兼容性风险。',
+      description: '合并或发布库改动前使用。'
+    },
+    {
+      id: 'verify-release-gates',
+      category: 'verify',
+      surfaces: ['release'],
+      title: '验证发布门禁',
+      prompt: '列出发布前要运行的门禁命令，并说明每条命令证明什么。',
+      description: '把发布准备绑定到具体命令。'
+    },
+    {
+      id: 'design-agent-route',
+      category: 'plan',
+      surfaces: ['agent', 'backend'],
+      title: '设计 agent 路由',
+      prompt: '设计 /api/chat 或 agent 路由契约，包括请求体、流格式、abort 处理和 secret 边界。',
+      description: '从路由契约开始接后端 agent。'
+    },
+    {
+      id: 'prepare-tool-approval',
+      category: 'approval',
+      surfaces: ['agent', 'tool-approval'],
+      title: '准备工具审批',
+      prompt: '设计持久工具审批流程，包含 approvalId、toolCallId、runId、审批决策和幂等检查。',
+      description: '暴露特权工具前使用。'
+    },
+    {
+      id: 'compare-thread-branches',
+      category: 'review',
+      surfaces: ['thread'],
+      title: '对比分支回答',
+      prompt: '对比当前回答和另一个分支，整理差异、风险和下一步动作。',
+      description: '选择 regenerate 或 branch 结果前使用。'
+    },
+    {
+      id: 'draft-media-prompt',
+      category: 'plan',
+      surfaces: ['media'],
+      title: '整理媒体提示词',
+      prompt: '把这段想法改写成图片或视频生成提示词，包含主体、风格、约束和安全边界。',
+      description: '把粗略想法整理成更安全的媒体生成提示词。'
+    },
+    {
+      id: 'triage-provider-error',
+      category: 'debug',
+      surfaces: ['chat', 'backend'],
+      title: '排查 Provider 错误',
+      prompt: '根据 request trace、状态、上游响应、重试记录和用户安全提示排查 Provider 错误。',
+      description: '从可观测证据排查失败的 Provider 调用。'
+    }
+  ]
+}
+
 export interface PromptSuggestionFilterContext<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -86,6 +366,41 @@ export interface UsePromptSuggestionsReturn<
     suggestion: string | PromptSuggestion<TMetadata>
   ) => PromptSuggestion<TMetadata> | null
   clearSelection: () => void
+}
+
+export function createPromptSuggestionRecipes<
+  TMetadata extends Record<string, unknown> = Record<string, never>
+>(
+  options: CreatePromptSuggestionRecipesOptions<TMetadata> = {}
+): PromptSuggestion<PromptSuggestionRecipeMetadata & TMetadata>[] {
+  const locale = options.locale ?? 'en'
+  const include = new Set(options.include ?? promptSuggestionRecipeIds)
+  const exclude = new Set(options.exclude ?? [])
+  const categories = options.categories ? new Set(options.categories) : null
+  const surfaces = options.surfaces ? new Set(options.surfaces) : null
+
+  return promptSuggestionRecipeCatalog[locale]
+    .filter(
+      (recipe) =>
+        include.has(recipe.id) &&
+        !exclude.has(recipe.id) &&
+        (!categories || categories.has(recipe.category)) &&
+        (!surfaces || recipe.surfaces.some((surface) => surfaces.has(surface)))
+    )
+    .map((recipe) => ({
+      id: recipe.id,
+      title: recipe.title,
+      prompt: recipe.prompt,
+      description: recipe.description,
+      metadata: {
+        ...resolveRecipeMetadata(options.metadata, recipe),
+        kind: 'task-starter',
+        recipe: recipe.id,
+        category: recipe.category,
+        surfaces: [...recipe.surfaces],
+        locale
+      }
+    }))
 }
 
 export function usePromptSuggestions<
@@ -255,4 +570,12 @@ function resolveMessages<TMetadata extends Record<string, unknown>>(
 
 function toError(cause: unknown): Error {
   return cause instanceof Error ? cause : new Error(String(cause))
+}
+
+function resolveRecipeMetadata<TMetadata extends Record<string, unknown>>(
+  metadata: CreatePromptSuggestionRecipesOptions<TMetadata>['metadata'],
+  recipe: PromptSuggestionRecipe
+): TMetadata {
+  if (!metadata) return {} as TMetadata
+  return typeof metadata === 'function' ? metadata(recipe) : metadata
 }

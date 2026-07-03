@@ -25,27 +25,28 @@ Winning this benchmark means:
 
 ## Current checkpoint against direct alternatives
 
-| Capability                                      | AI SDK UI     | CopilotKit | LangChain.js | VueUse | vue-ai-hooks               |
-| ----------------------------------------------- | ------------- | ---------- | ------------ | ------ | -------------------------- |
-| Vue-native composition API                      | ✅            | ⚪         | ⚪           | ✅     | ✅                         |
-| Streaming states + Abort/Retry                  | ✅            | ⚪         | ⚪           | ⚪     | ✅                         |
-| Proxy-first production path                     | ✅            | ✅         | ⚪           | ⚪     | ✅                         |
-| Tool calling + approval workflows               | ✅            | ✅         | ⚪           | ⚪     | ✅ (local + thread-safe)   |
-| Thread side panel primitives                    | ⚪            | ✅         | ⚪           | ⚪     | ✅                         |
-| Agent runtime adapters                          | ✅ (protocol) | ✅         | ✅ (backend) | ⚪     | ✅ (hosted event adapters) |
-| Headless agent runtime discovery & capabilities | ⚪            | ⚪         | ⚪           | ⚪     | ✅                         |
-| Message/task suggestion starters                | ⚪            | ✅         | ⚪           | ✅     | ✅                         |
-| Full copilot shell / built-in widgets           | ⚪            | ✅         | ⚪           | ⚪     | ⚪ (intentional)           |
-| Retrieval/long-running planning runtime         | ⚪            | ⚪         | ✅           | ⚪     | ⚪ (app/backend scope)     |
+| Capability                                      | AI SDK UI     | CopilotKit | LangChain.js | VueUse | vue-ai-hooks                             |
+| ----------------------------------------------- | ------------- | ---------- | ------------ | ------ | ---------------------------------------- |
+| Vue-native composition API                      | ✅            | ⚪         | ⚪           | ✅     | ✅                                       |
+| Streaming states + Abort/Retry                  | ✅            | ⚪         | ⚪           | ⚪     | ✅                                       |
+| Proxy-first production path                     | ✅            | ✅         | ⚪           | ⚪     | ✅                                       |
+| Tool calling + approval workflows               | ✅            | ✅         | ⚪           | ⚪     | ✅ (local + thread-safe)                 |
+| Thread side panel primitives                    | ⚪            | ✅         | ⚪           | ⚪     | ✅                                       |
+| Agent runtime adapters                          | ✅ (protocol) | ✅         | ✅ (backend) | ⚪     | ✅ (events + run demo + route templates) |
+| Headless agent runtime discovery & capabilities | ⚪            | ⚪         | ⚪           | ⚪     | ✅                                       |
+| Message/task suggestion starters                | ⚪            | ✅         | ⚪           | ✅     | ✅ (surface-filtered recipes)            |
+| Full copilot shell / built-in widgets           | ⚪            | ✅         | ⚪           | ⚪     | ⚪ (intentional)                         |
+| Retrieval/long-running planning runtime         | ⚪            | ⚪         | ✅           | ⚪     | ⚪ (app/backend scope)                   |
 
 ## Competitive gaps to fix next (ordered by product impact)
 
-1. **Agent UX consistency**: continue hardening `useAgentRun`, adapter event
-   mapping, and replay safety under interruption/retry.
-2. **Prompt startup accelerators**: ship first-class, reusable prompt-suggestion
-   recipes for task starters.
-3. **Observability parity**: keep `inspectRequestTrace` and stream event contracts first-class
-   in all demos so parity work is testable without proprietary backend code.
+1. **Observability parity**: keep `inspectRequestTrace`, `inspect()`, and stream event
+   contracts first-class in every route template and demo so parity work is testable without proprietary backend code.
+2. **Route template validation depth**: keep expanding framework-specific smoke
+   fixtures around copyable templates without adding those frameworks as dependencies.
+   Current coverage includes Nuxt/Nitro, Next.js, Hono, Fetch, and LangGraph resume shapes.
+3. **Prompt startup rollout depth**: continue adding surface-filtered prompt-suggestion
+   recipes only where a demo or product surface has a real task-starting need.
 
 ## Why this is still consistent with the objective
 

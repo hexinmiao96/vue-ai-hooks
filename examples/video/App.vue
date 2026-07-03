@@ -1,12 +1,41 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useVideo } from 'vue-ai-hooks'
+import { createPromptSuggestionRecipes, usePromptSuggestions, useVideo } from 'vue-ai-hooks'
 
 const proxyBaseURL = (import.meta.env.VITE_PROXY_BASE_URL || '').trim()
 const videoApi = import.meta.env.VITE_PROXY_VIDEO_URL || '/api/video'
 const useLocalDemo = !proxyBaseURL
 const demoFetch = useLocalDemo ? localVideoFetch : undefined
 const modeLabel = useLocalDemo ? 'Local deterministic storyboard' : `Proxy: ${proxyBaseURL}`
+const initialPrompt = 'A concise product walkthrough for a Vue AI dashboard'
+const videoStarterSuggestions = [
+  ...createPromptSuggestionRecipes({
+    surfaces: ['media'],
+    include: ['draft-media-prompt'],
+    metadata: { surface: 'vue-video-demo' }
+  }),
+  {
+    id: 'vue-video-walkthrough',
+    title: 'Product walkthrough',
+    prompt: initialPrompt,
+    description: 'Generate a concise product storyboard.',
+    metadata: { surface: 'vue-video-demo' }
+  },
+  {
+    id: 'vue-video-launch',
+    title: 'Feature launch',
+    prompt: 'A three-scene launch video for a Vue analytics feature',
+    description: 'Try a release-style storyboard prompt.',
+    metadata: { surface: 'vue-video-demo' }
+  },
+  {
+    id: 'vue-video-onboarding',
+    title: 'Onboarding flow',
+    prompt: 'A calm onboarding sequence for a support workspace',
+    description: 'Create a softer user education sequence.',
+    metadata: { surface: 'vue-video-demo' }
+  }
+]
 
 const {
   input,
@@ -24,7 +53,7 @@ const {
   api: videoApi,
   baseURL: proxyBaseURL,
   fetch: demoFetch,
-  initialInput: 'A concise product walkthrough for a Vue AI dashboard',
+  initialInput: initialPrompt,
   defaultRequest: {
     model: useLocalDemo ? 'local-storyboard-demo' : 'video-model',
     aspectRatio: '16:9',
@@ -33,6 +62,14 @@ const {
     fps: 24
   }
 })
+
+const { visibleSuggestions: visibleVideoStarters, selectSuggestion: selectVideoStarter } =
+  usePromptSuggestions({
+    suggestions: videoStarterSuggestions,
+    input,
+    max: 4,
+    filter: showAllSuggestions
+  })
 
 const previewUrl = computed(() => {
   if (video.value?.url) return video.value.url
@@ -59,6 +96,11 @@ const traceSummary = computed(() => {
     2
   )
 })
+
+function applyVideoStarter(id: string) {
+  const selected = selectVideoStarter(id)
+  if (selected) input.value = selected.prompt
+}
 
 async function localVideoFetch(_url: RequestInfo | URL, init?: RequestInit) {
   const body = parseRequestBody(init?.body)
@@ -147,6 +189,10 @@ function escapeSvg(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
+
+function showAllSuggestions() {
+  return true
+}
 </script>
 
 <template>
@@ -164,6 +210,19 @@ function escapeSvg(value: string) {
         Prompt
         <textarea v-model="input" rows="4" class="textarea" />
       </label>
+      <div class="starter-grid" aria-label="Video prompt starters">
+        <button
+          v-for="suggestion in visibleVideoStarters"
+          :key="suggestion.id"
+          class="starter-button"
+          type="button"
+          :disabled="isLoading"
+          @click="applyVideoStarter(suggestion.id)"
+        >
+          <span>{{ suggestion.title }}</span>
+          <small v-if="suggestion.description">{{ suggestion.description }}</small>
+        </button>
+      </div>
       <div class="actions">
         <button class="button" type="submit" :disabled="isLoading">Generate video</button>
         <button class="button" type="button" :disabled="!isLoading" @click="stop">Stop</button>
@@ -276,6 +335,43 @@ function escapeSvg(value: string) {
   border-radius: 8px;
   font: inherit;
   resize: vertical;
+}
+
+.starter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.starter-button {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  min-height: 70px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.starter-button span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.starter-button small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.starter-button:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .actions {

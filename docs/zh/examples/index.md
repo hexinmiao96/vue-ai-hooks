@@ -23,6 +23,8 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
 | 试 React 聊天迁移入口            | `pnpm example:react-chat`                                                                                                                                     | [React hooks](/zh/reference/react)                           |
 | 试 React 补全迁移入口            | `pnpm example:react-completion`                                                                                                                               | [React hooks](/zh/reference/react)                           |
 | 试 React 结构化输出迁移入口      | `pnpm example:react-object`                                                                                                                                   | [React hooks](/zh/reference/react)                           |
+| 试 React 图片生成/编辑入口       | `pnpm example:react-image`                                                                                                                                    | [React hooks](/zh/reference/react)                           |
+| 试 React 视频生成入口            | `pnpm example:react-video`                                                                                                                                    | [React hooks](/zh/reference/react)                           |
 | 测试 AI SDK UI stream 后端路由   | [UI message stream 路由](#stream-demo)                                                                                                                        | [Stream 工具](/zh/reference/streams)                         |
 | 一个提示词生成一段文本           | [文本补全](#completion-demo)                                                                                                                                  | [useCompletion](/zh/reference/use-completion)                |
 | 做语义相似度比较                 | [向量相似度](#embedding-demo)                                                                                                                                 | [useEmbedding](/zh/reference/use-embedding)                  |
@@ -35,7 +37,7 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
 | 从提示词抽取类型化 JSON          | [结构化对象输出](#object-demo)                                                                                                                                | [useObject](/zh/reference/use-object)                        |
 | 把应用状态暴露给 agent 请求      | `pnpm example:chat`                                                                                                                                           | [useAgentContext](/zh/reference/use-agent-context)           |
 | 根据 runtime 能力开关渲染 UI     | [任务型 Demo](/zh/guide/task-demos)                                                                                                                           | [useAgentCapabilities](/zh/reference/use-agent-capabilities) |
-| 跟踪无 UI 的自有 agent run       | [Agent 事件](/zh/guide/agent-events)                                                                                                                          | [useAgentRun](/zh/reference/use-agent-run)                   |
+| 跟踪无 UI 的自有 agent run       | `pnpm example:agent-run`                                                                                                                                      | [useAgentRun](/zh/reference/use-agent-run)                   |
 | 添加输入区任务入口 chips         | `pnpm example:chat`                                                                                                                                           | [usePromptSuggestions](/zh/reference/use-prompt-suggestions) |
 
 ## 5 分钟上手到生产验证路径
@@ -46,6 +48,8 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
    验证 `/api/*` 与 `readUIMessageStream()` 的契约行为。
 3. 运行 `pnpm example:threaded-chat`  
    在接真实存储之前，先验证 thread 的创建、归档、恢复是否稳定。
+4. 运行 `pnpm example:agent-run`  
+   验证 interrupt/resume、同 run 重放安全和检查快照。
 
 ## 常见启动问题
 
@@ -58,13 +62,14 @@ import DemoShowcase from '../../.vitepress/theme/components/DemoShowcase.vue'
 
 在决定接入路径前，先用这些条目快速验收：
 
-| 方向                   | 30 秒内应看到什么                                                 | 未命中时先查哪里                                                        |
-| ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 聊天 + 工具审批        | 能看到 **Run approval demo**、待确认的 `chargeCard`、可中止重试流 | 检查 `pnpm example:chat` 是否在运行，重启示例                           |
-| Thread 持久化          | 侧边栏可增删改、归档后列表状态一致                                | 走 `examples/threaded-chat` + `useChatThreads`                          |
-| 图片/视频/语音等媒体流 | 本地确定性产物先出现，请求面板可重复发送                          | 检查对应 `examples/image` / `examples/video` / `examples/speech` 路径   |
-| Proxy 契约             | `/api/chat`、`/api/ui-message-stream` 成功返回并在 UI 显示 chunks | 先跑 `pnpm example:proxy-server`，再用 `pnpm example:ui-message-stream` |
-| 结构化对象抽取         | `local-object` 示例能跑出字段化结果，且可切 `/api/object`         | 查 `examples/object` 与 [useObject](/zh/reference/use-object)           |
+| 方向                   | 30 秒内应看到什么                                                   | 未命中时先查哪里                                                        |
+| ---------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 聊天 + 工具审批        | 能看到 **Run approval demo**、待确认的 `chargeCard`、可中止重试流   | 检查 `pnpm example:chat` 是否在运行，重启示例                           |
+| Thread 持久化          | 侧边栏可增删改、归档后列表状态一致                                  | 走 `examples/threaded-chat` + `useChatThreads`                          |
+| Agent run 审批         | `approvePlan` 暂停 run，审批/拒绝后继续，`Inspection snapshot` 更新 | 查 `examples/agent-run` 和 [useAgentRun](/zh/reference/use-agent-run)   |
+| 图片/视频/语音等媒体流 | 本地确定性产物先出现，请求面板可重复发送                            | 检查对应 `examples/image` / `examples/video` / `examples/speech` 路径   |
+| Proxy 契约             | `/api/chat`、`/api/ui-message-stream` 成功返回并在 UI 显示 chunks   | 先跑 `pnpm example:proxy-server`，再用 `pnpm example:ui-message-stream` |
+| 结构化对象抽取         | `local-object` 示例能跑出字段化结果，且可切 `/api/object`           | 查 `examples/object` 与 [useObject](/zh/reference/use-object)           |
 
 ## 先跑不需要 key 的 Demo
 
@@ -89,9 +94,22 @@ pnpm example:chat
 如果要试不需要 key 的 React 结构化输出流程，运行 `pnpm example:react-object`。它复用
 `vue-ai-hooks/react` 的 `useObject`，默认使用本地 schema 驱动 object 流，并展示请求 trace。
 
+如果要试不需要 key 的 React 图片生成/编辑流程，运行 `pnpm example:react-image`。它复用
+`vue-ai-hooks/react` 的 `useImage`，默认使用确定性的本地 SVG/图像编辑源与 mask，并渲染
+media starter chips，随后可用 `VITE_EXAMPLE_PROVIDER=proxy` 切到 `/api/image` 后端。
+
+如果要试不需要 key 的 React 视频生成流程，运行 `pnpm example:react-video`。它复用
+`vue-ai-hooks/react` 的 `useVideo`，默认使用确定性的本地 storyboard、media starter chips
+并展示请求 trace，随后可用 `VITE_EXAMPLE_PROVIDER=proxy` 切到 `/api/video` 后端。
+
 如果要试不需要 key 的 threaded chat 流程，运行 `pnpm example:threaded-chat`。它把
 `useChatThreads()` 和每个 thread 独立的 `useChat({ persist })` 存储放在一起，你可以先验证
 创建、重命名、归档、恢复、删除、刷新和本地历史恢复，再接 server storage adapter。
+
+如果要试不需要 key 的 agent run 流程，运行 `pnpm example:agent-run`。它用
+`useAgentRun()` 跑确定性的本地 `AgentEvent` 流，在 `approvePlan` interrupt 处暂停，
+再用同一个 run id resume，并在事件日志旁展示 `inspect()` / `clearTrace()` 输出。agent
+和 tool-approval starter chips 会在启动前填充 run prompt。
 
 如要先上线无服务端方案的本地版本，再做服务端接入，可以先看 [IndexedDB 本地持久化（异步）](/zh/guide/server-storage#indexeddb-%E6%9C%AC%E5%9C%B0%E6%8C%81%E4%B9%85%E5%8C%96%E9%85%8D%E7%BD%AE%E5%99%A8%E5%BC%82%E6%AD%A5)。
 该方案在启动时异步恢复 thread/index 与 messages，并在明确生命周期动作后回写。

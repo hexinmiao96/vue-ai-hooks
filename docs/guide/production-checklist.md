@@ -25,12 +25,17 @@ storage, and operations.
 - Validate session, tenant, model access, and quota before forwarding.
 - Read provider keys from server-only environment variables.
 - Normalize upstream errors into user-safe messages.
+- On invalid `/api/chat` route payloads (missing runId/threadId/messages array), return
+  `HTTP 400` with `{"error":"Agent route failed"}` and redacted logs.
 - Forward abort signals to the provider when your runtime supports it.
 - Disable buffering in serverless, CDN, and reverse-proxy layers for SSE routes.
 - Add provider-specific timeout and retry policy at the backend boundary.
 - Follow the [agent bridge recipe](/guide/agent-bridge) when `/api/chat` talks
   to LangChain, LangGraph, or a custom agent service instead of a direct model
   provider.
+- Start from [agent route templates](/guide/agent-route-templates) when you
+  need copyable Nuxt/Nitro, Next.js, Hono, or Fetch route shapes for that
+  projection.
 - Keep agent checkpoints, retrieved documents, vector store credentials,
   LangSmith keys, and privileged tool state on the server.
 
@@ -110,7 +115,7 @@ Equivalent long form (full local gate, without security audit):
 ```bash
 pnpm check
 pnpm release:cadence
-pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm image:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm links:check && pnpm examples:build && pnpm docs:build
+pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm image:check && pnpm react-video:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm agent-run:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm agent-route-templates:check && pnpm links:check && pnpm examples:build && pnpm docs:build
 ```
 
 If you need the strictest publish path, run `pnpm release:check` (adds
@@ -130,22 +135,31 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
 3. Connect one real upstream through server-only env vars.
 4. Send a chat request, abort it, then retry.
 5. Trigger one provider error and confirm the UI keeps input editable.
-6. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
-7. Run `pnpm image:check` and confirm image generation/editing requests keep
+6. Send one malformed `/api/chat` request (missing `runId`, `threadId`, or messages
+   array) and confirm `400` + `{"error":"Agent route failed"}` with no secrets in logs.
+7. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
+8. Run `pnpm image:check` and confirm image generation/editing requests keep
    source images, masks, and trace metadata intact.
-8. Run `pnpm threaded-chat:check` and confirm local thread indexes and
-   per-thread message stores restore independently.
-9. Reload one server-stored thread and confirm messages restore with `Date`
-   values intact.
-10. Regenerate one assistant message, branch from the same user turn, reload, and
+9. Run `pnpm react-video:check` and confirm the React video demo keeps
+   deterministic storyboard, proxy, and trace contracts visible.
+10. Run `pnpm threaded-chat:check` and confirm local thread indexes and
+    per-thread message stores restore independently.
+11. Run `pnpm agent-run:check` and confirm interrupt/resume, same-run replay,
+    and inspection trace behavior stay intact.
+12. Run `pnpm agent-route-templates:check` and confirm the copyable agent route
+    templates pass executable fixture smoke for Nuxt/Nitro, Next.js, Hono,
+    Fetch, and LangGraph resume shapes.
+13. Reload one server-stored thread and confirm messages restore with `Date`
+    values intact.
+14. Regenerate one assistant message, branch from the same user turn, reload, and
     confirm both branches restore without duplicate `runId` writes.
-11. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
+15. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
     a second regenerate while one is streaming and confirm `run_in_progress` or
     same-`runId` resume behavior.
-12. Approve and reject one privileged tool request, then confirm duplicate
+16. Approve and reject one privileged tool request, then confirm duplicate
     `runId` submissions do not execute the tool twice and stale approval
     `revision` values return `approval_revision_conflict`.
-13. Confirm logs have trace ids but no provider API keys.
+17. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

@@ -21,9 +21,13 @@ const run = {
   traceId: 'trace_agent_smoke_1'
 }
 const events = createBrowserSafeAgentEvents(run)
+const langChainEvents = createLangChainProjectionEvents(run)
+const langGraphEvents = createLangGraphProjectionEvents(run)
 
 await checkChatChunkBridge(events)
 await checkUIMessageStreamBridge(events)
+await checkLangChainProjection(langChainEvents)
+await checkLangGraphProjection(langGraphEvents)
 checkInspectableRunMetadata(run)
 
 console.log('Agent bridge demo check passed.')
@@ -113,6 +117,89 @@ async function checkUIMessageStreamBridge(eventsToRead) {
   expectNoSecret(chunks, 'UI message stream bridge')
 }
 
+async function checkLangChainProjection(eventsToRead) {
+  const chunks = []
+  for await (const chunk of readAgentEventStream({
+    events: asyncEvents(eventsToRead),
+    progressDataType: 'data-agent-progress',
+    errorDataType: 'data-agent-error'
+  })) {
+    chunks.push(chunk)
+  }
+
+  expect(
+    chunks.map((chunk) => (typeof chunk.content === 'string' ? chunk.content : '')).join('') ===
+      'LangChain typed projection ready.',
+    'LangChain projection should preserve typed message deltas'
+  )
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.toolCalls?.[0]?.function.name === 'lookupAccount' &&
+        chunk.toolCalls[0].function.arguments.includes('[redacted]')
+    ),
+    'LangChain projection should expose redacted tool input'
+  )
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.finishReason === 'stop' &&
+        chunk.metadata?.backend === 'langchain' &&
+        chunk.metadata?.runId === run.runId
+    ),
+    'LangChain projection should finish with stable run metadata'
+  )
+  expectNoSecret(chunks, 'LangChain projection')
+}
+
+async function checkLangGraphProjection(eventsToRead) {
+  const chunks = []
+  for await (const chunk of readAgentEventStream({
+    events: asyncEvents(eventsToRead),
+    progressDataType: 'data-agent-progress',
+    interruptDataType: 'data-agent-interrupt',
+    errorDataType: 'data-agent-error'
+  })) {
+    chunks.push(chunk)
+  }
+
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.dataType === 'data-agent-progress' && chunk.data?.data?.checkpoint === '[redacted]'
+    ),
+    'LangGraph projection should redact checkpoint state in progress data'
+  )
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.dataType === 'data-agent-interrupt' &&
+        chunk.data?.value?.approvalId === 'approval_graph_1' &&
+        chunk.data.value.threadId === run.threadId
+    ),
+    'LangGraph projection should expose safe interrupt data for approval UI'
+  )
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.dataType === 'tool-output-available' &&
+        chunk.data?.toolName === 'sendEmail' &&
+        chunk.data?.output?.status === 'queued'
+    ),
+    'LangGraph projection should resume and expose a safe tool result'
+  )
+  expect(
+    chunks.some(
+      (chunk) =>
+        chunk.finishReason === 'stop' &&
+        chunk.metadata?.backend === 'langgraph' &&
+        chunk.metadata?.threadId === run.threadId
+    ),
+    'LangGraph projection should finish with durable thread metadata'
+  )
+  expectNoSecret(chunks, 'LangGraph projection')
+}
+
 function checkInspectableRunMetadata(runInfo) {
   const snapshot = inspectRequestTrace({
     status: 'ready',
@@ -156,6 +243,136 @@ function checkInspectableRunMetadata(runInfo) {
     },
     'inspection support output'
   )
+}
+
+function createLangChainProjectionEvents(runInfo) {
+  const langsmithKey = 'langsmith-secret'
+  const accountToken = 'customer-token-secret'
+  void langsmithKey
+  void accountToken
+
+  return [
+    {
+      type: 'progress',
+      id: 'langchain-stream-events',
+      label: 'LangChain streamEvents v3 started',
+      value: 0.15,
+      data: {
+        threadId: runInfo.threadId,
+        projection: 'messages/toolCalls/output',
+        traceId: runInfo.traceId
+      }
+    },
+    {
+      type: 'message-delta',
+      messageId: 'msg_langchain_1',
+      delta: 'LangChain typed projection ready.'
+    },
+    {
+      type: 'tool-call',
+      id: 'call_langchain_lookup',
+      name: 'lookupAccount',
+      input: {
+        accountId: 'acct_123',
+        token: '[redacted]',
+        fields: ['tier', 'status']
+      }
+    },
+    {
+      type: 'tool-result',
+      id: 'call_langchain_lookup',
+      name: 'lookupAccount',
+      output: {
+        tier: 'enterprise',
+        status: 'active'
+      }
+    },
+    {
+      type: 'finish',
+      finishReason: 'stop',
+      usage: {
+        promptTokens: 18,
+        completionTokens: 12,
+        totalTokens: 30
+      },
+      metadata: {
+        backend: 'langchain',
+        runId: runInfo.runId,
+        traceId: runInfo.traceId
+      }
+    }
+  ]
+}
+
+function createLangGraphProjectionEvents(runInfo) {
+  const checkpointState = 'raw-checkpoint-secret'
+  const emailBody = 'sensitive customer email body'
+  void checkpointState
+  void emailBody
+
+  return [
+    {
+      type: 'progress',
+      id: 'langgraph-update',
+      label: 'LangGraph state update',
+      value: 0.35,
+      data: {
+        node: 'review',
+        mode: 'updates',
+        checkpoint: '[redacted]',
+        threadId: runInfo.threadId
+      },
+      transient: true
+    },
+    {
+      type: 'tool-call',
+      id: 'call_graph_email',
+      name: 'sendEmail',
+      input: {
+        to: 'customer@example.com',
+        subject: 'Follow-up',
+        bodyPreview: 'Follow-up about your support case...',
+        body: '[redacted]'
+      }
+    },
+    {
+      type: 'interrupt',
+      id: 'interrupt_graph_email',
+      name: 'approveTool',
+      value: {
+        approvalId: 'approval_graph_1',
+        threadId: runInfo.threadId,
+        runId: runInfo.runId,
+        toolCallId: 'call_graph_email',
+        action: 'sendEmail',
+        summary: 'Review redacted email before sending'
+      }
+    },
+    {
+      type: 'tool-result',
+      id: 'call_graph_email',
+      name: 'sendEmail',
+      output: {
+        status: 'queued',
+        messageId: 'email_queued_1'
+      }
+    },
+    {
+      type: 'finish',
+      finishReason: 'stop',
+      usage: {
+        promptTokens: 20,
+        completionTokens: 16,
+        totalTokens: 36
+      },
+      metadata: {
+        backend: 'langgraph',
+        threadId: runInfo.threadId,
+        runId: runInfo.runId,
+        resumed: true
+      }
+    }
+  ]
 }
 
 function createBrowserSafeAgentEvents(runInfo) {
@@ -227,6 +444,9 @@ function expectNoSecret(value, label) {
   const text = JSON.stringify(value)
   expect(!text.includes('langsmith-secret'), `${label} should not expose LangSmith credentials`)
   expect(!text.includes('vector-secret'), `${label} should not expose vector store credentials`)
+  expect(!text.includes('customer-token-secret'), `${label} should not expose account tokens`)
+  expect(!text.includes('raw-checkpoint-secret'), `${label} should not expose checkpoint state`)
+  expect(!text.includes('sensitive customer email body'), `${label} should not expose tool bodies`)
 }
 
 function expect(condition, message) {

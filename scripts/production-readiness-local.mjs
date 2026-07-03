@@ -32,9 +32,12 @@ function run(label, command, args = [], options = {}) {
 const exampleBuilds = [
   ['chat', 'chat'],
   ['threaded-chat', 'threaded-chat'],
+  ['agent-run', 'agent-run'],
   ['react-chat', 'react-chat'],
   ['react-completion', 'react-completion'],
   ['react-object', 'react-object'],
+  ['react-image', 'react-image'],
+  ['react-video', 'react-video'],
   ['completion', 'completion'],
   ['embedding', 'embedding'],
   ['image', 'image'],
@@ -84,10 +87,13 @@ run('API docs check', bin('node'), ['scripts/check-api-docs.mjs'])
 run('Docs UX check', bin('node'), ['scripts/check-docs-ux.mjs'])
 run('Proxy example check', bin('node'), ['scripts/check-proxy-example.mjs'])
 run('Image demo check', bin('node'), ['scripts/check-image-demo.mjs'])
+run('React video demo check', bin('node'), ['scripts/check-react-video-demo.mjs'])
 run('Threaded chat demo check', bin('node'), ['scripts/check-threaded-chat-demo.mjs'])
 run('UI message stream demo check', bin('node'), ['scripts/check-ui-message-stream-demo.mjs'])
+run('Agent run demo check', bin('node'), ['scripts/check-agent-run-demo.mjs'])
 run('Tool approval demo check', bin('node'), ['scripts/check-tool-approval-demo.mjs'])
 run('Agent bridge demo check', bin('node'), ['scripts/check-agent-bridge-demo.mjs'])
+run('Agent route templates check', bin('node'), ['scripts/check-agent-route-templates.mjs'])
 run('Markdown link check', bin('node'), ['scripts/check-markdown-links.mjs'])
 
 for (const [dir, out] of exampleBuilds) {

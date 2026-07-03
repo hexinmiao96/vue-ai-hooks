@@ -8,10 +8,14 @@ current composer input, and track which suggestion the user selected before you
 decide whether to fill `useChat().input`, call `sendMessage()`, or open a custom
 workflow.
 
-Public exports: `usePromptSuggestions`, `PromptSuggestion`,
-`PromptSuggestionInput`, `PromptSuggestionFilter`,
-`PromptSuggestionFilterContext`, `PromptSuggestionLoader`,
-`PromptSuggestionLoaderContext`, `UsePromptSuggestionsOptions`, and
+Public exports: `usePromptSuggestions`, `createPromptSuggestionRecipes`,
+`promptSuggestionRecipeIds`, `PromptSuggestion`, `PromptSuggestionInput`,
+`PromptSuggestionFilter`, `PromptSuggestionFilterContext`,
+`PromptSuggestionLoader`, `PromptSuggestionLoaderContext`,
+`PromptSuggestionRecipe`, `PromptSuggestionRecipeCategory`,
+`PromptSuggestionRecipeId`, `PromptSuggestionRecipeLocale`,
+`PromptSuggestionRecipeMetadata`, `PromptSuggestionRecipeSurface`,
+`CreatePromptSuggestionRecipesOptions`, `UsePromptSuggestionsOptions`, and
 `UsePromptSuggestionsReturn`.
 
 ## Usage
@@ -55,6 +59,45 @@ function applySuggestion(id: string) {
 String suggestions become `{ id: 'suggestion-N', title, prompt }`. Object
 suggestions keep their `id`, `title`, `description`, and `metadata`; blank
 prompts are skipped.
+
+## Recipe starters
+
+Use `createPromptSuggestionRecipes()` when you want first-class task starters
+without maintaining one-off prompt chip arrays in every screen:
+
+```ts
+import { createPromptSuggestionRecipes, usePromptSuggestions } from 'vue-ai-hooks'
+
+const starterRecipes = createPromptSuggestionRecipes({
+  surfaces: ['thread', 'release'],
+  categories: ['review', 'verify', 'handoff'],
+  metadata: { surface: 'thread-panel' }
+})
+
+const suggestions = usePromptSuggestions({
+  input: chat.input,
+  messages: chat.messages,
+  suggestions: starterRecipes
+})
+```
+
+`promptSuggestionRecipeIds` contains the stable recipe ids. Each recipe includes
+`PromptSuggestionRecipeMetadata` with `kind: 'task-starter'`, `recipe`,
+`category`, `surfaces`, and `locale`, so product UI can group review,
+verification, handoff, planning, route-design, approval, media-prompt, and
+trace-inspection starters without hard-coding prompt text. Pass `locale: 'zh'`
+for Chinese starters, or use `include`, `exclude`, `categories`, and `surfaces`
+to ship only the tasks that fit the current workflow.
+
+Built-in recipe ids cover common product surfaces:
+
+- `summarize-thread`, `find-risks`, `plan-next-steps`, `draft-handoff`, and
+  `compare-thread-branches` for chat/thread work.
+- `write-test-plan`, `review-code-change`, and `verify-release-gates` for code
+  and release readiness.
+- `inspect-trace`, `design-agent-route`, `prepare-tool-approval`, and
+  `triage-provider-error` for agent/backend routes and privileged tools.
+- `draft-media-prompt` for image or video prompt setup.
 
 ## Return value
 

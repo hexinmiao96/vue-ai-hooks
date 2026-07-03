@@ -99,6 +99,57 @@ describe('useAgentRun', () => {
       ])
     )
     expect(agent.usage.value).toEqual({ promptTokens: 2, completionTokens: 3, totalTokens: 5 })
+    expect(agent.lastRequest.value).toMatchObject({
+      id: 'run_1',
+      providerId: 'agent-run',
+      trigger: 'start',
+      attempt: 1,
+      hasInput: true,
+      hasResume: false,
+      hasInterrupt: false,
+      input: { prompt: 'hi' }
+    })
+    expect(agent.lastResponse.value).toMatchObject({
+      id: 'run_1',
+      providerId: 'agent-run',
+      status: 'completed',
+      hasStream: true,
+      eventCount: 7,
+      chunkCount: 7,
+      messageCount: 1,
+      latestEventType: 'finish',
+      usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 }
+    })
+    const inspection = agent.inspect()
+    expect(inspection).toMatchObject({
+      status: 'completed',
+      providerId: 'agent-run',
+      attempt: 1,
+      hasRequest: true,
+      hasResponse: true,
+      hasStream: true,
+      request: expect.objectContaining({ id: 'run_1', trigger: 'start' }),
+      response: expect.objectContaining({ id: 'run_1', eventCount: 7 }),
+      providerTrace: expect.objectContaining({
+        providerId: 'agent-run',
+        requestKeys: expect.arrayContaining(['id', 'trigger', 'attempt']),
+        responseKeys: expect.arrayContaining(['eventCount', 'eventTypes', 'status'])
+      })
+    })
+    expect(inspection.timeline.filter((event) => event.kind === 'stream')).toHaveLength(7)
+    expect(inspection.timeline).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'stream',
+          label: 'agent tool-call',
+          metadata: expect.objectContaining({ id: 'call_1', name: 'lookup' })
+        })
+      ])
+    )
+    agent.clearTrace()
+    expect(agent.lastRequest.value).toBeNull()
+    expect(agent.lastResponse.value).toBeNull()
+    expect(agent.messages.value[0]?.content).toBe('Hello world')
     expect(onEvent).toHaveBeenCalledTimes(7)
     expect(onChunk).toHaveBeenCalledTimes(7)
     expect(onFinish).toHaveBeenCalledWith(
@@ -273,5 +324,138 @@ describe('useAgentRun', () => {
         }
       })
     ])
+  })
+
+  it('reuses in-flight and completed state for duplicate run ids', async () => {
+    let releaseRun: () => void = () => {}
+    const runReleased = new Promise<void>((resolve) => {
+      releaseRun = resolve
+    })
+    const run = vi.fn<AgentRunHandler<string>>(({ input }) => {
+      return (async function* () {
+        yield {
+          type: 'message-delta',
+          messageId: 'msg_replay',
+          delta: String(input)
+        }
+        await runReleased
+        yield { type: 'finish', finishReason: 'stop' }
+      })()
+    })
+    const agent = useAgentRun({ run })
+
+    const firstRun = agent.start('first', { id: 'run-replay' })
+    await pause(10)
+    const duplicateRun = agent.start('second', { id: 'run-replay' })
+
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(agent.currentRunId.value).toBe('run-replay')
+
+    releaseRun()
+    await Promise.all([firstRun, duplicateRun])
+
+    expect(agent.status.value).toBe('completed')
+    expect(agent.messages.value).toEqual([
+      expect.objectContaining({
+        id: 'msg_replay',
+        role: 'assistant',
+        content: 'first',
+        metadata: { finishReason: 'stop' }
+      })
+    ])
+
+    await agent.start('third', { id: 'run-replay' })
+
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(agent.messages.value[0]?.content).toBe('first')
+  })
+
+  it('ignores late events from interrupted prior run when a new run starts', async () => {
+    const onEvent = vi.fn()
+    const onChunk = vi.fn()
+    const run: AgentRunHandler = vi.fn(({ id }: { id: string }) => {
+      const source: AsyncGenerator<AgentEvent> = (async function* () {
+        if (id === 'run-slow') {
+          await pause(40)
+          yield {
+            type: 'message-delta',
+            messageId: 'msg_run-slow',
+            delta: 'stale'
+          }
+          await pause(40)
+          yield { type: 'finish', finishReason: 'stop' }
+          return
+        }
+
+        yield { type: 'message-delta', messageId: 'msg_run-fast', delta: 'fresh' }
+        yield { type: 'finish', finishReason: 'stop' }
+      })()
+      return source
+    })
+
+    const agent = useAgentRun({ run, onEvent, onChunk })
+
+    const slowRun = agent.start({}, { id: 'run-slow' })
+    await pause(10)
+
+    const fastRun = agent.start({ mode: 'fast' }, { id: 'run-fast' })
+    await Promise.all([slowRun, fastRun])
+
+    expect(run).toHaveBeenCalledTimes(2)
+    expect(onEvent).toHaveBeenCalledTimes(2)
+    expect(onChunk).toHaveBeenCalledTimes(2)
+    expect(agent.currentRunId.value).toBe('run-fast')
+    expect(agent.status.value).toBe('completed')
+    expect(agent.messages.value).toEqual([
+      expect.objectContaining({
+        id: 'msg_run-fast',
+        role: 'assistant',
+        content: 'fresh',
+        metadata: expect.objectContaining({
+          finishReason: 'stop'
+        })
+      })
+    ])
+  })
+
+  it('clears interrupt state on clear() before starting a new run', async () => {
+    const run = vi.fn(() =>
+      Promise.resolve([
+        {
+          type: 'interrupt',
+          id: 'approval',
+          name: 'approval',
+          value: { requiresApproval: true }
+        } satisfies AgentEvent
+      ])
+    )
+    const agent = useAgentRun({ run })
+
+    await agent.start('checkout')
+    expect(agent.hasInterrupt.value).toBe(true)
+    expect(agent.currentRunId.value).toContain('agent-run-')
+    expect(agent.interrupt.value).toEqual(
+      expect.objectContaining({
+        type: 'interrupt',
+        id: 'approval'
+      })
+    )
+
+    agent.clear()
+    expect(agent.currentRunId.value).toBeNull()
+    expect(agent.status.value).toBe('idle')
+    expect(agent.interrupt.value).toBeNull()
+    expect(agent.hasInterrupt.value).toBe(false)
+
+    await agent.start('checkout-2', { id: 'run-clean' })
+
+    expect(run).toHaveBeenCalledTimes(2)
+    expect(run).toHaveBeenLastCalledWith({
+      id: 'run-clean',
+      input: 'checkout-2',
+      resume: undefined,
+      interrupt: undefined,
+      signal: expect.any(AbortSignal)
+    })
   })
 })

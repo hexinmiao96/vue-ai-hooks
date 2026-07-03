@@ -103,17 +103,26 @@ jobs:
       - name: Image demo
         run: pnpm image:check
 
+      - name: React video demo
+        run: pnpm react-video:check
+
       - name: Threaded chat
         run: pnpm threaded-chat:check
 
       - name: UI message stream
         run: pnpm ui-message-stream:check
 
+      - name: Agent run
+        run: pnpm agent-run:check
+
       - name: Tool approval
         run: pnpm tool-approval:check
 
       - name: Agent bridge
         run: pnpm agent-bridge:check
+
+      - name: Agent route templates
+        run: pnpm agent-route-templates:check
 
       - name: Links
         run: pnpm links:check

@@ -6,10 +6,14 @@
 suggestion，按当前输入过滤，并记录用户选中的 suggestion；之后由你的界面决定：填入
 `useChat().input`、调用 `sendMessage()`，还是打开自定义流程。
 
-公开导出：`usePromptSuggestions`、`PromptSuggestion`、`PromptSuggestionInput`、
+公开导出：`usePromptSuggestions`、`createPromptSuggestionRecipes`、
+`promptSuggestionRecipeIds`、`PromptSuggestion`、`PromptSuggestionInput`、
 `PromptSuggestionFilter`、`PromptSuggestionFilterContext`、`PromptSuggestionLoader`、
-`PromptSuggestionLoaderContext`、`UsePromptSuggestionsOptions` 和
-`UsePromptSuggestionsReturn`。
+`PromptSuggestionLoaderContext`、`PromptSuggestionRecipe`、
+`PromptSuggestionRecipeCategory`、`PromptSuggestionRecipeId`、
+`PromptSuggestionRecipeLocale`、`PromptSuggestionRecipeMetadata`、
+`PromptSuggestionRecipeSurface`、`CreatePromptSuggestionRecipesOptions`、
+`UsePromptSuggestionsOptions` 和 `UsePromptSuggestionsReturn`。
 
 ## 用法
 
@@ -53,6 +57,44 @@ function applySuggestion(id: string) {
 
 字符串 suggestion 会变成 `{ id: 'suggestion-N', title, prompt }`。对象 suggestion
 会保留 `id`、`title`、`description` 和 `metadata`；空 prompt 会被跳过。
+
+## 任务启动 recipes
+
+如果不想在每个页面手写一次 prompt chip 数组，可以使用
+`createPromptSuggestionRecipes()` 生成一组一等任务入口：
+
+```ts
+import { createPromptSuggestionRecipes, usePromptSuggestions } from 'vue-ai-hooks'
+
+const starterRecipes = createPromptSuggestionRecipes({
+  locale: 'zh',
+  surfaces: ['thread', 'release'],
+  categories: ['review', 'verify', 'handoff'],
+  metadata: { surface: 'thread-panel' }
+})
+
+const suggestions = usePromptSuggestions({
+  input: chat.input,
+  messages: chat.messages,
+  suggestions: starterRecipes
+})
+```
+
+`promptSuggestionRecipeIds` 提供稳定 recipe id。每个 recipe 都会带
+`PromptSuggestionRecipeMetadata`，其中包含 `kind: 'task-starter'`、`recipe`、
+`category`、`surfaces` 和 `locale`，产品 UI 可以按 review、verification、handoff、
+planning、route-design、approval、media-prompt 和 trace-inspection 等任务入口分组，而不需要硬编码提示词文本。传入
+`locale: 'en'` 可生成英文 starters，也可以用 `include` / `exclude`、`categories`
+和 `surfaces` 只保留当前流程需要的任务。
+
+内置 recipe id 覆盖常见产品 surface：
+
+- `summarize-thread`、`find-risks`、`plan-next-steps`、`draft-handoff` 和
+  `compare-thread-branches` 用于聊天和 thread 工作流。
+- `write-test-plan`、`review-code-change` 和 `verify-release-gates` 用于代码和发布准备。
+- `inspect-trace`、`design-agent-route`、`prepare-tool-approval` 和
+  `triage-provider-error` 用于 agent/backend 路由和特权工具。
+- `draft-media-prompt` 用于图片或视频提示词准备。
 
 ## 返回值
 

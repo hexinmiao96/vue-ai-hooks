@@ -7,6 +7,12 @@ import {
   type Ref
 } from 'vue'
 import { mergeDeltas as mergeToolDeltas } from './_tc_merge'
+import {
+  inspectRequestTrace,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
+import { createRequestTrace } from '../utils/trace'
 import type {
   AgentEvent,
   AgentEventAdapterOptions,
@@ -48,6 +54,39 @@ export interface AgentRunFinishInfo {
   usage: TokenUsage | null
 }
 
+export interface AgentRunRequestInfo<TInput = unknown, TResume = unknown> {
+  id: string
+  providerId: 'agent-run'
+  trigger: 'start' | 'resume'
+  attempt: number
+  hasInput: boolean
+  hasResume: boolean
+  hasInterrupt: boolean
+  input?: TInput
+  resume?: TResume
+  interrupt?: AgentInterruptEvent | null
+}
+
+export interface AgentRunResponseInfo {
+  id: string
+  providerId: 'agent-run'
+  status: AgentRunStatus
+  hasStream: boolean
+  eventCount: number
+  chunkCount: number
+  messageCount: number
+  streamDataCount: number
+  eventTypes: AgentEvent['type'][]
+  latestEventType?: AgentEvent['type']
+  interrupt?: AgentInterruptEvent | null
+  usage: TokenUsage | null
+}
+
+export type AgentRunInspectionSnapshot<
+  TInput = unknown,
+  TResume = unknown
+> = RequestInspectionSnapshot<AgentRunRequestInfo<TInput, TResume>, AgentRunResponseInfo>
+
 export interface UseAgentRunOptions<
   TInput = unknown,
   TResume = unknown
@@ -78,8 +117,12 @@ export interface UseAgentRunReturn<TInput = unknown, TResume = unknown> {
   streamData: Ref<StreamDataPart[]>
   usage: Ref<TokenUsage | null>
   error: Ref<Error | null>
+  lastRequest: Ref<AgentRunRequestInfo<TInput, TResume> | null>
+  lastResponse: Ref<AgentRunResponseInfo | null>
   interrupt: Ref<AgentInterruptEvent | null>
   hasInterrupt: ComputedRef<boolean>
+  inspect: () => AgentRunInspectionSnapshot<TInput, TResume>
+  clearTrace: () => void
   start: (input?: TInput, options?: StartAgentRunOptions) => Promise<void>
   resume: (response?: TResume, options?: ResumeAgentRunOptions) => Promise<void>
   stop: () => void
@@ -110,25 +153,39 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
   const interrupt = shallowRef<AgentInterruptEvent | null>(null)
   const hasInterrupt = computed(() => interrupt.value !== null)
   const isLoading = computed(() => status.value === 'running' || status.value === 'streaming')
+  const { lastRequest, lastResponse, clearTrace, recordRequest, recordResponse } =
+    createRequestTrace<AgentRunRequestInfo<TInput, TResume>, AgentRunResponseInfo>()
 
   let controls: RunControls | null = null
   let sequence = 0
   let assistantId: string | null = null
+  let activeRunPromise: Promise<void> | null = null
 
   async function start(input?: TInput, startOptions: StartAgentRunOptions = {}) {
+    const runId = startOptions.id ?? createId('agent-run')
+    const replay = replayExistingRun(runId)
+    if (replay) return replay
     resetRunState()
-    await consume({ input, id: startOptions.id ?? createId('agent-run') })
+    const promise = consume({ input, id: runId })
+    trackActiveRun(runId, promise)
+    await promise
   }
 
   async function resume(response?: TResume, resumeOptions: ResumeAgentRunOptions = {}) {
     const pendingInterrupt = interrupt.value
-    if (!pendingInterrupt) return
+    if (!pendingInterrupt) {
+      if (resumeOptions.id) await replayExistingRun(resumeOptions.id)
+      return
+    }
+    const runId = resumeOptions.id ?? createId('agent-run')
     interrupt.value = null
-    await consume({
+    const promise = consume({
       resume: response,
       interrupt: pendingInterrupt,
-      id: resumeOptions.id ?? createId('agent-run')
+      id: runId
     })
+    trackActiveRun(runId, promise)
+    await promise
   }
 
   function stop() {
@@ -140,8 +197,19 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
   function clear() {
     stop()
     resetRunState()
+    clearTrace()
     currentRunId.value = null
     status.value = 'idle'
+  }
+
+  function inspect(): AgentRunInspectionSnapshot<TInput, TResume> {
+    return inspectRequestTrace({
+      status: status.value,
+      error: error.value,
+      lastRequest: lastRequest.value,
+      lastResponse: lastResponse.value,
+      events: agentEventsToInspectionTimeline(events.value)
+    })
   }
 
   async function consume(request: {
@@ -155,6 +223,7 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
     const runSequence = ++sequence
     controls = { controller, sequence: runSequence }
     currentRunId.value = request.id
+    recordRequest(createAgentRunRequestInfo(request, runSequence))
     status.value = 'running'
     error.value = null
     let finished = false
@@ -180,6 +249,18 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
         chunks.value = [...chunks.value, chunk]
         options.onChunk?.(chunk)
         applyChunk(chunk)
+        recordResponse(
+          createAgentRunResponseInfo(
+            request.id,
+            status.value,
+            events.value,
+            chunks.value,
+            messages.value,
+            streamData.value,
+            interrupt.value,
+            usage.value
+          )
+        )
       }
 
       if (controls?.sequence !== runSequence) return
@@ -190,6 +271,18 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
           ? 'interrupted'
           : 'completed'
       status.value = nextStatus
+      recordResponse(
+        createAgentRunResponseInfo(
+          request.id,
+          nextStatus,
+          events.value,
+          chunks.value,
+          messages.value,
+          streamData.value,
+          interrupt.value,
+          usage.value
+        )
+      )
       if (!controller.signal.aborted) {
         options.onFinish?.({
           id: request.id,
@@ -210,9 +303,44 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
       const nextError = err instanceof Error ? err : new Error(String(err))
       error.value = nextError
       status.value = 'error'
+      recordResponse(
+        createAgentRunResponseInfo(
+          request.id,
+          'error',
+          events.value,
+          chunks.value,
+          messages.value,
+          streamData.value,
+          interrupt.value,
+          usage.value
+        )
+      )
       options.onError?.(nextError)
       throw nextError
     }
+  }
+
+  function replayExistingRun(runId: string): Promise<void> | null {
+    if (currentRunId.value !== runId) return null
+    if (status.value === 'running' || status.value === 'streaming') {
+      return activeRunPromise ?? Promise.resolve()
+    }
+    if (status.value === 'interrupted' || status.value === 'completed') {
+      return Promise.resolve()
+    }
+    return null
+  }
+
+  function trackActiveRun(runId: string, promise: Promise<void>) {
+    activeRunPromise = promise
+    promise.then(
+      () => {
+        if (currentRunId.value === runId) activeRunPromise = null
+      },
+      () => {
+        if (currentRunId.value === runId) activeRunPromise = null
+      }
+    )
   }
 
   function resetRunState() {
@@ -295,13 +423,96 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
     streamData,
     usage,
     error,
+    lastRequest,
+    lastResponse,
     interrupt,
     hasInterrupt,
+    inspect,
+    clearTrace,
     start,
     resume,
     stop,
     clear
   }
+}
+
+export function createAgentRunRequestInfo<TInput = unknown, TResume = unknown>(
+  request: {
+    id: string
+    input?: TInput
+    resume?: TResume
+    interrupt?: AgentInterruptEvent | null
+  },
+  attempt: number
+): AgentRunRequestInfo<TInput, TResume> {
+  return {
+    id: request.id,
+    providerId: 'agent-run',
+    trigger: request.interrupt ? 'resume' : 'start',
+    attempt,
+    hasInput: request.input !== undefined,
+    hasResume: request.resume !== undefined,
+    hasInterrupt: request.interrupt != null,
+    ...(request.input !== undefined ? { input: request.input } : {}),
+    ...(request.resume !== undefined ? { resume: request.resume } : {}),
+    ...(request.interrupt !== undefined
+      ? { interrupt: request.interrupt ? { ...request.interrupt } : null }
+      : {})
+  }
+}
+
+export function createAgentRunResponseInfo(
+  id: string,
+  status: AgentRunStatus,
+  events: readonly AgentEvent[],
+  chunks: readonly ChatChunk[],
+  messages: readonly Message[],
+  streamData: readonly StreamDataPart[],
+  interrupt: AgentInterruptEvent | null,
+  usage: TokenUsage | null
+): AgentRunResponseInfo {
+  const eventTypes = events.map((event) => event.type)
+  const latestEventType = eventTypes[eventTypes.length - 1]
+  return {
+    id,
+    providerId: 'agent-run',
+    status,
+    hasStream: events.length > 0,
+    eventCount: events.length,
+    chunkCount: chunks.length,
+    messageCount: messages.length,
+    streamDataCount: streamData.length,
+    eventTypes,
+    ...(latestEventType ? { latestEventType } : {}),
+    ...(interrupt ? { interrupt: { ...interrupt } } : {}),
+    usage: usage ? { ...usage } : null
+  }
+}
+
+export function agentEventsToInspectionTimeline(
+  events: readonly AgentEvent[]
+): InspectionTimelineEventInput[] {
+  return events.map((event, index) => ({
+    kind: event.type === 'error' ? 'error' : 'stream',
+    label: `agent ${event.type}`,
+    ...(event.type === 'error' ? { message: event.errorText, category: 'provider' as const } : {}),
+    metadata: {
+      index,
+      type: event.type,
+      ...agentEventMetadata(event)
+    }
+  }))
+}
+
+function agentEventMetadata(event: AgentEvent): Record<string, unknown> {
+  if ('id' in event && event.id) return { id: event.id, ...agentNamedEventMetadata(event) }
+  return agentNamedEventMetadata(event)
+}
+
+function agentNamedEventMetadata(event: AgentEvent): Record<string, unknown> {
+  if ('name' in event && event.name) return { name: event.name }
+  if (event.type === 'finish') return { finishReason: event.finishReason ?? 'stop' }
+  return {}
 }
 
 function hasAssistantDelta(chunk: ChatChunk): boolean {

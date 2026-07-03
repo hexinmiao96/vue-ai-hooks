@@ -1,8 +1,8 @@
 # React hooks
 
 `vue-ai-hooks/react` 是可选 React 入口。目前它提供 React 版 `useChat`、
-`useCompletion` 和 `useObject`，用于流式 React UI，同时复用根入口里的 Provider、proxy
-transport、请求追踪和 stream 格式。
+`useCompletion`、`useImage`、`useVideo`、`useObject`、`usePromptSuggestions` 与 `useAgentRun`，用于流式 React UI，并复用根入口里的
+Provider、Proxy transport、请求追踪与 stream 格式。
 
 只有使用这个子路径时，消费侧应用才需要安装 React：
 
@@ -14,14 +14,24 @@ pnpm add vue-ai-hooks react
 
 ```bash
 pnpm example:react-chat
+pnpm example:react-image
+pnpm example:react-video
+```
+
+```tsx
+import { useChat, useCompletion, useImage, useObject, useVideo } from 'vue-ai-hooks/react'
 ```
 
 demo 源码在 `examples/react-chat/App.tsx`。它使用 `DirectChatTransport`
 和确定性的本地 stream，然后渲染 `lastRequest`、`lastResponse`、usage 和自定义
 stream data，方便你在接真实 `/api/chat` 路由前检查 React 请求生命周期。
 
+`examples/react-image/App.tsx` 和 `examples/react-video/App.tsx` 提供不需要 key 的媒体
+quickstart：默认返回确定性本地预览，展示请求 trace，并复用同一个
+`VITE_EXAMPLE_PROVIDER=proxy` 开关切到应用自有 `/api/image` 和 `/api/video` 路由。
+
 ```tsx
-import { useChat, useCompletion } from 'vue-ai-hooks/react'
+import { useChat, useCompletion, useAgentRun } from 'vue-ai-hooks/react'
 import { openai } from 'vue-ai-hooks'
 
 export function ChatPanel() {
@@ -104,10 +114,99 @@ export function ObjectBox() {
 }
 ```
 
+任务提示词（提示词卡片）可以这样接：
+
+```tsx
+import { createPromptSuggestionRecipes, usePromptSuggestions } from 'vue-ai-hooks/react'
+
+const starterRecipes = createPromptSuggestionRecipes({
+  locale: 'zh',
+  surfaces: ['chat', 'backend'],
+  include: ['summarize-thread', 'find-risks', 'design-agent-route', 'triage-provider-error']
+})
+
+export function PromptChips() {
+  const { visibleSuggestions, reloadSuggestions, selectSuggestion, clearSelection, error } =
+    usePromptSuggestions({
+      suggestions: starterRecipes,
+      input: '',
+      max: 4
+    })
+
+  return (
+    <aside>
+      {error ? <p>{error.message}</p> : null}
+      {visibleSuggestions.map((suggestion) => (
+        <button key={suggestion.id} type="button" onClick={() => void selectSuggestion(suggestion)}>
+          {suggestion.title}
+        </button>
+      ))}
+      <button onClick={() => void reloadSuggestions()} type="button">
+        重新加载
+      </button>
+      <button onClick={clearSelection} type="button">
+        清空选择
+      </button>
+    </aside>
+  )
+}
+```
+
+图片生成可以这样使用：
+
+```tsx
+import { useImage } from 'vue-ai-hooks/react'
+
+export function ImageBox() {
+  const { image, input, handleInputChange, handleSubmit, status, error } = useImage({
+    defaultRequest: { model: 'stable-diffusion-3' }
+  })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={input} onChange={handleInputChange} />
+      <button disabled={status !== 'ready' || !input.trim()}>生成</button>
+      {image ? <img src={image.url} alt="" /> : null}
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
+```
+
+视频生成可以这样使用：
+
+```tsx
+import { useVideo } from 'vue-ai-hooks/react'
+
+export function VideoBox() {
+  const { video, input, handleInputChange, handleSubmit, status, error } = useVideo({
+    defaultRequest: { model: 'video-model' }
+  })
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={input} onChange={handleInputChange} />
+      <button disabled={status !== 'ready' || !input.trim()}>生成</button>
+      {video ? <a href={video.url}>打开视频</a> : null}
+      {error ? <p>{error.message}</p> : null}
+    </form>
+  )
+}
+```
+
 ## API
 
 ```ts
-import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
+import {
+  useChat,
+  useCompletion,
+  useImage,
+  useObject,
+  createPromptSuggestionRecipes,
+  usePromptSuggestions,
+  useVideo,
+  useAgentRun
+} from 'vue-ai-hooks/react'
 ```
 
 `useChat(options)` 接收 `UseReactChatOptions`：
@@ -170,6 +269,99 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `useChat` 的 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
 使用 AI SDK 风格，新代码优先使用该回调；`onFinishLegacy(message, info)` 保留旧签名兼容。
+
+`useImage(options)` 接收 `UseReactImageOptions`：
+
+| 选项                                                        | 说明                                              |
+| ----------------------------------------------------------- | ------------------------------------------------- |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | 请求 `/api/image` 时使用的 proxy transport 配置。 |
+| `initialInput`, `defaultRequest`, `timeoutMs`               | 写入默认请求参数、初始输入与超时。                |
+| `onRequest`, `onResponse`, `onFinish`, `onError`            | 请求生命周期回调。                                |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | 图片请求重试策略（非流式场景）。                  |
+
+`UseReactImageReturn` 暴露常规 React state 和操作：
+
+| 返回值                                                                         | 说明                                     |
+| ------------------------------------------------------------------------------ | ---------------------------------------- |
+| `id`, `input`, `status`, `isLoading`, `error`, `image`, `images`, `result`     | 当前图片生成状态。                       |
+| `lastRequest`, `lastResponse`                                                  | 最近一次请求与响应追踪快照。             |
+| `inspect()`                                                                    | 生成带 timeline/retry 的调试快照。       |
+| `generate(prompt?, options?)`, `generateImage(prompt?, options?)`              | 从行内文本或 form 发起生成请求。         |
+| `editImage(prompt?, options)`                                                  | 使用 `image` 发起编辑请求，支持 `mask`。 |
+| `stop()`                                                                       | 中止进行中的请求。                       |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控表单输入与提交 helper。              |
+| `clearError()`, `clearTrace()`, `clear()`                                      | 重置错误、追踪或全部图片状态。           |
+
+`useVideo(options)` 接收 `UseReactVideoOptions`：
+
+| 选项                                                        | 说明                                              |
+| ----------------------------------------------------------- | ------------------------------------------------- |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | 请求 `/api/video` 时使用的 proxy transport 配置。 |
+| `initialInput`, `defaultRequest`, `timeoutMs`               | 写入默认请求参数、初始输入与超时。                |
+| `onRequest`, `onResponse`, `onFinish`, `onError`            | 请求生命周期回调。                                |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | 视频请求重试策略（非流式场景）。                  |
+
+`UseReactVideoReturn` 暴露常规 React state 和操作：
+
+| 返回值                                                                         | 说明                               |
+| ------------------------------------------------------------------------------ | ---------------------------------- |
+| `id`, `input`, `status`, `isLoading`, `error`, `video`, `videos`, `result`     | 当前视频生成状态。                 |
+| `lastRequest`, `lastResponse`                                                  | 最近一次请求与响应追踪快照。       |
+| `inspect()`                                                                    | 生成带 timeline/retry 的调试快照。 |
+| `generate(prompt?, options?)`, `generateVideo(prompt?, options?)`              | 从行内文本或 form 发起视频请求。   |
+| `stop()`                                                                       | 中止进行中的请求。                 |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控表单输入与提交 helper。        |
+| `clearError()`, `clearTrace()`, `clear()`                                      | 重置错误、追踪或全部视频状态。     |
+
+`usePromptSuggestions(options)` 接收 `UseReactPromptSuggestionsOptions`：
+
+React 子入口也导出 `createPromptSuggestionRecipes()`，用于生成带稳定
+`PromptSuggestionRecipeMetadata` 的共享任务启动器，并可按 chat、backend、agent、
+release、media、thread、code 和 tool-approval 等 `surfaces` 选择入口。
+
+| 选项          | 说明                                 |
+| ------------- | ------------------------------------ |
+| `suggestions` | 基础提示词列表，可用字符串或对象。   |
+| `input`       | 输入框文本，参与文本过滤。           |
+| `messages`    | 当前消息上下文，供自定义过滤器判断。 |
+| `max`         | 可见提示词最大数量。                 |
+| `filter`      | 自定义筛选回调。                     |
+| `loader`      | 可选异步加载器。                     |
+| `loadOnInit`  | 是否在挂载时触发一次加载。           |
+
+`UseReactPromptSuggestionsReturn` 暴露：
+
+| 返回值                               | 说明                       |
+| ------------------------------------ | -------------------------- |
+| `suggestions`                        | 全量归一化列表。           |
+| `visibleSuggestions`                 | 过滤后的可见列表。         |
+| `selectedSuggestion`                 | 当前选中项。               |
+| `isLoading`                          | 是否正在加载动态提示词。   |
+| `error`                              | 上次加载错误。             |
+| `reloadSuggestions`, `clearError`    | 重载动态提示词、清空错误。 |
+| `selectSuggestion`, `clearSelection` | 按 id/对象选中与清空选择。 |
+
+`useAgentRun(options)` 接收 `UseReactAgentRunOptions<T, R>`：
+
+| 选项                                        | 说明                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| `run`                                       | 用于消费应用侧 agent 事件流的处理函数，返回 `AgentEventSource`。 |
+| `id`, `generateId`                          | 运行时 id 与自定义 id 生成器。                                   |
+| `progressDataType`, `interruptDataType`     | 自定义 `progress`、`interrupt` 对应的 stream data 类型名。       |
+| `onEvent`, `onChunk`, `onFinish`, `onError` | 事件流与生命周期回调。                                           |
+
+`UseReactAgentRunReturn<T, R>` 暴露常规 React state 和操作：
+
+| 返回值                                                            | 说明                                                                  |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `id`, `currentRunId`, `status`, `isLoading`, `error`, `interrupt` | 当前运行状态与最新中断快照。                                          |
+| `events`, `chunks`, `messages`, `streamData`, `usage`             | 与 message/chunk 格式对齐的标准化输出。                               |
+| `lastRequest`, `lastResponse`                                     | 最近一次 agent start/resume 请求和事件计数响应快照。                  |
+| `inspect()`                                                       | 生成包含事件 timeline、interrupt、usage 和错误的 agent run 排障快照。 |
+| `hasInterrupt`                                                    | 当前是否处于 `interrupt` 等待态。                                     |
+| `start(input?, options?)`, `resume(response?, options?)`          | 发起或继续 run；重复的 active/completed `options.id` 会复用本地状态。 |
+| `stop()`, `clearTrace()`, `clear()`                               | 中止进行中的请求、隐藏 trace 快照或重置到空闲状态。                   |
+| `abortController`                                                 | 当前 `AbortController`，空闲时为 `null`。                             |
 
 `useObject(options)` 接收 `UseReactObjectOptions<T>`：
 

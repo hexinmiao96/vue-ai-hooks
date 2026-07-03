@@ -1,6 +1,7 @@
 import { AiHooksError, type AiRequestStatus } from '../types'
 
-export type InspectionStatus = AiRequestStatus | 'idle'
+export type InspectionStatus =
+  AiRequestStatus | 'idle' | 'running' | 'interrupted' | 'completed' | 'aborted'
 
 export type InspectionErrorCategory =
   | 'abort'

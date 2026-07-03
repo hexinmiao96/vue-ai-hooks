@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- No unreleased changes pending.
+
+## [0.14.1] - 2026-07-03
+
 ### Changed
 
 - Added a daily release cadence gate so npm publishes are limited to one new
@@ -33,11 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tightened the publish workflow release cadence check so already-published
   package versions fail before `npm publish`, while local readiness checks stay
   repeatable after a release.
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
 - Updated GitHub Actions setup actions to Node 24-backed versions to avoid
   runner deprecation warnings in CI and release jobs.
 - Added opt-in persistence load and clear error callbacks.
 - Recorded chat persistence failures in `inspect().timeline`.
 - Added `useChatThreads().persistenceError` for thread-index storage failures.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
 
 ## [0.14.0] - 2026-07-02
 

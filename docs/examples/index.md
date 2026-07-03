@@ -25,6 +25,8 @@ the API table only when you need an option or method.
 | Try the React chat migration entry                       | `pnpm example:react-chat`                                                            | [React hooks](/reference/react)                           |
 | Try the React completion migration entry                 | `pnpm example:react-completion`                                                      | [React hooks](/reference/react)                           |
 | Try the React structured output migration entry          | `pnpm example:react-object`                                                          | [React hooks](/reference/react)                           |
+| Try the React image generation migration entry           | `pnpm example:react-image`                                                           | [React hooks](/reference/react)                           |
+| Try the React video generation migration entry           | `pnpm example:react-video`                                                           | [React hooks](/reference/react)                           |
 | Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)                                              | [Stream utilities](/reference/streams)                    |
 | Turn one prompt into text                                | [Text completion](#completion-demo)                                                  | [useCompletion](/reference/use-completion)                |
 | Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)                                              | [useEmbedding](/reference/use-embedding)                  |
@@ -37,7 +39,7 @@ the API table only when you need an option or method.
 | Extract typed JSON from a prompt                         | [Structured object output](#object-demo)                                             | [useObject](/reference/use-object)                        |
 | Expose app state to agent requests                       | `pnpm example:chat`                                                                  | [useAgentContext](/reference/use-agent-context)           |
 | Render UI from runtime capability flags                  | [Task-oriented demos](/guide/task-demos)                                             | [useAgentCapabilities](/reference/use-agent-capabilities) |
-| Track a headless app-owned agent run                     | [Agent events](/guide/agent-events)                                                  | [useAgentRun](/reference/use-agent-run)                   |
+| Track a headless app-owned agent run                     | `pnpm example:agent-run`                                                             | [useAgentRun](/reference/use-agent-run)                   |
 | Add composer task starter chips                          | `pnpm example:chat`                                                                  | [usePromptSuggestions](/reference/use-prompt-suggestions) |
 
 ## 5-minute path to production confidence
@@ -48,6 +50,8 @@ the API table only when you need an option or method.
    Verify `/api/*` and `readUIMessageStream()` contract behavior.
 3. `pnpm example:threaded-chat`  
    Validate restore/recover flow before binding your real storage adapter.
+4. `pnpm example:agent-run`  
+   Validate interrupt/resume, same-run replay safety, and inspection snapshots.
 
 ## Common startup checks
 
@@ -64,6 +68,7 @@ Validate the first demo in each lane before you decide your integration path:
 | -------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Chat + tool approval       | `Run approval demo`, one pending `chargeCard`, one retry-capable stream                       | Confirm environment and rerun `pnpm example:chat`                                               |
 | Thread persistence         | Thread sidebar exists, create/rename actions work, and `Archive` state persists after refresh | Check `useChatThreads` path and `examples/threaded-chat`                                        |
+| Agent run approval         | `approvePlan` pauses the run, approve/reject resumes, and `Inspection snapshot` updates       | Check `examples/agent-run` and [useAgentRun](/reference/use-agent-run)                          |
 | Image/video/speech flow    | Deterministic local output and editable request panel appears                                 | Verify `VITE_PROXY_BASE_URL` and the target media demo route                                    |
 | Proxy contract             | `/api/chat` and `/api/ui-message-stream` both return 200 in `curl`/browser                    | Run `pnpm example:proxy-server` in one terminal and `pnpm example:ui-message-stream` in another |
 | Structured output (object) | `local-object` prompt output renders and can switch to `/api/object`                          | Check `examples/object` + `useObject` reference                                                 |
@@ -95,10 +100,26 @@ For a no-key React structured output flow, run `pnpm example:react-object`. It
 reuses `useObject` with a local schema-driven object stream and request trace
 panel, then can switch to proxy-backed `Provider` calls.
 
+For a no-key React image flow, run `pnpm example:react-image`. It reuses
+`useImage` with deterministic local SVG output and an edit mode with source/mask,
+renders media starter chips, then can switch to `proxy` mode with
+`VITE_EXAMPLE_PROVIDER=proxy`.
+
+For a no-key React video flow, run `pnpm example:react-video`. It reuses
+`useVideo` with deterministic local storyboard output, request trace rendering,
+media starter chips, and the same `VITE_EXAMPLE_PROVIDER=proxy` switch to
+`/api/video`.
+
 For a no-key threaded chat flow, run `pnpm example:threaded-chat`. It pairs
 `useChatThreads()` with per-thread `useChat({ persist })` storage so you can
 create, rename, archive, restore, delete, refresh, and verify local history
 before adding a server storage adapter.
+
+For a no-key agent run flow, run `pnpm example:agent-run`. It uses
+`useAgentRun()` with a deterministic local `AgentEvent` stream, pauses on an
+`approvePlan` interrupt, resumes with the same run id, and shows
+`inspect()` / `clearTrace()` output beside the event log. Agent and
+tool-approval starter chips fill the run prompt before start.
 
 For no-server production pilots, follow the [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async)
 recipe after this step. It shows how to pre-load and flush thread state through

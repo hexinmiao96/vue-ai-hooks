@@ -9,6 +9,7 @@ import {
   classifyInspectionError,
   convertToModelMessages,
   cosineSimilarity,
+  createPromptSuggestionRecipes,
   defineToolHandlers,
   createAgentContextMessage,
   createIdGenerator,
@@ -75,6 +76,7 @@ import {
   useTranscription,
   usePersist,
   withAgentContextMessage,
+  promptSuggestionRecipeIds,
   serializeChatThreads,
   serializeChatThreadsState,
   deserializeChatThreads,
@@ -82,9 +84,14 @@ import {
   zhipu
 } from 'vue-ai-hooks'
 import {
+  createPromptSuggestionRecipes as createReactPromptSuggestionRecipes,
   useChat as useReactChat,
   useCompletion as useReactCompletion,
-  useObject as useReactObject
+  useImage as useReactImage,
+  useObject as useReactObject,
+  usePromptSuggestions as useReactPromptSuggestions,
+  useAgentRun as useReactAgentRun,
+  useVideo as useReactVideo
 } from 'vue-ai-hooks/react'
 import type {
   AgentEvent,
@@ -112,7 +119,10 @@ import type {
   AgentInterruptEvent,
   AgentRunFinishInfo,
   AgentRunHandler,
+  AgentRunInspectionSnapshot,
   AgentRunRequest,
+  AgentRunRequestInfo,
+  AgentRunResponseInfo,
   AgentRunStatus,
   AgentContextInput,
   AgentContextMessageOptions,
@@ -244,11 +254,18 @@ import type {
   PrepareStep,
   PrepareStepOptions,
   PromptSuggestion,
+  CreatePromptSuggestionRecipesOptions,
   PromptSuggestionFilter,
   PromptSuggestionFilterContext,
   PromptSuggestionInput,
   PromptSuggestionLoader,
   PromptSuggestionLoaderContext,
+  PromptSuggestionRecipe,
+  PromptSuggestionRecipeCategory,
+  PromptSuggestionRecipeId,
+  PromptSuggestionRecipeLocale,
+  PromptSuggestionRecipeMetadata,
+  PromptSuggestionRecipeSurface,
   PruneMessagesOptions,
   PruneReasoningStrategy,
   PruneToolCallsOption,
@@ -391,13 +408,32 @@ import type {
   ReactCompletionFinishInfo,
   ReactCompletionRequestInfo,
   ReactCompletionResponseInfo,
+  ReactAgentRunFinishInfo,
+  ReactAgentRunInspectionSnapshot,
+  ReactAgentRunRequest,
+  ReactAgentRunRequestInfo,
+  ReactAgentRunResponseInfo,
+  ReactAgentRunStatus,
+  ReactImageGenerationRequestInfo,
+  ReactImageGenerationResponseInfo,
   ReactObjectFinishCallback,
   UseReactObjectOptions,
   UseReactObjectReturn,
   ReactObjectDeepPartial,
   ReactObjectFinishInfo,
   ReactObjectRequestInfo,
-  ReactObjectResponseInfo
+  ReactObjectResponseInfo,
+  ReactImageEditOptions,
+  UseReactImageOptions,
+  UseReactImageReturn,
+  UseReactAgentRunOptions,
+  UseReactAgentRunReturn,
+  UseReactPromptSuggestionsOptions,
+  UseReactPromptSuggestionsReturn,
+  ReactVideoGenerationRequestInfo,
+  ReactVideoGenerationResponseInfo,
+  UseReactVideoOptions,
+  UseReactVideoReturn
 } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
@@ -424,10 +460,39 @@ describe('public API types', () => {
       provider,
       schema: answerSchema
     }
+    const reactImageOptions: UseReactImageOptions = {
+      api: '/api/react-image'
+    }
+    const reactVideoOptions: UseReactVideoOptions = {
+      api: '/api/react-video'
+    }
+    const reactPromptSuggestionOptions: UseReactPromptSuggestionsOptions = {
+      suggestions: ['Summarize this thread'],
+      input: 'ask',
+      max: 3,
+      filter(suggestion, context) {
+        return suggestion.prompt.includes(context.input)
+      }
+    }
+    const reactAgentEvent: AgentEvent = { type: 'finish', finishReason: 'stop' }
+    const reactAgentRunOptions: UseReactAgentRunOptions<string, { approved: boolean }> = {
+      run(request) {
+        expectTypeOf(request).toEqualTypeOf<ReactAgentRunRequest<string, { approved: boolean }>>()
+        return [reactAgentEvent]
+      },
+      onFinish(info) {
+        expectTypeOf(info).toEqualTypeOf<ReactAgentRunFinishInfo>()
+      }
+    }
 
     expect(typeof useReactChat).toBe('function')
     expect(typeof useReactCompletion).toBe('function')
     expect(typeof useReactObject).toBe('function')
+    expect(typeof useReactImage).toBe('function')
+    expect(typeof useReactPromptSuggestions).toBe('function')
+    expect(typeof useReactAgentRun).toBe('function')
+    expect(typeof useReactVideo).toBe('function')
+    expect(typeof createReactPromptSuggestionRecipes).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
     expectTypeOf<
       NonNullable<UseReactChatOptions['onFinish']>
@@ -495,6 +560,81 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactObjectReturn<{ answer: string }>['lastResponse']
     >().toEqualTypeOf<ReactObjectResponseInfo | null>()
+    expectTypeOf(reactImageOptions).toMatchTypeOf<UseReactImageOptions>()
+    expectTypeOf<UseReactImageReturn>().toMatchTypeOf<{
+      image: GeneratedImage | null
+      images: GeneratedImage[]
+      generate: (
+        prompt?: string,
+        options?: Partial<ImageGenerationRequest>
+      ) => Promise<ImageGenerationResult>
+      generateImage: (
+        prompt?: string,
+        options?: Partial<ImageGenerationRequest>
+      ) => Promise<ImageGenerationResult>
+      editImage: (
+        prompt: string | undefined,
+        options: ReactImageEditOptions
+      ) => Promise<ImageGenerationResult>
+    }>()
+    expectTypeOf<
+      UseReactImageReturn['lastRequest']
+    >().toEqualTypeOf<ReactImageGenerationRequestInfo | null>()
+    expectTypeOf<
+      UseReactImageReturn['lastResponse']
+    >().toEqualTypeOf<ReactImageGenerationResponseInfo | null>()
+    expectTypeOf(reactVideoOptions).toMatchTypeOf<UseReactVideoOptions>()
+    expectTypeOf<ReturnType<typeof useReactVideo>>().toEqualTypeOf<UseReactVideoReturn>()
+    expectTypeOf<UseReactVideoReturn>().toMatchTypeOf<{
+      video: GeneratedVideo | null
+      videos: GeneratedVideo[]
+      generate: (
+        prompt?: string,
+        options?: Partial<VideoGenerationRequest>
+      ) => Promise<VideoGenerationResult>
+      generateVideo: (
+        prompt?: string,
+        options?: Partial<VideoGenerationRequest>
+      ) => Promise<VideoGenerationResult>
+    }>()
+    expectTypeOf<
+      UseReactVideoReturn['lastRequest']
+    >().toEqualTypeOf<ReactVideoGenerationRequestInfo | null>()
+    expectTypeOf<
+      UseReactVideoReturn['lastResponse']
+    >().toEqualTypeOf<ReactVideoGenerationResponseInfo | null>()
+    expectTypeOf(reactPromptSuggestionOptions).toMatchTypeOf<UseReactPromptSuggestionsOptions>()
+    expectTypeOf(createReactPromptSuggestionRecipes({ include: ['find-risks'] })).toMatchTypeOf<
+      PromptSuggestion[]
+    >()
+    expectTypeOf<
+      ReturnType<typeof useReactPromptSuggestions>
+    >().toMatchTypeOf<UseReactPromptSuggestionsReturn>()
+    expectTypeOf<UseReactPromptSuggestionsReturn>().toMatchTypeOf<{
+      suggestions: PromptSuggestion[]
+      visibleSuggestions: PromptSuggestion[]
+      selectedSuggestion: PromptSuggestion | null
+      isLoading: boolean
+      error: Error | null
+      reloadSuggestions: () => Promise<PromptSuggestion[]>
+      selectSuggestion: (suggestion: string | PromptSuggestion) => PromptSuggestion | null
+      clearSelection: () => void
+    }>()
+    expectTypeOf<ReactAgentRunStatus>().toEqualTypeOf<
+      'idle' | 'running' | 'streaming' | 'interrupted' | 'completed' | 'error' | 'aborted'
+    >()
+    expectTypeOf(reactAgentRunOptions).toEqualTypeOf<
+      UseReactAgentRunOptions<string, { approved: boolean }>
+    >()
+    expectTypeOf<
+      ReturnType<typeof useReactAgentRun<string, { approved: boolean }>>
+    >().toEqualTypeOf<UseReactAgentRunReturn<string, { approved: boolean }>>()
+    expectTypeOf<UseReactAgentRunReturn<string, { approved: boolean }>>().toMatchTypeOf<{
+      lastRequest: ReactAgentRunRequestInfo<string, { approved: boolean }> | null
+      lastResponse: ReactAgentRunResponseInfo | null
+      inspect: () => ReactAgentRunInspectionSnapshot<string, { approved: boolean }>
+      clearTrace: () => void
+    }>()
   })
 
   it('exports provider factories as ChatProvider-compatible values', () => {
@@ -785,6 +925,27 @@ describe('public API types', () => {
     expectTypeOf(agentRunOptions).toEqualTypeOf<UseAgentRunOptions<string, { approved: boolean }>>()
     expectTypeOf(agentRun).toEqualTypeOf<UseAgentRunReturn<string, { approved: boolean }>>()
     expectTypeOf(agentRun.interrupt).toEqualTypeOf<Ref<AgentInterruptEvent | null>>()
+    expectTypeOf(agentRun.lastRequest).toEqualTypeOf<
+      Ref<AgentRunRequestInfo<string, { approved: boolean }> | null>
+    >()
+    expectTypeOf(agentRun.lastResponse).toEqualTypeOf<Ref<AgentRunResponseInfo | null>>()
+    expectTypeOf(agentRun.inspect).toEqualTypeOf<
+      () => AgentRunInspectionSnapshot<string, { approved: boolean }>
+    >()
+    expectTypeOf(agentRun.clearTrace).toEqualTypeOf<() => void>()
+    expectTypeOf<AgentRunRequestInfo<string, { approved: boolean }>>().toMatchTypeOf<{
+      id: string
+      providerId: 'agent-run'
+      trigger: 'start' | 'resume'
+      attempt: number
+    }>()
+    expectTypeOf<AgentRunResponseInfo>().toMatchTypeOf<{
+      id: string
+      providerId: 'agent-run'
+      status: AgentRunStatus
+      eventCount: number
+      eventTypes: AgentEvent['type'][]
+    }>()
     expectTypeOf(agentEventToChatChunk).parameter(0).toEqualTypeOf<AgentEvent>()
     expectTypeOf(agentEventToChatChunk)
       .parameter(1)
@@ -873,7 +1034,9 @@ describe('public API types', () => {
     expectTypeOf(inspectRequestTrace).returns.toEqualTypeOf<
       RequestInspectionSnapshot<unknown, unknown>
     >()
-    expectTypeOf<InspectionStatus>().toEqualTypeOf<AiRequestStatus | 'idle'>()
+    expectTypeOf<InspectionStatus>().toEqualTypeOf<
+      AiRequestStatus | 'idle' | 'running' | 'interrupted' | 'completed' | 'aborted'
+    >()
     expectTypeOf<InspectionErrorCategory>().toEqualTypeOf<
       | 'abort'
       | 'authentication'
@@ -1038,6 +1201,23 @@ describe('public API types', () => {
       },
       loadOnInit: false
     } satisfies UsePromptSuggestionsOptions<Record<string, unknown>>)
+    const promptSuggestionRecipes = createPromptSuggestionRecipes({
+      include: ['find-risks', 'draft-handoff'],
+      surfaces: ['thread'],
+      metadata: { source: 'public-api' }
+    } satisfies CreatePromptSuggestionRecipesOptions<{ source: string }>)
+    const promptSuggestionRecipe: PromptSuggestionRecipe = {
+      id: 'find-risks',
+      category: 'review',
+      surfaces: ['chat', 'thread', 'release'],
+      title: 'Find risks',
+      prompt: 'Find risks.',
+      description: 'Review before release.'
+    }
+    const promptSuggestionRecipeLocale: PromptSuggestionRecipeLocale = 'en'
+    const promptSuggestionRecipeCategory: PromptSuggestionRecipeCategory = 'review'
+    const promptSuggestionRecipeId: PromptSuggestionRecipeId = 'find-risks'
+    const promptSuggestionRecipeSurface: PromptSuggestionRecipeSurface = 'thread'
     const agentContextRegistry = useAgentContextRegistry()
     const unregisterAgentContext = useAgentContext(agentContextRegistry, {
       description: 'Current route',
@@ -1196,6 +1376,23 @@ describe('public API types', () => {
       messages: readonly Message[]
       signal: AbortSignal
     }>()
+    expect(promptSuggestionRecipeIds).toContain('find-risks')
+    expect(promptSuggestionRecipes[0]?.metadata).toMatchObject({
+      kind: 'task-starter',
+      recipe: 'find-risks',
+      category: 'review',
+      surfaces: ['chat', 'thread', 'release'],
+      locale: 'en',
+      source: 'public-api'
+    })
+    expectTypeOf(promptSuggestionRecipes).toEqualTypeOf<
+      PromptSuggestion<PromptSuggestionRecipeMetadata & { source: string }>[]
+    >()
+    expectTypeOf(promptSuggestionRecipe).toEqualTypeOf<PromptSuggestionRecipe>()
+    expect(promptSuggestionRecipeLocale).toBe('en')
+    expect(promptSuggestionRecipeCategory).toBe('review')
+    expect(promptSuggestionRecipeId).toBe('find-risks')
+    expect(promptSuggestionRecipeSurface).toBe('thread')
     expectTypeOf(agentContextRegistry).toEqualTypeOf<AgentContextRegistry>()
     expectTypeOf(unregisterAgentContext).toEqualTypeOf<() => void>()
     expectTypeOf(agentContextSnapshots).toEqualTypeOf<AgentContextSnapshot[]>()

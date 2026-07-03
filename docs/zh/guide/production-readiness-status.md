@@ -10,15 +10,15 @@ issue 仍然只记录可复现 bug。
 
 ## 状态矩阵
 
-| 方向            | 当前状态           | 证据                                                                                     |
-| --------------- | ------------------ | ---------------------------------------------------------------------------------------- |
-| 调试检查        | 可接入应用         | `inspect()`、`inspectRequestTrace()`、timeline、retry records、provider trace、脱敏 curl |
-| 任务型 demo     | 可用于上手         | Vue 审批 demo、React chat/completion/object demo、图片编辑、proxy、AI SDK stream         |
-| Provider preset | 可经应用代理使用   | OpenAI-compatible、DeepSeek、OpenRouter、Gemini、Anthropic、Moonshot、智谱、Ollama、vLLM |
-| React 支持      | 迁移桥定位         | `vue-ai-hooks/react` 暴露 `useChat`、`useCompletion` 和 `useObject`                      |
-| 工具审批        | 可作为后端契约接入 | 持久审批记录、renderer contract、重放 `runId`、过期 `revision` 冲突                      |
-| 线程和持久化    | 可作为应用自有模型 | `useChatThreads`、服务端存储配方、IndexedDB 配方、重新生成分支契约                       |
-| Agent 桥接      | 可作为投影层接入   | `AgentEvent`、LangChain/LangGraph 配方、AI SDK UI stream part 转换                       |
+| 方向            | 当前状态           | 证据                                                                                                                               |
+| --------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 调试检查        | 可接入应用         | `inspect()`、`inspectRequestTrace()`、timeline、retry records、provider trace、脱敏 curl                                           |
+| 任务型 demo     | 可用于上手         | Vue 审批 demo、agent run 审批、React chat/completion/object/image/video demo、图片编辑、proxy、AI SDK stream                       |
+| Provider preset | 可经应用代理使用   | OpenAI-compatible、DeepSeek、OpenRouter、Gemini、Anthropic、Moonshot、智谱、Ollama、vLLM                                           |
+| React 支持      | 迁移桥定位         | `vue-ai-hooks/react` 暴露 `useChat`、`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun` |
+| 工具审批        | 可作为后端契约接入 | 持久审批记录、renderer contract、重放 `runId`、过期 `revision` 冲突                                                                |
+| 线程和持久化    | 可作为应用自有模型 | `useChatThreads`、服务端存储配方、IndexedDB 配方、重新生成分支契约                                                                 |
+| Agent 桥接      | 可作为投影层接入   | `AgentEvent`、LangChain/LangGraph 配方、路由模板、interrupt/resume 投影守护规则、AI SDK UI stream part 转换                        |
 
 ## 必跑门禁
 
@@ -34,7 +34,7 @@ pnpm production:readiness
 node scripts/production-readiness-local.mjs
 ```
 
-这条门禁覆盖 format、secret、source hygiene、lint、typecheck、test hygiene、coverage、build、dist、size、pack、install、changelog、metadata、community health、workflow、API docs、docs UX、proxy、图片编辑、threaded chat、UI message stream、tool approval、agent bridge、markdown links、examples 和 docs build。
+这条门禁覆盖 format、secret、source hygiene、lint、typecheck、test hygiene、coverage、build、dist、size、pack、install、changelog、metadata、community health、workflow、API docs、docs UX、proxy、图片编辑、threaded chat、UI message stream、agent run、tool approval、agent bridge、agent route templates、markdown links、examples 和 docs build。
 
 ## 发布边界
 

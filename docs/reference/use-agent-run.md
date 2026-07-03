@@ -7,7 +7,8 @@ it when your backend already exposes an `AgentEvent` stream and the Vue app need
 one state layer for run status, normalized assistant messages, stream data,
 interrupts, and resume requests.
 
-Public exports: `useAgentRun`, `AgentRunRequest`, `AgentRunHandler`,
+Public exports: `useAgentRun`, `AgentRunRequest`, `AgentRunRequestInfo`,
+`AgentRunResponseInfo`, `AgentRunInspectionSnapshot`, `AgentRunHandler`,
 `AgentRunStatus`, `AgentRunFinishInfo`, `StartAgentRunOptions`,
 `ResumeAgentRunOptions`, `UseAgentRunOptions`, and `UseAgentRunReturn`.
 
@@ -80,8 +81,12 @@ you can reuse `Message.parts` renderers from `useChat`.
 | `streamData`          | `Ref<StreamDataPart[]>`             | Non-transient data emitted by progress, interrupt, tool result, source, file, or error events. |
 | `usage`               | `Ref<TokenUsage \| null>`           | Latest usage from a finish event.                                                              |
 | `error`               | `Ref<Error \| null>`                | Last non-aborted runner error.                                                                 |
+| `lastRequest`         | `Ref<AgentRunRequestInfo \| null>`  | Latest start/resume request snapshot for local trace inspection.                               |
+| `lastResponse`        | `Ref<AgentRunResponseInfo \| null>` | Latest event/chunk/message count snapshot for local trace inspection.                          |
 | `interrupt`           | `Ref<AgentInterruptEvent \| null>`  | Pending human-in-the-loop interrupt event.                                                     |
 | `hasInterrupt`        | `ComputedRef<boolean>`              | `true` when `interrupt` is not null.                                                           |
+| `inspect()`           | `() => AgentRunInspectionSnapshot`  | Build a debug snapshot with request, response, event timeline, interrupt, usage, and errors.   |
+| `clearTrace()`        | `() => void`                        | Clears `lastRequest` and `lastResponse` without changing current run output.                   |
 | `start(input, opts)`  | `(input?, opts?) => Promise<void>`  | Clears previous state and starts a new run.                                                    |
 | `resume(value, opts)` | `(resume?, opts?) => Promise<void>` | Sends a response for the pending interrupt and continues the same timeline.                    |
 | `stop()`              | `() => void`                        | Aborts the active runner.                                                                      |
@@ -106,6 +111,49 @@ if (agent.status.value === 'interrupted') {
 clears `interrupt` before reading the resumed stream. It does not clear
 `messages`, `events`, `chunks`, or `streamData`, so the resumed output continues
 the same visible timeline.
+
+## Inspection
+
+`inspect()` returns an `AgentRunInspectionSnapshot` built from `lastRequest`,
+`lastResponse`, raw `AgentEvent` timeline entries, the current `status`, and the
+last runner `error`. This mirrors the `inspectRequestTrace()` shape used by
+chat, media, and capability hooks without pretending that a provider request
+exists inside the browser.
+
+```ts
+const snapshot = agent.inspect()
+
+console.log(snapshot.status)
+console.log(snapshot.request?.trigger)
+console.log(snapshot.response?.eventTypes)
+```
+
+`lastRequest` records the stable run id, trigger (`start` or `resume`), attempt,
+input/resume presence, and pending interrupt summary. `lastResponse` records
+event, chunk, message, stream-data counts, latest event type, usage, interrupt,
+and the final agent run status. Call `clearTrace()` when the UI should hide the
+debug snapshot but keep the visible run output.
+
+## Run id replay safety
+
+Pass a stable `opts.id` when a button click, network retry, or page restore may
+replay the same frontend action:
+
+```ts
+const runId = `checkout:${approvalId}`
+
+await agent.start('charge the customer', { id: runId })
+await agent.start('charge the customer', { id: runId }) // reuses the active or completed state
+```
+
+If the same run id is already `running` or `streaming`, `start()` returns the
+active promise instead of calling `run` again. If the same run id is already
+`completed` or `interrupted`, `start()` resolves without clearing local state or
+calling `run` again. `error` and `aborted` runs can still be retried with the
+same id. Backend durability, idempotency, and audit records still belong in your
+app-owned agent runtime.
+
+It returns the active promise instead of calling `run` again.
 
 ## When to use it
 

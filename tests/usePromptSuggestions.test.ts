@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { shallowRef } from 'vue'
-import { usePromptSuggestions } from '../src/composables/usePromptSuggestions'
+import {
+  createPromptSuggestionRecipes,
+  promptSuggestionRecipeIds,
+  usePromptSuggestions
+} from '../src/composables/usePromptSuggestions'
 import type {
   PromptSuggestionInput,
   PromptSuggestionLoaderContext
@@ -39,6 +43,81 @@ describe('usePromptSuggestions', () => {
       }
     ])
     expect(visibleSuggestions.value).toHaveLength(2)
+  })
+
+  it('creates reusable task starter recipes with stable metadata', () => {
+    const recipes = createPromptSuggestionRecipes({
+      include: ['find-risks', 'write-test-plan', 'inspect-trace'],
+      exclude: ['inspect-trace'],
+      metadata(recipe) {
+        return { source: 'builtin', rank: recipe.id === 'find-risks' ? 1 : 2 }
+      }
+    })
+
+    expect(promptSuggestionRecipeIds).toContain('inspect-trace')
+    expect(recipes.map((recipe) => recipe.id)).toEqual(['find-risks', 'write-test-plan'])
+    expect(recipes[0]).toMatchObject({
+      id: 'find-risks',
+      title: 'Find risks',
+      metadata: {
+        kind: 'task-starter',
+        recipe: 'find-risks',
+        category: 'review',
+        surfaces: ['chat', 'thread', 'release'],
+        locale: 'en',
+        source: 'builtin',
+        rank: 1
+      }
+    })
+
+    const { visibleSuggestions } = usePromptSuggestions({
+      input: 'test',
+      suggestions: recipes
+    })
+    expect(visibleSuggestions.value.map((suggestion) => suggestion.id)).toEqual(['write-test-plan'])
+  })
+
+  it('filters task starter recipes by category and product surface', () => {
+    const recipes = createPromptSuggestionRecipes({
+      categories: ['verify', 'approval'],
+      surfaces: ['release', 'tool-approval']
+    })
+
+    expect(recipes.map((recipe) => recipe.id)).toEqual([
+      'write-test-plan',
+      'verify-release-gates',
+      'prepare-tool-approval'
+    ])
+    expect(recipes.map((recipe) => recipe.metadata?.category)).toEqual([
+      'verify',
+      'verify',
+      'approval'
+    ])
+    const approvalRecipe = recipes.find((recipe) => recipe.id === 'prepare-tool-approval')
+    expect(approvalRecipe?.metadata?.surfaces).toEqual(['agent', 'tool-approval'])
+  })
+
+  it('creates localized task starter recipes', () => {
+    const recipes = createPromptSuggestionRecipes({
+      locale: 'zh',
+      include: ['draft-handoff']
+    })
+
+    expect(recipes).toEqual([
+      {
+        id: 'draft-handoff',
+        title: '写交接说明',
+        prompt: '写一段交接说明，包含背景、已完成工作、剩余风险和已运行命令。',
+        description: '让下一个人或下一轮会话可以安全接上。',
+        metadata: {
+          kind: 'task-starter',
+          recipe: 'draft-handoff',
+          category: 'handoff',
+          surfaces: ['thread', 'release'],
+          locale: 'zh'
+        }
+      }
+    ])
   })
 
   it('filters by composer input and caps visible suggestions', () => {

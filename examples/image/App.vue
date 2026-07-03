@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
-import { useImage, type GeneratedImage } from 'vue-ai-hooks'
+import {
+  createPromptSuggestionRecipes,
+  useImage,
+  usePromptSuggestions,
+  type GeneratedImage,
+  type PromptSuggestionInput
+} from 'vue-ai-hooks'
 
 type DemoMode = 'generate' | 'edit'
+type ImageStarterMetadata = { surface: string; mode?: DemoMode }
 
 const proxyBaseURL = (import.meta.env.VITE_PROXY_BASE_URL || '').trim()
 const imageApi = import.meta.env.VITE_PROXY_IMAGE_URL || '/api/image'
@@ -11,6 +18,34 @@ const demoFetch = useLocalDemo ? localImageFetch : undefined
 const modeLabel = useLocalDemo ? 'Local deterministic demo' : `Proxy: ${proxyBaseURL}`
 const generatePrompt = 'A clean Vue composable dashboard hero image'
 const editPrompt = 'Replace the card background with a calm product workspace'
+const imageStarterSuggestions: PromptSuggestionInput<ImageStarterMetadata>[] = [
+  ...createPromptSuggestionRecipes<ImageStarterMetadata>({
+    surfaces: ['media'],
+    include: ['draft-media-prompt'],
+    metadata: { surface: 'vue-image-demo' }
+  }),
+  {
+    id: 'vue-image-dashboard',
+    title: 'Dashboard hero',
+    prompt: generatePrompt,
+    description: 'Generate a deterministic product dashboard image.',
+    metadata: { surface: 'vue-image-demo', mode: 'generate' }
+  },
+  {
+    id: 'vue-image-launch',
+    title: 'Launch visual',
+    prompt: 'A minimalist product launch hero with crisp interface details',
+    description: 'Try a clean generation prompt with UI context.',
+    metadata: { surface: 'vue-image-demo', mode: 'generate' }
+  },
+  {
+    id: 'vue-image-workspace-edit',
+    title: 'Workspace edit',
+    prompt: editPrompt,
+    description: 'Switch to edit mode and update the source image.',
+    metadata: { surface: 'vue-image-demo', mode: 'edit' }
+  }
+]
 const mode = shallowRef<DemoMode>('generate')
 const editSourceImage: GeneratedImage = {
   url: svgDataUrl('Source image for useImage editing', 'source'),
@@ -44,6 +79,14 @@ const {
   }
 })
 
+const { visibleSuggestions: visibleImageStarters, selectSuggestion: selectImageStarter } =
+  usePromptSuggestions({
+    suggestions: imageStarterSuggestions,
+    input,
+    max: 4,
+    filter: showAllSuggestions
+  })
+
 const previewUrl = computed(() => {
   if (image.value?.url) return image.value.url
   if (image.value?.base64) {
@@ -74,6 +117,17 @@ const traceSummary = computed(() => {
     2
   )
 })
+
+function applyImageStarter(id: string) {
+  const selected = selectImageStarter(id)
+  if (!selected) return
+
+  const starterMode = selected.metadata?.mode
+  if (starterMode === 'generate' || starterMode === 'edit') {
+    mode.value = starterMode
+  }
+  input.value = selected.prompt
+}
 
 function setMode(nextMode: DemoMode) {
   const previousDefault = mode.value === 'edit' ? editPrompt : generatePrompt
@@ -204,6 +258,10 @@ function escapeSvg(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 }
+
+function showAllSuggestions() {
+  return true
+}
 </script>
 
 <template>
@@ -242,6 +300,19 @@ function escapeSvg(value: string) {
         Prompt
         <textarea v-model="input" rows="4" class="textarea" />
       </label>
+      <div class="starter-grid" aria-label="Image prompt starters">
+        <button
+          v-for="suggestion in visibleImageStarters"
+          :key="suggestion.id"
+          class="starter-button"
+          type="button"
+          :disabled="isLoading"
+          @click="applyImageStarter(suggestion.id)"
+        >
+          <span>{{ suggestion.title }}</span>
+          <small v-if="suggestion.description">{{ suggestion.description }}</small>
+        </button>
+      </div>
       <section v-if="mode === 'edit'" class="source-panel" aria-label="Image edit source">
         <div class="source-frame">
           <img class="source-image" :src="sourceImageUrl" alt="Edit source" />
@@ -384,6 +455,43 @@ function escapeSvg(value: string) {
   border-radius: 8px;
   font: inherit;
   resize: vertical;
+}
+
+.starter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.starter-button {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+  min-height: 70px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.starter-button span {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.starter-button small {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.starter-button:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 .source-panel {

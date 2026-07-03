@@ -6,9 +6,10 @@
 `AgentEvent` stream，而 Vue 应用需要一层状态来管理 run status、归一后的 assistant
 messages、stream data、interrupt 和 resume 请求时使用它。
 
-公开导出：`useAgentRun`、`AgentRunRequest`、`AgentRunHandler`、`AgentRunStatus`、
-`AgentRunFinishInfo`、`StartAgentRunOptions`、`ResumeAgentRunOptions`、
-`UseAgentRunOptions` 和 `UseAgentRunReturn`。
+公开导出：`useAgentRun`、`AgentRunRequest`、`AgentRunRequestInfo`、
+`AgentRunResponseInfo`、`AgentRunInspectionSnapshot`、`AgentRunHandler`、
+`AgentRunStatus`、`AgentRunFinishInfo`、`StartAgentRunOptions`、
+`ResumeAgentRunOptions`、`UseAgentRunOptions` 和 `UseAgentRunReturn`。
 
 ## 用法
 
@@ -79,8 +80,12 @@ if (agent.hasInterrupt.value) {
 | `streamData`          | `Ref<StreamDataPart[]>`             | progress、interrupt、tool result、source、file 或 error 事件产生的非 transient data。 |
 | `usage`               | `Ref<TokenUsage \| null>`           | finish 事件里的最新 usage。                                                           |
 | `error`               | `Ref<Error \| null>`                | 最近一次非 abort runner 错误。                                                        |
+| `lastRequest`         | `Ref<AgentRunRequestInfo \| null>`  | 最近一次 start/resume 请求快照，用于本地 trace 检查。                                 |
+| `lastResponse`        | `Ref<AgentRunResponseInfo \| null>` | 最近一次事件/chunk/message 计数快照，用于本地 trace 检查。                            |
 | `interrupt`           | `Ref<AgentInterruptEvent \| null>`  | 待处理的人在回路 interrupt 事件。                                                     |
 | `hasInterrupt`        | `ComputedRef<boolean>`              | `interrupt` 不为 null 时是 `true`。                                                   |
+| `inspect()`           | `() => AgentRunInspectionSnapshot`  | 生成包含请求、响应、事件 timeline、interrupt、usage 和错误的排障快照。                |
+| `clearTrace()`        | `() => void`                        | 清空 `lastRequest` 与 `lastResponse`，不改变当前 run 输出。                           |
 | `start(input, opts)`  | `(input?, opts?) => Promise<void>`  | 清空旧状态并启动新 run。                                                              |
 | `resume(value, opts)` | `(resume?, opts?) => Promise<void>` | 对 pending interrupt 发送响应，并在同一条 timeline 里继续。                           |
 | `stop()`              | `() => void`                        | abort 当前 runner。                                                                   |
@@ -103,6 +108,41 @@ if (agent.status.value === 'interrupted') {
 
 `resume()` 会把上一次的 `interrupt` 传回你的 `run` handler，并在读取续跑 stream 前清空
 `interrupt`。它不会清空 `messages`、`events`、`chunks` 或 `streamData`，所以续跑输出会继续追加到同一条可见 timeline。
+
+## 检查快照
+
+`inspect()` 会返回 `AgentRunInspectionSnapshot`，内容来自 `lastRequest`、
+`lastResponse`、原始 `AgentEvent` timeline、当前 `status` 和最近一次 runner `error`。它复用
+chat、媒体和 capability hooks 的 `inspectRequestTrace()` 快照形态，但不会假装浏览器内部存在
+Provider 请求。
+
+```ts
+const snapshot = agent.inspect()
+
+console.log(snapshot.status)
+console.log(snapshot.request?.trigger)
+console.log(snapshot.response?.eventTypes)
+```
+
+`lastRequest` 会记录稳定 run id、触发方式（`start` 或 `resume`）、attempt、是否有
+input/resume，以及 pending interrupt 摘要。`lastResponse` 会记录 event、chunk、message、
+stream data 数量、最新事件类型、usage、interrupt 和最终 agent run 状态。需要隐藏调试信息但保留当前 run 输出时，调用 `clearTrace()`。
+
+## Run id 重放安全
+
+当按钮点击、网络重试或页面恢复可能重放同一个前端动作时，给 `opts.id` 传稳定值：
+
+```ts
+const runId = `checkout:${approvalId}`
+
+await agent.start('向客户扣款', { id: runId })
+await agent.start('向客户扣款', { id: runId }) // 复用进行中或已完成的本地状态
+```
+
+如果相同 run id 已经是 `running` 或 `streaming`，`start()` 会返回当前进行中的 promise，
+而不会再次调用 `run`。如果相同 run id 已经是 `completed` 或 `interrupted`，`start()`
+会直接 resolve，不清空本地状态，也不再次调用 `run`。`error` 和 `aborted` 状态仍可用同一
+id 重试。后端持久化、幂等和审计记录仍然属于你的应用自有 agent runtime。
 
 ## 适用场景
 

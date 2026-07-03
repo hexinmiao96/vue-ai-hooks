@@ -1,12 +1,24 @@
 import { DirectChatTransport, inspectRequestTrace } from 'vue-ai-hooks'
 import { useCallback, useMemo, useState } from 'react'
-import { useChat, type ChatChunk, type ChatRequest, type Message } from 'vue-ai-hooks/react'
+import {
+  createPromptSuggestionRecipes,
+  useChat,
+  usePromptSuggestions,
+  type ChatChunk,
+  type ChatRequest,
+  type Message
+} from 'vue-ai-hooks/react'
 
 const samplePrompts = [
   'Show me the minimum React integration path.',
   'How should I keep provider keys out of the browser?',
   'What should I inspect when a stream fails?'
 ]
+
+const starterPrompts = createPromptSuggestionRecipes({
+  surfaces: ['chat', 'backend'],
+  metadata: { surface: 'react-chat' }
+})
 
 function sleep(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
@@ -76,9 +88,9 @@ export default function App() {
   const {
     messages,
     input,
+    setInput,
     handleInputChange,
     handleSubmit,
-    sendMessage,
     isLoading,
     status: chatStatus,
     stop,
@@ -105,6 +117,18 @@ export default function App() {
       streamProtocol: 'ui-message',
       metadata: { demo: 'react-chat' }
     }
+  })
+  const { visibleSuggestions } = usePromptSuggestions({
+    suggestions: [
+      ...samplePrompts.map((prompt, index) => ({
+        id: `react-chat-prompt-${index + 1}`,
+        prompt
+      })),
+      ...starterPrompts
+    ],
+    input,
+    messages,
+    max: 6
   })
   const [copiedStatus, setCopiedStatus] = useState('Copy curl')
   const inspection = useMemo(
@@ -168,18 +192,18 @@ export default function App() {
           </div>
         </header>
 
-        <div className="sample-grid" aria-label="Sample prompts">
-          {samplePrompts.map((prompt) => (
+        <div className="sample-grid" aria-label="Prompt suggestions">
+          {visibleSuggestions.map((suggestion) => (
             <button
               className="sample-button"
               disabled={isLoading}
-              key={prompt}
+              key={suggestion.id}
               onClick={() => {
-                void sendMessage(prompt)
+                setInput(suggestion.prompt)
               }}
               type="button"
             >
-              {prompt}
+              {suggestion.prompt}
             </button>
           ))}
         </div>

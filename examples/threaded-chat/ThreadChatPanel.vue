@@ -1,7 +1,19 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { DirectChatTransport, useChat } from 'vue-ai-hooks'
-import type { ChatChunk, ChatRequest, Message, MessageContent } from 'vue-ai-hooks'
+import {
+  createPromptSuggestionRecipes,
+  DirectChatTransport,
+  useChat,
+  usePromptSuggestions
+} from 'vue-ai-hooks'
+import type {
+  ChatChunk,
+  ChatRequest,
+  Message,
+  MessageContent,
+  PromptSuggestion,
+  PromptSuggestionRecipeMetadata
+} from 'vue-ai-hooks'
 
 interface ThreadStats {
   threadId: string
@@ -9,6 +21,8 @@ interface ThreadStats {
   lastMessagePreview: string
   updatedAt: Date
 }
+
+type ThreadStarterMetadata = PromptSuggestionRecipeMetadata & { surface: string }
 
 const props = defineProps<{
   threadId: string
@@ -86,11 +100,11 @@ const {
   error,
   lastRequest,
   lastResponse,
-  append,
   handleSubmit,
   stop,
   clear,
-  clearTrace
+  clearTrace,
+  inspect
 } = useChat({
   id: props.threadId,
   threadId: props.threadId,
@@ -103,6 +117,25 @@ const {
     forwardedProps: { demo: 'threaded-chat' }
   }
 })
+
+const starterSuggestions = createPromptSuggestionRecipes({
+  surfaces: ['thread'],
+  metadata: { surface: 'threaded-chat' }
+})
+
+const {
+  visibleSuggestions,
+  selectSuggestion,
+  isLoading: isLoadingSuggestions
+} = usePromptSuggestions({
+  suggestions: starterSuggestions,
+  input,
+  messages,
+  max: 6,
+  loadOnInit: true
+})
+
+const inspection = computed(() => inspect())
 
 const canSend = computed(() => !isLoading.value && input.value.trim().length > 0)
 const renderedMessages = computed(() =>
@@ -117,6 +150,8 @@ const traceRows = computed(() => [
   { label: 'Thread', value: props.threadId },
   { label: 'Provider', value: lastRequest.value?.providerId ?? provider.id },
   { label: 'Status', value: status.value },
+  { label: 'Attempt', value: String(inspection.value.request?.attempt ?? 0) },
+  { label: 'Timeline', value: String(inspection.value.timeline.length) },
   { label: 'Response', value: lastResponse.value ? 'stream captured' : 'idle' }
 ])
 const checkpointText = computed(() => {
@@ -166,20 +201,38 @@ async function send(event?: { preventDefault?: () => void }) {
   })
 }
 
-async function ask(prompt: string) {
-  if (isLoading.value) return
-  input.value = ''
-  await append(prompt, {
-    metadata: {
-      source: 'threaded-chat-demo'
-    }
-  })
+function applySuggestion(suggestion: PromptSuggestion<ThreadStarterMetadata>) {
+  const selected = selectSuggestion(suggestion)
+  if (!selected || isLoading.value) return
+  input.value = selected.prompt
 }
 
 function clearThreadMessages() {
   clear()
   clearTrace()
 }
+
+const inspectionSummary = computed(() => {
+  const statusValue = inspection.value.status
+  const requestProvider = lastRequest.value?.providerId ?? provider.id
+  const attempt = inspection.value.request?.attempt ?? 0
+  const timelineLength = inspection.value.timeline.length
+  return `status=${statusValue}; provider=${requestProvider}; attempt=${attempt}; timeline=${timelineLength}`
+})
+
+const inspectionRequestJson = computed(() =>
+  lastRequest.value ? JSON.stringify(lastRequest.value, null, 2) : 'No request yet.'
+)
+const inspectionResponseJson = computed(() =>
+  lastResponse.value ? JSON.stringify(lastResponse.value, null, 2) : 'No response yet.'
+)
+const inspectionProviderTrace = computed(() =>
+  inspection.value.providerTrace
+    ? JSON.stringify(inspection.value.providerTrace, null, 2)
+    : 'No provider trace yet.'
+)
+const inspectionTimelineJson = computed(() => JSON.stringify(inspection.value.timeline, null, 2))
+const inspectionCurl = computed(() => inspection.value.curl ?? 'No curl available.')
 </script>
 
 <template>
@@ -200,6 +253,7 @@ function clearThreadMessages() {
         <dd class="trace-value">{{ row.value }}</dd>
       </div>
     </dl>
+    <p class="trace-summary">{{ inspectionSummary }}</p>
 
     <section class="message-list" aria-live="polite">
       <div v-if="renderedMessages.length === 0" class="empty-state">
@@ -209,16 +263,17 @@ function clearThreadMessages() {
         </span>
         <div class="suggestions">
           <button
+            v-for="suggestion in visibleSuggestions"
+            :key="suggestion.id"
             type="button"
             class="suggestion-button"
-            @click="ask('Summarize this support case.')"
+            :disabled="isLoadingSuggestions"
+            @click="applySuggestion(suggestion)"
           >
-            Summarize support case
-          </button>
-          <button type="button" class="suggestion-button" @click="ask('Draft the next reply.')">
-            Draft next reply
+            {{ suggestion.title }}
           </button>
         </div>
+        <p v-if="isLoadingSuggestions" class="suggestion-status">Loading suggestions…</p>
       </div>
 
       <article
@@ -235,6 +290,22 @@ function clearThreadMessages() {
     </section>
 
     <p v-if="error" class="error-message">{{ error.message }}</p>
+
+    <details class="trace-details">
+      <summary>Inspect request trace</summary>
+      <ul class="trace-list">
+        <li>Provider trace available: {{ inspection.providerTrace ? 'yes' : 'no' }}</li>
+        <li>Curl: {{ inspection.curl ? 'generated' : 'missing' }}</li>
+        <li>Retries: {{ inspection.retries.length }}</li>
+      </ul>
+      <pre class="trace-code">{{ inspectionSummary }}</pre>
+      <pre class="trace-code">request: {{ inspectionRequestJson }}</pre>
+      <pre class="trace-code">response: {{ inspectionResponseJson }}</pre>
+      <pre class="trace-code">timeline: {{ inspectionTimelineJson }}</pre>
+      <pre v-if="inspection.providerTrace" class="trace-code">
+providerTrace: {{ inspectionProviderTrace }}</pre>
+      <pre class="trace-code">curl: {{ inspectionCurl }}</pre>
+    </details>
 
     <form class="composer" @submit="send">
       <label class="field-label" for="thread-message">Message</label>
@@ -324,6 +395,37 @@ function clearThreadMessages() {
   font-weight: 700;
 }
 
+.trace-summary {
+  margin: 0;
+  padding: 0 18px 8px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.trace-details {
+  padding: 0 18px 12px;
+}
+
+.trace-list {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: #334155;
+  font-size: 12px;
+}
+
+.trace-code {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #d8dee9;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  font: 12px/1.45 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+}
+
 .message-list {
   display: flex;
   flex-direction: column;
@@ -367,6 +469,12 @@ function clearThreadMessages() {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
+}
+
+.suggestion-status {
+  margin: 2px 0 0;
+  color: #526070;
+  font-size: 12px;
 }
 
 .message {

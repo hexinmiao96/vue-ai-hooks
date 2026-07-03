@@ -35,6 +35,53 @@ export {
 } from './react/useCompletion'
 
 export {
+  useImage,
+  type ReactImageGenerationRequestInfo,
+  type ReactImageGenerationResponseInfo,
+  type ReactImageEditOptions,
+  type UseReactImageOptions,
+  type UseReactImageReturn
+} from './react/useImage'
+
+export {
+  useVideo,
+  type ReactVideoGenerationRequestInfo,
+  type ReactVideoGenerationResponseInfo,
+  type UseReactVideoOptions,
+  type UseReactVideoReturn
+} from './react/useVideo'
+
+export {
+  createPromptSuggestionRecipes,
+  promptSuggestionRecipeIds,
+  usePromptSuggestions,
+  type CreatePromptSuggestionRecipesOptions,
+  type PromptSuggestionRecipe,
+  type PromptSuggestionRecipeCategory,
+  type PromptSuggestionRecipeId,
+  type PromptSuggestionRecipeLocale,
+  type PromptSuggestionRecipeMetadata,
+  type PromptSuggestionRecipeSurface,
+  type UseReactPromptSuggestionsOptions,
+  type UseReactPromptSuggestionsReturn
+} from './react/usePromptSuggestions'
+
+export {
+  useAgentRun,
+  type ReactAgentRunFinishInfo,
+  type ReactAgentRunHandler,
+  type ReactAgentRunInspectionSnapshot,
+  type ReactAgentRunRequest,
+  type ReactAgentRunRequestInfo,
+  type ReactAgentRunResponseInfo,
+  type ReactAgentRunStatus,
+  type ResumeAgentRunOptions,
+  type StartAgentRunOptions,
+  type UseReactAgentRunOptions,
+  type UseReactAgentRunReturn
+} from './react/useAgentRun'
+
+export {
   useObject,
   type ReactObjectDeepPartial,
   type ReactAiSdkObjectFinishCallback,

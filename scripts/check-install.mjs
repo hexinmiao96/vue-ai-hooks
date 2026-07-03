@@ -42,6 +42,7 @@ import { createRequire } from 'node:module'
 import {
   AiHooksError,
   createInspectionCurl,
+  createPromptSuggestionRecipes,
   deepseek,
   openai,
   openrouter,
@@ -73,6 +74,9 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 if (typeof useChat !== 'function') {
   throw new Error('ESM useChat export failed')
 }
+if (createPromptSuggestionRecipes({ include: ['find-risks'] })[0]?.id !== 'find-risks') {
+  throw new Error('ESM createPromptSuggestionRecipes export failed')
+}
 if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
   throw new Error('ESM createInspectionCurl export failed')
 }
@@ -87,6 +91,21 @@ if (typeof reactEntry.useCompletion !== 'function') {
 if (typeof reactEntry.useObject !== 'function') {
   throw new Error('ESM React useObject export failed')
 }
+if (typeof reactEntry.useImage !== 'function') {
+  throw new Error('ESM React useImage export failed')
+}
+if (typeof reactEntry.useAgentRun !== 'function') {
+  throw new Error('ESM React useAgentRun export failed')
+}
+if (typeof reactEntry.usePromptSuggestions !== 'function') {
+  throw new Error('ESM React usePromptSuggestions export failed')
+}
+if (typeof reactEntry.createPromptSuggestionRecipes !== 'function') {
+  throw new Error('ESM React createPromptSuggestionRecipes export failed')
+}
+if (typeof reactEntry.useVideo !== 'function') {
+  throw new Error('ESM React useVideo export failed')
+}
 `
   )
   run('node', ['esm-check.mjs'], { cwd: tempRoot })
@@ -98,6 +117,7 @@ const {
   AiHooksError,
   anthropic,
   createInspectionCurl,
+  createPromptSuggestionRecipes,
   openaiCompatible,
   useCompletion
 } = require('vue-ai-hooks')
@@ -118,6 +138,9 @@ if (new AiHooksError('test').name !== 'AiHooksError') {
 if (typeof useCompletion !== 'function') {
   throw new Error('CJS useCompletion export failed')
 }
+if (createPromptSuggestionRecipes({ include: ['find-risks'] })[0]?.id !== 'find-risks') {
+  throw new Error('CJS createPromptSuggestionRecipes export failed')
+}
 if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
   throw new Error('CJS createInspectionCurl export failed')
 }
@@ -132,6 +155,21 @@ if (typeof reactEntry.useCompletion !== 'function') {
 if (typeof reactEntry.useObject !== 'function') {
   throw new Error('CJS React useObject export failed')
 }
+if (typeof reactEntry.useImage !== 'function') {
+  throw new Error('CJS React useImage export failed')
+}
+if (typeof reactEntry.useAgentRun !== 'function') {
+  throw new Error('CJS React useAgentRun export failed')
+}
+if (typeof reactEntry.usePromptSuggestions !== 'function') {
+  throw new Error('CJS React usePromptSuggestions export failed')
+}
+if (typeof reactEntry.createPromptSuggestionRecipes !== 'function') {
+  throw new Error('CJS React createPromptSuggestionRecipes export failed')
+}
+if (typeof reactEntry.useVideo !== 'function') {
+  throw new Error('CJS React useVideo export failed')
+}
 `
   )
   run('node', ['cjs-check.cjs'], { cwd: tempRoot })
@@ -139,17 +177,26 @@ if (typeof reactEntry.useObject !== 'function') {
   writeFileSync(
     join(tempRoot, 'types-check.mts'),
     `
-import { createInspectionCurl, useChat, openaiCompatible } from 'vue-ai-hooks'
-import type { ChatProvider, InspectionTimelineEvent, Message, UseChatReturn } from 'vue-ai-hooks'
+import { createInspectionCurl, createPromptSuggestionRecipes, useChat, openaiCompatible } from 'vue-ai-hooks'
+import type { ChatProvider, InspectionTimelineEvent, Message, PromptSuggestionInput, UseChatReturn } from 'vue-ai-hooks'
 import {
+  createPromptSuggestionRecipes as createReactPromptSuggestionRecipes,
+  useAgentRun as useReactAgentRun,
   useChat as useReactChat,
   useCompletion as useReactCompletion,
-  useObject as useReactObject
+  useImage as useReactImage,
+  useObject as useReactObject,
+  usePromptSuggestions as useReactPromptSuggestions,
+  useVideo as useReactVideo
 } from 'vue-ai-hooks/react'
 import type {
+  UseReactAgentRunReturn,
   UseReactChatReturn,
   UseReactCompletionReturn,
-  UseReactObjectReturn
+  UseReactImageReturn,
+  UseReactObjectReturn,
+  UseReactPromptSuggestionsReturn,
+  UseReactVideoReturn
 } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
@@ -164,6 +211,20 @@ const reactObject: UseReactObjectReturn<{ answer: string }> = useReactObject({
   provider,
   schema: { type: 'object', properties: { answer: { type: 'string' } } }
 })
+const reactImage: UseReactImageReturn = useReactImage()
+const reactAgentRun: UseReactAgentRunReturn<string, string> = useReactAgentRun({
+  run: async function* () {}
+})
+const reactPromptSuggestions: UseReactPromptSuggestionsReturn = useReactPromptSuggestions({
+  suggestions: ['Summarize this thread']
+})
+const promptRecipes: PromptSuggestionInput[] = createPromptSuggestionRecipes({
+  include: ['find-risks']
+})
+const reactPromptRecipes: PromptSuggestionInput[] = createReactPromptSuggestionRecipes({
+  include: ['write-test-plan']
+})
+const reactVideo: UseReactVideoReturn = useReactVideo()
 
 chat.setMessages(initialMessages)
 const timelineEvent: InspectionTimelineEvent = {
@@ -173,10 +234,16 @@ const timelineEvent: InspectionTimelineEvent = {
 const curl: string | null = createInspectionCurl({ api: '/api/chat' })
 void timelineEvent
 void curl
+void promptRecipes
+void reactPromptRecipes
 reactChat.setMessages(initialMessages)
 reactChat.setInput('hello from react')
 reactCompletion.setInput('complete from react')
 reactObject.setInput('object from react')
+reactImage.setInput('image from react')
+reactAgentRun.stop()
+reactPromptSuggestions.selectSuggestion('suggestion-1')
+reactVideo.setInput('video from react')
 `
   )
   run(

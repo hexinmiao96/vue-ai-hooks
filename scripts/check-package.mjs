@@ -26,9 +26,13 @@ const requiredFiles = [
   'src/composables/useChatThreads.ts',
   'src/composables/usePromptSuggestions.ts',
   'src/react.ts',
+  'src/react/useAgentRun.ts',
   'src/react/useChat.ts',
   'src/react/useCompletion.ts',
+  'src/react/useImage.ts',
   'src/react/useObject.ts',
+  'src/react/usePromptSuggestions.ts',
+  'src/react/useVideo.ts',
   'src/utils/agentEvents.ts',
   'dist/index.mjs',
   'dist/index.cjs',
@@ -50,10 +54,20 @@ const requiredFiles = [
   'dist/react.cjs',
   'dist/react.d.ts',
   'dist/react.d.ts.map',
+  'dist/react/useAgentRun.d.ts',
+  'dist/react/useAgentRun.d.ts.map',
+  'dist/react/useChat.d.ts',
+  'dist/react/useChat.d.ts.map',
   'dist/react/useCompletion.d.ts',
   'dist/react/useCompletion.d.ts.map',
+  'dist/react/useImage.d.ts',
+  'dist/react/useImage.d.ts.map',
   'dist/react/useObject.d.ts',
-  'dist/react/useObject.d.ts.map'
+  'dist/react/useObject.d.ts.map',
+  'dist/react/usePromptSuggestions.d.ts',
+  'dist/react/usePromptSuggestions.d.ts.map',
+  'dist/react/useVideo.d.ts',
+  'dist/react/useVideo.d.ts.map'
 ]
 
 const forbiddenPrefixes = [
@@ -88,6 +102,9 @@ const brokenReadmeLinks = ['README.md', 'README.zh-CN.md'].flatMap((file) =>
 const brokenDeclarationMapSources = [...files]
   .filter((file) => file.endsWith('.d.ts.map'))
   .flatMap((file) => findBrokenMapSources(file, files))
+const brokenDeclarationSourceMaps = [...files]
+  .filter((file) => file.endsWith('.d.ts'))
+  .flatMap((file) => findBrokenDeclarationSourceMaps(file, files))
 const sizeFailures = []
 
 if (pack.size > maxPackageSize) {
@@ -107,6 +124,7 @@ if (
   forbidden.length ||
   brokenReadmeLinks.length ||
   brokenDeclarationMapSources.length ||
+  brokenDeclarationSourceMaps.length ||
   sizeFailures.length
 ) {
   if (missing.length) {
@@ -123,6 +141,11 @@ if (
   if (brokenDeclarationMapSources.length) {
     console.error(
       `Broken declaration map sources:\n${brokenDeclarationMapSources.map((line) => `- ${line}`).join('\n')}`
+    )
+  }
+  if (brokenDeclarationSourceMaps.length) {
+    console.error(
+      `Broken declaration source maps:\n${brokenDeclarationSourceMaps.map((line) => `- ${line}`).join('\n')}`
     )
   }
   if (sizeFailures.length) {
@@ -191,10 +214,25 @@ function normalizePackagePath(value) {
 function findBrokenMapSources(file, packageFiles) {
   const map = JSON.parse(readFileSync(file, 'utf8'))
   const broken = []
-  for (const source of map.sources ?? []) {
+  const sources = map.sources ?? []
+  const sourcesContent = map.sourcesContent ?? []
+  for (const [index, source] of sources.entries()) {
     const target = normalizePackagePath(posix.join(dirname(file), source))
-    if (!target || !packageFiles.has(target)) {
+    if ((!target || !packageFiles.has(target)) && sourcesContent[index] === undefined) {
       broken.push(`${file}: ${source}`)
+    }
+  }
+  return broken
+}
+
+function findBrokenDeclarationSourceMaps(file, packageFiles) {
+  const content = readFileSync(file, 'utf8')
+  const broken = []
+  const matches = content.matchAll(/sourceMappingURL=([^\s]+)/g)
+  for (const match of matches) {
+    const target = normalizePackagePath(posix.join(dirname(file), match[1]))
+    if (!target || !packageFiles.has(target)) {
+      broken.push(`${file}: ${match[1]}`)
     }
   }
   return broken

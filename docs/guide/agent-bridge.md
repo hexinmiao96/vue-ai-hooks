@@ -28,18 +28,18 @@ human-in-the-loop runs.
 Do not forward those raw events directly to the browser. Normalize them into
 `AgentEvent` values:
 
-| Backend signal              | Browser-safe `AgentEvent`              |
-| --------------------------- | -------------------------------------- |
-| Model token or message part | `message-delta`                        |
-| Chain or graph progress     | `progress`                             |
-| Tool input is ready         | `tool-call`                            |
-| Tool completed              | `tool-result`                          |
-| Tool failed                 | `tool-error`                           |
-| Retrieval citation          | `source`                               |
-| Generated file              | `file`                                 |
-| Run completed               | `finish`                               |
-| Recoverable agent error     | `error`                                |
-| HITL interrupt              | `progress` plus a durable approval row |
+| Backend signal              | Browser-safe `AgentEvent`               |
+| --------------------------- | --------------------------------------- |
+| Model token or message part | `message-delta`                         |
+| Chain or graph progress     | `progress`                              |
+| Tool input is ready         | `tool-call`                             |
+| Tool completed              | `tool-result`                           |
+| Tool failed                 | `tool-error`                            |
+| Retrieval citation          | `source`                                |
+| Generated file              | `file`                                  |
+| Run completed               | `finish`                                |
+| Recoverable agent error     | `error`                                 |
+| HITL interrupt              | `interrupt` plus a durable approval row |
 
 Use [Tool approvals](/guide/tool-approvals) when an interrupt or tool call needs
 a human decision. Use [Agent events](/guide/agent-events) for the low-level
@@ -118,6 +118,11 @@ Treat this as a projection layer, not a public dependency contract. If your
 LangChain version emits different shapes, adapt those shapes in this backend
 function and keep the browser-facing `AgentEvent` stable.
 
+If you consume multiple typed projections such as `.messages`, `.toolCalls`, and
+`.output`, do it in the backend route or worker. The browser should never receive
+the LangChain stream object, raw tool arguments, LangSmith metadata, or provider
+headers. Redact first, then emit only `AgentEvent`.
+
 ## LangGraph projection
 
 LangGraph can stream SDK chunks or local graph events. Normalize modes into the
@@ -156,6 +161,66 @@ export async function* runLangGraphAgent(input: AgentInput): AsyncGenerator<Agen
 For interrupt/resume flows, store the interrupt payload in your backend, create
 an approval row, and resume the graph only after the approval route validates the
 reviewer decision. Do not send raw checkpoint state to the browser.
+
+For local LangGraph runtimes, compile the graph with a checkpointer and resume
+with the same thread id. Keep `Command` and checkpoint state server-side; the UI
+only sees the approval summary:
+
+```ts
+import { Command } from '@langchain/langgraph'
+import type { AgentEvent } from 'vue-ai-hooks'
+
+export async function* resumeLangGraphRun(input: ResumeInput): AsyncGenerator<AgentEvent> {
+  const config = { configurable: { thread_id: input.threadId } }
+
+  yield {
+    type: 'interrupt',
+    id: input.approvalId,
+    name: 'approveTool',
+    value: {
+      approvalId: input.approvalId,
+      runId: input.runId,
+      threadId: input.threadId,
+      toolCallId: input.toolCallId,
+      summary: input.summary
+    }
+  }
+
+  if (!input.approved) return
+
+  const stream = await graph.streamEvents(
+    new Command({ resume: { action: 'approve', approvalId: input.approvalId } }),
+    { version: 'v3', ...config }
+  )
+
+  for await (const message of stream.messages) {
+    for await (const delta of message.text) {
+      yield { type: 'message-delta', delta }
+    }
+  }
+
+  yield { type: 'finish', metadata: { runId: input.runId, threadId: input.threadId } }
+}
+```
+
+This mirrors `useAgentRun().resume()` in the browser while keeping the durable
+checkpoint and `Command({ resume })` execution under backend control.
+
+## Projection guardrails
+
+Use these as the projection contract for every backend adapter:
+
+- Emit `data-agent-interrupt` only with reviewer-safe fields such as
+  `approvalId`, `toolCallId`, `runId`, `threadId`, and a redacted summary.
+- Replace raw checkpoint state, vector matches, tool bodies, access tokens, and
+  LangSmith/provider metadata with `"[redacted]"` before creating events.
+- Treat `runId` and LangGraph `thread_id` as durable pointers. Browser retries
+  should reconnect or resume, not start a second graph.
+- Prefer `source` and `file` references for large retrieval payloads. Keep
+  `progress.data` small enough to render and log safely.
+- Verify the projection with `pnpm agent-bridge:check`; it simulates
+  LangChain typed projections, LangGraph interrupt/resume, redaction, and both
+  `ChatChunk` and AI SDK UI stream output.
 
 ## vue-ai-hooks route
 

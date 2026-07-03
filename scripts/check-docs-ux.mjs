@@ -30,6 +30,8 @@ const files = {
   zhToolApprovals: readFileSync('docs/zh/guide/tool-approvals.md', 'utf8'),
   agentBridge: readFileSync('docs/guide/agent-bridge.md', 'utf8'),
   zhAgentBridge: readFileSync('docs/zh/guide/agent-bridge.md', 'utf8'),
+  agentRouteTemplates: readFileSync('docs/guide/agent-route-templates.md', 'utf8'),
+  zhAgentRouteTemplates: readFileSync('docs/zh/guide/agent-route-templates.md', 'utf8'),
   agentEvents: readFileSync('docs/guide/agent-events.md', 'utf8'),
   zhAgentEvents: readFileSync('docs/zh/guide/agent-events.md', 'utf8'),
   inspection: readFileSync('docs/guide/inspection.md', 'utf8'),
@@ -79,8 +81,13 @@ const files = {
   threadedChatExample: readFileSync('examples/threaded-chat/App.vue', 'utf8'),
   threadedChatPanel: readFileSync('examples/threaded-chat/ThreadChatPanel.vue', 'utf8'),
   threadedChatCheck: readFileSync('scripts/check-threaded-chat-demo.mjs', 'utf8'),
+  agentRunExample: readFileSync('examples/agent-run/App.vue', 'utf8'),
+  agentRunCheck: readFileSync('scripts/check-agent-run-demo.mjs', 'utf8'),
   imageCheck: readFileSync('scripts/check-image-demo.mjs', 'utf8'),
+  reactVideoCheck: readFileSync('scripts/check-react-video-demo.mjs', 'utf8'),
   reactChatExample: readFileSync('examples/react-chat/App.tsx', 'utf8'),
+  reactImageExample: readFileSync('examples/react-image/App.tsx', 'utf8'),
+  reactVideoExample: readFileSync('examples/react-video/App.tsx', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
   videoExample: readFileSync('examples/video/App.vue', 'utf8'),
@@ -179,6 +186,12 @@ expect(
   'VitePress sidebars must expose the agent bridge guide in English and Chinese'
 )
 expect(
+  files.config.includes(
+    "{ text: 'Agent route templates', link: '/guide/agent-route-templates' }"
+  ) && files.config.includes("{ text: 'Agent 路由模板', link: '/zh/guide/agent-route-templates' }"),
+  'VitePress sidebars must expose the agent route templates guide in English and Chinese'
+)
+expect(
   files.config.includes("{ text: 'Agent events', link: '/guide/agent-events' }") &&
     files.config.includes("{ text: 'Agent 事件', link: '/zh/guide/agent-events' }"),
   'VitePress sidebars must expose the agent-event guide in English and Chinese'
@@ -263,6 +276,7 @@ for (const snippet of [
   '[Proxy recipes](/guide/proxy-recipes)',
   '[Agent events](/guide/agent-events)',
   '[Agent bridge recipe](/guide/agent-bridge)',
+  '[Agent route templates](/guide/agent-route-templates)',
   '[server storage recipe](/guide/server-storage)',
   '[Regenerate branches recipe](/guide/regenerate-branches)',
   '[Tool approval recipe](/guide/tool-approvals)',
@@ -301,6 +315,7 @@ for (const snippet of [
   '[Proxy 配方](/zh/guide/proxy-recipes)',
   '[Agent 事件](/zh/guide/agent-events)',
   '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
+  '[Agent 路由模板](/zh/guide/agent-route-templates)',
   '[服务端存储配方](/zh/guide/server-storage)',
   '[重新生成分支配方](/zh/guide/regenerate-branches)',
   '[工具审批配方](/zh/guide/tool-approvals)',
@@ -324,6 +339,10 @@ for (const snippet of [
   'pnpm example:threaded-chat',
   'examples/threaded-chat/App.vue',
   '[useChatThreads](/reference/use-chat-threads)',
+  'Headless agent run approval',
+  'pnpm example:agent-run',
+  'examples/agent-run/App.vue',
+  '[useAgentRun](/reference/use-agent-run)',
   'threads.createThread',
   'Server-side chat history',
   '[Server storage](/guide/server-storage)',
@@ -334,6 +353,7 @@ for (const snippet of [
   'Own `/api/chat` proxy',
   'Agent backend bridge',
   '[Agent bridge](/guide/agent-bridge)',
+  '[Agent route templates](/guide/agent-route-templates)',
   'LangChain',
   'LangGraph',
   'checkpoints',
@@ -346,6 +366,7 @@ for (const snippet of [
   'readUIMessageStream()',
   'readAgentEventStream',
   'agentEventToUIMessageStreamPart()',
+  'pnpm agent-route-templates:check',
   '[Production checklist](/guide/production-checklist)'
 ]) {
   expect(files.taskDemos.includes(snippet), `English task demos guide must include: ${snippet}`)
@@ -362,6 +383,10 @@ for (const snippet of [
   'pnpm example:threaded-chat',
   'examples/threaded-chat/App.vue',
   '[useChatThreads](/zh/reference/use-chat-threads)',
+  '无 UI Agent run 审批',
+  'pnpm example:agent-run',
+  'examples/agent-run/App.vue',
+  '[useAgentRun](/zh/reference/use-agent-run)',
   'threads.createThread',
   '服务端聊天历史',
   '[服务端存储](/zh/guide/server-storage)',
@@ -372,6 +397,7 @@ for (const snippet of [
   '自有 `/api/chat` proxy',
   'Agent 后端桥接',
   '[后端 Agent 桥接](/zh/guide/agent-bridge)',
+  '[Agent 路由模板](/zh/guide/agent-route-templates)',
   'LangChain',
   'LangGraph',
   'checkpoint',
@@ -384,6 +410,7 @@ for (const snippet of [
   'readUIMessageStream()',
   'readAgentEventStream',
   'agentEventToUIMessageStreamPart()',
+  'pnpm agent-route-templates:check',
   '[生产检查清单](/zh/guide/production-checklist)'
 ]) {
   expect(files.zhTaskDemos.includes(snippet), `Chinese task demos guide must include: ${snippet}`)
@@ -437,9 +464,13 @@ for (const snippet of [
   '## Browser boundary',
   '## Backend proxy',
   '[agent bridge recipe](/guide/agent-bridge)',
+  '[agent route templates](/guide/agent-route-templates)',
+  'Nuxt/Nitro',
   'LangChain',
   'LangGraph',
   'LangSmith keys',
+  'HTTP 400',
+  '"error":"Agent route failed"',
   '## Streaming contract',
   '## Tools and approvals',
   '[tool approval recipe](/guide/tool-approvals)',
@@ -455,7 +486,12 @@ for (const snippet of [
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
+  'Send one malformed `/api/chat` request',
+  '`400` + `{"error":"Agent route failed"}`',
   'pnpm image:check',
+  'pnpm react-video:check',
+  'pnpm agent-run:check',
+  'pnpm agent-route-templates:check',
   '## Production smoke test',
   'without duplicate `runId` writes',
   'branch_revision_conflict',
@@ -473,9 +509,13 @@ for (const snippet of [
   '## 浏览器边界',
   '## 后端代理',
   '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
+  '[Agent 路由模板](/zh/guide/agent-route-templates)',
+  'Nuxt/Nitro',
   'LangChain',
   'LangGraph',
   'LangSmith key',
+  'HTTP 400',
+  '"error":"Agent route failed"',
   '## 流式契约',
   '## 工具和审批',
   '[工具审批配方](/zh/guide/tool-approvals)',
@@ -489,9 +529,15 @@ for (const snippet of [
   '多设备历史',
   '重新生成时不要覆盖旧 assistant 消息',
   'inspectRequestTrace()',
+  '发送一次格式错误的 `/api/chat` 请求',
+  '确认响应为 `400`',
+  '`{"error":"Agent route failed"}`',
   'pnpm check',
   'pnpm release:check',
   'pnpm image:check',
+  'pnpm react-video:check',
+  'pnpm agent-run:check',
+  'pnpm agent-route-templates:check',
   '## 生产 smoke test',
   '没有重复写入相同 `runId`',
   'branch_revision_conflict',
@@ -516,6 +562,8 @@ for (const snippet of [
   'Tool approval',
   'Threads and persistence',
   'Agent bridge',
+  'route templates',
+  'agent route templates',
   'pnpm production:readiness',
   'node scripts/production-readiness-local.mjs',
   'pnpm release:status',
@@ -523,7 +571,8 @@ for (const snippet of [
   'daily release cadence',
   'Do not publish another npm version on the same Asia/Shanghai calendar day',
   'Do not turn this package into a backend agent framework',
-  'Do not add React hooks only for symmetry'
+  'Do not add React hooks only for symmetry',
+  '`useChat`, `useCompletion`, `useObject`, `useImage`, `useVideo`, `usePromptSuggestions`, and `useAgentRun`'
 ]) {
   expect(
     files.productionReadinessStatus.includes(snippet),
@@ -543,6 +592,8 @@ for (const snippet of [
   '工具审批',
   '线程和持久化',
   'Agent 桥接',
+  '路由模板',
+  'agent route templates',
   'pnpm production:readiness',
   'node scripts/production-readiness-local.mjs',
   'pnpm release:status',
@@ -550,7 +601,8 @@ for (const snippet of [
   'release cadence',
   '同一个 Asia/Shanghai 自然日',
   '不把这个包做成后端 Agent 框架',
-  '不为了对称而扩 React hook'
+  '不为了对称而扩 React hook',
+  '`useChat`、`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun`'
 ]) {
   expect(
     files.zhProductionReadinessStatus.includes(snippet),
@@ -757,6 +809,11 @@ for (const snippet of [
   'updates',
   'tools',
   'interrupt/resume',
+  'data-agent-interrupt',
+  'Projection guardrails',
+  'Command({ resume',
+  'thread_id',
+  'pnpm agent-bridge:check',
   'AgentEvent',
   'POST /api/agent/runs',
   'GET  /api/agent/runs/:runId/events',
@@ -782,6 +839,11 @@ for (const snippet of [
   'updates',
   'tools',
   'interrupt/resume',
+  'data-agent-interrupt',
+  '投影守护规则',
+  'Command({ resume',
+  'thread_id',
+  'pnpm agent-bridge:check',
   'AgentEvent',
   'POST /api/agent/runs',
   'GET  /api/agent/runs/:runId/events',
@@ -798,6 +860,68 @@ for (const snippet of [
   expect(
     files.zhAgentBridge.includes(snippet),
     `Chinese agent bridge guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Agent route templates',
+  'Next.js App Router',
+  'export async function POST(request: Request)',
+  'request.json()',
+  "export const runtime = 'nodejs'",
+  "export const dynamic = 'force-dynamic'",
+  'Nuxt server route',
+  'server/api/chat.post.ts',
+  'defineEventHandler',
+  'readBody(event)',
+  'event.req?.signal',
+  'Hono',
+  "app.post('/api/chat'",
+  'c.req.json()',
+  'streamText',
+  'Web Fetch route',
+  'agentRouteErrorResponse()',
+  'LangGraph interrupt resume',
+  'Command({ resume',
+  'data-agent-interrupt',
+  'x-agent-run-id',
+  'x-agent-trace-id',
+  'pnpm agent-route-templates:check'
+]) {
+  expect(
+    files.agentRouteTemplates.includes(snippet),
+    `English agent route templates guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Agent 路由模板',
+  'Next.js App Router',
+  'export async function POST(request: Request)',
+  'request.json()',
+  "export const runtime = 'nodejs'",
+  "export const dynamic = 'force-dynamic'",
+  'Nuxt server route',
+  'server/api/chat.post.ts',
+  'defineEventHandler',
+  'readBody(event)',
+  'event.req?.signal',
+  'Hono',
+  "app.post('/api/chat'",
+  'c.req.json()',
+  'streamText',
+  'Web Fetch route',
+  'agentRouteErrorResponse()',
+  'LangGraph interrupt resume',
+  'Command({ resume',
+  'data-agent-interrupt',
+  'x-agent-run-id',
+  'x-agent-trace-id',
+  'pnpm agent-route-templates:check'
+]) {
+  expect(
+    files.zhAgentRouteTemplates.includes(snippet),
+    `Chinese agent route templates guide must include: ${snippet}`
   )
 }
 
@@ -858,6 +982,26 @@ expect(
   'React chat example must be runnable without provider keys and included in the examples build gate'
 )
 expect(
+  files.reactVideoExample.includes("from 'vue-ai-hooks/react'") &&
+    files.reactVideoExample.includes('useVideo') &&
+    files.reactVideoExample.includes('createPromptSuggestionRecipes') &&
+    files.reactVideoExample.includes('usePromptSuggestions') &&
+    files.reactVideoExample.includes("surfaces: ['media']") &&
+    files.reactVideoExample.includes('visibleSuggestions') &&
+    files.reactVideoExample.includes('localVideoFetch') &&
+    files.reactVideoExample.includes('VITE_EXAMPLE_PROVIDER') &&
+    files.reactVideoExample.includes('VITE_PROXY_VIDEO_URL') &&
+    files.reactVideoExample.includes('inspectRequestTrace') &&
+    files.reactVideoExample.includes('Trace JSON') &&
+    files.reactVideoCheck.includes('React video demo check passed') &&
+    files.packageJson.includes('"example:react-video"') &&
+    files.packageJson.includes('"example:react-video:build"') &&
+    files.packageJson.includes('"react-video:check"') &&
+    files.packageJson.includes('pnpm example:react-video:build') &&
+    files.packageJson.includes('pnpm react-video:check'),
+  'React video example must be runnable without provider keys, traceable, checked, and included in readiness gates'
+)
+expect(
   files.threadedChatExample.includes("import { useChatThreads } from 'vue-ai-hooks'") &&
     files.threadedChatExample.includes('ThreadChatPanel') &&
     files.threadedChatExample.includes('THREAD_INDEX_KEY') &&
@@ -866,17 +1010,50 @@ expect(
     files.threadedChatExample.includes('archiveActiveThread') &&
     files.threadedChatExample.includes('restoreThread') &&
     files.threadedChatPanel.includes('DirectChatTransport') &&
+    files.threadedChatPanel.includes('createPromptSuggestionRecipes') &&
     files.threadedChatPanel.includes("'thread-local'") &&
     files.threadedChatPanel.includes('useChat({') &&
     files.threadedChatPanel.includes('persist: {') &&
     files.threadedChatPanel.includes('vue-ai-hooks:threaded-chat:messages') &&
     files.threadedChatPanel.includes('thread-checkpoint') &&
+    files.taskDemos.includes("createPromptSuggestionRecipes({ surfaces: ['thread'] })") &&
+    files.zhTaskDemos.includes("createPromptSuggestionRecipes({ surfaces: ['thread'] })") &&
     files.packageJson.includes('"example:threaded-chat"') &&
     files.packageJson.includes('"example:threaded-chat:build"') &&
     files.packageJson.includes('pnpm example:threaded-chat:build') &&
     files.threadedChatCheck.includes('persistenceError') &&
     files.threadedChatCheck.includes('clearPersistenceError()'),
   'Threaded chat example must pair useChatThreads with per-thread useChat({ persist }), expose persistence diagnostics, and be included in the examples build gate'
+)
+expect(
+  files.agentRunExample.includes("from 'vue-ai-hooks'") &&
+    files.agentRunExample.includes('useAgentRun') &&
+    files.agentRunExample.includes('createPromptSuggestionRecipes') &&
+    files.agentRunExample.includes('usePromptSuggestions') &&
+    files.agentRunExample.includes("surfaces: ['agent', 'tool-approval']") &&
+    files.agentRunExample.includes('visibleAgentStarters') &&
+    files.agentRunExample.includes('runLocalAgent') &&
+    files.agentRunExample.includes("name: 'approvePlan'") &&
+    files.agentRunExample.includes('agent.resume(') &&
+    files.agentRunExample.includes('agent.inspect()') &&
+    files.agentRunExample.includes('agent.clearTrace()') &&
+    files.agentRunExample.includes('startDuplicateRun') &&
+    files.agentRunExample.includes('Replay same id') &&
+    files.agentRunExample.includes('Inspection snapshot') &&
+    files.agentRunCheck.includes('Agent run demo check passed') &&
+    files.agentRunCheck.includes('same interrupted run id should replay existing state') &&
+    files.packageJson.includes('"example:agent-run"') &&
+    files.packageJson.includes('"example:agent-run:build"') &&
+    files.packageJson.includes('"agent-run:check"') &&
+    files.packageJson.includes('pnpm example:agent-run:build') &&
+    files.packageJson.includes('pnpm agent-run:check') &&
+    files.taskDemos.includes(
+      "createPromptSuggestionRecipes({ surfaces: ['agent', 'tool-approval'] })"
+    ) &&
+    files.zhTaskDemos.includes(
+      "createPromptSuggestionRecipes({ surfaces: ['agent', 'tool-approval'] })"
+    ),
+  'Agent run example must verify interrupt/resume, same-run replay, inspection, and readiness gates'
 )
 expect(
   files.readme.includes('defaults to the no-key `local-tools` provider') &&
@@ -921,12 +1098,20 @@ expect(
     files.zhReadme.includes('`examples/object`') &&
     files.readme.includes('`examples/react-chat`') &&
     files.zhReadme.includes('`examples/react-chat`') &&
+    files.readme.includes('`examples/react-video`') &&
+    files.zhReadme.includes('`examples/react-video`') &&
     files.readme.includes('`examples/threaded-chat`') &&
     files.zhReadme.includes('`examples/threaded-chat`') &&
+    files.readme.includes('`examples/agent-run`') &&
+    files.zhReadme.includes('`examples/agent-run`') &&
     files.readme.includes('pnpm example:react-chat') &&
     files.zhReadme.includes('pnpm example:react-chat') &&
+    files.readme.includes('pnpm example:react-video') &&
+    files.zhReadme.includes('pnpm example:react-video') &&
     files.readme.includes('pnpm example:threaded-chat') &&
     files.zhReadme.includes('pnpm example:threaded-chat') &&
+    files.readme.includes('pnpm example:agent-run') &&
+    files.zhReadme.includes('pnpm example:agent-run') &&
     files.readme.includes('/docs/guide/choosing.md') &&
     files.zhReadme.includes('/docs/zh/guide/choosing.md') &&
     files.readme.includes('/docs/guide/task-demos.md') &&
@@ -941,6 +1126,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/ai-sdk-migration.md') &&
     files.readme.includes('/docs/guide/agent-bridge.md') &&
     files.zhReadme.includes('/docs/zh/guide/agent-bridge.md') &&
+    files.readme.includes('/docs/guide/agent-route-templates.md') &&
+    files.zhReadme.includes('/docs/zh/guide/agent-route-templates.md') &&
     files.readme.includes('/docs/guide/proxy-recipes.md') &&
     files.zhReadme.includes('/docs/zh/guide/proxy-recipes.md') &&
     files.readme.includes('/docs/guide/server-storage.md') &&
@@ -949,6 +1136,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/regenerate-branches.md') &&
     files.readme.includes('/docs/guide/tool-approvals.md') &&
     files.zhReadme.includes('/docs/zh/guide/tool-approvals.md') &&
+    files.readme.includes('Nuxt/Nitro, Next.js, Hono, or Fetch') &&
+    files.zhReadme.includes('Nuxt/Nitro、Next.js、Hono 或 Fetch') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
@@ -1012,17 +1201,22 @@ for (const snippet of [
 for (const snippet of [
   '# React hooks',
   '`useChat`, `useCompletion`, and `useObject`',
-  'import { useChat, useCompletion, useObject } from',
+  'import { useChat, useCompletion, useImage, useObject, useVideo } from',
   'pnpm example:react-chat',
+  'pnpm example:react-video',
   'DirectChatTransport',
   'examples/react-chat/App.tsx',
+  'examples/react-video/App.tsx',
   'CompletionBox',
   'ObjectBox',
   '`useCompletion(options)` accepts `UseReactCompletionOptions`',
   '`UseReactCompletionReturn` exposes plain React state and actions',
   '`useObject(options)` accepts `UseReactObjectOptions<T>`',
   '`UseReactObjectReturn<T>` exposes plain React state and actions',
+  '`useVideo(options)` accepts `UseReactVideoOptions`',
+  '`UseReactVideoReturn` exposes plain React state and actions',
   'complete(prompt?, options?)',
+  'generateVideo(prompt?, options?)',
   'submit(prompt?, options?)',
   'Retry controls; retries only happen before the first streamed text delta'
 ]) {
@@ -1034,17 +1228,22 @@ for (const snippet of [
   'React 版 `useChat`、',
   '`useCompletion`',
   '`useObject`',
-  'import { useChat, useCompletion, useObject } from',
+  'import { useChat, useCompletion, useImage, useObject, useVideo } from',
   'pnpm example:react-chat',
+  'pnpm example:react-video',
   'DirectChatTransport',
   'examples/react-chat/App.tsx',
+  'examples/react-video/App.tsx',
   'CompletionBox',
   'ObjectBox',
   '`useCompletion(options)` 接收 `UseReactCompletionOptions`',
   '`UseReactCompletionReturn` 暴露普通 React state 和操作',
   '`useObject(options)` 接收 `UseReactObjectOptions<T>`',
   '`UseReactObjectReturn<T>` 暴露普通 React state 和操作',
+  '`useVideo(options)` 接收 `UseReactVideoOptions`',
+  '`UseReactVideoReturn` 暴露常规 React state 和操作',
   'complete(prompt?, options?)',
+  'generateVideo(prompt?, options?)',
   'submit(prompt?, options?)',
   '只有首个文本 delta 到达前的失败会重试'
 ]) {
@@ -1424,6 +1623,16 @@ expect(
     files.packageJson.includes('"example:threaded-chat"') &&
     files.packageJson.includes('"example:threaded-chat:build"') &&
     files.packageJson.includes('pnpm example:threaded-chat:build') &&
+    files.packageJson.includes('"example:agent-run"') &&
+    files.packageJson.includes('"example:agent-run:build"') &&
+    files.packageJson.includes('pnpm example:agent-run:build') &&
+    files.packageJson.includes('"agent-run:check"') &&
+    files.packageJson.includes('pnpm agent-run:check') &&
+    files.packageJson.includes('"example:react-video"') &&
+    files.packageJson.includes('"example:react-video:build"') &&
+    files.packageJson.includes('pnpm example:react-video:build') &&
+    files.packageJson.includes('"react-video:check"') &&
+    files.packageJson.includes('pnpm react-video:check') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&
     files.packageJson.includes('pnpm image:check') &&
@@ -1442,7 +1651,7 @@ expect(
     files.packageJson.includes('"example:object"') &&
     files.packageJson.includes('"example:object:build"') &&
     files.packageJson.includes('pnpm example:object:build'),
-  'package scripts must expose and build the threaded chat, image, video, speech, transcription, rerank, and object examples'
+  'package scripts must expose and build the threaded chat, agent run, React video, image, video, speech, transcription, rerank, and object examples'
 )
 
 expect(
@@ -1458,6 +1667,8 @@ for (const snippet of [
   '## Run the no-key demo first',
   'pnpm example:chat',
   'pnpm example:threaded-chat',
+  'pnpm example:agent-run',
+  'pnpm example:react-video',
   'useChatThreads()',
   'per-thread `useChat({ persist })`',
   'deterministic `local-tools` provider',
@@ -1467,6 +1678,9 @@ for (const snippet of [
   '`/api/ui-message-stream`',
   'useAgentContext()',
   'usePromptSuggestions()',
+  'useAgentRun()',
+  'approvePlan',
+  'Inspection snapshot',
   'pnpm example:image',
   'deterministic local SVG',
   'editImage()',
@@ -1490,8 +1704,10 @@ for (const snippet of [
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
   'Add thread sidebar and local restore checks',
+  'Track a headless app-owned agent run',
   'Test an AI SDK UI stream backend route',
   '[UI message stream route](#stream-demo)',
+  'Try the React video generation migration entry',
   'Generate or edit an image through an app route',
   '[Image generation](#image-demo)',
   'Generate a video through an app route',
@@ -1512,6 +1728,8 @@ for (const snippet of [
   '## 先跑不需要 key 的 Demo',
   'pnpm example:chat',
   'pnpm example:threaded-chat',
+  'pnpm example:agent-run',
+  'pnpm example:react-video',
   'useChatThreads()',
   '每个 thread 独立的 `useChat({ persist })`',
   '确定性的',
@@ -1523,6 +1741,10 @@ for (const snippet of [
   '`/api/ui-message-stream`',
   'useAgentContext()',
   'usePromptSuggestions()',
+  'useAgentRun()',
+  'approvePlan',
+  'Inspection snapshot',
+  '试 React 视频生成入口',
   'pnpm example:image',
   '确定性的本地',
   'editImage()',
@@ -1546,6 +1768,7 @@ for (const snippet of [
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
   '增加 thread 侧边栏和本地恢复验证',
+  '跟踪无 UI 的自有 agent run',
   '测试 AI SDK UI stream 后端路由',
   '[UI message stream 路由](#stream-demo)',
   '通过应用后端生成或编辑图片',
@@ -1570,6 +1793,10 @@ expect(
 )
 expect(
   files.imageExample.includes('useImage') &&
+    files.imageExample.includes('createPromptSuggestionRecipes') &&
+    files.imageExample.includes('usePromptSuggestions') &&
+    files.imageExample.includes("surfaces: ['media']") &&
+    files.imageExample.includes('visibleImageStarters') &&
     files.imageExample.includes('editImage') &&
     files.imageExample.includes('localImageFetch') &&
     files.imageExample.includes('VITE_PROXY_IMAGE_URL') &&
@@ -1578,16 +1805,46 @@ expect(
     files.imageExample.includes('operation: lastRequest.value.operation') &&
     files.imageExample.includes('previewUrl') &&
     files.imageCheck.includes('editImage') &&
-    files.imageCheck.includes("operation === 'edit'"),
+    files.imageCheck.includes("operation === 'edit'") &&
+    files.taskDemos.includes("createPromptSuggestionRecipes({ surfaces: ['media'] })") &&
+    files.zhTaskDemos.includes("createPromptSuggestionRecipes({ surfaces: ['media'] })"),
   'Image example must run generation and editing without keys, then switch to the proxy image route when configured'
 )
 expect(
+  files.reactImageExample.includes('useImage') &&
+    files.reactImageExample.includes('createPromptSuggestionRecipes') &&
+    files.reactImageExample.includes('usePromptSuggestions') &&
+    files.reactImageExample.includes("surfaces: ['media']") &&
+    files.reactImageExample.includes('visibleSuggestions') &&
+    files.reactImageExample.includes('editImage') &&
+    files.reactImageExample.includes('inspectRequestTrace'),
+  'React image example must run without keys, expose trace state, and render media starter chips'
+)
+expect(
   files.videoExample.includes('useVideo') &&
+    files.videoExample.includes('createPromptSuggestionRecipes') &&
+    files.videoExample.includes('usePromptSuggestions') &&
+    files.videoExample.includes("surfaces: ['media']") &&
+    files.videoExample.includes('visibleVideoStarters') &&
     files.videoExample.includes('localVideoFetch') &&
     files.videoExample.includes('VITE_PROXY_VIDEO_URL') &&
     files.videoExample.includes('VITE_PROXY_BASE_URL') &&
     files.videoExample.includes('previewUrl'),
   'Video example must run without keys and switch to the proxy video route when configured'
+)
+expect(
+  files.reactVideoExample.includes('useVideo') &&
+    files.reactVideoExample.includes('createPromptSuggestionRecipes') &&
+    files.reactVideoExample.includes('usePromptSuggestions') &&
+    files.reactVideoExample.includes("surfaces: ['media']") &&
+    files.reactVideoExample.includes('visibleSuggestions') &&
+    files.reactVideoExample.includes('localVideoFetch') &&
+    files.reactVideoExample.includes('VITE_PROXY_VIDEO_URL') &&
+    files.reactVideoExample.includes('VITE_PROXY_BASE_URL') &&
+    files.reactVideoExample.includes('previewUrl') &&
+    files.reactVideoExample.includes('inspectRequestTrace') &&
+    files.reactVideoCheck.includes('VITE_PROXY_VIDEO_URL'),
+  'React video example must run without keys, expose trace state, and switch to the proxy video route when configured'
 )
 expect(
   files.speechExample.includes('useSpeech') &&
@@ -2171,14 +2428,26 @@ for (const snippet of [
   '# useAgentRun',
   'Headless agent run state',
   'AgentRunRequest',
+  'AgentRunRequestInfo',
+  'AgentRunResponseInfo',
+  'AgentRunInspectionSnapshot',
   'AgentRunHandler',
   'AgentRunStatus',
   'UseAgentRunOptions',
   'UseAgentRunReturn',
   'interrupt',
   'resume()',
+  'lastRequest',
+  'lastResponse',
+  'inspect()',
+  'clearTrace()',
+  '## Inspection',
+  'raw `AgentEvent` timeline entries',
   "status: 'completed' \\| 'interrupted'",
   'data-agent-interrupt',
+  '## Run id replay safety',
+  'reuses the active or completed state',
+  'returns the active promise instead of calling `run` again',
   'agentEventToChatChunk()',
   'does not render a copilot UI, execute tools, or call a provider'
 ]) {
@@ -2187,12 +2456,25 @@ for (const snippet of [
 for (const snippet of [
   '# usePromptSuggestions',
   'Headless prompt suggestion state',
+  'createPromptSuggestionRecipes',
+  'promptSuggestionRecipeIds',
   'PromptSuggestionInput',
   'PromptSuggestionFilter',
   'PromptSuggestionLoader',
   'PromptSuggestionLoaderContext',
+  'PromptSuggestionRecipeMetadata',
+  'PromptSuggestionRecipeSurface',
+  'CreatePromptSuggestionRecipesOptions',
   'UsePromptSuggestionsOptions',
   'UsePromptSuggestionsReturn',
+  '## Recipe starters',
+  "kind: 'task-starter'",
+  'surfaces',
+  'categories',
+  'verify-release-gates',
+  'design-agent-route',
+  'draft-media-prompt',
+  'trace-inspection starters',
   'visibleSuggestions',
   'isLoading',
   'reloadSuggestions()',
@@ -2375,14 +2657,26 @@ for (const snippet of [
   '# useAgentRun',
   '无 UI agent run 状态',
   'AgentRunRequest',
+  'AgentRunRequestInfo',
+  'AgentRunResponseInfo',
+  'AgentRunInspectionSnapshot',
   'AgentRunHandler',
   'AgentRunStatus',
   'UseAgentRunOptions',
   'UseAgentRunReturn',
   'interrupt',
   'resume()',
+  'lastRequest',
+  'lastResponse',
+  'inspect()',
+  'clearTrace()',
+  '## 检查快照',
+  '原始 `AgentEvent` timeline',
   "`status` 为 `'completed' \\| 'interrupted'`",
   'data-agent-interrupt',
+  '## Run id 重放安全',
+  '复用进行中或已完成的本地状态',
+  '而不会再次调用 `run`',
   'agentEventToChatChunk()',
   '不渲染 copilot UI、不执行工具，也不会替你调用 Provider'
 ]) {
@@ -2391,12 +2685,25 @@ for (const snippet of [
 for (const snippet of [
   '# usePromptSuggestions',
   '无 UI prompt suggestion 状态',
+  'createPromptSuggestionRecipes',
+  'promptSuggestionRecipeIds',
   'PromptSuggestionInput',
   'PromptSuggestionFilter',
   'PromptSuggestionLoader',
   'PromptSuggestionLoaderContext',
+  'PromptSuggestionRecipeMetadata',
+  'PromptSuggestionRecipeSurface',
+  'CreatePromptSuggestionRecipesOptions',
   'UsePromptSuggestionsOptions',
   'UsePromptSuggestionsReturn',
+  '## 任务启动 recipes',
+  "kind: 'task-starter'",
+  'surfaces',
+  'categories',
+  'verify-release-gates',
+  'design-agent-route',
+  'draft-media-prompt',
+  'trace-inspection',
   'visibleSuggestions',
   'isLoading',
   'reloadSuggestions()',

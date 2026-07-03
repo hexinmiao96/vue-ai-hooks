@@ -1,6 +1,18 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 
 const distEntry = new URL('../dist/index.mjs', import.meta.url)
+const app = readFileSync('examples/image/App.vue', 'utf8')
+
+for (const snippet of [
+  'createPromptSuggestionRecipes',
+  'usePromptSuggestions',
+  "surfaces: ['media']",
+  'visibleImageStarters',
+  'applyImageStarter',
+  'Image prompt starters'
+]) {
+  expect(app.includes(snippet), `Image demo must include: ${snippet}`)
+}
 
 if (!existsSync(distEntry)) {
   throw new Error('dist/index.mjs is missing. Run `pnpm build` before `pnpm image:check`.')

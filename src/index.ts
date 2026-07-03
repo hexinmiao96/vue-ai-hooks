@@ -244,7 +244,10 @@ export {
   useAgentRun,
   type AgentRunFinishInfo,
   type AgentRunHandler,
+  type AgentRunInspectionSnapshot,
   type AgentRunRequest,
+  type AgentRunRequestInfo,
+  type AgentRunResponseInfo,
   type AgentRunStatus,
   type ResumeAgentRunOptions,
   type StartAgentRunOptions,
@@ -252,13 +255,22 @@ export {
   type UseAgentRunReturn
 } from './composables/useAgentRun'
 export {
+  createPromptSuggestionRecipes,
+  promptSuggestionRecipeIds,
   usePromptSuggestions,
+  type CreatePromptSuggestionRecipesOptions,
   type PromptSuggestion,
   type PromptSuggestionFilter,
   type PromptSuggestionFilterContext,
   type PromptSuggestionInput,
   type PromptSuggestionLoader,
   type PromptSuggestionLoaderContext,
+  type PromptSuggestionRecipe,
+  type PromptSuggestionRecipeCategory,
+  type PromptSuggestionRecipeId,
+  type PromptSuggestionRecipeLocale,
+  type PromptSuggestionRecipeMetadata,
+  type PromptSuggestionRecipeSurface,
   type UsePromptSuggestionsOptions,
   type UsePromptSuggestionsReturn
 } from './composables/usePromptSuggestions'
