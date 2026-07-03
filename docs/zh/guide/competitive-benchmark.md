@@ -43,6 +43,24 @@
 3. **启动提示铺设深度**：只在 demo 或产品入口确实需要任务起手时，继续补按 surface 筛选的
    prompt-suggestion recipes。
 
+## 当前执行进度（快照：2026-07-03）
+
+- 范围内直对标基准分：**7 / 8**
+  - ✅ Vue 原生组合式 API
+  - ✅ 流式状态 + 终止/重试
+  - ✅ 面向生产的 proxy 路径
+  - ✅ 工具调用 + 审批流程
+  - ✅ Thread 侧边能力
+  - ✅ Agent 运行时适配能力
+  - ✅ 运行时能力发现
+  - ⚪ 全量 copilot 外壳特性为故意保留外延（有意不做）
+- 下 30 天目标：把可观测化覆盖收口到所有 route 模板与 demo 的第一优先级，并补齐可复制后端模板的
+  fixture 数量。
+- 证据源：
+  - `docs/guide/production-readiness-status.md`
+  - `CHANGELOG.md` 0.14.x 条目
+  - `pnpm production:readiness` 与 `pnpm release:check`
+
 ## 与目标的一致性
 
 `vue-ai-hooks` 的目标不是做一套“完整 AI Shell”，而是做一套可直接用于产品的 Vue-first

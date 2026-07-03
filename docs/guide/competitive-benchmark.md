@@ -48,6 +48,25 @@ Winning this benchmark means:
 3. **Prompt startup rollout depth**: continue adding surface-filtered prompt-suggestion
    recipes only where a demo or product surface has a real task-starting need.
 
+## Current execution score (snapshot: 2026-07-03)
+
+- In-scope direct benchmark score: **7 / 8** (AI SDK UI migration parity and
+  observable contracts focus).
+  - ✅ Vue-native composition API
+  - ✅ Streaming + abort/retry
+  - ✅ Proxy-first production path
+  - ✅ Tool calling + approval workflows
+  - ✅ Thread-side primitives
+  - ✅ Agent runtime adapters
+  - ✅ Runtime capability discovery
+  - ⚪ Full copilot shell intentionally out of scope
+- Next 30-day target: close the observability gap in all route templates and
+  demos, then expand route template fixtures for copy-safe backend integration.
+- Evidence source:
+  - `docs/guide/production-readiness-status.md`
+  - `CHANGELOG.md` entries in 0.14.x
+  - `pnpm production:readiness` and `pnpm release:check`
+
 ## Why this is still consistent with the objective
 
 Our objective is not to become a full agent shell. It is to be the strongest
