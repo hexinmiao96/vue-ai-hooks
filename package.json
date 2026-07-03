@@ -273,7 +273,7 @@
     "@vue/tsconfig": "^0.5.1",
     "eslint": "^9.39.4",
     "eslint-plugin-vue": "^10.9.2",
-    "globals": "^16.5.0",
+    "globals": "^17.7.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.2.5",
     "react": "^18.3.1",
