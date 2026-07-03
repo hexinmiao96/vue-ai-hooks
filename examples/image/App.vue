@@ -1,12 +1,23 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useImage } from 'vue-ai-hooks'
+import { computed, shallowRef } from 'vue'
+import { useImage, type GeneratedImage } from 'vue-ai-hooks'
+
+type DemoMode = 'generate' | 'edit'
 
 const proxyBaseURL = (import.meta.env.VITE_PROXY_BASE_URL || '').trim()
 const imageApi = import.meta.env.VITE_PROXY_IMAGE_URL || '/api/image'
 const useLocalDemo = !proxyBaseURL
 const demoFetch = useLocalDemo ? localImageFetch : undefined
 const modeLabel = useLocalDemo ? 'Local deterministic demo' : `Proxy: ${proxyBaseURL}`
+const generatePrompt = 'A clean Vue composable dashboard hero image'
+const editPrompt = 'Replace the card background with a calm product workspace'
+const mode = shallowRef<DemoMode>('generate')
+const editSourceImage: GeneratedImage = {
+  url: svgDataUrl('Source image for useImage editing', 'source'),
+  mediaType: 'image/svg+xml',
+  revisedPrompt: 'Source image for useImage editing'
+}
+const editMask = svgMaskDataUrl()
 
 const {
   input,
@@ -17,6 +28,7 @@ const {
   error,
   lastRequest,
   lastResponse,
+  editImage,
   handleSubmit,
   stop,
   clear
@@ -24,7 +36,7 @@ const {
   api: imageApi,
   baseURL: proxyBaseURL,
   fetch: demoFetch,
-  initialInput: 'A clean Vue composable dashboard hero image',
+  initialInput: generatePrompt,
   defaultRequest: {
     model: useLocalDemo ? 'local-svg-demo' : 'image-model',
     size: '1024x1024',
@@ -40,14 +52,22 @@ const previewUrl = computed(() => {
   return ''
 })
 
+const sourceImageUrl = computed(() => editSourceImage.url || '')
+const previewAlt = computed(() =>
+  mode.value === 'edit' ? 'Edited image result' : 'Generated image result'
+)
+const submitLabel = computed(() => (mode.value === 'edit' ? 'Edit image' : 'Generate image'))
+
 const traceSummary = computed(() => {
   if (!lastRequest.value) return 'No request yet.'
   return JSON.stringify(
     {
       api: lastRequest.value.api,
+      operation: lastRequest.value.operation,
       prompt: lastRequest.value.prompt,
       model: lastRequest.value.request.model,
       size: lastRequest.value.request.size,
+      sourceImage: lastRequest.value.request.image ? 'provided' : '-',
       images: lastResponse.value?.result.images.length ?? 0
     },
     null,
@@ -55,10 +75,48 @@ const traceSummary = computed(() => {
   )
 })
 
+function setMode(nextMode: DemoMode) {
+  const previousDefault = mode.value === 'edit' ? editPrompt : generatePrompt
+  const nextDefault = nextMode === 'edit' ? editPrompt : generatePrompt
+  mode.value = nextMode
+  if (!input.value || input.value === previousDefault) {
+    input.value = nextDefault
+  }
+}
+
+async function submitImage(event?: { preventDefault?: () => void }) {
+  if (mode.value === 'generate') {
+    await handleSubmit(event)
+    return
+  }
+
+  event?.preventDefault?.()
+  await editImage(input.value, {
+    image: editSourceImage,
+    mask: editMask,
+    model: useLocalDemo ? 'local-image-edit-demo' : 'image-edit-model',
+    size: '1024x1024',
+    body: { workflow: 'image-edit-demo' }
+  })
+  input.value = ''
+}
+
+function clearDemo() {
+  clear()
+  input.value = mode.value === 'edit' ? editPrompt : generatePrompt
+}
+
 async function localImageFetch(_url: RequestInfo | URL, init?: RequestInit) {
   const body = parseRequestBody(init?.body)
   const prompt = typeof body.prompt === 'string' ? body.prompt : 'Vue AI Hooks'
-  const imageUrl = svgDataUrl(prompt)
+  const operation = body.operation === 'edit' ? 'edit' : 'generate'
+  const imageUrl = svgDataUrl(prompt, operation)
+  const model =
+    typeof body.model === 'string'
+      ? body.model
+      : operation === 'edit'
+        ? 'local-image-edit-demo'
+        : 'local-svg-demo'
   return new Response(
     JSON.stringify({
       image: {
@@ -73,8 +131,11 @@ async function localImageFetch(_url: RequestInfo | URL, init?: RequestInit) {
           revisedPrompt: prompt
         }
       ],
-      model: body.model || 'local-svg-demo',
-      providerMetadata: { provider: 'local-demo' }
+      model,
+      providerMetadata: {
+        operation,
+        provider: 'local-demo'
+      }
     }),
     {
       headers: { 'Content-Type': 'application/json' }
@@ -92,25 +153,37 @@ function parseRequestBody(body: BodyInit | null | undefined): Record<string, unk
   }
 }
 
-function svgDataUrl(prompt: string) {
+function svgDataUrl(prompt: string, kind: 'generate' | 'edit' | 'source' = 'generate') {
   const normalized = prompt.replace(/\s+/g, ' ').trim() || 'Vue AI Hooks'
   const shortPrompt = normalized.length > 82 ? `${normalized.slice(0, 79)}...` : normalized
   const hue = Math.abs(hashText(normalized)) % 360
+  const title =
+    kind === 'edit' ? 'useImage edit' : kind === 'source' ? 'source image' : 'useImage generate'
+  const accentHue = kind === 'edit' ? (hue + 28) % 360 : kind === 'source' ? 168 : hue
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
     <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="hsl(${hue} 78% 48%)"/>
-      <stop offset="100%" stop-color="hsl(${(hue + 56) % 360} 72% 42%)"/>
+      <stop offset="0%" stop-color="hsl(${accentHue} 78% 48%)"/>
+      <stop offset="100%" stop-color="hsl(${(accentHue + 56) % 360} 72% 42%)"/>
     </linearGradient>
   </defs>
   <rect width="1024" height="1024" rx="64" fill="url(#bg)"/>
   <rect x="96" y="122" width="832" height="780" rx="42" fill="rgba(255,255,255,0.86)"/>
-  <text x="144" y="228" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700">useImage demo</text>
+  <text x="144" y="228" fill="#0f172a" font-family="Inter, Arial, sans-serif" font-size="44" font-weight="700">${title}</text>
   <text x="144" y="320" fill="#334155" font-family="Inter, Arial, sans-serif" font-size="30">${escapeSvg(shortPrompt)}</text>
-  <circle cx="780" cy="690" r="118" fill="hsl(${(hue + 150) % 360} 82% 48%)"/>
+  <circle cx="780" cy="690" r="118" fill="hsl(${(accentHue + 150) % 360} 82% 48%)"/>
   <rect x="144" y="520" width="420" height="34" rx="17" fill="#0f172a"/>
   <rect x="144" y="590" width="560" height="26" rx="13" fill="#475569"/>
   <rect x="144" y="650" width="480" height="26" rx="13" fill="#64748b"/>
+</svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
+
+function svgMaskDataUrl() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="black"/>
+  <circle cx="756" cy="672" r="172" fill="white"/>
+  <rect x="122" y="494" width="560" height="210" rx="36" fill="white"/>
 </svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
@@ -143,15 +216,51 @@ function escapeSvg(value: string) {
       <span class="status">{{ status }}</span>
     </header>
 
-    <form class="form" @submit="handleSubmit">
+    <div class="segments" role="tablist" aria-label="Image operation">
+      <button
+        class="segment"
+        :class="{ 'segment-active': mode === 'generate' }"
+        type="button"
+        :aria-pressed="mode === 'generate'"
+        @click="setMode('generate')"
+      >
+        Generate
+      </button>
+      <button
+        class="segment"
+        :class="{ 'segment-active': mode === 'edit' }"
+        type="button"
+        :aria-pressed="mode === 'edit'"
+        @click="setMode('edit')"
+      >
+        Edit
+      </button>
+    </div>
+
+    <form class="form" @submit="submitImage">
       <label class="field">
         Prompt
         <textarea v-model="input" rows="4" class="textarea" />
       </label>
+      <section v-if="mode === 'edit'" class="source-panel" aria-label="Image edit source">
+        <div class="source-frame">
+          <img class="source-image" :src="sourceImageUrl" alt="Edit source" />
+        </div>
+        <dl class="source-list">
+          <div>
+            <dt>Source</dt>
+            <dd>Normalized image object</dd>
+          </div>
+          <div>
+            <dt>Mask</dt>
+            <dd>Data URL</dd>
+          </div>
+        </dl>
+      </section>
       <div class="actions">
-        <button class="button" type="submit" :disabled="isLoading">Generate image</button>
+        <button class="button" type="submit" :disabled="isLoading">{{ submitLabel }}</button>
         <button class="button" type="button" :disabled="!isLoading" @click="stop">Stop</button>
-        <button class="button" type="button" :disabled="isLoading" @click="clear">Clear</button>
+        <button class="button" type="button" :disabled="isLoading" @click="clearDemo">Clear</button>
       </div>
     </form>
 
@@ -161,7 +270,7 @@ function escapeSvg(value: string) {
 
     <section class="preview">
       <div class="preview-frame">
-        <img v-if="previewUrl" class="preview-image" :src="previewUrl" alt="Generated result" />
+        <img v-if="previewUrl" class="preview-image" :src="previewUrl" :alt="previewAlt" />
         <p v-else class="empty">No image yet.</p>
       </div>
       <aside class="details">
@@ -170,6 +279,10 @@ function escapeSvg(value: string) {
           <div>
             <dt>Images</dt>
             <dd>{{ images.length }}</dd>
+          </div>
+          <div>
+            <dt>Operation</dt>
+            <dd>{{ lastRequest?.operation || mode }}</dd>
           </div>
           <div>
             <dt>Media type</dt>
@@ -222,6 +335,33 @@ function escapeSvg(value: string) {
   font-size: 12px;
 }
 
+.segments {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  gap: 2px;
+  margin-top: 18px;
+  padding: 3px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.segment {
+  min-height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.segment-active {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
 .form {
   display: grid;
   gap: 12px;
@@ -244,6 +384,56 @@ function escapeSvg(value: string) {
   border-radius: 8px;
   font: inherit;
   resize: vertical;
+}
+
+.source-panel {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.source-frame {
+  display: grid;
+  width: 112px;
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.source-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.source-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.source-list div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.source-list dt {
+  color: #64748b;
+}
+
+.source-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .actions {
@@ -352,6 +542,16 @@ function escapeSvg(value: string) {
 @media (min-width: 760px) {
   .preview {
     grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .source-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .source-frame {
+    width: min(100%, 180px);
   }
 }
 </style>

@@ -110,7 +110,7 @@ Equivalent long form (full local gate, without security audit):
 ```bash
 pnpm check
 pnpm release:cadence
-pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm links:check && pnpm examples:build && pnpm docs:build
+pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm image:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm links:check && pnpm examples:build && pnpm docs:build
 ```
 
 If you need the strictest publish path, run `pnpm release:check` (adds
@@ -131,19 +131,21 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
 4. Send a chat request, abort it, then retry.
 5. Trigger one provider error and confirm the UI keeps input editable.
 6. Capture an `inspectRequestTrace()` snapshot and confirm secrets are absent.
-7. Run `pnpm threaded-chat:check` and confirm local thread indexes and
+7. Run `pnpm image:check` and confirm image generation/editing requests keep
+   source images, masks, and trace metadata intact.
+8. Run `pnpm threaded-chat:check` and confirm local thread indexes and
    per-thread message stores restore independently.
-8. Reload one server-stored thread and confirm messages restore with `Date`
+9. Reload one server-stored thread and confirm messages restore with `Date`
    values intact.
-9. Regenerate one assistant message, branch from the same user turn, reload, and
-   confirm both branches restore without duplicate `runId` writes.
-10. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
+10. Regenerate one assistant message, branch from the same user turn, reload, and
+    confirm both branches restore without duplicate `runId` writes.
+11. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
     a second regenerate while one is streaming and confirm `run_in_progress` or
     same-`runId` resume behavior.
-11. Approve and reject one privileged tool request, then confirm duplicate
+12. Approve and reject one privileged tool request, then confirm duplicate
     `runId` submissions do not execute the tool twice and stale approval
     `revision` values return `approval_revision_conflict`.
-12. Confirm logs have trace ids but no provider API keys.
+13. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

@@ -15,7 +15,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/CONTRIBUTING.md)
 
 `vue-ai-hooks` brings the same DX you'd expect from [VueUse](https://vueuse.org) or
-[Axios](https://axios-http.com) to the LLM world. Ten Vue composables, an optional
+[Axios](https://axios-http.com) to the LLM world. Fifteen Vue composables, an optional
 React `useChat` / `useCompletion` / `useObject` subpath, pluggable providers,
 Server-Sent Events streaming handled for you. Works with OpenAI and any
 OpenAI-compatible service (DeepSeek, Moonshot, Zhipu, Ollama via its OpenAI shim,
@@ -31,22 +31,24 @@ const { messages, input, handleSubmit, isLoading, stop } = useChat({
 
 ## Why
 
-The AI-in-Vue story is currently fragmented. Options today:
+The AI-in-Vue story is currently fragmented. Compare the relevant layers by fit:
 
-| Library                       | Tradeoff                                                                      |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| **Vercel AI SDK**             | Broad full-stack SDK; larger surface area than a focused Vue composable layer |
-| **CopilotKit**                | Higher-level copilot UI and agent integration; more product opinion           |
-| **LangChain.js**              | Powerful but heavy; opinionated chains, lots of magic                         |
-| **VueUse**                    | Excellent Vue utility layer, but not an AI request lifecycle SDK              |
-| **Direct fetch + manual SSE** | Works, but you re-implement aborts, retries, and state for every project      |
-| **vue-ai-hooks**              | A focused, framework-native SDK with the boring parts done                    |
+| Relationship               | Library or layer              | Fit                                                                                       |
+| -------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Direct alternative         | **AI SDK UI / Vercel AI SDK** | Broad full-stack SDK; larger surface area than a focused Vue composable layer             |
+| Product-adjacent benchmark | **CopilotKit**                | Higher-level copilot UI and agent integration; useful to track, not the API shape to copy |
+| Backend complement         | **LangChain.js**              | Agent orchestration belongs behind your API route, not inside the Vue composable API      |
+| Vue DX benchmark           | **VueUse**                    | Excellent Vue utility layer, but not an AI request lifecycle SDK                          |
+| Baseline implementation    | **Direct fetch + manual SSE** | Works, but you re-implement aborts, retries, and state for every project                  |
+| This package               | **vue-ai-hooks**              | A focused, framework-native SDK with the boring parts done                                |
 
 ## Features
 
-- **Ten composables, one mental model**: `useChat`, `useCompletion`,
+- **Fifteen composables, one mental model**: `useChat`, `useCompletion`,
   `useEmbedding`, `useGeneration`, `useImage`, `useVideo`, `useSpeech`,
-  `useTranscription`, `useRerank`, and `useObject`.
+  `useTranscription`, `useRerank`, `useObject`, `useChatThreads`,
+  `useAgentContext`, `useAgentCapabilities`, `useAgentRun`, and
+  `usePromptSuggestions`.
 - **Optional React chat, completion, and object support**: import `useChat`,
   `useCompletion`, or `useObject` from `vue-ai-hooks/react` for React streaming
   state while reusing the same providers and request types.
@@ -62,17 +64,27 @@ The AI-in-Vue story is currently fragmented. Options today:
 - **Thread persistence**: `useChatThreads` manages local thread indexes,
   current thread selection, rename, archive, restore, delete, and Date-safe
   thread persistence.
+- **Agent context**: `useAgentContextRegistry` and `useAgentContext` expose
+  reactive app state to chat or app-owned agent requests without a UI provider.
+- **Agent capabilities**: `useAgentCapabilities` reads app-owned `/info`
+  endpoints and turns declared runtime support into stable `supports` flags for
+  adaptive UI.
+- **Prompt suggestions**: `usePromptSuggestions` normalizes static or
+  app-loaded suggestion chips for chat composers without taking over your UI.
+- **Agent run state**: `useAgentRun` manages app-owned agent event streams,
+  pending interrupts, resume requests, normalized messages, and stream data
+  without adopting a copilot UI framework.
 - **AI SDK-style UI and agent helpers**: `sendMessage`, tool output/approval aliases,
-  file attachments, structured `Message.parts`, custom stream data, and message
-  pruning, reusable `Chat` instances, `DefaultChatTransport`,
+  `getToolRenderParts`, file attachments, structured `Message.parts`, custom stream data,
+  and message pruning, reusable `Chat` instances, `DefaultChatTransport`,
   `DirectChatTransport`, reusable UI stream decoding utilities, and lightweight
   `AgentEvent` adapters for app-owned agent streams.
-- **Tool calling controls**: `tool()`/`dynamicTool()` helpers, local handlers,
-  approval gates, active tool filtering, stop conditions, and per-step request
-  preparation.
+- **Tool calling controls**: `tool()`/`dynamicTool()`/`defineToolHandlers()`
+  helpers, typed tool inference, local handlers, approval gates, active tool
+  filtering, stop conditions, and per-step request preparation.
 - **Typed output and generation**: JSON Schema object output, embedding vectors,
-  app-owned image, video, speech, transcription, and rerank routes, custom generation
-  jobs, deterministic ids, and Date-safe persistence helpers.
+  app-owned image generation/editing, video, speech, transcription, and rerank
+  routes, custom generation jobs, deterministic ids, and Date-safe persistence helpers.
 - **Library quality**: strict TypeScript, no runtime dependencies beyond Vue,
   tree-shakable ESM/CJS builds, and Vitest coverage.
 
@@ -232,18 +244,24 @@ await rerankDocuments('Vue AI search', [
 console.log(rerankedDocuments.value)
 ```
 
-### Image generation
+### Image generation and editing
 
 ```ts
 import { useImage } from 'vue-ai-hooks'
 
-const { image, generateImage } = useImage({
+const { image, generateImage, editImage } = useImage({
   api: '/api/image'
 })
 
 await generateImage('A Vue workspace hero image', {
   size: '1024x1024'
 })
+
+await editImage('Replace the background with a product workspace', {
+  image: { url: 'https://cdn.example.test/source.png', mediaType: 'image/png' },
+  mask: 'data:image/png;base64,...'
+})
+
 console.log(image.value?.url)
 ```
 
@@ -298,12 +316,12 @@ console.log(transcription.value)
 ### Structured object output
 
 ```ts
-import { useObject, openai } from 'vue-ai-hooks'
+import { jsonSchema, useObject, openai } from 'vue-ai-hooks'
 
 const { object, partialObject, submit } = useObject<{ title: string; priority: 'low' | 'high' }>({
   provider: openai({ apiKey: '...' }),
   schemaName: 'ticket',
-  schema: {
+  schema: jsonSchema<{ title: string; priority: 'low' | 'high' }>({
     type: 'object',
     properties: {
       title: { type: 'string' },
@@ -311,7 +329,7 @@ const { object, partialObject, submit } = useObject<{ title: string; priority: '
     },
     required: ['title', 'priority'],
     additionalProperties: false
-  }
+  })
 })
 
 await submit('Extract a support ticket from this message.')
@@ -482,8 +500,9 @@ identifier plus app context without changing the client-side shared chat id.
 Use `context` when browser-local tool handlers need stores, services, or session
 state that should not be serialized.
 Use `tool()`, `dynamicTool()`, and `jsonSchema()` when you want AI SDK-style
-tool definitions inside `useChat({ tools })`; provider requests still receive
-the normalized OpenAI-compatible `Tool[]`.
+tool definitions inside `useChat({ tools })` or wrapped JSON Schema for
+`useObject({ schema })`; provider requests still receive the normalized
+OpenAI-compatible `Tool[]` or unwrapped schema.
 
 Set `throttleMs` on `useChat`, `useCompletion`, or `useObject` to batch reactive
 stream updates for busy UIs. The final stream state is always flushed before the
@@ -493,9 +512,9 @@ alias, but new code should prefer `throttleMs`.
 routes that return plain text streams. `useChat({ streamProtocol: 'text' })`
 does the same for existing chat endpoints that stream raw text.
 
-`useChat` keeps the final assistant message as the first `onFinish` argument and
-also passes `ChatFinishInfo` with the message snapshot, abort/error/disconnect
-flags, and finish reason.
+`useChat` accepts AI SDK-style `onFinish({ message, messages })` callbacks and
+still supports legacy `onFinish(message, info)`. `ChatFinishInfo` carries the
+message snapshot, abort/error/disconnect flags, and finish reason.
 
 Pass `generateId` to `useChat`, `useCompletion`, `useGeneration`, or
 `useObject` when you need deterministic IDs for SSR, persistence, tests, or
@@ -538,14 +557,14 @@ already-parsed parts or custom SSE readers.
 ### `useCompletion(options)` / `useEmbedding(options)` / `useGeneration(options)` / `useImage(options)` / `useVideo(options)` / `useSpeech(options)` / `useTranscription(options)` / `useRerank(options)` / `useObject(options)`
 
 Same shape, scoped to single-shot completions, embedding vectors, custom
-generation jobs, app-owned image generation routes, app-owned video generation
+generation jobs, app-owned image generation/editing routes, app-owned video generation
 routes, app-owned speech generation routes, app-owned transcription routes,
 app-owned rerank routes, and structured JSON object output respectively.
 
 These composables also expose `status`, `isLoading`, `error`, `clearError()`,
 `lastRequest`, `lastResponse`, `clearTrace()`, `stop()`, and `clear()` so UI
 state and trace panels can follow one pattern across chat, text, vectors, custom
-generation jobs, image generation, video generation, speech generation,
+generation jobs, image generation/editing, video generation, speech generation,
 transcription, reranking, and structured JSON. Default proxy traces include the resolved proxy `api` and
 browser credentials mode.
 Use `inspectRequestTrace()` to turn those refs into a production debug snapshot
@@ -557,17 +576,18 @@ and `initialValue` for seeding the first partial object. Default proxy object
 routes may return either chat chunks or `text/plain` JSON streams.
 `experimental_useObject` is also exported as an AI SDK-compatible alias for the
 same composable.
-Its `onFinish` callback keeps the parsed object as the first argument and passes
-`ObjectFinishInfo` with the final object, raw JSON text, abort status, and error
-field.
+Its `onFinish` callback accepts AI SDK-style `onFinish({ object, error })` and
+still supports legacy `onFinish(object, info)`. AI SDK-style callbacks receive
+`object: undefined` plus the validation error when final JSON/schema validation
+fails.
 
 `useGeneration` accepts a custom `fetcher` and provides typed `result`,
 `progress`, `chunks`, `stop()`, `reset()`, lifecycle callbacks, and retries before
 visible output.
 
 `useImage` targets your own `/api/image` route and provides `image`, `images`,
-`result`, `generateImage()`, lifecycle trace refs, aborts, retries, and form
-helpers while keeping provider credentials server-side.
+`result`, `generateImage()`, `editImage()`, lifecycle trace refs, aborts,
+retries, and form helpers while keeping provider credentials server-side.
 
 `useVideo` targets your own `/api/video` route and provides `video`, `videos`,
 `result`, `generateVideo()`, lifecycle trace refs, aborts, retries, and form
@@ -589,11 +609,12 @@ aborts, retries, and form helpers while keeping rerank credentials server-side.
 `useChat`, `useCompletion`, `useEmbedding`, `useImage`, `useVideo`,
 `useSpeech`, `useTranscription`, `useRerank`, and `useObject` also expose `setInput()`,
 `handleInputChange()`, and `handleSubmit()` for simple form wiring. Successful
-form submissions clear `input`; failed submissions leave it intact. All ten
-accept `initialInput`.
+form submissions clear `input`; failed submissions leave it intact. Request
+composables accept `initialInput`.
 
-`useCompletion`'s `onFinish` callback keeps the final text as the first argument
-and passes the original prompt plus abort status through `CompletionFinishInfo`.
+`useCompletion`'s `onFinish` callback follows AI SDK ordering:
+`onFinish(prompt, completion, info?)`. It still accepts `onFinishLegacy(completion, info)` for
+existing code. The callback info includes `prompt`, `completion`, and `isAbort`.
 
 Passing the same `id` to multiple `useCompletion()` calls shares completion
 state across components. Omit `id` for independent generated state.
@@ -652,6 +673,22 @@ blocks pnpm execution wrappers, use either `pnpm production:readiness:local` or
 
 Fifteen runnable examples live in [`examples/`](https://github.com/hexinmiao96/vue-ai-hooks/tree/main/examples):
 
+Start with one path instead of reading the full list:
+
+| If you want to verify...             | Run first                    | What should work without keys                         |
+| ------------------------------------ | ---------------------------- | ----------------------------------------------------- |
+| Vue chat, tool approval, app context | `pnpm example:chat`          | **Run approval demo**, local stream, approval/reject  |
+| Thread sidebar and local restore     | `pnpm example:threaded-chat` | Create, rename, archive, restore, refresh             |
+| React migration surface              | `pnpm example:react-chat`    | Stream, stop, request trace, usage, stream data       |
+| Media or retrieval routes            | `pnpm example:image`         | Deterministic local result, then optional proxy route |
+| Backend proxy contract               | `pnpm example:proxy-server`  | `/api/*`, `/api/ai/*`, and `/api/ui-message-stream`   |
+
+### Quick path before reading docs
+
+1. Start with `pnpm example:chat` to validate stream state + approval flow.
+2. Run `pnpm example:proxy-server`, then test the same demo through `VITE_CHAT_PROVIDER=proxy-route` to validate API contracts.
+3. Run `pnpm example:threaded-chat` before introducing persistent storage to verify thread restore rules.
+
 - `examples/chat` — streaming chat UI with provider switching, structured `Message.parts`, and a local tool approval demo
 - `examples/threaded-chat` — no-key threaded chat demo with `useChatThreads`, per-thread `useChat({ persist })`, and local restore checks
 - `examples/react-chat` — no-key React chat quickstart with `vue-ai-hooks/react`, `DirectChatTransport`, and request trace state
@@ -660,7 +697,7 @@ Fifteen runnable examples live in [`examples/`](https://github.com/hexinmiao96/v
 - `examples/proxy-server` — local backend proxy template for the default `/api/*` routes, the explicit `/api/ai/*` contract, and a UI message stream route
 - `examples/completion` — single-shot completion form
 - `examples/embedding` — pairwise cosine similarity heatmap
-- `examples/image` — no-key image generation form with a deterministic local SVG fallback
+- `examples/image` — no-key image generation/editing form with a deterministic local SVG fallback
 - `examples/video` — no-key video generation form with a deterministic local storyboard fallback
 - `examples/speech` — no-key speech generation form with a deterministic local WAV fallback
 - `examples/transcription` — no-key audio transcription form with a deterministic local transcript

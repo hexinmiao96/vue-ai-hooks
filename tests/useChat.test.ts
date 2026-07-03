@@ -3,8 +3,10 @@ import { nextTick } from 'vue'
 import {
   Chat,
   convertToModelMessages,
+  defineToolHandlers,
   deserializeMessages,
   dynamicTool,
+  getToolRenderParts,
   hasToolCall,
   isStepCount,
   jsonSchema,
@@ -19,6 +21,7 @@ import {
   validateUIMessages,
   useChat
 } from '../src/composables/useChat'
+import { useAgentContextRegistry } from '../src/composables/useAgentContext'
 import type { ChatProvider } from '../src/providers/types'
 import type {
   ChatChunk,
@@ -380,11 +383,113 @@ describe('useChat', () => {
     expect(validateUIMessages(raw)).toEqual([{ id: 'm1', role: 'user', content: 'hi' }])
     expect(safeValidateUIMessages(raw)).toEqual({
       success: true,
-      messages: [{ id: 'm1', role: 'user', content: 'hi' }]
+      messages: [{ id: 'm1', role: 'user', content: 'hi' }],
+      data: [{ id: 'm1', role: 'user', content: 'hi' }]
     })
     expect(() => validateUIMessages([{ id: 'bad', role: 'user', content: 1 }])).toThrow(
       'Messages could not be deserialized'
     )
+  })
+
+  it('validates UI messages with AI SDK-style options object aliases and tools', () => {
+    const messages = [
+      {
+        id: 'm1',
+        role: 'assistant',
+        content: '',
+        metadata: { source: 'server' },
+        toolCalls: [
+          {
+            id: 'call_1',
+            type: 'function',
+            function: { name: 'lookup', arguments: '{"q":"vue"}' }
+          }
+        ],
+        parts: [
+          { type: 'data-progress', data: { value: 80 } },
+          {
+            type: 'tool-lookup',
+            toolCallId: 'call_1',
+            toolName: 'lookup',
+            state: 'output-available',
+            input: { q: 'vue' },
+            output: { answer: 'ok' }
+          }
+        ]
+      }
+    ]
+    const tools = {
+      lookup: tool<{ q: string }, { answer: string }>({
+        inputSchema: jsonSchema({
+          type: 'object',
+          required: ['q'],
+          properties: { q: { type: 'string' } },
+          additionalProperties: false
+        })
+      })
+    }
+
+    expect(
+      validateUIMessages({
+        messages,
+        metadataSchema: {
+          type: 'object',
+          required: ['source'],
+          properties: { source: { type: 'string' } }
+        },
+        dataSchemas: {
+          'data-progress': {
+            type: 'object',
+            required: ['value'],
+            properties: { value: { type: 'number' } }
+          }
+        },
+        tools
+      })
+    ).toEqual(messages)
+
+    const result = safeValidateUIMessages({ messages, tools })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data).toEqual(result.messages)
+    }
+
+    expect(() =>
+      validateUIMessages({
+        messages: [
+          {
+            ...messages[0],
+            toolCalls: [
+              {
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":1}' }
+              }
+            ]
+          }
+        ],
+        tools
+      })
+    ).toThrow('Tool "lookup" input did not match schema')
+    expect(() =>
+      validateUIMessages({
+        messages: [
+          {
+            ...messages[0],
+            parts: [
+              {
+                type: 'tool-missing',
+                toolCallId: 'call_2',
+                toolName: 'missing',
+                state: 'input-available',
+                input: {}
+              }
+            ]
+          }
+        ],
+        tools
+      })
+    ).toThrow('Tool "missing" was not declared')
   })
 
   it('converts UI messages to model messages without mutating originals', () => {
@@ -1058,6 +1163,136 @@ describe('useChat', () => {
     ).toThrow(/Unsupported reasoning pruning strategy/)
   })
 
+  it('derives safe tool render rows from parts, tool calls, results, and pending actions', () => {
+    const messages: Message[] = [
+      {
+        id: 'assistant-streaming',
+        role: 'assistant',
+        content: '',
+        parts: [
+          {
+            type: 'tool-searchDocs',
+            toolCallId: 'call_streaming',
+            toolName: 'searchDocs',
+            state: 'input-streaming',
+            inputText: '{"query":"vue'
+          }
+        ]
+      },
+      {
+        id: 'assistant-call',
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_confirm',
+            type: 'function',
+            function: { name: 'confirmPurchase', arguments: '{"sku":"pro"}' }
+          },
+          {
+            id: 'call_lookup',
+            type: 'function',
+            function: { name: 'lookupOrder', arguments: '{"orderId":"o1"}' }
+          }
+        ]
+      },
+      {
+        id: 'lookup-result',
+        role: 'tool',
+        toolCallId: 'call_lookup',
+        content: '{"status":"paid"}'
+      },
+      {
+        id: 'failed-result',
+        role: 'tool',
+        toolCallId: 'call_failed',
+        name: 'chargeCard',
+        content: '{"state":"output-error","errorText":"User rejected"}'
+      },
+      {
+        id: 'agent-output',
+        role: 'assistant',
+        content: '',
+        parts: [
+          {
+            type: 'tool-rerank',
+            toolCallId: 'call_rerank',
+            toolName: 'rerank',
+            state: 'output-available',
+            output: { top: 'doc-1' }
+          }
+        ]
+      }
+    ]
+
+    const rows = getToolRenderParts({
+      messages,
+      pendingToolCalls: [
+        {
+          id: 'call_confirm',
+          type: 'function',
+          function: { name: 'confirmPurchase', arguments: '{"sku":"pro"}' }
+        }
+      ]
+    })
+
+    expect(rows).toEqual([
+      {
+        key: 'call_streaming',
+        toolCallId: 'call_streaming',
+        toolName: 'searchDocs',
+        state: 'input-streaming',
+        status: 'inProgress',
+        pending: false,
+        inputText: '{"query":"vue',
+        messageId: 'assistant-streaming'
+      },
+      {
+        key: 'call_confirm',
+        toolCallId: 'call_confirm',
+        toolName: 'confirmPurchase',
+        state: 'input-available',
+        status: 'awaitingAction',
+        pending: true,
+        input: { sku: 'pro' },
+        inputText: '{"sku":"pro"}',
+        messageId: 'assistant-call'
+      },
+      {
+        key: 'call_lookup',
+        toolCallId: 'call_lookup',
+        toolName: 'lookupOrder',
+        state: 'output-available',
+        status: 'complete',
+        pending: false,
+        input: { orderId: 'o1' },
+        inputText: '{"orderId":"o1"}',
+        output: { status: 'paid' },
+        messageId: 'lookup-result'
+      },
+      {
+        key: 'call_failed',
+        toolCallId: 'call_failed',
+        toolName: 'chargeCard',
+        state: 'output-error',
+        status: 'error',
+        pending: false,
+        errorText: 'User rejected',
+        messageId: 'failed-result'
+      },
+      {
+        key: 'call_rerank',
+        toolCallId: 'call_rerank',
+        toolName: 'rerank',
+        state: 'output-available',
+        status: 'complete',
+        pending: false,
+        output: { top: 'doc-1' },
+        messageId: 'agent-output'
+      }
+    ])
+  })
+
   it('shares state across instances with the same id and seeds from the first instance', async () => {
     const requests: ChatRequest[] = []
     const provider = fakeTurnProvider([[{ content: 'shared output' }]], requests)
@@ -1591,7 +1826,7 @@ describe('useChat', () => {
   it('does not retry chat streams after a chunk was received', async () => {
     let calls = 0
     const onRetry = vi.fn()
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const provider: ChatProvider = {
       id: 'partial-failure',
       async chat(): Promise<AsyncIterable<ChatChunk>> {
@@ -1875,7 +2110,7 @@ describe('useChat', () => {
   })
 
   it('uses stream messageId as the assistant message id', async () => {
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const { append, messages } = useChat({
       provider: fakeProvider([
         { messageId: 'server_assistant_1', metadata: { type: 'start' } },
@@ -2334,7 +2569,7 @@ describe('useChat', () => {
   it('accepts a message object and reports update and finish callbacks', async () => {
     const onUpdate = vi.fn()
     const onChunk = vi.fn()
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const { append, messages } = useChat({
       provider: fakeProvider([{ content: 'ok' }, { finishReason: 'stop' }]),
       onChunk,
@@ -2375,6 +2610,45 @@ describe('useChat', () => {
         messages: [
           expect.objectContaining({ role: 'user', content: 'from object' }),
           expect.objectContaining({ role: 'assistant', content: 'ok' })
+        ],
+        isAbort: false,
+        isError: false,
+        isDisconnect: false,
+        finishReason: 'stop'
+      })
+    )
+  })
+
+  it('supports AI SDK-style onFinish callback objects', async () => {
+    const onFinish = vi.fn(
+      ({ message, messages, isAbort, isError, isDisconnect, finishReason }) => {
+        expect(message).toMatchObject({
+          role: 'assistant',
+          content: 'done',
+          metadata: { finishReason: 'stop' }
+        })
+        expect(messages.map((item: Message) => item.role)).toEqual(['user', 'assistant'])
+        expect(messages[1]).toMatchObject({ content: 'done' })
+        expect(isAbort).toBe(false)
+        expect(isError).toBe(false)
+        expect(isDisconnect).toBe(false)
+        expect(finishReason).toBe('stop')
+      }
+    )
+    const { append } = useChat({
+      provider: fakeProvider([{ content: 'done' }, { finishReason: 'stop' }]),
+      onFinish
+    })
+
+    await append('finish shape')
+
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.objectContaining({ content: 'done' }),
+        messages: [
+          expect.objectContaining({ role: 'user', content: 'finish shape' }),
+          expect.objectContaining({ role: 'assistant', content: 'done' })
         ],
         isAbort: false,
         isError: false,
@@ -2549,6 +2823,65 @@ describe('useChat', () => {
         }
       }
     ])
+    expect(getWeather).toHaveBeenCalledWith(
+      { city: 'Tokyo' },
+      expect.objectContaining({
+        args: { city: 'Tokyo' },
+        toolCall: expect.objectContaining({ id: 'call_1' })
+      })
+    )
+    expect(messages.value.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant'
+    ])
+    expect(messages.value[2].content).toBe('{"city":"Tokyo","temp":22}')
+  })
+
+  it('accepts typed tool handlers from defineToolHandlers', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'getWeather', arguments: '{"city":"Tokyo"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Tokyo is sunny.' }, { finishReason: 'stop' }]
+      ],
+      requests
+    )
+    const tools = {
+      getWeather: tool<{ city: string }, { city: string; temp: number }>({
+        description: 'Get current weather.',
+        inputSchema: jsonSchema<{ city: string }>({
+          type: 'object',
+          required: ['city'],
+          properties: { city: { type: 'string' } },
+          additionalProperties: false
+        })
+      })
+    }
+    const getWeather = vi.fn((args: { city: string }) => ({ city: args.city, temp: 22 }))
+    const { append, messages } = useChat({
+      provider,
+      tools,
+      toolHandlers: defineToolHandlers(tools, {
+        getWeather
+      })
+    })
+
+    await append('weather?')
+
     expect(getWeather).toHaveBeenCalledWith(
       { city: 'Tokyo' },
       expect.objectContaining({
@@ -2859,6 +3192,60 @@ describe('useChat', () => {
     })
   })
 
+  it('adds registered agent context to chat requests before prepare hooks', async () => {
+    const requests: ChatRequest[] = []
+    const prepareSendMessagesRequest = vi.fn(({ messages }) => ({
+      metadata: { roles: messages.map((message: Message) => message.role) }
+    }))
+    const registry = useAgentContextRegistry()
+    registry.register({
+      id: 'filters',
+      description: 'Active filters',
+      value: { status: 'open', owner: 'me' }
+    })
+    registry.register({
+      id: 'route',
+      description: 'Current route',
+      value: '/tickets'
+    })
+    const provider = fakeTurnProvider([[{ content: 'context received' }]], requests)
+    const { append, lastRequest } = useChat({
+      provider,
+      agentContext: registry,
+      agentContextMessage: { id: 'runtime-context', title: 'Runtime context' },
+      initialMessages: [{ id: 's1', role: 'system', content: 'Be concise.' }],
+      prepareSendMessagesRequest
+    })
+
+    await append('What should I review?')
+
+    expect(prepareSendMessagesRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({ id: 's1', role: 'system' }),
+          expect.objectContaining({
+            id: 'runtime-context',
+            role: 'system',
+            content:
+              'Runtime context\n- Active filters: {"status":"open","owner":"me"}\n- Current route: /tickets'
+          }),
+          expect.objectContaining({ role: 'user', content: 'What should I review?' })
+        ]
+      })
+    )
+    expect(requests[0].messages.map((message) => message.id)).toEqual([
+      's1',
+      'runtime-context',
+      expect.any(String)
+    ])
+    expect(requests[0].metadata).toEqual({ roles: ['system', 'system', 'user'] })
+    expect(lastRequest.value?.messages[1]).toMatchObject({
+      id: 'runtime-context',
+      content:
+        'Runtime context\n- Active filters: {"status":"open","owner":"me"}\n- Current route: /tickets'
+    })
+  })
+
   it('passes thread id and forwarded props through resume requests', async () => {
     const requests: ChatResumeRequest[] = []
     const onRequest = vi.fn()
@@ -2995,7 +3382,7 @@ describe('useChat', () => {
 
   it('resumes an active stream into the latest assistant message', async () => {
     const resumeRequests: ChatResumeRequest[] = []
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const provider: ChatProvider = {
       ...fakeProvider([]),
       id: 'resumable',
@@ -3168,7 +3555,7 @@ describe('useChat', () => {
         return null
       }
     }
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const { messages, resumeStream, status } = useChat({ provider, onFinish })
 
     await resumeStream()
@@ -3221,7 +3608,7 @@ describe('useChat', () => {
 
   it('stop() cancels an in-flight stream', async () => {
     const chunks: ChatChunk[] = [{ content: 'a' }, { content: 'b' }, { content: 'c' }]
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: Message, _info: unknown) => undefined)
     const { messages, append, stop } = useChat({ provider: fakeProvider(chunks), onFinish })
 
     const p = append('hi')
@@ -3394,7 +3781,7 @@ describe('useChat', () => {
 
   it('executes tool handlers and continues the conversation', async () => {
     const requests: ChatRequest[] = []
-    const onToolCall = vi.fn()
+    const onToolCall = vi.fn((_args: unknown, _context: unknown) => undefined)
     const onToolResult = vi.fn()
     const runtimeContext = { tenantId: 'tenant_1', mode: 'checkout' }
     const provider = fakeTurnProvider(
@@ -3466,7 +3853,7 @@ describe('useChat', () => {
 
   it('waits for manual tool results and continues after addToolResult()', async () => {
     const requests: ChatRequest[] = []
-    const onToolCall = vi.fn()
+    const onToolCall = vi.fn((_args: unknown, _context: unknown) => undefined)
     const onToolResult = vi.fn()
     const provider = fakeTurnProvider(
       [
@@ -3531,6 +3918,80 @@ describe('useChat', () => {
         })
       })
     )
+  })
+
+  it('supports AI SDK-style onToolCall callback objects with addToolOutput()', async () => {
+    const requests: ChatRequest[] = []
+    const provider = fakeTurnProvider(
+      [
+        [
+          {
+            toolCalls: [
+              {
+                index: 0,
+                id: 'call_1',
+                type: 'function',
+                function: { name: 'lookup', arguments: '{"q":"vue"}' }
+              }
+            ]
+          },
+          { finishReason: 'tool_calls' }
+        ],
+        [{ content: 'Lookup complete.' }, { finishReason: 'stop' }]
+      ],
+      requests
+    )
+    let submitToolOutput!: ReturnType<typeof useChat>['addToolOutput']
+    const onToolCall = vi.fn(async ({ toolCall }) => {
+      expect(toolCall).toMatchObject({
+        toolCallId: 'call_1',
+        toolName: 'lookup',
+        input: { q: 'vue' },
+        dynamic: true
+      })
+      await submitToolOutput(
+        { tool: toolCall.toolName, toolCallId: toolCall.toolCallId, output: { ok: true } },
+        { metadata: { source: 'tool-callback' } }
+      )
+    })
+    const chat = useChat({
+      provider,
+      tools: {
+        lookup: dynamicTool({
+          inputSchema: jsonSchema({
+            type: 'object',
+            required: ['q'],
+            properties: { q: { type: 'string' } },
+            additionalProperties: false
+          })
+        })
+      },
+      onToolCall
+    })
+    submitToolOutput = chat.addToolOutput
+
+    await chat.append('lookup vue')
+
+    expect(onToolCall).toHaveBeenCalledTimes(1)
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toMatchObject({ metadata: { source: 'tool-callback' } })
+    expect(requests[1].messages.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool'
+    ])
+    expect(chat.messages.value.map((message) => message.role)).toEqual([
+      'user',
+      'assistant',
+      'tool',
+      'assistant'
+    ])
+    expect(chat.messages.value[2]).toMatchObject({
+      role: 'tool',
+      toolCallId: 'call_1',
+      content: '{"ok":true}'
+    })
+    expect(chat.messages.value[3].content).toBe('Lookup complete.')
   })
 
   it('accepts AI SDK-style addToolOutput() options', async () => {

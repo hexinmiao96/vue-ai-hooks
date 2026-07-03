@@ -18,6 +18,7 @@ const rootSidebar = {
         { text: 'Upgrade to v0.4.0', link: '/guide/upgrade-0.4' },
         { text: 'Upgrade to v0.3.0', link: '/guide/upgrade-0.3' },
         { text: 'AI SDK migration', link: '/guide/ai-sdk-migration' },
+        { text: 'Competitive benchmark', link: '/guide/competitive-benchmark' },
         { text: 'Providers', link: '/guide/providers' },
         { text: 'Proxy recipes', link: '/guide/proxy-recipes' },
         { text: 'Server storage', link: '/guide/server-storage' },
@@ -56,6 +57,10 @@ const rootSidebar = {
         { text: 'useRerank', link: '/reference/use-rerank' },
         { text: 'useObject', link: '/reference/use-object' },
         { text: 'useChatThreads', link: '/reference/use-chat-threads' },
+        { text: 'useAgentContext', link: '/reference/use-agent-context' },
+        { text: 'useAgentCapabilities', link: '/reference/use-agent-capabilities' },
+        { text: 'useAgentRun', link: '/reference/use-agent-run' },
+        { text: 'usePromptSuggestions', link: '/reference/use-prompt-suggestions' },
         { text: 'usePersist', link: '/reference/use-persist' }
       ]
     },
@@ -89,6 +94,7 @@ const zhSidebar = {
         { text: '升级到 v0.4.0', link: '/zh/guide/upgrade-0.4' },
         { text: '升级到 v0.3.0', link: '/zh/guide/upgrade-0.3' },
         { text: 'AI SDK 迁移', link: '/zh/guide/ai-sdk-migration' },
+        { text: '竞品基准对齐', link: '/zh/guide/competitive-benchmark' },
         { text: 'Provider', link: '/zh/guide/providers' },
         { text: 'Proxy 配方', link: '/zh/guide/proxy-recipes' },
         { text: '服务端存储', link: '/zh/guide/server-storage' },
@@ -127,6 +133,10 @@ const zhSidebar = {
         { text: 'useRerank', link: '/zh/reference/use-rerank' },
         { text: 'useObject', link: '/zh/reference/use-object' },
         { text: 'useChatThreads', link: '/zh/reference/use-chat-threads' },
+        { text: 'useAgentContext', link: '/zh/reference/use-agent-context' },
+        { text: 'useAgentCapabilities', link: '/zh/reference/use-agent-capabilities' },
+        { text: 'useAgentRun', link: '/zh/reference/use-agent-run' },
+        { text: 'usePromptSuggestions', link: '/zh/reference/use-prompt-suggestions' },
         { text: 'usePersist', link: '/zh/reference/use-persist' }
       ]
     },

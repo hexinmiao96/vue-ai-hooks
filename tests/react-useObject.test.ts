@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useObject } from '../src/react'
+import type { ReactLegacyObjectFinishCallback, ReactObjectFinishCallback } from '../src/react'
 import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk, ChatRequest } from '../src/types'
 
@@ -67,7 +68,7 @@ describe('react useObject', () => {
     const requests: ChatRequest[] = []
     const onChunk = vi.fn()
     const onPartial = vi.fn()
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_object: unknown, _info: unknown) => undefined)
     const onRequest = vi.fn()
     const onResponse = vi.fn()
     const { result } = renderHook(() =>
@@ -143,6 +144,83 @@ describe('react useObject', () => {
         }
       }
     })
+  })
+
+  it('supports AI SDK-style object onFinish callbacks', async () => {
+    const onFinish: ReactObjectFinishCallback<TaskSummary> = vi.fn((_info: unknown) => undefined)
+    const { result } = renderHook(() =>
+      useObject<TaskSummary>({
+        provider: objectProvider([{ content: '{"title":"Ship","priority":"high"}' }]),
+        schema,
+        onFinish
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.submit('Summarize this task.')).resolves.toEqual({
+        title: 'Ship',
+        priority: 'high'
+      })
+    })
+
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object: { title: 'Ship', priority: 'high' },
+        text: '{"title":"Ship","priority":"high"}',
+        isAbort: false,
+        error: undefined
+      })
+    )
+  })
+
+  it('reports object parse errors through AI SDK-style onFinish callback', async () => {
+    const onFinish: ReactObjectFinishCallback<TaskSummary> = vi.fn((_info: unknown) => undefined)
+    const { result } = renderHook(() =>
+      useObject<TaskSummary>({
+        provider: objectProvider([{ content: '{"title":"Ship",' }]),
+        schema,
+        onFinish
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.submit('Summarize this task.')).rejects.toThrow()
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object: undefined,
+        text: '{"title":"Ship",',
+        isAbort: false,
+        error: expect.any(Error)
+      })
+    )
+  })
+
+  it('supports explicit object onFinishLegacy callback', async () => {
+    const onFinishLegacy: ReactLegacyObjectFinishCallback<TaskSummary> = vi.fn(
+      (_object, _info) => undefined
+    )
+    const { result } = renderHook(() =>
+      useObject<TaskSummary>({
+        provider: objectProvider([{ content: '{"title":"Ship","priority":"high"}' }]),
+        schema,
+        onFinishLegacy
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.submit('Summarize this task.')).resolves.toEqual({
+        title: 'Ship',
+        priority: 'high'
+      })
+    })
+
+    expect(onFinishLegacy).toHaveBeenCalledWith(
+      { title: 'Ship', priority: 'high' },
+      expect.objectContaining({ isAbort: false, error: undefined })
+    )
   })
 
   it('uses proxy transport when provider is omitted', async () => {
@@ -602,6 +680,52 @@ describe('react useObject', () => {
         status: 'ready'
       }
     ])
+  })
+
+  it('uses retryDelayMs function when calculating object retry delay', async () => {
+    const requests: ChatRequest[] = []
+    let calls = 0
+    const provider: ChatProvider = {
+      ...objectProvider([], requests),
+      async chat(request): Promise<AsyncIterable<ChatChunk>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) throw new Error('temporary object failure')
+        return (async function* () {
+          yield { content: '{"title":"Recovered","priority":"high"}' }
+        })()
+      }
+    }
+
+    const onRetry = vi.fn()
+    const retryDelayMs = vi.fn(() => 0)
+
+    const { result } = renderHook(() =>
+      useObject<TaskSummary>({
+        provider,
+        schema,
+        maxRetries: 1,
+        retryDelayMs,
+        onRetry
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.submit('retry')).resolves.toEqual({
+        title: 'Recovered',
+        priority: 'high'
+      })
+    })
+
+    expect(calls).toBe(2)
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(retryDelayMs).toHaveBeenCalledTimes(2)
+    expect(retryDelayMs).toHaveBeenCalledWith(
+      expect.objectContaining({
+        attempt: 1,
+        maxRetries: 1
+      })
+    )
   })
 
   it('rejects stopped streams with an abort error', async () => {

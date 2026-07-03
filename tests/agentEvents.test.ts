@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   agentEventToChatChunk,
   agentEventToUIMessageStreamPart,
+  readAgentEvents,
   readAgentEventStream
 } from '../src/utils/agentEvents'
 import { createUIMessageStreamResponse, readUIMessageStream } from '../src/utils/stream'
@@ -105,6 +106,37 @@ describe('agent event adapters', () => {
       finishReason: 'stop',
       usage: { promptTokens: 2, completionTokens: 3, totalTokens: 5 },
       metadata: { model: 'agent-test' }
+    })
+
+    expect(
+      agentEventToChatChunk(
+        {
+          type: 'interrupt',
+          id: 'approval_1',
+          name: 'approveCharge',
+          value: { amount: 49 }
+        },
+        { interruptDataType: 'data-human-approval' }
+      )
+    ).toEqual({
+      data: {
+        id: 'approval_1',
+        name: 'approveCharge',
+        value: { amount: 49 }
+      },
+      dataType: 'data-human-approval',
+      dataId: 'approval_1',
+      parts: [
+        {
+          type: 'data-human-approval',
+          id: 'approval_1',
+          data: {
+            id: 'approval_1',
+            name: 'approveCharge',
+            value: { amount: 49 }
+          }
+        }
+      ]
     })
 
     expect(
@@ -306,6 +338,11 @@ describe('agent event adapters', () => {
       dataType: 'data-agent-error',
       transient: true
     })
+    expect(agentEventToChatChunk({ type: 'interrupt', name: 'review', transient: true })).toEqual({
+      data: { name: 'review' },
+      dataType: 'data-agent-interrupt',
+      transient: true
+    })
   })
 
   it('maps agent events to AI SDK UI message stream parts', () => {
@@ -318,6 +355,7 @@ describe('agent event adapters', () => {
       { type: 'source', id: 'source_1', url: 'https://example.test/docs', title: 'Docs' },
       { type: 'file', id: 'file_1', url: 'https://example.test/a.txt', name: 'a.txt' },
       { type: 'finish', finishReason: 'length', metadata: { model: 'agent-test' } },
+      { type: 'interrupt', id: 'approval_1', name: 'approveCharge', value: { amount: 49 } },
       { type: 'error', errorText: 'soft failure', transient: true }
     ]
 
@@ -355,8 +393,31 @@ describe('agent event adapters', () => {
       },
       { type: 'file', url: 'https://example.test/a.txt', id: 'file_1', name: 'a.txt' },
       { type: 'finish', finishReason: 'length', messageMetadata: { model: 'agent-test' } },
+      {
+        type: 'data-agent-interrupt',
+        id: 'approval_1',
+        data: {
+          id: 'approval_1',
+          name: 'approveCharge',
+          value: { amount: 49 }
+        }
+      },
       { type: 'data-agent-error', data: { errorText: 'soft failure' }, transient: true }
     ])
+  })
+
+  it('reads raw iterable agent events without converting them', async () => {
+    const events: AgentEvent[] = [
+      { type: 'message-delta', delta: 'A' },
+      { type: 'interrupt', id: 'approval_1', name: 'approveCharge' }
+    ]
+    const rawEvents = []
+
+    for await (const event of readAgentEvents(events)) {
+      rawEvents.push(event)
+    }
+
+    expect(rawEvents).toEqual(events)
   })
 
   it('feeds UI stream responses through existing stream readers', async () => {

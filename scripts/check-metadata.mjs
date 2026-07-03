@@ -99,16 +99,43 @@ const requiredViteConfigSnippets = [
   "react: 'React'",
   "vue: 'Vue'"
 ]
-const expectedPackageFiles = [
-  'dist',
-  'src',
+const requiredPackageFiles = [
   'README.md',
   'README.zh-CN.md',
   'CHANGELOG.md',
   'SECURITY.md',
   'SUPPORT.md',
   'CODE_OF_CONDUCT.md',
-  'LICENSE'
+  'LICENSE',
+  'dist/index.mjs',
+  'dist/index.cjs',
+  'dist/index.d.ts',
+  'dist/react.mjs',
+  'dist/react.cjs',
+  'dist/react.d.ts',
+  'dist/index.d.ts.map',
+  'dist/react.d.ts.map',
+  'dist/inspection-C_FINWZC.js',
+  'dist/inspection-pBAFBYlz.cjs',
+  'src/index.ts',
+  'src/react.ts',
+  'src/react/useChat.ts',
+  'src/react/useCompletion.ts',
+  'src/react/useObject.ts',
+  'src/utils/agentEvents.ts',
+  'src/composables/useAgentCapabilities.ts',
+  'src/composables/useAgentContext.ts',
+  'src/composables/useAgentRun.ts',
+  'src/composables/useChatThreads.ts',
+  'src/composables/usePromptSuggestions.ts'
+]
+const forbiddenPackageFiles = [
+  'dist/index.mjs.map',
+  'dist/index.cjs.map',
+  'dist/react.mjs.map',
+  'dist/react.cjs.map',
+  'dist/inspection-C_FINWZC.js.map',
+  'dist/inspection-pBAFBYlz.cjs.map'
 ]
 const requiredPackageKeywords = [
   'vue',
@@ -187,9 +214,18 @@ expect(
 expect(packageJson.type === 'module', 'package type must be module')
 expect(packageJson.sideEffects === false, 'package must remain side-effect free for tree shaking')
 expect(packageJson.publishConfig?.access === 'public', 'publishConfig.access must be public')
+for (const file of requiredPackageFiles) {
+  expect(packageJson.files?.includes(file), `package files whitelist must include ${file}`)
+}
+for (const file of forbiddenPackageFiles) {
+  expect(
+    !packageJson.files?.includes(file),
+    `forbidden package map should not be whitelisted: ${file}`
+  )
+}
 expect(
-  arraysEqual(packageJson.files ?? [], expectedPackageFiles),
-  `package files whitelist must stay exact: ${expectedPackageFiles.join(', ')}`
+  packageJson.files?.length === new Set(packageJson.files ?? []).size,
+  'package files whitelist must not contain duplicates'
 )
 expect(!existsSync('.npmignore'), 'package must rely on package.json files, not .npmignore')
 for (const entry of requiredGitignoreEntries) {

@@ -37,12 +37,12 @@
 | `addToolOutput()` / 已弃用的 `addToolResult()`      | `addToolOutput()` 或 `addToolResult({ toolCallId, output })`                                                                                                  |
 | `addToolApprovalResponse()`                         | `addToolApprovalResponse()`、`approveToolCall()`、`rejectToolCall()`                                                                                          |
 | `stepCountIs()`                                     | `stepCountIs()`，或旧名 `isStepCount()`，用于限制自动工具循环步骤数                                                                                           |
-| `tool()` / `dynamicTool()`                          | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`                                                                                         |
+| `tool()` / `dynamicTool()` / `jsonSchema()`         | `tool()`、`dynamicTool()` 和 `jsonSchema()` 配合 `useChat({ tools })`；`jsonSchema()` 也可用于 `useObject({ schema })`                                        |
 | `stopWhen`                                          | `stopWhen`                                                                                                                                                    |
 | `experimental_throttle`                             | `experimental_throttle`，或更推荐的 `throttleMs`                                                                                                              |
 | 自定义 stream data                                  | `data`、`streamData`、`setData()`、`onData` 和 `ChatChunk.data`                                                                                               |
 | `experimental_useObject()`                          | `experimental_useObject()` 别名，或更推荐的 `useObject()`                                                                                                     |
-| AI SDK Core 图片生成                                | `useImage()` 调用你的自有 `/api/image` 路由                                                                                                                   |
+| AI SDK Core 图片生成/编辑                           | `useImage()` 调用你的自有 `/api/image` 路由；源图编辑使用 `editImage()`                                                                                       |
 | AI SDK Core 视频生成                                | `useVideo()` 调用你的自有 `/api/video` 路由                                                                                                                   |
 | AI SDK Core 语音生成                                | `useSpeech()` 调用你的自有 `/api/speech` 路由                                                                                                                 |
 | AI SDK Core 音频转写                                | `useTranscription()` 调用你的自有 `/api/transcription` 路由                                                                                                   |
@@ -339,7 +339,7 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 5. 可以先保留 `experimental_useObject` import，也可以迁移完成后改名为 `useObject`。
 6. 迁移已有 AI SDK object endpoint 时，可以让 `useObject` proxy 路由直接返回
    `text/plain` JSON 文本流。
-7. 将图片生成调用迁移到 `useImage({ api: '/api/image' })`，并把图片模型凭据保留在服务端。
+7. 将图片生成和编辑调用迁移到 `useImage({ api: '/api/image' })` 和 `editImage()`，并把图片模型凭据保留在服务端。
 8. 将视频生成调用迁移到 `useVideo({ api: '/api/video' })`，并把视频模型凭据保留在服务端。
 9. 将语音生成调用迁移到 `useSpeech({ api: '/api/speech' })`，并把文字转语音凭据保留在服务端。
 10. 将音频转写调用迁移到 `useTranscription({ api: '/api/transcription' })`，并把转写凭据保留在服务端。

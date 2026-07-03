@@ -20,8 +20,8 @@ hero:
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
 features:
-  - title: Ten composables, one mental model
-    details: useChat, useCompletion, useEmbedding, useGeneration, useImage, useVideo, useSpeech, useTranscription, useRerank, and useObject cover chat, text, vectors, custom generation jobs, app-owned image, video, speech, transcription, and rerank routes, and structured JSON. Pluggable providers let you swap models without rewriting your app.
+  - title: Fifteen composables, one mental model
+    details: useChat, useCompletion, useEmbedding, useGeneration, useImage, useVideo, useSpeech, useTranscription, useRerank, useObject, useChatThreads, useAgentContext, useAgentCapabilities, useAgentRun, and usePromptSuggestions cover chat, text, vectors, media routes, structured JSON, threads, runtime app context, runtime capability discovery, headless agent run state, and composer task starters. Pick by product job first, then drill into the API reference.
   - title: Start without an API key
     details: The chat demo includes a deterministic local provider for tool approvals, and the proxy template streams fake chunks locally. Try the UI first, wire real providers later.
   - title: Streaming by default
@@ -37,7 +37,7 @@ features:
   - title: Retry controls
     details: Opt into maxRetries, retryDelayMs, shouldRetry, and onRetry for transient provider failures. Streaming calls only retry before the first chunk to avoid duplicated output.
   - title: Consistent statuses
-    details: status, isLoading, error, and clearError follow one lifecycle vocabulary across chat, completion, embedding, image generation, speech generation, transcription, reranking, custom generation, and structured object output.
+    details: status, isLoading, error, and clearError follow one lifecycle vocabulary across chat, completion, embedding, image generation/editing, speech generation, transcription, reranking, custom generation, and structured object output.
   - title: TypeScript first
     details: Strict mode, no any leaks, full IDE autocomplete. If you can write the call, you can read the type.
   - title: Tiny

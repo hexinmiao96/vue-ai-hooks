@@ -39,6 +39,17 @@ export interface ReactCompletionFinishInfo {
   isAbort: boolean
 }
 
+export type ReactAiSdkCompletionFinishCallback = (
+  prompt: string,
+  completion: string,
+  info?: ReactCompletionFinishInfo
+) => void
+
+export type ReactLegacyCompletionFinishCallback = (
+  completion: string,
+  info: ReactCompletionFinishInfo
+) => void
+
 export interface ReactCompletionRequestInfo {
   id: string
   providerId: string
@@ -73,7 +84,8 @@ export interface UseReactCompletionOptions extends RetryOptions, StreamThrottleO
   onUpdate?: (completion: string, delta: string) => void
   onRequest?: (info: ReactCompletionRequestInfo) => void
   onResponse?: (info: ReactCompletionResponseInfo) => void
-  onFinish?: (completion: string, info: ReactCompletionFinishInfo) => void
+  onFinish?: ReactAiSdkCompletionFinishCallback
+  onFinishLegacy?: ReactLegacyCompletionFinishCallback
   onError?: (error: Error) => void
 }
 
@@ -139,6 +151,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
     onRequest,
     onResponse,
     onFinish,
+    onFinishLegacy,
     onError
   } = options
 
@@ -189,6 +202,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   const onRequestRef = useRef(onRequest)
   const onResponseRef = useRef(onResponse)
   const onFinishRef = useRef(onFinish)
+  const onFinishLegacyRef = useRef(onFinishLegacy)
   const onErrorRef = useRef(onError)
 
   optionsRef.current = options
@@ -196,6 +210,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   onRequestRef.current = onRequest
   onResponseRef.current = onResponse
   onFinishRef.current = onFinish
+  onFinishLegacyRef.current = onFinishLegacy
   onErrorRef.current = onError
 
   const setCompletion = useCallback((value: string) => {
@@ -342,11 +357,13 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   )
 
   const finishCompletion = useCallback((prompt: string, isAbort: boolean) => {
-    onFinishRef.current?.(completionRef.current, {
+    const info = {
       prompt,
       completion: completionRef.current,
       isAbort
-    })
+    }
+    onFinishRef.current?.(prompt, completionRef.current, info)
+    onFinishLegacyRef.current?.(completionRef.current, info)
   }, [])
 
   const complete = useCallback(

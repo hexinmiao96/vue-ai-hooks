@@ -4,8 +4,10 @@ Structured JSON output composable for prompts that should return one parsed
 object.
 
 Public TypeScript types: `UseObjectOptions`, `UseObjectReturn`, `DeepPartial`,
-`ObjectRequestInfo`, `ObjectResponseInfo`, `ResponseFormat`, `IdGenerator`,
-`RetryOptions`, and `RetryContext`.
+`ObjectRequestInfo`, `ObjectResponseInfo`, `ObjectFinishInfo`,
+`ObjectFinishCallbackOptions`, `AiSdkObjectFinishCallback`,
+`LegacyObjectFinishCallback`, `ObjectFinishCallback`, `ResponseFormat`,
+`JsonSchemaDefinition`, `IdGenerator`, `RetryOptions`, and `RetryContext`.
 
 `experimental_useObject` is exported as an AI SDK-compatible alias for the same
 composable.
@@ -13,7 +15,7 @@ composable.
 ## Usage
 
 ```ts
-import { useObject, openai } from 'vue-ai-hooks'
+import { jsonSchema, useObject, openai } from 'vue-ai-hooks'
 
 type Ticket = {
   title: string
@@ -23,7 +25,7 @@ type Ticket = {
 const { object, partialObject, text, input, submit, isLoading, error } = useObject<Ticket>({
   provider: openai({ apiKey: '...' }),
   schemaName: 'ticket',
-  schema: {
+  schema: jsonSchema<Ticket>({
     type: 'object',
     properties: {
       title: { type: 'string' },
@@ -31,7 +33,7 @@ const { object, partialObject, text, input, submit, isLoading, error } = useObje
     },
     required: ['title', 'priority'],
     additionalProperties: false
-  }
+  })
 })
 
 await submit('Turn this customer message into a ticket.')
@@ -57,38 +59,38 @@ const { object, partialObject, submit } = useObject<Ticket>({
 
 ## Options
 
-| Name                    | Type                                                                   | Default       | Description                                                                |
-| ----------------------- | ---------------------------------------------------------------------- | ------------- | -------------------------------------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | proxy         | Provider used to send the structured chat request. Omit to use proxy.      |
-| `transport`             | `ChatProvider`                                                         | -             | AI SDK-style alias for `provider`.                                         |
-| `api`                   | `string`                                                               | `/api/object` | Chat URL for the default proxy transport.                                  |
-| `baseURL`               | `string`                                                               | -             | Base URL prepended to default proxy transport URLs.                        |
-| `headers`               | `HeadersInit \| () => HeadersInit`                                     | -             | Static or dynamic headers for the default proxy transport.                 |
-| `body`                  | `Record<string, unknown> \| () => ...`                                 | -             | Extra JSON body fields for the default proxy transport.                    |
-| `credentials`           | `RequestCredentials`                                                   | -             | Browser credentials mode for the default proxy transport.                  |
-| `fetch`                 | `typeof fetch`                                                         | global        | Custom fetch implementation for the default proxy transport.               |
-| `id`                    | `string`                                                               | generated     | Object state id. Matching ids share state across instances.                |
-| `schema`                | `Record<string, unknown>`                                              | required      | JSON Schema sent through `responseFormat`.                                 |
-| `schemaName`            | `string`                                                               | `'object'`    | Name for the provider-side JSON schema.                                    |
-| `schemaDescription`     | `string`                                                               | -             | Optional schema description.                                               |
-| `strict`                | `boolean`                                                              | `true`        | Strict JSON Schema mode for providers that support it.                     |
-| `initialObject`         | `T \| null`                                                            | `null`        | Object value used before submit and after `clear()`.                       |
-| `initialValue`          | `DeepPartial<T> \| null`                                               | —             | AI SDK-style initial partial object value.                                 |
-| `initialInput`          | `string`                                                               | `''`          | Initial prompt text for object forms.                                      |
-| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | Default request payload merged into every submit.                          |
-| `generateId`            | `IdGenerator`                                                          | `generateId`  | Override automatic object and prompt message id generation.                |
-| `maxRetries`            | `number`                                                               | `0`           | Retry attempts for failures before the first stream chunk.                 |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | Delay before each retry.                                                   |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | Override the default retryable error decision.                             |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -             | Called before a retry attempt waits and re-runs.                           |
-| `throttleMs`            | `number`                                                               | -             | Minimum wait in ms between reactive `text` and `partialObject` updates.    |
-| `experimental_throttle` | `number`                                                               | -             | AI SDK-compatible alias. Prefer `throttleMs`.                              |
-| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -             | Called after each streamed chat chunk is applied.                          |
-| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | Called whenever the current JSON stream can be parsed as a partial object. |
-| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Called with the final structured chat request before send.                 |
-| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Called after the provider returns a structured chat stream.                |
-| `onFinish`              | `(object: T, info: ObjectFinishInfo<T>) => void`                       | -             | Called after the final JSON parses successfully.                           |
-| `onError`               | `(err: Error) => void`                                                 | -             | Called on provider errors or invalid JSON parse failures.                  |
+| Name                    | Type                                                                   | Default       | Description                                                                    |
+| ----------------------- | ---------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------ |
+| `provider`              | `ChatProvider`                                                         | proxy         | Provider used to send the structured chat request. Omit to use proxy.          |
+| `transport`             | `ChatProvider`                                                         | -             | AI SDK-style alias for `provider`.                                             |
+| `api`                   | `string`                                                               | `/api/object` | Chat URL for the default proxy transport.                                      |
+| `baseURL`               | `string`                                                               | -             | Base URL prepended to default proxy transport URLs.                            |
+| `headers`               | `HeadersInit \| () => HeadersInit`                                     | -             | Static or dynamic headers for the default proxy transport.                     |
+| `body`                  | `Record<string, unknown> \| () => ...`                                 | -             | Extra JSON body fields for the default proxy transport.                        |
+| `credentials`           | `RequestCredentials`                                                   | -             | Browser credentials mode for the default proxy transport.                      |
+| `fetch`                 | `typeof fetch`                                                         | global        | Custom fetch implementation for the default proxy transport.                   |
+| `id`                    | `string`                                                               | generated     | Object state id. Matching ids share state across instances.                    |
+| `schema`                | `Record<string, unknown> \| JsonSchemaDefinition<T>`                   | required      | JSON Schema, or `jsonSchema()` wrapper, sent through `responseFormat`.         |
+| `schemaName`            | `string`                                                               | `'object'`    | Name for the provider-side JSON schema.                                        |
+| `schemaDescription`     | `string`                                                               | -             | Optional schema description.                                                   |
+| `strict`                | `boolean`                                                              | `true`        | Strict JSON Schema mode for providers that support it.                         |
+| `initialObject`         | `T \| null`                                                            | `null`        | Object value used before submit and after `clear()`.                           |
+| `initialValue`          | `DeepPartial<T> \| null`                                               | —             | AI SDK-style initial partial object value.                                     |
+| `initialInput`          | `string`                                                               | `''`          | Initial prompt text for object forms.                                          |
+| `defaultRequest`        | `Partial<ChatRequest>`                                                 | `{}`          | Default request payload merged into every submit.                              |
+| `generateId`            | `IdGenerator`                                                          | `generateId`  | Override automatic object and prompt message id generation.                    |
+| `maxRetries`            | `number`                                                               | `0`           | Retry attempts for failures before the first stream chunk.                     |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`           | Delay before each retry.                                                       |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -             | Override the default retryable error decision.                                 |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -             | Called before a retry attempt waits and re-runs.                               |
+| `throttleMs`            | `number`                                                               | -             | Minimum wait in ms between reactive `text` and `partialObject` updates.        |
+| `experimental_throttle` | `number`                                                               | -             | AI SDK-compatible alias. Prefer `throttleMs`.                                  |
+| `onChunk`               | `(chunk: ChatChunk, text: string) => void`                             | -             | Called after each streamed chat chunk is applied.                              |
+| `onPartial`             | `(partialObject: DeepPartial<T>, text: string) => void`                | -             | Called whenever the current JSON stream can be parsed as a partial object.     |
+| `onRequest`             | `(info: ObjectRequestInfo) => void`                                    | -             | Called with the final structured chat request before send.                     |
+| `onResponse`            | `(info: ObjectResponseInfo) => void`                                   | -             | Called after the provider returns a structured chat stream.                    |
+| `onFinish`              | `ObjectFinishCallback<T>`                                              | -             | AI SDK-style `({ object, error })`; legacy `(object, info)` is still accepted. |
+| `onError`               | `(err: Error) => void`                                                 | -             | Called on provider errors or invalid JSON parse failures.                      |
 
 ## Return value
 
@@ -118,16 +120,22 @@ const { object, partialObject, submit } = useObject<Ticket>({
 ## Provider support
 
 `useObject` sends `ChatRequest.responseFormat` with a JSON Schema response
-format. `openai`, `openaiCompatible`, `openrouter`, `gemini`, and `deepseek`
+format. Pass a raw JSON Schema object or the exported `jsonSchema<T>()` helper.
+When the helper is used, the provider receives the unwrapped schema and the
+optional custom `validate` callback runs after the final JSON parses.
+`openai`, `openaiCompatible`, `openrouter`, `gemini`, and `deepseek`
 serialize it to OpenAI-compatible `response_format`; `proxyProvider` forwards it to your backend
 unchanged. When `provider` and `transport` are omitted, `useObject` uses the
 built-in proxy transport and calls `api` or `/api/object`.
 That proxy endpoint may return SSE/JSON chat chunks or a `text/plain` stream of
 JSON text; plain text chunks are treated as streamed object content.
 
-`onFinish` keeps the parsed object as the first argument and also receives
-`ObjectFinishInfo<T>` with `object`, raw JSON `text`, `isAbort`, and `error`
-fields.
+`onFinish({ object, error, text, isAbort })` follows the AI SDK UI shape. When
+final JSON parses and validates, `object` is the typed result and `error` is
+`undefined`. When final JSON or schema validation fails, AI SDK-style callbacks
+receive `object: undefined` and the validation error before `submit()` rejects.
+The legacy `onFinish(object, info)` signature is still accepted for existing
+code and is called only after a successful final object is available.
 
 Providers that do not enforce structured output may still return valid JSON if
 prompted carefully. The client validates the final parsed JSON against common

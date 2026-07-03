@@ -4,6 +4,7 @@
 
 公开 TypeScript 类型：`UseCompletionOptions`、`UseCompletionReturn`、
 `CompletionRequestInfo`、`CompletionResponseInfo`、`CompletionFinishInfo`、
+`AiSdkCompletionFinishCallback`、`LegacyCompletionFinishCallback`、
 `CompletionStreamProtocol`、`RetryOptions` 和 `RetryContext`。
 
 ## 用法
@@ -30,33 +31,34 @@ const { complete } = useCompletion({
 
 ## 选项
 
-| 名称                    | 类型                                                                   | 默认值            | 说明                                           |
-| ----------------------- | ---------------------------------------------------------------------- | ----------------- | ---------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | proxy             | 要使用的 Provider；省略时使用默认 proxy。      |
-| `transport`             | `ChatProvider`                                                         | -                 | AI SDK 风格的 `provider` 别名。                |
-| `api`                   | `string`                                                               | `/api/completion` | 默认 proxy transport 的 completion URL。       |
-| `baseURL`               | `string`                                                               | -                 | 拼接到默认 proxy transport URL 前的 base URL。 |
-| `headers`               | `HeadersInit \| () => HeadersInit`                                     | -                 | 默认 proxy 的静态或动态 headers。              |
-| `body`                  | `Record<string, unknown> \| () => ...`                                 | -                 | 默认 proxy 附加到 JSON body 的字段。           |
-| `credentials`           | `RequestCredentials`                                                   | -                 | 默认 proxy 的浏览器 credentials 模式。         |
-| `fetch`                 | `typeof fetch`                                                         | global            | 默认 proxy 的自定义 fetch 实现。               |
-| `id`                    | `string`                                                               | 自动生成          | Completion 状态标识；相同 id 会共享状态。      |
-| `generateId`            | `IdGenerator`                                                          | `generateId`      | 未传 `id` 时用于生成 id。                      |
-| `initialInput`          | `string`                                                               | `''`              | 初始表单 prompt。                              |
-| `initialCompletion`     | `string`                                                               | `''`              | 初始补全文本。                                 |
-| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | 默认请求选项。                                 |
-| `streamProtocol`        | `'text' \| 'data'`                                                     | -                 | AI SDK 兼容的 proxy stream protocol 提示。     |
-| `maxRetries`            | `number`                                                               | `0`               | 首个 delta 到达前失败时最多重试几次。          |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | 每次重试前等待的毫秒数。                       |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | -                 | 覆盖默认的错误是否可重试判断。                 |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | -                 | 等待并重新发起请求前调用。                     |
-| `throttleMs`            | `number`                                                               | -                 | 响应式补全更新之间的最小等待毫秒数。           |
-| `experimental_throttle` | `number`                                                               | -                 | AI SDK 风格兼容别名，建议用 `throttleMs`。     |
-| `onUpdate`              | `(completion: string, delta: string) => void`                          | -                 | 每个非空流式 delta 追加后调用。                |
-| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | -                 | Provider 调用前，拿到最终补全请求。            |
-| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | -                 | Provider 返回补全 stream 后调用。              |
-| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | -                 | 补全完成时调用。                               |
-| `onError`               | `(e: Error) => void`                                                   | -                 | 发生错误时调用。                               |
+| 名称                    | 类型                                                                        | 默认值            | 说明                                           |
+| ----------------------- | --------------------------------------------------------------------------- | ----------------- | ---------------------------------------------- |
+| `provider`              | `ChatProvider`                                                              | proxy             | 要使用的 Provider；省略时使用默认 proxy。      |
+| `transport`             | `ChatProvider`                                                              | -                 | AI SDK 风格的 `provider` 别名。                |
+| `api`                   | `string`                                                                    | `/api/completion` | 默认 proxy transport 的 completion URL。       |
+| `baseURL`               | `string`                                                                    | -                 | 拼接到默认 proxy transport URL 前的 base URL。 |
+| `headers`               | `HeadersInit \| () => HeadersInit`                                          | -                 | 默认 proxy 的静态或动态 headers。              |
+| `body`                  | `Record<string, unknown> \| () => ...`                                      | -                 | 默认 proxy 附加到 JSON body 的字段。           |
+| `credentials`           | `RequestCredentials`                                                        | -                 | 默认 proxy 的浏览器 credentials 模式。         |
+| `fetch`                 | `typeof fetch`                                                              | global            | 默认 proxy 的自定义 fetch 实现。               |
+| `id`                    | `string`                                                                    | 自动生成          | Completion 状态标识；相同 id 会共享状态。      |
+| `generateId`            | `IdGenerator`                                                               | `generateId`      | 未传 `id` 时用于生成 id。                      |
+| `initialInput`          | `string`                                                                    | `''`              | 初始表单 prompt。                              |
+| `initialCompletion`     | `string`                                                                    | `''`              | 初始补全文本。                                 |
+| `defaultRequest`        | `Partial<CompletionRequest>`                                                | `{}`              | 默认请求选项。                                 |
+| `streamProtocol`        | `'text' \| 'data'`                                                          | -                 | AI SDK 兼容的 proxy stream protocol 提示。     |
+| `maxRetries`            | `number`                                                                    | `0`               | 首个 delta 到达前失败时最多重试几次。          |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                               | `0`               | 每次重试前等待的毫秒数。                       |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>`      | -                 | 覆盖默认的错误是否可重试判断。                 |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                             | -                 | 等待并重新发起请求前调用。                     |
+| `throttleMs`            | `number`                                                                    | -                 | 响应式补全更新之间的最小等待毫秒数。           |
+| `experimental_throttle` | `number`                                                                    | -                 | AI SDK 风格兼容别名，建议用 `throttleMs`。     |
+| `onUpdate`              | `(completion: string, delta: string) => void`                               | -                 | 每个非空流式 delta 追加后调用。                |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                     | -                 | Provider 调用前，拿到最终补全请求。            |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                                    | -                 | Provider 返回补全 stream 后调用。              |
+| `onFinish`              | `(prompt: string, completion: string, info?: CompletionFinishInfo) => void` | -                 | 补全完成时调用。                               |
+| `onFinishLegacy`        | `(completion: string, info: CompletionFinishInfo) => void`                  | -                 | 老版本兼容回调，参数顺序为 completion 在前。   |
+| `onError`               | `(e: Error) => void`                                                        | -                 | 发生错误时调用。                               |
 
 ## 返回值
 
@@ -96,8 +98,10 @@ const { complete } = useCompletion({
   默认 proxy 会把协议提示写入请求 JSON，并把 `text/plain` 响应作为流式文本读取。
   默认 `data` 路径继续支持既有 SSE/JSON 响应。
 - `handleSubmit()` 只会在补全成功后清空 `input`；Provider 错误会保留 prompt 供重试。
-- `onFinish(completion, info)` 保持最终补全文本作为第一个参数，同时通过
-  `info.prompt`、`info.completion` 和 `info.isAbort` 传递完成元信息。
+- `stop()` 会中止进行中的补全流，并以当前已完成文本触发 `onFinish(prompt, '', { isAbort: true })`；该路径不会触发 `onError`。
+- `onFinish(prompt, completion, info?)` 与 AI SDK 对齐，同时在可选的第三参数透传
+  `info.prompt`、`info.completion` 和 `info.isAbort`。
+- `onFinishLegacy(completion, info)` 保留用于老版本回调用法。
 - `onRequest(info)` 会在 Provider 执行前收到最终 `CompletionRequest`。
   `onResponse(info)` 会在 Provider 返回 stream 后执行。两者都包含从 1 开始的
   `attempt`、Provider id、prompt、body、headers 和请求快照。

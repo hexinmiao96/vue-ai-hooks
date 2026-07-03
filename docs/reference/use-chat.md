@@ -13,6 +13,7 @@ Public TypeScript types: `Chat`, `ChatOptions`, `UseChatOptions`, `UseChatReturn
 `PrepareReconnectToStreamRequest`, `PrepareReconnectToStreamRequestOptions`,
 `SendChatTrigger`, `SetMessagesInput`, `SetDataInput`, `PruneMessagesOptions`,
 `PruneToolCallsStrategy`, `PruneToolCallsRule`, `PruneToolCallsOption`,
+`GetToolRenderPartsOptions`, `ToolRenderPart`, `ToolRenderStatus`,
 `ConvertToModelMessagesOptions`, `ChatPersistOptions`, `SerializedMessage`,
 `StreamDataPart`, `IdGenerator`, `ChatAttachmentInput`, `ChatAttachmentsInput`,
 `MessagePart`, `MessageTextPart`, `MessageReasoningPart`, `MessageSourcePart`,
@@ -22,7 +23,8 @@ Public TypeScript types: `Chat`, `ChatOptions`, `UseChatOptions`, `UseChatReturn
 `ToolCallHandler`, `ToolCallHandlerContext`, `ToolResultHandlerContext`,
 `SendAutomaticallyWhen`, `SendAutomaticallyWhenOptions`, `StopWhen`,
 `StopWhenOptions`, `JsonSchemaDefinition`, `ToolInputSchema`,
-`ToolExecute`, `ToolModelOutput`, `ToolModelOutputContext`,
+`ToolExecute`, `ToolHandlerFor`, `ToolHandlersFor`, `InferToolInput`,
+`InferToolOutput`, `InferUITools`, `ToolModelOutput`, `ToolModelOutputContext`,
 `ToolDefinition`, `AnyToolDefinition`, `ToolSet`,
 `ChatToolsInput`, `ValidateMessagesOptions`, `ValidateUIMessagesOptions`,
 `SafeValidateMessagesResult`, `SafeValidateUIMessagesResult`, `RetryOptions`,
@@ -32,7 +34,8 @@ Public helpers: `pruneMessages`, `convertToModelMessages`, `serializeMessages`,
 `deserializeMessages`, `validateMessages`, `safeValidateMessages`,
 `validateUIMessages`, `safeValidateUIMessages`,
 `lastAssistantMessageIsCompleteWithToolCalls`, `stepCountIs`, `isStepCount`,
-`hasToolCall`, `jsonSchema`, `tool`, and `dynamicTool`.
+`hasToolCall`, `getToolRenderParts`, `jsonSchema`, `tool`, `dynamicTool`, and
+`defineToolHandlers`.
 
 ## Usage
 
@@ -97,57 +100,59 @@ Use `input` with a Vue form for the common composer flow:
 
 ## Options
 
-| Name                              | Type                                                                   | Default      | Description                                                            |
-| --------------------------------- | ---------------------------------------------------------------------- | ------------ | ---------------------------------------------------------------------- |
-| `chat`                            | `Chat`                                                                 | —            | Existing chat instance to reuse; other options are ignored.            |
-| `provider`                        | `ChatProvider`                                                         | proxy        | The provider to use. Omit to use the default proxy transport.          |
-| `transport`                       | `ChatProvider`                                                         | —            | AI SDK-style alias for `provider`.                                     |
-| `api`                             | `string`                                                               | `/api/chat`  | Chat URL for the default proxy transport.                              |
-| `baseURL`                         | `string`                                                               | —            | Base URL prepended to default proxy transport URLs.                    |
-| `headers`                         | `HeadersInit \| () => HeadersInit`                                     | —            | Static or dynamic headers for the default proxy transport.             |
-| `body`                            | `Record<string, unknown> \| () => ...`                                 | —            | Extra JSON body fields for the default proxy transport.                |
-| `credentials`                     | `RequestCredentials`                                                   | —            | Browser credentials mode for the default proxy transport.              |
-| `fetch`                           | `typeof fetch`                                                         | global       | Custom fetch implementation for the default proxy transport.           |
-| `streamProtocol`                  | `ChatStreamProtocol`                                                   | auto         | Hint for app-owned proxy chat streams; use `'text'` for raw text.      |
-| `id`                              | `string`                                                               | generated    | Stable chat id sent with provider requests.                            |
-| `threadId`                        | `string`                                                               | —            | Backend thread id sent with chat and resume requests.                  |
-| `forwardedProps`                  | `Record<string, unknown>`                                              | —            | App props forwarded to proxy/agent backends.                           |
-| `context`                         | `unknown`                                                              | —            | Client-local context passed to local tool callbacks only.              |
-| `generateId`                      | `IdGenerator`                                                          | `generateId` | Override automatic chat, message, tool, and stream data id generation. |
-| `initialMessages`                 | `Message[]`                                                            | `[]`         | Seed the message history.                                              |
-| `messages`                        | `Message[]`                                                            | `[]`         | AI SDK-style alias for `initialMessages`; `initialMessages` wins.      |
-| `initialInput`                    | `string`                                                               | `''`         | Seed the composer input for the first instance of an id.               |
-| `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`         | Default options merged into every chat request.                        |
-| `resume`                          | `boolean`                                                              | `false`      | Automatically try `resumeStream()` when the composable is created.     |
-| `prepareStep`                     | `PrepareStep`                                                          | —            | Customize each assistant step request before the final send hook.      |
-| `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | —            | Customize the final provider request before send/regenerate calls.     |
-| `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | —            | Customize the final resume request before `resumeStream()` reconnects. |
-| `tools`                           | `Tool[] \| ToolSet`                                                    | —            | Default tool list or AI SDK-style tool map.                            |
-| `activeTools`                     | `string[]`                                                             | —            | Filter the resolved tool list by function name for this chat/request.  |
-| `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | —            | Default tool choice.                                                   |
-| `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —            | Local handlers for automatic tool execution.                           |
-| `requiresToolApproval`            | `ToolApprovalPredicate`                                                | —            | Return true to pause a tool call for UI approval before execution.     |
-| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper       | Decide whether completed tool results should trigger the next request. |
-| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | —            | Stop automatic tool continuation when a condition matches.             |
-| `maxToolRoundtrips`               | `number`                                                               | `1`          | Maximum automatic tool-call rounds after a user message.               |
-| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | —            | Validate custom stream data by `dataType` before `onData`/storage.     |
-| `messageMetadataSchema`           | `MessageMetadataSchema<TMetadata>`                                     | —            | Validate user and assistant message metadata before it is stored.      |
-| `persist`                         | `ChatPersistOptions`                                                   | —            | Auto-save Date-safe messages to localStorage or a custom `Storage`.    |
-| `maxRetries`                      | `number`                                                               | `0`          | Retry attempts for failures before the first stream chunk.             |
-| `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`          | Delay before each retry.                                               |
-| `shouldRetry`                     | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —            | Override the default retryable error decision.                         |
-| `onRetry`                         | `(error: Error, context: RetryContext) => void`                        | —            | Called before a retry attempt waits and re-runs.                       |
-| `throttleMs`                      | `number`                                                               | —            | Minimum wait in ms between reactive message and `streamData` updates.  |
-| `experimental_throttle`           | `number`                                                               | —            | AI SDK-compatible alias. Prefer `throttleMs` in new code.              |
-| `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | —            | Called after each raw chat chunk is applied to the assistant message.  |
-| `onData`                          | `(part: StreamDataPart<TData>) => void`                                | —            | Called for custom stream data parts, including transient parts.        |
-| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | —            | Called with the final chat/resume request before the provider runs.    |
-| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | —            | Called after the provider returns a chat/resume stream or no stream.   |
-| `onToolCall`                      | `(args: unknown, context: ToolCallHandlerContext) => void`             | —            | Called before a registered local tool handler runs.                    |
-| `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | —            | Called after a local tool handler returns a `tool` message.            |
-| `onUpdate`                        | `(m: Message) => void`                                                 | —            | Called for every streamed chunk update.                                |
-| `onFinish`                        | `(m: Message, info: ChatFinishInfo) => void`                           | —            | Called once the assistant message is finished.                         |
-| `onError`                         | `(e: Error) => void`                                                   | —            | Called on any error; falls back to `error` ref.                        |
+| Name                              | Type                                                                   | Default      | Description                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| `chat`                            | `Chat`                                                                 | —            | Existing chat instance to reuse; other options are ignored.                                  |
+| `provider`                        | `ChatProvider`                                                         | proxy        | The provider to use. Omit to use the default proxy transport.                                |
+| `transport`                       | `ChatProvider`                                                         | —            | AI SDK-style alias for `provider`.                                                           |
+| `api`                             | `string`                                                               | `/api/chat`  | Chat URL for the default proxy transport.                                                    |
+| `baseURL`                         | `string`                                                               | —            | Base URL prepended to default proxy transport URLs.                                          |
+| `headers`                         | `HeadersInit \| () => HeadersInit`                                     | —            | Static or dynamic headers for the default proxy transport.                                   |
+| `body`                            | `Record<string, unknown> \| () => ...`                                 | —            | Extra JSON body fields for the default proxy transport.                                      |
+| `credentials`                     | `RequestCredentials`                                                   | —            | Browser credentials mode for the default proxy transport.                                    |
+| `fetch`                           | `typeof fetch`                                                         | global       | Custom fetch implementation for the default proxy transport.                                 |
+| `streamProtocol`                  | `ChatStreamProtocol`                                                   | auto         | Hint for app-owned proxy chat streams; use `'text'` for raw text.                            |
+| `id`                              | `string`                                                               | generated    | Stable chat id sent with provider requests.                                                  |
+| `threadId`                        | `string`                                                               | —            | Backend thread id sent with chat and resume requests.                                        |
+| `forwardedProps`                  | `Record<string, unknown>`                                              | —            | App props forwarded to proxy/agent backends.                                                 |
+| `agentContext`                    | `AgentContextRegistry \| AgentContextSnapshot[]`                       | —            | Runtime app context inserted into chat requests as a system message.                         |
+| `agentContextMessage`             | `AgentContextMessageOptions`                                           | —            | Customize the generated context system message id, title, or timestamp.                      |
+| `context`                         | `unknown`                                                              | —            | Client-local context passed to local tool callbacks only.                                    |
+| `generateId`                      | `IdGenerator`                                                          | `generateId` | Override automatic chat, message, tool, and stream data id generation.                       |
+| `initialMessages`                 | `Message[]`                                                            | `[]`         | Seed the message history.                                                                    |
+| `messages`                        | `Message[]`                                                            | `[]`         | AI SDK-style alias for `initialMessages`; `initialMessages` wins.                            |
+| `initialInput`                    | `string`                                                               | `''`         | Seed the composer input for the first instance of an id.                                     |
+| `defaultRequest`                  | `Partial<ChatRequest>`                                                 | `{}`         | Default options merged into every chat request.                                              |
+| `resume`                          | `boolean`                                                              | `false`      | Automatically try `resumeStream()` when the composable is created.                           |
+| `prepareStep`                     | `PrepareStep`                                                          | —            | Customize each assistant step request before the final send hook.                            |
+| `prepareSendMessagesRequest`      | `PrepareSendMessagesRequest`                                           | —            | Customize the final provider request before send/regenerate calls.                           |
+| `prepareReconnectToStreamRequest` | `PrepareReconnectToStreamRequest`                                      | —            | Customize the final resume request before `resumeStream()` reconnects.                       |
+| `tools`                           | `Tool[] \| ToolSet`                                                    | —            | Default tool list or AI SDK-style tool map.                                                  |
+| `activeTools`                     | `string[]`                                                             | —            | Filter the resolved tool list by function name for this chat/request.                        |
+| `toolChoice`                      | `'auto' \| 'none' \| 'required' \| { ... }`                            | —            | Default tool choice.                                                                         |
+| `toolHandlers`                    | `Record<string, ToolCallHandler>`                                      | —            | Local handlers for automatic tool execution.                                                 |
+| `requiresToolApproval`            | `ToolApprovalPredicate`                                                | —            | Return true to pause a tool call for UI approval before execution.                           |
+| `sendAutomaticallyWhen`           | `SendAutomaticallyWhen \| false`                                       | helper       | Decide whether completed tool results should trigger the next request.                       |
+| `stopWhen`                        | `StopWhen \| StopWhen[]`                                               | —            | Stop automatic tool continuation when a condition matches.                                   |
+| `maxToolRoundtrips`               | `number`                                                               | `1`          | Maximum automatic tool-call rounds after a user message.                                     |
+| `dataPartSchemas`                 | `DataPartSchemas<TData>`                                               | —            | Validate custom stream data by `dataType` before `onData`/storage.                           |
+| `messageMetadataSchema`           | `MessageMetadataSchema<TMetadata>`                                     | —            | Validate user and assistant message metadata before it is stored.                            |
+| `persist`                         | `ChatPersistOptions`                                                   | —            | Auto-save Date-safe messages to localStorage or a custom `Storage`.                          |
+| `maxRetries`                      | `number`                                                               | `0`          | Retry attempts for failures before the first stream chunk.                                   |
+| `retryDelayMs`                    | `number \| (context: RetryContext) => number`                          | `0`          | Delay before each retry.                                                                     |
+| `shouldRetry`                     | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —            | Override the default retryable error decision.                                               |
+| `onRetry`                         | `(error: Error, context: RetryContext) => void`                        | —            | Called before a retry attempt waits and re-runs.                                             |
+| `throttleMs`                      | `number`                                                               | —            | Minimum wait in ms between reactive message and `streamData` updates.                        |
+| `experimental_throttle`           | `number`                                                               | —            | AI SDK-compatible alias. Prefer `throttleMs` in new code.                                    |
+| `onChunk`                         | `(chunk: ChatChunk, assistant: Message) => void`                       | —            | Called after each raw chat chunk is applied to the assistant message.                        |
+| `onData`                          | `(part: StreamDataPart<TData>) => void`                                | —            | Called for custom stream data parts, including transient parts.                              |
+| `onRequest`                       | `(info: ChatRequestInfo) => void`                                      | —            | Called with the final chat/resume request before the provider runs.                          |
+| `onResponse`                      | `(info: ChatResponseInfo) => void`                                     | —            | Called after the provider returns a chat/resume stream or no stream.                         |
+| `onToolCall`                      | `ToolCallCallback`                                                     | —            | AI SDK-style `({ toolCall })` callback; legacy `(args, context)` is still accepted.          |
+| `onToolResult`                    | `(result: unknown, context: ToolResultHandlerContext) => void`         | —            | Called after a local tool handler returns a `tool` message.                                  |
+| `onUpdate`                        | `(m: Message) => void`                                                 | —            | Called for every streamed chunk update.                                                      |
+| `onFinish`                        | `ChatFinishCallback`                                                   | —            | AI SDK-style `({ message, messages })` callback; legacy `(message, info)` is still accepted. |
+| `onError`                         | `(e: Error) => void`                                                   | —            | Called on any error; falls back to `error` ref.                                              |
 
 ## File attachments
 
@@ -232,10 +237,13 @@ if (restored) setMessages(restored)
 Use `validateMessages(raw)` when you only need a boolean gate before accepting
 or importing a payload. Use `safeValidateMessages(raw)` when you want either
 restored messages or a validation error without throwing. Use
-`validateUIMessages(raw)` or `safeValidateUIMessages(raw)` when you are porting
-AI SDK server code that already validates persisted UI messages. All validation
-helpers accept `messageMetadataSchema` and `dataPartSchemas`, so imported
-payloads can be checked with the same schemas used by `useChat()`:
+`validateUIMessages(raw, options)` or `safeValidateUIMessages({ messages,
+metadataSchema, dataSchemas, tools })` when you are porting AI SDK server code
+that already validates persisted UI messages. The UI-message helpers accept the
+AI SDK-style `metadataSchema` and `dataSchemas` aliases, plus `tools` for
+checking restored tool inputs. All validation helpers accept
+`messageMetadataSchema` and `dataPartSchemas`, so imported payloads can be
+checked with the same schemas used by `useChat()`:
 
 ```ts
 const raw = await loadChat('support-thread-1')
@@ -254,6 +262,22 @@ const result = safeValidateMessages(raw, {
 
 if (!result.success) throw result.error
 setMessages(result.messages)
+```
+
+The AI SDK-style object form exposes both `messages` and `data` on successful
+safe validation:
+
+```ts
+const result = safeValidateUIMessages({
+  messages: raw,
+  metadataSchema: { type: 'object' },
+  dataSchemas: {
+    'data-progress': { type: 'object' }
+  },
+  tools
+})
+
+if (result.success) setMessages(result.data)
 ```
 
 Override `storage`, `serialize`, or `deserialize` only when you need a custom
@@ -301,6 +325,29 @@ text parts, converts source/file/custom data chunks into `source`, `file`, and
 `serializeMessages()` and `deserializeMessages()` preserve valid
 `Message.parts`, so persisted chats can restore the same structured rendering
 state.
+
+### Tool render rows
+
+Use `getToolRenderParts()` when a chat surface needs a stable, headless renderer
+contract for tool calls, approvals, and results. It reads `Message.parts`,
+assistant `toolCalls`, `role: 'tool'` result messages, and optional
+`pendingToolCalls` from `useChat()`; it does not register global renderers or
+render UI for you.
+
+```ts
+const toolRows = computed(() =>
+  getToolRenderParts({
+    messages: chat.messages.value,
+    pendingToolCalls: chat.pendingToolCalls.value
+  })
+)
+```
+
+Each `ToolRenderPart` has `toolCallId`, `toolName`, original `state`,
+normalized `status`, `pending`, optional `input` / `inputText`, optional
+`output`, optional `errorText`, and the `messageId` that contributed the current
+row. `status` is one of `'inProgress'`, `'executing'`, `'awaitingAction'`,
+`'complete'`, or `'error'`.
 
 ## Return value
 
@@ -388,11 +435,12 @@ The same snapshots are also stored in `lastRequest` and `lastResponse`, so a
 debug panel can render the latest provider attempt without duplicating callback
 state.
 
-`onFinish(message, info)` receives the final assistant message and a snapshot
-with `info.message`, `info.messages`, `info.isAbort`, `info.isError`,
-`info.isDisconnect`, and `info.finishReason`. If a stream fails after the
-assistant message has started, `onFinish` runs with `isError: true` and
-`isDisconnect: true` before `onError`.
+`onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
+receives the final assistant message and a snapshot of the conversation. The
+legacy `onFinish(message, info)` signature is still accepted for existing code.
+That legacy `info` object continues to expose `info.isDisconnect`.
+If a stream fails after the assistant message has started, `onFinish` runs with
+`isError: true` and `isDisconnect: true` before `onError`.
 
 ## Custom ids
 
@@ -431,6 +479,34 @@ await append('Use provider-specific options.', {
 
 `body` is merged before explicit fields such as `messages`, `model`, and
 `stream`, so typed request options win if a key conflicts.
+
+## Agent context
+
+Use `useAgentContextRegistry()` when the model or backend needs current Vue app
+state, such as route, selected records, filters, or user preferences.
+
+```ts
+const agentContext = useAgentContextRegistry()
+
+useAgentContext(agentContext, {
+  description: 'Current ticket filters',
+  value: () => ({
+    status: filters.status,
+    owner: filters.owner
+  })
+})
+
+const chat = useChat({
+  api: '/api/chat',
+  agentContext,
+  agentContextMessage: { title: 'Runtime context' }
+})
+```
+
+The context is resolved while preparing each request, inserted after leading
+system messages, and kept out of the visible `messages` history. If your backend
+expects structured JSON instead, call `agentContext.toJSON()` inside
+`prepareSendMessagesRequest()` and place it in `body`.
 
 ## Message pruning
 
@@ -625,8 +701,8 @@ const { messages, append } = useChat({
       return { city, temp: 22, conditions: 'sunny' }
     }
   },
-  onToolCall(args, context) {
-    console.debug('tool call', context.toolCall.function.name, args)
+  onToolCall({ toolCall }) {
+    console.debug('tool call', toolCall.toolName, toolCall.input)
   },
   onToolResult(result, context) {
     console.debug('tool result', context.resultMessage.toolCallId, result)
@@ -672,6 +748,33 @@ const chat = useChat({
 })
 ```
 
+When handlers live outside the tool definitions, use `defineToolHandlers()` to
+keep handler arguments aligned with the `ToolSet`:
+
+```ts
+import { defineToolHandlers, tool, useChat, type InferUITools } from 'vue-ai-hooks'
+
+const tools = {
+  getWeather: tool<{ city: string }, { temp: number }>({
+    description: 'Get the weather in a city'
+  })
+}
+
+type AppTools = InferUITools<typeof tools>
+// AppTools['getWeather']['input'] is { city: string }
+// AppTools['getWeather']['output'] is { temp: number }
+
+const chat = useChat({
+  provider,
+  tools,
+  toolHandlers: defineToolHandlers(tools, {
+    getWeather(input) {
+      return weatherService.current(input.city)
+    }
+  })
+})
+```
+
 Provider requests still receive the normalized OpenAI-compatible `Tool[]`.
 If you also pass `toolHandlers`, explicit handlers override `execute` functions
 from the helper definitions.
@@ -681,9 +784,12 @@ values.
 
 Use `context` for browser-local dependencies that tools need, such as a store,
 session snapshot, or client service handle. It is passed to `toolHandlers`,
-`requiresToolApproval`, `onToolCall`, and `onToolResult` through
-`ToolCallHandlerContext.context`; it is not copied into provider requests. Use
-`forwardedProps` instead when a proxy/agent backend needs JSON context.
+`requiresToolApproval`, legacy `onToolCall(args, context)`, and `onToolResult`
+through `ToolCallHandlerContext.context`; it is not copied into provider
+requests. AI SDK-style `onToolCall({ toolCall, context })` receives the same
+runtime context plus `toolCall.toolName`, `toolCall.toolCallId`,
+`toolCall.input`, and `toolCall.dynamic`. Use `forwardedProps` instead when a
+proxy/agent backend needs JSON context.
 
 The library handles the streaming accumulation of `tool_calls` deltas into the
 final `toolCalls[]` on the assistant message. OpenAI-compatible providers use

@@ -11,7 +11,8 @@ Public exports: `parseSSE`, `readUIMessageStream`, `toChatChunks`,
 `PipeUIMessageStreamToResponseOptions`, `ServerResponseLike`,
 `UIMessageStreamPart`, `UIMessageStreamSource`, `UIMessageStreamWriter`, and
 `UIMessageStreamParser`. Agent adapter exports: `agentEventToChatChunk`,
-`agentEventToUIMessageStreamPart`, `readAgentEventStream`, `AgentEvent`,
+`agentEventToUIMessageStreamPart`, `readAgentEvents`,
+`readAgentEventStream`, `AgentEvent`, `AgentInterruptEvent`,
 `AgentEventAdapterOptions`, `AgentEventSource`, and
 `ReadAgentEventStreamOptions`.
 
@@ -28,6 +29,7 @@ your UI still wants the normal `ChatChunk` or AI SDK UI message stream contract:
 import {
   agentEventToUIMessageStreamPart,
   createUIMessageStreamResponse,
+  readAgentEvents,
   readAgentEventStream,
   type AgentEvent
 } from 'vue-ai-hooks'
@@ -37,11 +39,16 @@ async function* runAgent(): AsyncGenerator<AgentEvent> {
   yield { type: 'progress', id: 'lookup', label: 'Looking up account' }
   yield { type: 'tool-call', id: 'call_1', name: 'lookupAccount', input: { id: 'acct_1' } }
   yield { type: 'tool-result', id: 'call_1', name: 'lookupAccount', output: { status: 'active' } }
+  yield { type: 'interrupt', id: 'approval_1', name: 'approveCharge' }
   yield { type: 'finish', finishReason: 'stop' }
 }
 
 for await (const chunk of readAgentEventStream({ events: runAgent() })) {
   console.log(chunk)
+}
+
+for await (const event of readAgentEvents(runAgent())) {
+  console.log(event.type)
 }
 
 export function POST() {
@@ -58,17 +65,20 @@ async function* toParts(events: AsyncIterable<AgentEvent>) {
 ```
 
 `agentEventToChatChunk(event, options?)` converts one `AgentEvent` to a
-`ChatChunk`. `readAgentEventStream({ events, signal, ...options })` accepts an
-`AgentEventSource`: iterable, async iterable, or `ReadableStream<AgentEvent>`.
+`ChatChunk`. `readAgentEvents(events, signal?)` reads raw `AgentEvent` values
+without converting them. `readAgentEventStream({ events, signal, ...options })`
+accepts an `AgentEventSource`: iterable, async iterable, or
+`ReadableStream<AgentEvent>`.
 `agentEventToUIMessageStreamPart(event, options?)` converts one event to a
 `UIMessageStreamPart` for proxy routes.
 
 `AgentEventAdapterOptions` supports:
 
-| Option             | Type             | Default               | Description                             |
-| ------------------ | ---------------- | --------------------- | --------------------------------------- |
-| `progressDataType` | `data-${string}` | `data-agent-progress` | Data part type for progress events.     |
-| `errorDataType`    | `data-${string}` | `data-agent-error`    | Data part type for non-throwing errors. |
+| Option              | Type             | Default                | Description                             |
+| ------------------- | ---------------- | ---------------------- | --------------------------------------- |
+| `progressDataType`  | `data-${string}` | `data-agent-progress`  | Data part type for progress events.     |
+| `interruptDataType` | `data-${string}` | `data-agent-interrupt` | Data part type for interrupt events.    |
+| `errorDataType`     | `data-${string}` | `data-agent-error`     | Data part type for non-throwing errors. |
 
 For task-level guidance, see [Agent events](/guide/agent-events).
 

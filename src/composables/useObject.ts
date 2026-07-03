@@ -18,7 +18,11 @@ import { cloneMessageSnapshot, cloneRequestSnapshot } from '../utils/lifecycle'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { headersToRecord } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
-import { validateJsonSchema } from '../utils/jsonSchema'
+import {
+  schemaToJsonSchema,
+  validateJsonSchema,
+  type JsonSchemaDefinition
+} from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
@@ -55,6 +59,25 @@ export interface ObjectFinishInfo<T = unknown> {
   error: Error | undefined
 }
 
+export interface ObjectFinishCallbackOptions<T = unknown> {
+  object: T | undefined
+  text: string
+  isAbort: boolean
+  error: Error | undefined
+}
+
+export type AiSdkObjectFinishCallback<T = unknown> = (
+  options: ObjectFinishCallbackOptions<T>
+) => void | Promise<void>
+
+export type LegacyObjectFinishCallback<T = unknown> = (
+  object: T,
+  info: ObjectFinishInfo<T>
+) => void | Promise<void>
+
+export type ObjectFinishCallback<T = unknown> =
+  AiSdkObjectFinishCallback<T> | LegacyObjectFinishCallback<T>
+
 export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -65,7 +88,7 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   body?: ProxyProviderConfig['body']
   fetch?: typeof fetch
   id?: string
-  schema: Record<string, unknown>
+  schema: Record<string, unknown> | JsonSchemaDefinition<T>
   schemaName?: string
   schemaDescription?: string
   strict?: boolean
@@ -78,7 +101,7 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   onPartial?: (partialObject: DeepPartial<T>, text: string) => void
   onRequest?: (info: ObjectRequestInfo) => void
   onResponse?: (info: ObjectResponseInfo) => void
-  onFinish?: (object: T, info: ObjectFinishInfo<T>) => void
+  onFinish?: ObjectFinishCallback<T>
   onError?: (err: Error) => void
 }
 
@@ -191,6 +214,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
   const initialPartialObject =
     initialValue === undefined ? (initialObject as DeepPartial<T> | null) : initialValue
   const state = getObjectState(id.value, initialObject, initialPartialObject, initialInput)
+  const outputSchema = schemaToJsonSchema(schema)
   const {
     object,
     partialObject,
@@ -238,6 +262,17 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
     status.value = 'ready'
   }
 
+  function finishObject(finalObject: T | undefined, info: ObjectFinishCallbackOptions<T>) {
+    if (!onFinish) return
+    if (onFinish.length <= 1) {
+      void (onFinish as AiSdkObjectFinishCallback<T>)(info)
+      return
+    }
+    if (finalObject !== undefined) {
+      void (onFinish as LegacyObjectFinishCallback<T>)(finalObject, info as ObjectFinishInfo<T>)
+    }
+  }
+
   function setInput(value: string) {
     input.value = value
   }
@@ -257,7 +292,7 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
       type: 'json_schema',
       json_schema: {
         name: schemaName,
-        schema,
+        schema: outputSchema,
         strict
       }
     }
@@ -419,12 +454,24 @@ export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectR
             throw createAbortError()
           }
 
-          const finalObject = parseObject(nextText)
+          let finalObject: T
+          try {
+            finalObject = parseObject(nextText)
+          } catch (err) {
+            const e = normalizeError(err)
+            finishObject(undefined, {
+              object: undefined,
+              text: nextText,
+              isAbort: false,
+              error: e
+            })
+            throw e
+          }
           object.value = finalObject
           partialObject.value = finalObject as DeepPartial<T>
           text.value = nextText
           status.value = 'ready'
-          onFinish?.(finalObject, {
+          finishObject(finalObject, {
             object: finalObject,
             text: nextText,
             isAbort: false,

@@ -20,8 +20,8 @@ hero:
       link: https://github.com/hexinmiao96/vue-ai-hooks
 
 features:
-  - title: 十个组合式函数，一套心智模型
-    details: useChat、useCompletion、useEmbedding、useGeneration、useImage、useVideo、useSpeech、useTranscription、useRerank 和 useObject 覆盖对话、文本、向量、自定义生成任务、自有后端图片、视频、语音、转写和重排路由，以及结构化 JSON。可插拔 Provider 让你切换模型时不需要重写应用。
+  - title: 十五个组合式函数，一套心智模型
+    details: useChat、useCompletion、useEmbedding、useGeneration、useImage、useVideo、useSpeech、useTranscription、useRerank、useObject、useChatThreads、useAgentContext、useAgentCapabilities、useAgentRun 和 usePromptSuggestions 覆盖对话、文本、向量、媒体路由、结构化 JSON、threads、运行时应用上下文、runtime 能力发现、无 UI agent run 状态和输入区任务入口。先按产品任务选择，再进入 API 参考。
   - title: 可以先不配置 API key
     details: 聊天示例内置确定性的本地 Provider，可直接体验工具审批；proxy 模板也能在本地返回模拟流式片段。先跑通 UI，再接真实模型。
   - title: 默认支持流式响应
@@ -37,7 +37,7 @@ features:
   - title: 重试控制
     details: 通过 maxRetries、retryDelayMs、shouldRetry 和 onRetry 显式处理临时 Provider 失败。流式请求只会在首个 chunk 前重试，避免重复输出。
   - title: 一致的状态模型
-    details: status、isLoading、error 和 clearError 在聊天、补全、向量、图片生成、语音生成、转写、自定义生成与结构化对象输出中使用同一套生命周期语义。
+    details: status、isLoading、error 和 clearError 在聊天、补全、向量、图片生成/编辑、语音生成、转写、自定义生成与结构化对象输出中使用同一套生命周期语义。
   - title: TypeScript 优先
     details: 严格模式、无 any 泄漏、完整 IDE 自动补全。能写出来的调用，也能读懂它的类型。
   - title: 小而轻

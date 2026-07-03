@@ -92,6 +92,52 @@ describe('useImage', () => {
     expect(images.value).toHaveLength(1)
   })
 
+  it('posts image edit requests with source images, masks, and trace metadata', async () => {
+    const response = {
+      images: [{ url: 'https://cdn.example.test/edited.png', mediaType: 'image/png' }],
+      model: 'edit-model'
+    }
+    const fetcher = vi.fn(async () => jsonResponse(response))
+    const { editImage, image, result, lastRequest, lastResponse } = useImage({
+      body: { tenantId: 'tenant_1' },
+      fetch: fetcher as unknown as typeof fetch
+    })
+
+    await expect(
+      editImage('replace the sky', {
+        image: { url: 'https://cdn.example.test/source.png', mediaType: 'image/png' },
+        mask: 'data:image/png;base64,bWFzaw==',
+        model: 'edit-model',
+        body: { workflow: 'image-edit' }
+      })
+    ).resolves.toMatchObject({
+      image: response.images[0],
+      images: response.images
+    })
+
+    const [, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
+    expect(JSON.parse(init.body as string)).toMatchObject({
+      tenantId: 'tenant_1',
+      workflow: 'image-edit',
+      operation: 'edit',
+      prompt: 'replace the sky',
+      image: { url: 'https://cdn.example.test/source.png', mediaType: 'image/png' },
+      mask: 'data:image/png;base64,bWFzaw==',
+      model: 'edit-model'
+    })
+    expect(image.value).toEqual(response.images[0])
+    expect(result.value?.model).toBe('edit-model')
+    expect(lastRequest.value).toMatchObject({
+      operation: 'edit',
+      prompt: 'replace the sky',
+      body: expect.objectContaining({ operation: 'edit' })
+    })
+    expect(lastResponse.value).toMatchObject({
+      operation: 'edit',
+      result: { model: 'edit-model' }
+    })
+  })
+
   it('normalizes array and empty image responses', async () => {
     const arrayFetcher = vi.fn(async () =>
       jsonResponse([
@@ -153,6 +199,9 @@ describe('useImage', () => {
 
     generation.handleInputChange({ target: {} })
     await expect(generation.generateImage()).rejects.toThrow('requires a prompt')
+    await expect(generation.editImage('missing source', { image: '' })).rejects.toThrow(
+      'requires an image'
+    )
 
     generation.setInput('dynamic prompt')
     await generation.generateImage()

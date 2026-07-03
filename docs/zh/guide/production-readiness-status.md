@@ -13,7 +13,7 @@ issue 仍然只记录可复现 bug。
 | 方向            | 当前状态           | 证据                                                                                     |
 | --------------- | ------------------ | ---------------------------------------------------------------------------------------- |
 | 调试检查        | 可接入应用         | `inspect()`、`inspectRequestTrace()`、timeline、retry records、provider trace、脱敏 curl |
-| 任务型 demo     | 可用于上手         | Vue 审批 demo、React chat/completion/object demo、proxy、AI SDK stream、生产检查清单     |
+| 任务型 demo     | 可用于上手         | Vue 审批 demo、React chat/completion/object demo、图片编辑、proxy、AI SDK stream         |
 | Provider preset | 可经应用代理使用   | OpenAI-compatible、DeepSeek、OpenRouter、Gemini、Anthropic、Moonshot、智谱、Ollama、vLLM |
 | React 支持      | 迁移桥定位         | `vue-ai-hooks/react` 暴露 `useChat`、`useCompletion` 和 `useObject`                      |
 | 工具审批        | 可作为后端契约接入 | 持久审批记录、renderer contract、重放 `runId`、过期 `revision` 冲突                      |
@@ -34,7 +34,7 @@ pnpm production:readiness
 node scripts/production-readiness-local.mjs
 ```
 
-这条门禁覆盖 format、secret、source hygiene、lint、typecheck、test hygiene、coverage、build、dist、size、pack、install、changelog、metadata、community health、workflow、API docs、docs UX、proxy、threaded chat、UI message stream、tool approval、agent bridge、markdown links、examples 和 docs build。
+这条门禁覆盖 format、secret、source hygiene、lint、typecheck、test hygiene、coverage、build、dist、size、pack、install、changelog、metadata、community health、workflow、API docs、docs UX、proxy、图片编辑、threaded chat、UI message stream、tool approval、agent bridge、markdown links、examples 和 docs build。
 
 ## 发布边界
 

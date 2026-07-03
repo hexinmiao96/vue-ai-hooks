@@ -1,6 +1,14 @@
 import type { ChatChunk, MessagePart, TokenUsage } from '../types'
 import type { UIMessageStreamPart } from './stream'
 
+export interface AgentInterruptEvent {
+  type: 'interrupt'
+  id?: string
+  name: string
+  value?: unknown
+  transient?: boolean
+}
+
 export type AgentEvent =
   | {
       type: 'message-delta'
@@ -59,6 +67,7 @@ export type AgentEvent =
       metadata?: Record<string, unknown>
       transient?: boolean
     }
+  | AgentInterruptEvent
 
 export type AgentEventSource =
   Iterable<AgentEvent> | AsyncIterable<AgentEvent> | ReadableStream<AgentEvent>
@@ -66,6 +75,8 @@ export type AgentEventSource =
 export interface AgentEventAdapterOptions {
   /** Data part type for progress events. */
   progressDataType?: `data-${string}`
+  /** Data part type for interrupt events. */
+  interruptDataType?: `data-${string}`
   /** Data part type for non-throwing agent error events. */
   errorDataType?: `data-${string}`
 }
@@ -76,6 +87,7 @@ export interface ReadAgentEventStreamOptions extends AgentEventAdapterOptions {
 }
 
 const defaultProgressDataType = 'data-agent-progress'
+const defaultInterruptDataType = 'data-agent-interrupt'
 const defaultErrorDataType = 'data-agent-error'
 
 /** Convert one lightweight agent event into a normalized chat chunk. */
@@ -200,6 +212,18 @@ export function agentEventToChatChunk(
     }
   }
 
+  if (event.type === 'interrupt') {
+    const dataType = options.interruptDataType ?? defaultInterruptDataType
+    const data = interruptPayload(event)
+    return {
+      data,
+      dataType,
+      ...(event.id ? { dataId: event.id } : {}),
+      ...(event.transient !== undefined ? { transient: event.transient } : {}),
+      ...(event.transient ? {} : { parts: [dataMessagePart(dataType, event.id, data)] })
+    }
+  }
+
   const dataType = options.errorDataType ?? defaultErrorDataType
   const data = {
     errorText: event.errorText,
@@ -290,6 +314,15 @@ export function agentEventToUIMessageStreamPart(
     }
   }
 
+  if (event.type === 'interrupt') {
+    return {
+      type: options.interruptDataType ?? defaultInterruptDataType,
+      data: interruptPayload(event),
+      ...(event.id ? { id: event.id } : {}),
+      ...(event.transient !== undefined ? { transient: event.transient } : {})
+    }
+  }
+
   return {
     type: options.errorDataType ?? defaultErrorDataType,
     data: {
@@ -298,6 +331,14 @@ export function agentEventToUIMessageStreamPart(
     },
     ...(event.transient !== undefined ? { transient: event.transient } : {})
   }
+}
+
+/** Read raw lightweight agent events from an iterable, async iterable, or stream. */
+export async function* readAgentEvents(
+  events: AgentEventSource,
+  signal?: AbortSignal
+): AsyncGenerator<AgentEvent> {
+  yield* agentEvents(events, signal)
 }
 
 /** Read an iterable or stream of lightweight agent events as normalized chat chunks. */
@@ -349,6 +390,14 @@ function progressPayload(event: Extract<AgentEvent, { type: 'progress' }>) {
     ...(event.label ? { label: event.label } : {}),
     ...(typeof event.value === 'number' ? { value: event.value } : {}),
     ...(event.data === undefined ? {} : { data: event.data })
+  }
+}
+
+function interruptPayload(event: AgentInterruptEvent) {
+  return {
+    ...(event.id ? { id: event.id } : {}),
+    name: event.name,
+    ...(event.value === undefined ? {} : { value: event.value })
   }
 }
 

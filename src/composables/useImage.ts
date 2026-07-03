@@ -2,8 +2,10 @@ import { ref, shallowRef, type Ref } from 'vue'
 import type {
   AiRequestStatus,
   GeneratedImage,
+  ImageEditInput,
   ImageGenerationRequest,
   ImageGenerationResult,
+  ImageOperation,
   RetryOptions
 } from '../types'
 import {
@@ -32,6 +34,7 @@ export interface ImageGenerationRequestInfo {
   attempt: number
   api: string
   credentials?: RequestCredentials
+  operation: ImageOperation
   prompt: string
   request: ImageGenerationRequest
   body?: Record<string, unknown>
@@ -58,6 +61,13 @@ export interface UseImageOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+export interface ImageEditOptions extends Omit<
+  Partial<ImageGenerationRequest>,
+  'prompt' | 'operation' | 'image'
+> {
+  image: ImageEditInput | ImageEditInput[]
+}
+
 export interface UseImageReturn {
   input: Ref<string>
   image: Ref<GeneratedImage | null>
@@ -76,6 +86,10 @@ export interface UseImageReturn {
   generateImage: (
     prompt?: string,
     options?: Partial<ImageGenerationRequest>
+  ) => Promise<ImageGenerationResult>
+  editImage: (
+    prompt: string | undefined,
+    options: ImageEditOptions
   ) => Promise<ImageGenerationResult>
   stop: () => void
   setInput: (value: string) => void
@@ -197,6 +211,7 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
       attempt,
       api,
       credentials,
+      operation: request.operation ?? 'generate',
       prompt: request.prompt,
       request: cloneRequestSnapshot(request),
       body: { ...body },
@@ -234,13 +249,19 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     return res
   }
 
-  async function generateImage(
+  async function runImageRequest(
+    operation: ImageOperation,
     prompt?: string,
     requestOptions: Partial<ImageGenerationRequest> = {}
   ) {
     const finalPrompt = prompt ?? input.value
     if (!finalPrompt) {
-      throw new Error('generateImage() requires a prompt (either as argument or via input.value)')
+      throw new Error(`${operation === 'edit' ? 'editImage' : 'generateImage'}() requires a prompt`)
+    }
+    if (operation === 'edit' && !hasImageEditInput(requestOptions.image)) {
+      throw new Error(
+        'editImage() requires an image URL, data URL, base64 payload, or image object'
+      )
     }
 
     const controller = new AbortController()
@@ -263,6 +284,7 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
             ...requestOptions,
             ...(body ? { body } : {}),
             prompt: finalPrompt,
+            ...(operation === 'edit' ? { operation } : {}),
             signal: controller.signal
           }
           const res = await postImage(request, retryAttempt + 1)
@@ -299,6 +321,17 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     }
   }
 
+  async function generateImage(
+    prompt?: string,
+    requestOptions: Partial<ImageGenerationRequest> = {}
+  ) {
+    return runImageRequest('generate', prompt, requestOptions)
+  }
+
+  async function editImage(prompt: string | undefined, requestOptions: ImageEditOptions) {
+    return runImageRequest('edit', prompt, requestOptions)
+  }
+
   async function handleSubmit(
     event?: { preventDefault?: () => void },
     requestOptions: Partial<ImageGenerationRequest> = {}
@@ -322,6 +355,7 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     inspect,
     generate: generateImage,
     generateImage,
+    editImage,
     stop,
     setInput,
     handleInputChange,
@@ -379,4 +413,11 @@ function isGeneratedImage(value: unknown): value is GeneratedImage {
     typeof value.mediaType === 'string' ||
     typeof value.revisedPrompt === 'string'
   )
+}
+
+function hasImageEditInput(value: unknown): value is ImageEditInput | ImageEditInput[] {
+  if (Array.isArray(value)) return value.some(hasImageEditInput)
+  if (typeof value === 'string') return value.trim().length > 0
+  if (!isRecord(value)) return false
+  return typeof value.url === 'string' || typeof value.base64 === 'string'
 }

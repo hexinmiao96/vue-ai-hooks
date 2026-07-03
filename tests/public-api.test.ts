@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref, type ComputedRef, type Ref } from 'vue'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   AiHooksError,
@@ -9,6 +9,8 @@ import {
   classifyInspectionError,
   convertToModelMessages,
   cosineSimilarity,
+  defineToolHandlers,
+  createAgentContextMessage,
   createIdGenerator,
   createInspectionCurl,
   createUIMessageStream,
@@ -19,10 +21,12 @@ import {
   deserializeMessages,
   DirectChatTransport,
   dynamicTool,
+  extractAgentCapabilities,
   fallbackProvider,
   formatSSEData,
   gemini,
   generateId,
+  getToolRenderParts,
   hasToolCall,
   experimental_useObject,
   inspectRequestTrace,
@@ -38,6 +42,7 @@ import {
   pipeUIMessageStreamToResponse,
   pruneMessages,
   proxyProvider,
+  readAgentEvents,
   readAgentEventStream,
   readUIMessageStream,
   safeValidateMessages,
@@ -49,8 +54,16 @@ import {
   validateMessages,
   validateUIMessages,
   vllm,
+  formatAgentContexts,
+  resolveAgentContexts,
+  summarizeAgentCapabilities,
+  useAgentCapabilities,
+  useAgentContext,
+  useAgentContextRegistry,
+  useAgentRun,
   useChat,
   useChatThreads,
+  usePromptSuggestions,
   useCompletion,
   useEmbedding,
   useGeneration,
@@ -61,6 +74,7 @@ import {
   useVideo,
   useTranscription,
   usePersist,
+  withAgentContextMessage,
   serializeChatThreads,
   serializeChatThreadsState,
   deserializeChatThreads,
@@ -76,12 +90,44 @@ import type {
   AgentEvent,
   AgentEventAdapterOptions,
   AgentEventSource,
+  AgentCapabilities,
+  AgentCapabilitiesRequestInfo,
+  AgentCapabilitiesResponseInfo,
+  AgentCapabilitiesSupportSummary,
+  AgentCapabilityTool,
+  AgentExecutionCapabilities,
+  AgentHumanInTheLoopCapabilities,
+  AgentIdentityCapabilities,
+  AgentInfoAgent,
+  AgentInfoResponse,
+  AgentMultiAgentCapabilities,
+  AgentMultimodalCapabilities,
+  AgentMultimodalInputCapabilities,
+  AgentMultimodalOutputCapabilities,
+  AgentOutputCapabilities,
+  AgentReasoningCapabilities,
+  AgentStateCapabilities,
+  AgentToolsCapabilities,
+  AgentTransportCapabilities,
+  AgentInterruptEvent,
+  AgentRunFinishInfo,
+  AgentRunHandler,
+  AgentRunRequest,
+  AgentRunStatus,
+  AgentContextInput,
+  AgentContextMessageOptions,
+  AgentContextRegistry,
+  AgentContextSerializable,
+  AgentContextSnapshot,
+  AgentContextSource,
   AiRequestStatus,
   AiSdkSendChatTrigger,
   AddToolOutputOptions,
   AddToolResultOptions,
   AppendChatOptions,
+  AiSdkChatFinishCallback,
   AnthropicConfig,
+  ChatFinishCallback,
   ChatFinishInfo,
   ChatOptions,
   ChatChunk,
@@ -134,15 +180,22 @@ import type {
   GenerationRequestInfo,
   GenerationResponseInfo,
   GenerationRunContext,
+  GetToolRenderPartsOptions,
   IdGenerator,
   GeneratedAudio,
   GeneratedImage,
+  ImageEditInput,
+  ImageEditOptions,
   GeneratedVideo,
   ImageGenerationRequest,
   ImageGenerationRequestInfo,
   ImageGenerationResponseInfo,
   ImageGenerationResult,
+  ImageOperation,
   ImageUrlPart,
+  InferToolInput,
+  InferToolOutput,
+  InferUITools,
   InspectionCurlOptions,
   InspectionErrorCategory,
   InspectionErrorSummary,
@@ -167,10 +220,20 @@ import type {
   MessageSourcePart,
   MessageTextPart,
   MessageToolPart,
+  UIDataTypes,
+  UIMessage,
+  UIMessageDataPart,
+  UIMessagePart,
+  UIMessageToolPart,
+  UITools,
   MoonshotConfig,
   OllamaConfig,
   OpenAiLikeConfig,
   OpenRouterConfig,
+  AiSdkObjectFinishCallback,
+  LegacyObjectFinishCallback,
+  ObjectFinishCallback,
+  ObjectFinishCallbackOptions,
   ObjectFinishInfo,
   ObjectRequestInfo,
   ObjectResponseInfo,
@@ -180,6 +243,12 @@ import type {
   PrepareSendMessagesRequestOptions,
   PrepareStep,
   PrepareStepOptions,
+  PromptSuggestion,
+  PromptSuggestionFilter,
+  PromptSuggestionFilterContext,
+  PromptSuggestionInput,
+  PromptSuggestionLoader,
+  PromptSuggestionLoaderContext,
   PruneMessagesOptions,
   PruneReasoningStrategy,
   PruneToolCallsOption,
@@ -193,6 +262,8 @@ import type {
   CreateUIMessageStreamResponseOptions,
   PipeUIMessageStreamToResponseOptions,
   ReadAgentEventStreamOptions,
+  LoadAgentCapabilitiesOptions,
+  ResumeAgentRunOptions,
   RegenerateChatOptions,
   ReadUIMessageStreamOptions,
   RerankDocument,
@@ -245,16 +316,26 @@ import type {
   JsonSchemaDefinition,
   ToolDefinition,
   ToolExecute,
+  ToolHandlerFor,
+  ToolHandlersFor,
   ToolInputSchema,
   ToolModelOutput,
   ToolModelOutputContext,
+  ToolRenderPart,
+  ToolRenderStatus,
   ToolSet,
   ToolApprovalResponse,
   ToolApprovalPredicate,
   ToolCall,
+  LegacyChatFinishCallback,
+  AiSdkToolCallCallback,
+  LegacyToolCallCallback,
+  ToolCallCallback,
+  ToolCallCallbackOptions,
   ToolCallHandler,
   ToolCallHandlerContext,
   ToolResultHandlerContext,
+  UIToolCall,
   ZhipuConfig,
   ZhipuEndpoint,
   ServerResponseLike,
@@ -266,6 +347,13 @@ import type {
   UseChatThreadsOptions,
   UseChatThreadsReturn,
   UseChatReturn,
+  UseAgentCapabilitiesOptions,
+  UseAgentCapabilitiesReturn,
+  StartAgentRunOptions,
+  UseAgentRunOptions,
+  UseAgentRunReturn,
+  UsePromptSuggestionsOptions,
+  UsePromptSuggestionsReturn,
   ValidateMessagesOptions,
   ValidateUIMessagesOptions,
   UpdateChatThreadInput,
@@ -290,15 +378,24 @@ import type {
   UsePersistOptions
 } from 'vue-ai-hooks'
 import type {
+  ReactAiSdkChatFinishCallback,
+  ReactLegacyChatFinishCallback,
+  ReactLegacyObjectFinishCallback,
   UseReactChatOptions,
   UseReactChatReturn,
   UseReactCompletionOptions,
   UseReactCompletionReturn,
+  ReactChatFinishCallback,
+  ReactAiSdkCompletionFinishCallback,
+  ReactLegacyCompletionFinishCallback,
+  ReactCompletionFinishInfo,
   ReactCompletionRequestInfo,
   ReactCompletionResponseInfo,
+  ReactObjectFinishCallback,
   UseReactObjectOptions,
   UseReactObjectReturn,
   ReactObjectDeepPartial,
+  ReactObjectFinishInfo,
   ReactObjectRequestInfo,
   ReactObjectResponseInfo
 } from 'vue-ai-hooks/react'
@@ -319,21 +416,41 @@ describe('public API types', () => {
   it('exports the React subpath without changing the Vue root entry', () => {
     const reactOptions: UseReactChatOptions = { provider }
     const reactCompletionOptions: UseReactCompletionOptions = { provider }
+    const answerSchema = jsonSchema<{ answer: string }>({
+      type: 'object',
+      properties: { answer: { type: 'string' } }
+    })
     const reactObjectOptions: UseReactObjectOptions<{ answer: string }> = {
       provider,
-      schema: { type: 'object', properties: { answer: { type: 'string' } } }
+      schema: answerSchema
     }
 
     expect(typeof useReactChat).toBe('function')
     expect(typeof useReactCompletion).toBe('function')
     expect(typeof useReactObject).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
+    expectTypeOf<
+      NonNullable<UseReactChatOptions['onFinish']>
+    >().toEqualTypeOf<ReactChatFinishCallback>()
+    expectTypeOf<ReactChatFinishCallback>().toMatchTypeOf<
+      ReactAiSdkChatFinishCallback | ReactLegacyChatFinishCallback
+    >()
+    expectTypeOf<
+      NonNullable<UseReactChatOptions['onFinishLegacy']>
+    >().toEqualTypeOf<ReactLegacyChatFinishCallback>()
     expectTypeOf<UseReactChatReturn>().toMatchTypeOf<{
       messages: Message[]
       input: string
       append: (content: string | Message) => Promise<void>
     }>()
     expectTypeOf(reactCompletionOptions).toMatchTypeOf<UseReactCompletionOptions>()
+    expectTypeOf<
+      NonNullable<UseReactCompletionOptions['onFinish']>
+    >().toEqualTypeOf<ReactAiSdkCompletionFinishCallback>()
+    expectTypeOf<
+      NonNullable<UseReactCompletionOptions['onFinishLegacy']>
+    >().toEqualTypeOf<ReactLegacyCompletionFinishCallback>()
+    expectTypeOf<ReactCompletionFinishInfo>().toMatchTypeOf<CompletionFinishInfo>()
     expectTypeOf<ReturnType<typeof useReactCompletion>>().toEqualTypeOf<UseReactCompletionReturn>()
     expectTypeOf<UseReactCompletionReturn>().toMatchTypeOf<{
       completion: string
@@ -346,6 +463,18 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactCompletionReturn['lastResponse']
     >().toEqualTypeOf<ReactCompletionResponseInfo | null>()
+    expectTypeOf<ReactObjectFinishInfo<{ answer: string }>>().toMatchTypeOf<{
+      object: { answer: string }
+      text: string
+      isAbort: boolean
+      error: Error | undefined
+    }>()
+    expectTypeOf<
+      NonNullable<UseReactObjectOptions<{ answer: string }>['onFinish']>
+    >().toEqualTypeOf<ReactObjectFinishCallback<{ answer: string }>>()
+    expectTypeOf<
+      NonNullable<UseReactObjectOptions<{ answer: string }>['onFinishLegacy']>
+    >().toEqualTypeOf<ReactLegacyObjectFinishCallback<{ answer: string }>>()
     expectTypeOf(reactObjectOptions).toMatchTypeOf<UseReactObjectOptions<{ answer: string }>>()
     expectTypeOf<ReturnType<typeof useReactObject<{ answer: string }>>>().toEqualTypeOf<
       UseReactObjectReturn<{ answer: string }>
@@ -517,13 +646,145 @@ describe('public API types', () => {
       name: 'lookup',
       input: { q: 'vue' }
     }
-    const agentOptions: AgentEventAdapterOptions = { progressDataType: 'data-agent-progress' }
+    const agentInterrupt: AgentInterruptEvent = {
+      type: 'interrupt',
+      id: 'approval_1',
+      name: 'approveCharge',
+      value: { amount: 49 }
+    }
+    const agentOptions: AgentEventAdapterOptions = {
+      progressDataType: 'data-agent-progress',
+      interruptDataType: 'data-agent-interrupt'
+    }
     const agentSource: AgentEventSource = [agentEvent]
     const readAgentOptions: ReadAgentEventStreamOptions = { events: agentSource, ...agentOptions }
+    const agentCapabilities: AgentCapabilities = {
+      identity: { name: 'Docs agent', type: 'langgraph' },
+      transport: { streaming: true, resumable: true },
+      tools: { supported: true, clientProvided: true, items: [{ name: 'lookup' }] },
+      output: { structuredOutput: true },
+      state: { snapshots: true, deltas: true },
+      multiAgent: { supported: true, subAgents: [{ name: 'planner' }] },
+      reasoning: { supported: true },
+      multimodal: { input: { image: true }, output: { audio: true } },
+      execution: { codeExecution: true },
+      humanInTheLoop: { supported: true, approvals: true, interrupts: true },
+      custom: { rateLimit: { maxRequestsPerMinute: 60 } }
+    }
+    const agentCapabilitiesOptions: UseAgentCapabilitiesOptions = {
+      initialCapabilities: agentCapabilities,
+      loadOnInit: false
+    }
+    const agentCapabilitiesState = useAgentCapabilities(agentCapabilitiesOptions)
+    const agentRunHandler: AgentRunHandler<string, { approved: boolean }> = (request) => {
+      expectTypeOf(request).toEqualTypeOf<AgentRunRequest<string, { approved: boolean }>>()
+      return [agentEvent]
+    }
+    const agentRunOptions: UseAgentRunOptions<string, { approved: boolean }> = {
+      run: agentRunHandler,
+      onFinish(info) {
+        expectTypeOf(info).toEqualTypeOf<AgentRunFinishInfo>()
+      }
+    }
+    const agentRun = useAgentRun(agentRunOptions)
     expectTypeOf(agentEvent).toMatchTypeOf<AgentEvent>()
+    expectTypeOf(agentInterrupt).toEqualTypeOf<AgentInterruptEvent>()
     expectTypeOf(agentOptions).toEqualTypeOf<AgentEventAdapterOptions>()
     expectTypeOf(agentSource).toMatchTypeOf<AgentEventSource>()
     expectTypeOf(readAgentOptions).toEqualTypeOf<ReadAgentEventStreamOptions>()
+    expectTypeOf(agentCapabilities).toEqualTypeOf<AgentCapabilities>()
+    expectTypeOf<AgentIdentityCapabilities>().toMatchTypeOf<AgentCapabilities['identity']>()
+    expectTypeOf<AgentTransportCapabilities>().toMatchTypeOf<AgentCapabilities['transport']>()
+    expectTypeOf<AgentCapabilityTool>().toMatchTypeOf<
+      | Tool
+      | {
+          name: string
+          description?: string
+          parameters?: Record<string, unknown>
+        }
+    >()
+    expectTypeOf<AgentToolsCapabilities>().toMatchTypeOf<AgentCapabilities['tools']>()
+    expectTypeOf<AgentOutputCapabilities>().toMatchTypeOf<AgentCapabilities['output']>()
+    expectTypeOf<AgentStateCapabilities>().toMatchTypeOf<AgentCapabilities['state']>()
+    expectTypeOf<AgentMultiAgentCapabilities>().toMatchTypeOf<AgentCapabilities['multiAgent']>()
+    expectTypeOf<AgentReasoningCapabilities>().toMatchTypeOf<AgentCapabilities['reasoning']>()
+    expectTypeOf<AgentMultimodalInputCapabilities>().toMatchTypeOf<{
+      image?: boolean
+      audio?: boolean
+      video?: boolean
+      pdf?: boolean
+      file?: boolean
+    }>()
+    expectTypeOf<AgentMultimodalOutputCapabilities>().toMatchTypeOf<{
+      image?: boolean
+      audio?: boolean
+    }>()
+    expectTypeOf<AgentMultimodalCapabilities>().toMatchTypeOf<AgentCapabilities['multimodal']>()
+    expectTypeOf<AgentExecutionCapabilities>().toMatchTypeOf<AgentCapabilities['execution']>()
+    expectTypeOf<AgentHumanInTheLoopCapabilities>().toMatchTypeOf<
+      AgentCapabilities['humanInTheLoop']
+    >()
+    expectTypeOf<AgentInfoAgent>().toMatchTypeOf<{
+      id?: string
+      capabilities?: AgentCapabilities
+    }>()
+    expectTypeOf<AgentInfoResponse>().toMatchTypeOf<{
+      capabilities?: AgentCapabilities
+      agents?: AgentInfoAgent[]
+    }>()
+    expectTypeOf<AgentCapabilitiesSupportSummary>().toMatchTypeOf<{
+      streaming: boolean
+      toolCalling: boolean
+      humanInTheLoop: boolean
+      interrupts: boolean
+    }>()
+    expectTypeOf<LoadAgentCapabilitiesOptions>().toMatchTypeOf<{
+      api?: string
+      agentId?: string
+      signal?: AbortSignal
+    }>()
+    expectTypeOf<AgentCapabilitiesRequestInfo>().toMatchTypeOf<{
+      providerId: 'agent-capabilities'
+      method: 'GET'
+      attempt: number
+      api: string
+    }>()
+    expectTypeOf<AgentCapabilitiesResponseInfo>().toMatchTypeOf<
+      AgentCapabilitiesRequestInfo & {
+        capabilities: AgentCapabilities | null
+        rawInfo: unknown
+      }
+    >()
+    expectTypeOf(agentCapabilitiesOptions).toEqualTypeOf<UseAgentCapabilitiesOptions>()
+    expectTypeOf(agentCapabilitiesState).toEqualTypeOf<UseAgentCapabilitiesReturn>()
+    expectTypeOf(agentCapabilitiesState.capabilities).toEqualTypeOf<Ref<AgentCapabilities | null>>()
+    expectTypeOf(agentCapabilitiesState.supports).toEqualTypeOf<
+      ComputedRef<AgentCapabilitiesSupportSummary>
+    >()
+    expectTypeOf(agentCapabilitiesState.loadCapabilities)
+      .parameter(0)
+      .toEqualTypeOf<LoadAgentCapabilitiesOptions | undefined>()
+    expectTypeOf(agentCapabilitiesState.loadCapabilities).returns.toEqualTypeOf<
+      Promise<AgentCapabilities | null>
+    >()
+    expectTypeOf(summarizeAgentCapabilities)
+      .parameter(0)
+      .toEqualTypeOf<AgentCapabilities | null | undefined>()
+    expectTypeOf(
+      summarizeAgentCapabilities
+    ).returns.toEqualTypeOf<AgentCapabilitiesSupportSummary>()
+    expectTypeOf(extractAgentCapabilities).parameter(0).toEqualTypeOf<unknown>()
+    expectTypeOf(extractAgentCapabilities).parameter(1).toEqualTypeOf<string | undefined>()
+    expectTypeOf(extractAgentCapabilities).returns.toEqualTypeOf<AgentCapabilities | null>()
+    expectTypeOf<AgentRunStatus>().toEqualTypeOf<
+      'idle' | 'running' | 'streaming' | 'interrupted' | 'completed' | 'error' | 'aborted'
+    >()
+    expectTypeOf<StartAgentRunOptions>().toEqualTypeOf<{ id?: string }>()
+    expectTypeOf<ResumeAgentRunOptions>().toEqualTypeOf<StartAgentRunOptions>()
+    expectTypeOf(agentRunHandler).toEqualTypeOf<AgentRunHandler<string, { approved: boolean }>>()
+    expectTypeOf(agentRunOptions).toEqualTypeOf<UseAgentRunOptions<string, { approved: boolean }>>()
+    expectTypeOf(agentRun).toEqualTypeOf<UseAgentRunReturn<string, { approved: boolean }>>()
+    expectTypeOf(agentRun.interrupt).toEqualTypeOf<Ref<AgentInterruptEvent | null>>()
     expectTypeOf(agentEventToChatChunk).parameter(0).toEqualTypeOf<AgentEvent>()
     expectTypeOf(agentEventToChatChunk)
       .parameter(1)
@@ -534,6 +795,9 @@ describe('public API types', () => {
       .parameter(1)
       .toEqualTypeOf<AgentEventAdapterOptions | undefined>()
     expectTypeOf(agentEventToUIMessageStreamPart).returns.toEqualTypeOf<UIMessageStreamPart>()
+    expectTypeOf(readAgentEvents).parameter(0).toEqualTypeOf<AgentEventSource>()
+    expectTypeOf(readAgentEvents).parameter(1).toEqualTypeOf<AbortSignal | undefined>()
+    expectTypeOf(readAgentEvents).returns.toEqualTypeOf<AsyncGenerator<AgentEvent>>()
     expectTypeOf(readAgentEventStream).parameter(0).toEqualTypeOf<ReadAgentEventStreamOptions>()
     expectTypeOf(readAgentEventStream).returns.toEqualTypeOf<AsyncGenerator<ChatChunk>>()
     expectTypeOf(createUIMessageStream).parameter(0).toEqualTypeOf<CreateUIMessageStreamOptions>()
@@ -575,7 +839,14 @@ describe('public API types', () => {
     expectTypeOf(safeValidateMessages).returns.toEqualTypeOf<SafeValidateMessagesResult>()
     expectTypeOf(validateUIMessages).returns.toEqualTypeOf<Message[]>()
     expectTypeOf(safeValidateUIMessages).returns.toEqualTypeOf<SafeValidateUIMessagesResult>()
-    expectTypeOf<ValidateUIMessagesOptions>().toEqualTypeOf<ValidateMessagesOptions>()
+    expectTypeOf<ValidateUIMessagesOptions>().toMatchTypeOf<
+      ValidateMessagesOptions & {
+        messages?: unknown
+        metadataSchema?: MessageMetadataSchema
+        dataSchemas?: DataPartSchemas
+        tools?: ToolSet
+      }
+    >()
     expectTypeOf<CreateUIMessageStreamResponseOptions>().toMatchTypeOf<{
       stream: UIMessageStreamSource
       status?: number
@@ -736,7 +1007,7 @@ describe('public API types', () => {
     } satisfies UseRerankOptions<string>)
     const structured = useObject<{ answer: string }>({
       provider,
-      schema: { type: 'object' }
+      schema: jsonSchema<{ answer: string }>({ type: 'object' })
     } satisfies UseObjectOptions<{ answer: string }>)
     const experimentalStructured = experimental_useObject<{ answer: string }>({
       provider,
@@ -749,6 +1020,57 @@ describe('public API types', () => {
       api: '/api/object',
       schema: { type: 'object' }
     } satisfies UseObjectOptions<{ answer: string }>)
+    const promptSuggestions = usePromptSuggestions<Record<string, unknown>>({
+      input: chat.input,
+      messages: chat.messages,
+      suggestions: [
+        'Summarize this thread',
+        {
+          id: 'risks',
+          title: 'Find risks',
+          prompt: 'Find the top risks.',
+          metadata: { category: 'review' }
+        }
+      ],
+      loader(context) {
+        expectTypeOf(context).toEqualTypeOf<PromptSuggestionLoaderContext>()
+        return [{ id: 'dynamic', prompt: `Use context: ${context.input}` }]
+      },
+      loadOnInit: false
+    } satisfies UsePromptSuggestionsOptions<Record<string, unknown>>)
+    const agentContextRegistry = useAgentContextRegistry()
+    const unregisterAgentContext = useAgentContext(agentContextRegistry, {
+      description: 'Current route',
+      value: '/tickets'
+    } satisfies AgentContextInput)
+    const agentContextSnapshots = agentContextRegistry.contexts.value
+    const agentContextMessage = createAgentContextMessage(agentContextSnapshots)
+    const agentContextMessages = withAgentContextMessage(
+      [{ id: 'u1', role: 'user', content: 'Hello' }],
+      agentContextSnapshots
+    )
+    const agentContextText = formatAgentContexts(agentContextSnapshots)
+    const resolvedAgentContexts = resolveAgentContexts(agentContextRegistry)
+    const serializableAgentContext: AgentContextSerializable = {
+      route: '/tickets',
+      flags: [true, null]
+    }
+    const renderToolCall: ToolCall = {
+      id: 'call_render',
+      type: 'function',
+      function: { name: 'lookup', arguments: '{}' }
+    }
+    const toolRenderRows = getToolRenderParts({
+      messages: [
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: '',
+          toolCalls: [renderToolCall]
+        }
+      ],
+      pendingToolCalls: [renderToolCall]
+    } satisfies GetToolRenderPartsOptions)
 
     expectTypeOf(chat).toEqualTypeOf<UseChatReturn>()
     expectTypeOf(defaultTransportChat).toEqualTypeOf<UseChatReturn>()
@@ -836,6 +1158,52 @@ describe('public API types', () => {
     >()
     expectTypeOf(chat.lastRequest).toEqualTypeOf<Ref<ChatRequestInfo | null>>()
     expectTypeOf(chat.lastResponse).toEqualTypeOf<Ref<ChatResponseInfo | null>>()
+    expectTypeOf(promptSuggestions).toEqualTypeOf<UsePromptSuggestionsReturn>()
+    expectTypeOf(promptSuggestions.suggestions.value).toEqualTypeOf<PromptSuggestion[]>()
+    expectTypeOf(promptSuggestions.visibleSuggestions.value).toEqualTypeOf<PromptSuggestion[]>()
+    expectTypeOf(promptSuggestions.selectedSuggestion).toEqualTypeOf<Ref<PromptSuggestion | null>>()
+    expectTypeOf(promptSuggestions.isLoading).toEqualTypeOf<Ref<boolean>>()
+    expectTypeOf(promptSuggestions.error).toEqualTypeOf<Ref<Error | null>>()
+    expectTypeOf(promptSuggestions.reloadSuggestions).toEqualTypeOf<
+      () => Promise<PromptSuggestion[]>
+    >()
+    expectTypeOf(promptSuggestions.clearError).toEqualTypeOf<() => void>()
+    expectTypeOf(promptSuggestions.selectSuggestion)
+      .parameter(0)
+      .toEqualTypeOf<string | PromptSuggestion>()
+    expectTypeOf(
+      promptSuggestions.selectSuggestion
+    ).returns.toEqualTypeOf<PromptSuggestion | null>()
+    expectTypeOf(promptSuggestions.clearSelection).toEqualTypeOf<() => void>()
+    expectTypeOf<PromptSuggestionInput>().toMatchTypeOf<
+      string | { prompt: string; title?: string; metadata?: Record<string, unknown> }
+    >()
+    expectTypeOf<PromptSuggestionFilter>().toEqualTypeOf<
+      (suggestion: PromptSuggestion, context: PromptSuggestionFilterContext) => boolean
+    >()
+    expectTypeOf<PromptSuggestionFilterContext>().toMatchTypeOf<{
+      input: string
+      messages: readonly Message[]
+      suggestions: readonly PromptSuggestion[]
+    }>()
+    expectTypeOf<PromptSuggestionLoader>().toEqualTypeOf<
+      (
+        context: PromptSuggestionLoaderContext
+      ) => readonly PromptSuggestionInput[] | Promise<readonly PromptSuggestionInput[]>
+    >()
+    expectTypeOf<PromptSuggestionLoaderContext>().toMatchTypeOf<{
+      input: string
+      messages: readonly Message[]
+      signal: AbortSignal
+    }>()
+    expectTypeOf(agentContextRegistry).toEqualTypeOf<AgentContextRegistry>()
+    expectTypeOf(unregisterAgentContext).toEqualTypeOf<() => void>()
+    expectTypeOf(agentContextSnapshots).toEqualTypeOf<AgentContextSnapshot[]>()
+    expectTypeOf(agentContextMessage).toEqualTypeOf<Message | null>()
+    expectTypeOf(agentContextMessages).toEqualTypeOf<ChatRequestMessage[]>()
+    expectTypeOf(agentContextText).toEqualTypeOf<string>()
+    expectTypeOf(resolvedAgentContexts).toEqualTypeOf<AgentContextSnapshot[]>()
+    expectTypeOf(serializableAgentContext).toMatchTypeOf<AgentContextSerializable>()
     expectTypeOf(completion).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf(defaultTransportCompletion).toEqualTypeOf<UseCompletionReturn>()
     expectTypeOf(completionApi).toEqualTypeOf<UseCompletionReturn>()
@@ -844,6 +1212,12 @@ describe('public API types', () => {
     expectTypeOf<ChatOptions>().toEqualTypeOf<Omit<UseChatOptions, 'chat'>>()
     expectTypeOf<UseChatOptions['provider']>().toEqualTypeOf<ChatProvider | undefined>()
     expectTypeOf<UseChatOptions['transport']>().toEqualTypeOf<ChatProvider | undefined>()
+    expectTypeOf<UseChatOptions['agentContext']>().toEqualTypeOf<
+      AgentContextSource | false | undefined
+    >()
+    expectTypeOf<UseChatOptions['agentContextMessage']>().toEqualTypeOf<
+      AgentContextMessageOptions | undefined
+    >()
     expectTypeOf<UseChatOptions['api']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseChatOptions['baseURL']>().toEqualTypeOf<string | undefined>()
     expectTypeOf<UseChatOptions['credentials']>().toEqualTypeOf<RequestCredentials | undefined>()
@@ -990,6 +1364,20 @@ describe('public API types', () => {
     expectTypeOf<UseChatOptions['prepareReconnectToStreamRequest']>().toEqualTypeOf<
       PrepareReconnectToStreamRequest | undefined
     >()
+    expectTypeOf<UseChatOptions['onToolCall']>().toEqualTypeOf<ToolCallCallback | undefined>()
+    expectTypeOf<ToolCallCallback>().toMatchTypeOf<AiSdkToolCallCallback | LegacyToolCallCallback>()
+    expectTypeOf<ToolCallCallbackOptions>().toMatchTypeOf<{
+      toolCall: UIToolCall
+      messages: Message[]
+      args: unknown
+      context?: unknown
+    }>()
+    expectTypeOf<UIToolCall>().toMatchTypeOf<{
+      toolCallId: string
+      toolName: string
+      input: unknown
+      dynamic: boolean
+    }>()
     expectTypeOf<ChatRequestLifecycleKind>().toEqualTypeOf<'chat' | 'resume'>()
     expectTypeOf<AiSdkSendChatTrigger>().toEqualTypeOf<
       'submit-user-message' | 'regenerate-assistant-message'
@@ -1039,6 +1427,21 @@ describe('public API types', () => {
     expectTypeOf<DataPartSchemas<{ progress: number }>>().toEqualTypeOf<
       Record<string, DataPartSchema<{ progress: number }>>
     >()
+    const uiValidationOptions: ValidateUIMessagesOptions<{ progress: number }, { source: string }> =
+      {
+        messages: [],
+        metadataSchema: { type: 'object' },
+        dataSchemas: { 'data-progress': { type: 'object' } },
+        tools: {}
+      }
+    expectTypeOf(uiValidationOptions.messages).toEqualTypeOf<unknown>()
+    expectTypeOf(uiValidationOptions.metadataSchema).toEqualTypeOf<
+      MessageMetadataSchema<{ source: string }> | undefined
+    >()
+    expectTypeOf(uiValidationOptions.dataSchemas).toEqualTypeOf<
+      DataPartSchemas<{ progress: number }> | undefined
+    >()
+    expectTypeOf(uiValidationOptions.tools).toEqualTypeOf<ToolSet | undefined>()
     expectTypeOf<
       UseChatOptions<unknown, { source: string }>['messageMetadataSchema']
     >().toEqualTypeOf<MessageMetadataSchema<{ source: string }> | undefined>()
@@ -1050,6 +1453,12 @@ describe('public API types', () => {
     >()
     expectTypeOf(pruneMessages).parameter(0).toEqualTypeOf<PruneMessagesOptions>()
     expectTypeOf(pruneMessages).returns.toEqualTypeOf<Message[]>()
+    expectTypeOf(getToolRenderParts).parameter(0).toEqualTypeOf<GetToolRenderPartsOptions>()
+    expectTypeOf(getToolRenderParts).returns.toEqualTypeOf<ToolRenderPart[]>()
+    expectTypeOf(toolRenderRows).toEqualTypeOf<ToolRenderPart[]>()
+    expectTypeOf<ToolRenderStatus>().toEqualTypeOf<
+      'inProgress' | 'executing' | 'awaitingAction' | 'complete' | 'error'
+    >()
     expectTypeOf<PruneToolCallsStrategy>().toEqualTypeOf<
       'none' | 'all' | 'before-last-message' | `before-last-${number}-messages`
     >()
@@ -1105,6 +1514,9 @@ describe('public API types', () => {
       .parameter(1)
       .toEqualTypeOf<Partial<CompletionRequest> | undefined>()
     expectTypeOf<UseCompletionOptions['onFinish']>().toEqualTypeOf<
+      ((prompt: string, completion: string, info?: CompletionFinishInfo) => void) | undefined
+    >()
+    expectTypeOf<UseCompletionOptions['onFinishLegacy']>().toEqualTypeOf<
       ((completion: string, info: CompletionFinishInfo) => void) | undefined
     >()
     expectTypeOf<CompletionFinishInfo>().toEqualTypeOf<{
@@ -1187,6 +1599,9 @@ describe('public API types', () => {
     expectTypeOf(imageGeneration.generateImage).returns.toEqualTypeOf<
       Promise<ImageGenerationResult>
     >()
+    expectTypeOf(imageGeneration.editImage).returns.toEqualTypeOf<Promise<ImageGenerationResult>>()
+    expectTypeOf(imageGeneration.editImage).parameter(0).toEqualTypeOf<string | undefined>()
+    expectTypeOf(imageGeneration.editImage).parameter(1).toEqualTypeOf<ImageEditOptions>()
     expectTypeOf(imageGeneration.setInput).toEqualTypeOf<(value: string) => void>()
     expectTypeOf(imageGeneration.handleInputChange)
       .parameter(0)
@@ -1205,6 +1620,9 @@ describe('public API types', () => {
     >()
     expectTypeOf<ImageGenerationRequest>().toMatchTypeOf<{
       prompt: string
+      operation?: ImageOperation
+      image?: ImageEditInput | ImageEditInput[]
+      mask?: ImageEditInput
       body?: Record<string, unknown>
       model?: string
       n?: number
@@ -1223,8 +1641,14 @@ describe('public API types', () => {
       providerId: 'proxy'
       attempt: number
       api: string
+      operation: ImageOperation
       prompt: string
       request: ImageGenerationRequest
+    }>()
+    expectTypeOf<ImageEditOptions>().toMatchTypeOf<{
+      image: ImageEditInput | ImageEditInput[]
+      mask?: ImageEditInput
+      model?: string
     }>()
     expectTypeOf<ImageGenerationResponseInfo>().toMatchTypeOf<
       ImageGenerationRequestInfo & { result: ImageGenerationResult }
@@ -1590,6 +2014,12 @@ describe('public API types', () => {
       isAbort: boolean
       error: Error | undefined
     }>()
+    expectTypeOf<ObjectFinishCallbackOptions<{ answer: string }>>().toEqualTypeOf<{
+      object: { answer: string } | undefined
+      text: string
+      isAbort: boolean
+      error: Error | undefined
+    }>()
     expectTypeOf<UseObjectOptions['onRequest']>().toEqualTypeOf<
       ((info: ObjectRequestInfo) => void) | undefined
     >()
@@ -1597,7 +2027,10 @@ describe('public API types', () => {
       ((info: ObjectResponseInfo) => void) | undefined
     >()
     expectTypeOf<UseObjectOptions<{ answer: string }>['onFinish']>().toEqualTypeOf<
-      ((object: { answer: string }, info: ObjectFinishInfo<{ answer: string }>) => void) | undefined
+      ObjectFinishCallback<{ answer: string }> | undefined
+    >()
+    expectTypeOf<ObjectFinishCallback<{ answer: string }>>().toMatchTypeOf<
+      AiSdkObjectFinishCallback<{ answer: string }> | LegacyObjectFinishCallback<{ answer: string }>
     >()
 
     expectTypeOf(assertInvalidPublicApiUsage).returns.toEqualTypeOf<void>()
@@ -1680,19 +2113,88 @@ describe('public API types', () => {
     const runtimeTool = dynamicTool({
       parameters: { type: 'object' }
     })
-    const toolSet: ToolSet = {
+    const typedToolSet = {
       lookup: lookupTool,
       runtime: runtimeTool,
       wire: wireTool
     }
+    const toolSet: ToolSet = typedToolSet
     const chatTools: ChatToolsInput = toolSet
     const wireTools: ChatToolsInput = [wireTool]
+    type TypedToolSet = typeof typedToolSet
+    expectTypeOf<InferToolInput<typeof lookupTool>>().toEqualTypeOf<{ q: string }>()
+    expectTypeOf<InferToolOutput<typeof lookupTool>>().toEqualTypeOf<{ answer: string }>()
+    expectTypeOf<InferUITools<TypedToolSet>['lookup']>().toEqualTypeOf<{
+      input: { q: string }
+      output: { answer: string }
+    }>()
+    expectTypeOf<InferUITools<TypedToolSet>['runtime']>().toEqualTypeOf<{
+      input: unknown
+      output: unknown
+    }>()
+    expectTypeOf<InferUITools<TypedToolSet>['wire']>().toEqualTypeOf<{
+      input: unknown
+      output: unknown
+    }>()
+    type AppDataParts = { progress: { step: number; label?: string } }
+    type AppTools = InferUITools<TypedToolSet>
+    type AppUIMessage = UIMessage<{ source: string }, AppDataParts, AppTools>
+    const uiDataTypes: UIDataTypes = { progress: { step: 1 } }
+    const uiTools: UITools = {
+      lookup: { input: { q: 'vue' }, output: { answer: 'ok' } }
+    }
+    const uiDataPart: UIMessageDataPart<AppDataParts> = {
+      type: 'data-progress',
+      id: 'progress_1',
+      data: { step: 1, label: 'Searching' }
+    }
+    const uiToolPart: UIMessageToolPart<AppTools> = {
+      type: 'tool-lookup',
+      toolCallId: 'call_1',
+      toolName: 'lookup',
+      state: 'output-available',
+      input: { q: 'vue' },
+      output: { answer: 'ok' }
+    }
+    const uiMessagePart: UIMessagePart<AppDataParts, AppTools> = uiToolPart
+    const uiMessage: AppUIMessage = {
+      id: 'msg_ui',
+      role: 'assistant',
+      content: '',
+      metadata: { source: 'tool-test' },
+      parts: [messageTextPart, uiDataPart, uiMessagePart]
+    }
+    expectTypeOf(uiDataPart.data.step).toEqualTypeOf<number>()
+    expectTypeOf(uiToolPart.input).toEqualTypeOf<{ q: string } | undefined>()
+    expectTypeOf(uiToolPart.output).toEqualTypeOf<{ answer: string } | undefined>()
+    expectTypeOf(uiMessage.metadata).toEqualTypeOf<{ source: string } | undefined>()
+    expectTypeOf(uiMessage.parts).toEqualTypeOf<
+      UIMessagePart<AppDataParts, AppTools>[] | undefined
+    >()
     const schemaContract: JsonSchemaDefinition<{ q: string }> = schema
     const lookupToolContract: ToolDefinition<{ q: string }, { answer: string }> = lookupTool
     const runtimeToolContract: ToolDefinition<unknown, unknown> = runtimeTool
     const schemaInput: ToolInputSchema<{ q: string }> = schema
     const executeContract: ToolExecute<{ q: string }, { answer: string }> | undefined =
       lookupTool.execute
+    const handlerContract: ToolHandlerFor<typeof lookupTool> = (input, context) => {
+      expectTypeOf(input).toEqualTypeOf<{ q: string }>()
+      expectTypeOf(context).toEqualTypeOf<ToolCallHandlerContext>()
+      return { answer: input.q }
+    }
+    const handlersContract: ToolHandlersFor<TypedToolSet> = {
+      lookup(input, context) {
+        expectTypeOf(input).toEqualTypeOf<{ q: string }>()
+        expectTypeOf(context).toEqualTypeOf<ToolCallHandlerContext>()
+        return { answer: input.q }
+      },
+      runtime(input) {
+        expectTypeOf(input).toEqualTypeOf<unknown>()
+        return input
+      }
+    }
+    const typedToolHandlers = defineToolHandlers(typedToolSet, handlersContract)
+    expectTypeOf(typedToolHandlers).toEqualTypeOf<Record<string, ToolCallHandler>>()
     const modelOutput: ToolModelOutput = { type: 'text', text: 'ok' }
     const anyToolDefinition: AnyToolDefinition = lookupTool
     void [
@@ -1701,6 +2203,15 @@ describe('public API types', () => {
       runtimeToolContract,
       schemaInput,
       executeContract,
+      handlerContract,
+      handlersContract,
+      typedToolHandlers,
+      uiDataTypes,
+      uiTools,
+      uiDataPart,
+      uiToolPart,
+      uiMessagePart,
+      uiMessage,
       modelOutput,
       anyToolDefinition,
       chatTools,
@@ -1891,11 +2402,33 @@ describe('public API types', () => {
       isDisconnect: false,
       finishReason: 'stop'
     }
+    const aiSdkChatFinishCallback: AiSdkChatFinishCallback = (info) => {
+      expectTypeOf(info).toEqualTypeOf<ChatFinishInfo>()
+      expectTypeOf(info.message).toEqualTypeOf<Message>()
+      expectTypeOf(info.messages).toEqualTypeOf<Message[]>()
+      expectTypeOf(info.isAbort).toEqualTypeOf<boolean>()
+    }
+    const legacyChatFinishCallback: LegacyChatFinishCallback = (finishedMessage, info) => {
+      expectTypeOf(finishedMessage).toEqualTypeOf<Message>()
+      expectTypeOf(info).toEqualTypeOf<ChatFinishInfo>()
+    }
     const handler: ToolCallHandler = async (args, context) => {
       expectTypeOf(args).toEqualTypeOf<unknown>()
       expectTypeOf(context).toEqualTypeOf<ToolCallHandlerContext>()
       expectTypeOf(context.context).toEqualTypeOf<unknown>()
       return { ok: true }
+    }
+    const aiSdkToolCallCallback: AiSdkToolCallCallback = async ({ toolCall, messages, args }) => {
+      expectTypeOf(toolCall).toEqualTypeOf<UIToolCall>()
+      expectTypeOf(toolCall.toolCallId).toEqualTypeOf<string>()
+      expectTypeOf(toolCall.toolName).toEqualTypeOf<string>()
+      expectTypeOf(toolCall.input).toEqualTypeOf<unknown>()
+      expectTypeOf(messages).toEqualTypeOf<Message[]>()
+      expectTypeOf(args).toEqualTypeOf<unknown>()
+    }
+    const legacyToolCallCallback: LegacyToolCallCallback = (args, context) => {
+      expectTypeOf(args).toEqualTypeOf<unknown>()
+      expectTypeOf(context).toEqualTypeOf<ToolCallHandlerContext>()
     }
     const requiresToolApproval: ToolApprovalPredicate = (args, context) => {
       expectTypeOf(args).toEqualTypeOf<unknown>()
@@ -1912,6 +2445,7 @@ describe('public API types', () => {
     }
     const options: UseChatOptions = {
       provider,
+      onToolCall: aiSdkToolCallCallback,
       requiresToolApproval,
       sendAutomaticallyWhen,
       stopWhen
@@ -2094,8 +2628,9 @@ describe('public API types', () => {
     expectTypeOf(chunk).toEqualTypeOf<ChatChunk>()
     expectTypeOf(messagesAreValid).toEqualTypeOf<boolean>()
     expectTypeOf(finishInfo).toEqualTypeOf<ChatFinishInfo>()
-    expectTypeOf<UseChatOptions['onFinish']>().toEqualTypeOf<
-      ((m: Message, info: ChatFinishInfo) => void) | undefined
+    expectTypeOf<UseChatOptions['onFinish']>().toEqualTypeOf<ChatFinishCallback | undefined>()
+    expectTypeOf<ChatFinishCallback>().toMatchTypeOf<
+      AiSdkChatFinishCallback | LegacyChatFinishCallback
     >()
     expectTypeOf<ChatFinishInfo>().toMatchTypeOf<{
       message: Message
@@ -2105,7 +2640,12 @@ describe('public API types', () => {
       isDisconnect: boolean
       finishReason?: ChatChunk['finishReason']
     }>()
+    expectTypeOf(aiSdkChatFinishCallback).toEqualTypeOf<AiSdkChatFinishCallback>()
+    expectTypeOf(legacyChatFinishCallback).toEqualTypeOf<LegacyChatFinishCallback>()
     expectTypeOf(handler).toEqualTypeOf<ToolCallHandler>()
+    expectTypeOf(aiSdkToolCallCallback).toEqualTypeOf<AiSdkToolCallCallback>()
+    expectTypeOf(legacyToolCallCallback).toEqualTypeOf<LegacyToolCallCallback>()
+    expectTypeOf(options.onToolCall).toEqualTypeOf<ToolCallCallback | undefined>()
     expectTypeOf(options.requiresToolApproval).toEqualTypeOf<ToolApprovalPredicate | undefined>()
     expectTypeOf(options.sendAutomaticallyWhen).toEqualTypeOf<
       SendAutomaticallyWhen | false | undefined

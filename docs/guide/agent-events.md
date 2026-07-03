@@ -27,6 +27,7 @@ async function* runAgent(): AsyncGenerator<AgentEvent> {
   yield { type: 'progress', id: 'search', label: 'Searching docs', value: 0.5 }
   yield { type: 'tool-call', id: 'call_1', name: 'lookupOrder', input: { orderId: 'A-42' } }
   yield { type: 'tool-result', id: 'call_1', name: 'lookupOrder', output: { status: 'paid' } }
+  yield { type: 'interrupt', id: 'approval_1', name: 'approveRefund', value: { amount: 49 } }
   yield { type: 'source', id: 'source_1', url: 'https://example.test/orders/A-42' }
   yield { type: 'finish', usage: { promptTokens: 12, completionTokens: 18, totalTokens: 30 } }
 }
@@ -41,6 +42,7 @@ The common event types are:
 | `tool-call`     | Tool input is ready for rendering or approval | `toolCalls` / `tool-input-available` |
 | `tool-result`   | Tool completed successfully                   | `tool-output-available`              |
 | `tool-error`    | Tool failed but the stream can continue       | `tool-output-error`                  |
+| `interrupt`     | Human-in-the-loop resume point                | `data-agent-interrupt`               |
 | `source`        | URL citation or external reference            | `source-url`                         |
 | `file`          | Generated or attached file                    | `file`                               |
 | `finish`        | Final reason, usage, and optional metadata    | `finish`                             |
@@ -126,14 +128,15 @@ stable timeline. For durable human approval, reviewer audit trails, idempotent
 execution, and safe renderer contracts, use the
 [tool approval recipe](/guide/tool-approvals).
 
-## Data part names
+## Interrupt and data part names
 
-Progress and non-throwing agent error data use safe defaults:
+Interrupt, progress, and non-throwing agent error data use safe defaults:
 
 ```ts
 readAgentEventStream({
   events,
   progressDataType: 'data-agent-progress',
+  interruptDataType: 'data-agent-interrupt',
   errorDataType: 'data-agent-error'
 })
 ```
@@ -144,12 +147,15 @@ Override those names if your application already has a data-part taxonomy:
 readAgentEventStream({
   events,
   progressDataType: 'data-workflow-progress',
+  interruptDataType: 'data-workflow-interrupt',
   errorDataType: 'data-workflow-error'
 })
 ```
 
-Use `transient: true` on progress or error events when the UI should receive
-`onData` without storing the part in the message timeline.
+Use `transient: true` on progress, interrupt, or error events when the UI should
+receive `onData` without storing the part in the message timeline. For a
+browser-owned run button and approval UI, see
+[useAgentRun](/reference/use-agent-run).
 
 ## Production notes
 

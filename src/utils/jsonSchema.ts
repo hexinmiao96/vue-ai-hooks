@@ -1,23 +1,61 @@
+type JsonSchemaValidationResult<T = unknown> =
+  { success: true; value: T } | { success: false; error: Error }
+
+type JsonSchemaValidator<T = unknown> = (value: unknown) => boolean | JsonSchemaValidationResult<T>
+
+export interface JsonSchemaDefinition<T = unknown> {
+  readonly kind: 'json-schema'
+  readonly schema: Record<string, unknown>
+  readonly validate?: JsonSchemaValidator<T>
+}
+
+type JsonSchemaInput<T = unknown> = Record<string, unknown> | JsonSchemaDefinition<T>
+
+export function jsonSchema<T = unknown>(
+  schema: Record<string, unknown>,
+  options: { validate?: JsonSchemaValidator<T> } = {}
+): JsonSchemaDefinition<T> {
+  return {
+    kind: 'json-schema',
+    schema,
+    ...(options.validate ? { validate: options.validate } : {})
+  }
+}
+
+export function schemaToJsonSchema(schema: JsonSchemaInput): Record<string, unknown> {
+  return isJsonSchemaDefinition(schema) ? schema.schema : schema
+}
+
+export function isJsonSchemaDefinition(value: unknown): value is JsonSchemaDefinition {
+  return isJsonObject(value) && value.kind === 'json-schema' && isJsonObject(value.schema)
+}
+
 export function validateJsonSchema(
   value: unknown,
-  schema: Record<string, unknown>,
+  schema: JsonSchemaInput,
   path = 'object'
 ): string | null {
-  const types = schemaTypes(schema.type)
+  const jsonSchema = schemaToJsonSchema(schema)
+  const types = schemaTypes(jsonSchema.type)
   if (types.length && !types.some((type) => matchesJsonType(value, type))) {
     return `${path} must be ${types.join(' or ')}`
   }
 
-  if (Array.isArray(schema.enum) && !schema.enum.some((item) => sameJsonValue(item, value))) {
-    return `${path} must be one of ${schema.enum.map(formatJsonValue).join(', ')}`
+  if (
+    Array.isArray(jsonSchema.enum) &&
+    !jsonSchema.enum.some((item) => sameJsonValue(item, value))
+  ) {
+    return `${path} must be one of ${jsonSchema.enum.map(formatJsonValue).join(', ')}`
   }
 
   const objectSchema =
-    recordSchema(schema.properties) || Array.isArray(schema.required) || schema.additionalProperties
+    recordSchema(jsonSchema.properties) ||
+    Array.isArray(jsonSchema.required) ||
+    jsonSchema.additionalProperties
   if (objectSchema) {
     if (!isJsonObject(value)) return `${path} must be object`
-    const properties = recordSchema(schema.properties) ?? {}
-    const required = schema.required
+    const properties = recordSchema(jsonSchema.properties) ?? {}
+    const required = jsonSchema.required
     if (Array.isArray(required)) {
       for (const key of required) {
         if (typeof key === 'string' && !(key in value)) return `${path}.${key} is required`
@@ -29,16 +67,16 @@ export function validateJsonSchema(
         if (error) return error
       }
     }
-    if (schema.additionalProperties === false) {
+    if (jsonSchema.additionalProperties === false) {
       for (const key of Object.keys(value)) {
         if (!(key in properties)) return `${path}.${key} is not allowed`
       }
-    } else if (isJsonObject(schema.additionalProperties)) {
+    } else if (isJsonObject(jsonSchema.additionalProperties)) {
       for (const key of Object.keys(value)) {
         if (!(key in properties)) {
           const error = validateJsonSchema(
             value[key],
-            schema.additionalProperties,
+            jsonSchema.additionalProperties,
             `${path}.${key}`
           )
           if (error) return error
@@ -47,14 +85,44 @@ export function validateJsonSchema(
     }
   }
 
-  if (Array.isArray(value) && isJsonObject(schema.items)) {
+  if (Array.isArray(value) && isJsonObject(jsonSchema.items)) {
     for (let index = 0; index < value.length; index += 1) {
-      const error = validateJsonSchema(value[index], schema.items, `${path}[${index}]`)
+      const error = validateJsonSchema(value[index], jsonSchema.items, `${path}[${index}]`)
       if (error) return error
     }
   }
 
+  if (isJsonSchemaDefinition(schema) && schema.validate) {
+    return validateCustomJsonSchema(value, schema.validate, path)
+  }
+
   return null
+}
+
+function validateCustomJsonSchema(
+  value: unknown,
+  validate: JsonSchemaValidator,
+  path: string
+): string | null {
+  let result: boolean | JsonSchemaValidationResult
+  try {
+    result = validate(value)
+  } catch (err) {
+    return formatCustomValidationError(path, err)
+  }
+  if (typeof result === 'boolean') {
+    return result ? null : `${path} did not match validator`
+  }
+  if (isJsonObject(result) && result.success === true) return null
+  if (isJsonObject(result) && result.success === false) {
+    return formatCustomValidationError(path, result.error)
+  }
+  return null
+}
+
+function formatCustomValidationError(path: string, err: unknown) {
+  if (err instanceof Error && err.message) return `${path} did not match validator: ${err.message}`
+  return `${path} did not match validator`
 }
 
 function schemaTypes(type: unknown): string[] {

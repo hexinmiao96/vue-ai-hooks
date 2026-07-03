@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { jsonSchema } from '../src/composables/useChat'
 import { useObject } from '../src/composables/useObject'
 import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk, ChatRequest } from '../src/types'
@@ -143,11 +144,35 @@ describe('useObject', () => {
     expect(object.value).toEqual({ title: 'Plain', priority: 'high' })
   })
 
+  it('accepts jsonSchema() wrappers and sends the unwrapped schema', async () => {
+    const requests: ChatRequest[] = []
+    const wrappedSchema = jsonSchema<TaskSummary>(schema)
+    const { submit } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Wrapped","priority":"high"}' }], requests),
+      schema: wrappedSchema,
+      schemaName: 'task_summary'
+    })
+
+    await expect(submit('Summarize this task.')).resolves.toEqual({
+      title: 'Wrapped',
+      priority: 'high'
+    })
+
+    expect(requests[0].responseFormat).toMatchObject({
+      type: 'json_schema',
+      json_schema: {
+        name: 'task_summary',
+        schema,
+        strict: true
+      }
+    })
+  })
+
   it('streams JSON text, parses the final object, and sends responseFormat', async () => {
     const requests: ChatRequest[] = []
     const onChunk = vi.fn()
     const onPartial = vi.fn()
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_object: TaskSummary, _info: unknown) => undefined)
     const { object, partialObject, text, submit } = useObject<TaskSummary>({
       provider: fakeProvider(
         [{ content: '{"title":"Ship"' }, { content: ',"priority":"high"}' }],
@@ -205,6 +230,139 @@ describe('useObject', () => {
         }
       }
     })
+  })
+
+  it('supports AI SDK-style onFinish callback objects', async () => {
+    const onFinish = vi.fn(
+      ({
+        object,
+        text,
+        isAbort,
+        error
+      }: {
+        object: TaskSummary | undefined
+        text: string
+        isAbort: boolean
+        error: Error | undefined
+      }) => {
+        expect(object).toEqual({ title: 'Done', priority: 'low' })
+        expect(text).toBe('{"title":"Done","priority":"low"}')
+        expect(isAbort).toBe(false)
+        expect(error).toBeUndefined()
+      }
+    )
+    const { submit } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Done","priority":"low"}' }]),
+      schema,
+      onFinish
+    })
+
+    await expect(submit('Summarize this task.')).resolves.toEqual({
+      title: 'Done',
+      priority: 'low'
+    })
+
+    expect(onFinish).toHaveBeenCalledWith({
+      object: { title: 'Done', priority: 'low' },
+      text: '{"title":"Done","priority":"low"}',
+      isAbort: false,
+      error: undefined
+    })
+  })
+
+  it('reports final schema validation errors to AI SDK-style onFinish', async () => {
+    const onFinish = vi.fn()
+    const { error, submit } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Missing priority"}' }]),
+      schema,
+      onFinish
+    })
+
+    await expect(submit('Summarize this task.')).rejects.toThrow(/object.priority is required/)
+
+    expect(error.value?.message).toContain('object.priority is required')
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object: undefined,
+        text: '{"title":"Missing priority"}',
+        isAbort: false,
+        error: expect.objectContaining({
+          message: expect.stringContaining('object.priority is required')
+        })
+      })
+    )
+  })
+
+  it('reports jsonSchema() custom validation result errors', async () => {
+    const onFinish = vi.fn()
+    const wrappedSchema = jsonSchema<TaskSummary>(schema, {
+      validate(value) {
+        const task = value as TaskSummary
+        if (task.title.startsWith('Ship')) return { success: true, value: task }
+        return { success: false, error: new Error('title must start with Ship') }
+      }
+    })
+    const { error, submit } = useObject<TaskSummary>({
+      provider: fakeProvider([{ content: '{"title":"Blocked","priority":"high"}' }]),
+      schema: wrappedSchema,
+      onFinish
+    })
+
+    await expect(submit('Summarize this task.')).rejects.toThrow('title must start with Ship')
+
+    expect(error.value?.message).toContain('title must start with Ship')
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        object: undefined,
+        text: '{"title":"Blocked","priority":"high"}',
+        isAbort: false,
+        error: expect.objectContaining({
+          message: expect.stringContaining('title must start with Ship')
+        })
+      })
+    )
+  })
+
+  it('throws when submit() has no prompt, input, or request messages', async () => {
+    const { submit } = useObject<TaskSummary>({
+      provider: fakeProvider([]),
+      schema
+    })
+
+    await expect(submit()).rejects.toThrow(
+      'submit() requires a prompt, input.value, or request messages'
+    )
+  })
+
+  it('repairs escaped string partial JSON while streaming', async () => {
+    const onPartial = vi.fn()
+    const { partialObject, object, text, submit } = useObject<TaskSummary>({
+      provider: {
+        ...fakeProvider([]),
+        async chat(): Promise<AsyncIterable<ChatChunk>> {
+          return (async function* () {
+            yield { content: '{"title":"Ship \\"now\\"","priority":' }
+            await Promise.resolve()
+            yield { content: '"high"}' }
+          })()
+        }
+      },
+      schema,
+      onPartial
+    })
+
+    await expect(submit('repair')).resolves.toEqual({
+      title: 'Ship "now"',
+      priority: 'high'
+    })
+
+    expect(partialObject.value).toEqual({ title: 'Ship "now"', priority: 'high' })
+    expect(object.value).toEqual({ title: 'Ship "now"', priority: 'high' })
+    expect(text.value).toBe('{"title":"Ship \\"now\\"","priority":"high"}')
+    expect(onPartial).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Ship "now"' }),
+      expect.any(String)
+    )
   })
 
   it('uses generateId for automatic prompt messages without replacing explicit ids', async () => {

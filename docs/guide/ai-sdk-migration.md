@@ -39,12 +39,12 @@ refs and provider objects instead of a full-stack framework integration layer.
 | `addToolOutput()` / deprecated `addToolResult()`    | `addToolOutput()` or `addToolResult({ toolCallId, output })`                                                                                                    |
 | `addToolApprovalResponse()`                         | `addToolApprovalResponse()`, `approveToolCall()`, `rejectToolCall()`                                                                                            |
 | `stepCountIs()`                                     | `stepCountIs()` or older `isStepCount()` for automatic tool-loop limits                                                                                         |
-| `tool()` / `dynamicTool()`                          | `tool()`, `dynamicTool()`, and `jsonSchema()` with `useChat({ tools })`                                                                                         |
+| `tool()` / `dynamicTool()` / `jsonSchema()`         | `tool()`, `dynamicTool()`, and `jsonSchema()` with `useChat({ tools })`; `jsonSchema()` also works with `useObject({ schema })`                                 |
 | `stopWhen`                                          | `stopWhen`                                                                                                                                                      |
 | `experimental_throttle`                             | `experimental_throttle` or preferred `throttleMs`                                                                                                               |
 | Custom stream data                                  | `data`, `streamData`, `setData()`, `onData`, and `ChatChunk.data`                                                                                               |
 | `experimental_useObject()`                          | `experimental_useObject()` alias or preferred `useObject()`                                                                                                     |
-| AI SDK Core image generation                        | `useImage()` calling your app-owned `/api/image` route                                                                                                          |
+| AI SDK Core image generation/editing                | `useImage()` calling your app-owned `/api/image` route, with `editImage()` for source-image edits                                                               |
 | AI SDK Core video generation                        | `useVideo()` calling your app-owned `/api/video` route                                                                                                          |
 | AI SDK Core speech generation                       | `useSpeech()` calling your app-owned `/api/speech` route                                                                                                        |
 | AI SDK Core transcription                           | `useTranscription()` calling your app-owned `/api/transcription` route                                                                                          |
@@ -366,8 +366,8 @@ fields for default chat proxy transports.
    after the migration.
 6. Let `useObject` proxy routes return `text/plain` JSON streams when you are
    porting an existing AI SDK object endpoint.
-7. Map image generation calls to `useImage({ api: '/api/image' })` and keep
-   image model credentials server-side.
+7. Map image generation and editing calls to `useImage({ api: '/api/image' })`
+   and `editImage()`, then keep image model credentials server-side.
 8. Map video generation calls to `useVideo({ api: '/api/video' })` and keep
    video model credentials server-side.
 9. Map speech generation calls to `useSpeech({ api: '/api/speech' })` and keep

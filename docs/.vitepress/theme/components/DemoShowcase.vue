@@ -442,19 +442,25 @@ const copy = {
     quickChoiceTitle: 'Choose by job',
     quickChoices: [
       { job: 'Chat UI or tool approval', pick: 'useChat' },
+      { job: 'Thread sidebar and local restore', pick: 'useChatThreads' },
       { job: 'One prompt to text', pick: 'useCompletion' },
+      { job: 'Custom generation job', pick: 'useGeneration' },
       { job: 'Similarity search', pick: 'useEmbedding' },
       { job: 'Document reranking', pick: 'useRerank' },
       { job: 'Image generation', pick: 'useImage' },
       { job: 'Video generation', pick: 'useVideo' },
       { job: 'Speech generation', pick: 'useSpeech' },
       { job: 'Audio transcription', pick: 'useTranscription' },
-      { job: 'Typed JSON extraction', pick: 'useObject' }
+      { job: 'Typed JSON extraction', pick: 'useObject' },
+      { job: 'Runtime app context', pick: 'useAgentContext' },
+      { job: 'Runtime capability flags', pick: 'useAgentCapabilities' },
+      { job: 'Headless agent run state', pick: 'useAgentRun' },
+      { job: 'Composer task starters', pick: 'usePromptSuggestions' }
     ],
     heroStats: [
-      { label: 'Composables', value: '10' },
-      { label: 'Runtime deps', value: '0' },
-      { label: 'Typed APIs', value: '100%' }
+      { label: 'Runnable examples', value: '15' },
+      { label: 'Demo panels', value: '10' },
+      { label: 'Runtime deps', value: '0' }
     ],
     demoLinks: [
       { label: 'Chat', href: '#chat-demo' },
@@ -1281,6 +1287,12 @@ const copy = {
         fit: 'Search, clustering, similarity scoring'
       },
       {
+        name: 'useGeneration',
+        state: 'result, progress, chunks, isLoading, error',
+        actions: 'generate, stop, reset',
+        fit: 'Custom app-owned async generation jobs'
+      },
+      {
         name: 'useRerank',
         state: 'documents, rerankedDocuments, ranking, result, isLoading, error',
         actions: 'rerankDocuments, handleSubmit, setDocuments, stop, clear',
@@ -1291,6 +1303,12 @@ const copy = {
         state: 'image, images, input, result, isLoading, error',
         actions: 'generateImage, handleSubmit, stop, clear',
         fit: 'Image tools through app-owned backend routes'
+      },
+      {
+        name: 'useVideo',
+        state: 'video, videos, input, result, isLoading, error',
+        actions: 'generateVideo, handleSubmit, stop, clear',
+        fit: 'Video tools through app-owned backend routes'
       },
       {
         name: 'useSpeech',
@@ -1309,6 +1327,36 @@ const copy = {
         state: 'partialObject, object, text, input, isLoading, error',
         actions: 'submit, stop, clear',
         fit: 'Extraction, classification, JSON form filling'
+      },
+      {
+        name: 'useChatThreads',
+        state: 'threads, activeThread, activeThreadId, persistenceError',
+        actions: 'createThread, renameThread, archiveThread, restoreThread, deleteThread',
+        fit: 'Thread sidebars, local indexes, and restore checks'
+      },
+      {
+        name: 'useAgentContext',
+        state: 'snapshot, version, updatedAt',
+        actions: 'set, patch, reset, subscribe',
+        fit: 'Expose reactive app state to provider or agent requests'
+      },
+      {
+        name: 'useAgentCapabilities',
+        state: 'capabilities, supports, isLoading, error',
+        actions: 'refresh, clearError',
+        fit: 'Adaptive UI for runtime-declared agent capabilities'
+      },
+      {
+        name: 'useAgentRun',
+        state: 'status, messages, streamData, pendingInterrupts, error',
+        actions: 'start, resume, stop, reset',
+        fit: 'Headless app-owned agent event streams'
+      },
+      {
+        name: 'usePromptSuggestions',
+        state: 'suggestions, isLoading, error',
+        actions: 'load, select, clearError',
+        fit: 'Composer chips and task starters without a copilot shell'
       }
     ],
     tableLabels: {
@@ -1339,19 +1387,25 @@ const copy = {
     quickChoiceTitle: '按任务选择',
     quickChoices: [
       { job: '聊天界面或工具审批', pick: 'useChat' },
+      { job: 'Thread 侧边栏和本地恢复', pick: 'useChatThreads' },
       { job: '一个提示词生成文本', pick: 'useCompletion' },
+      { job: '自定义生成任务', pick: 'useGeneration' },
       { job: '语义相似度检索', pick: 'useEmbedding' },
       { job: '文档重排', pick: 'useRerank' },
       { job: '图片生成', pick: 'useImage' },
       { job: '视频生成', pick: 'useVideo' },
       { job: '语音生成', pick: 'useSpeech' },
       { job: '音频转写', pick: 'useTranscription' },
-      { job: '类型化 JSON 抽取', pick: 'useObject' }
+      { job: '类型化 JSON 抽取', pick: 'useObject' },
+      { job: '运行时应用上下文', pick: 'useAgentContext' },
+      { job: '运行时能力开关', pick: 'useAgentCapabilities' },
+      { job: '无 UI Agent run 状态', pick: 'useAgentRun' },
+      { job: '输入区任务入口', pick: 'usePromptSuggestions' }
     ],
     heroStats: [
-      { label: '组合式函数', value: '10' },
-      { label: '运行时依赖', value: '0' },
-      { label: '类型覆盖', value: '100%' }
+      { label: '可运行示例', value: '15' },
+      { label: '展示面板', value: '10' },
+      { label: '运行时依赖', value: '0' }
     ],
     demoLinks: [
       { label: '对话', href: '#chat-demo' },
@@ -2160,6 +2214,13 @@ const copy = {
         fit: '搜索、聚类、相似度计算'
       },
       {
+        name: 'useGeneration',
+        state:
+          'result（结果）、progress（进度）、chunks（片段）、isLoading（加载中）、error（错误）',
+        actions: 'generate 生成, stop 停止, reset 重置',
+        fit: '自有后端的异步生成任务'
+      },
+      {
         name: 'useRerank',
         state:
           'documents（文档）、rerankedDocuments（重排文档）、ranking（排序）、result（结果）、isLoading（加载中）、error（错误）',
@@ -2202,6 +2263,38 @@ const copy = {
           'partialObject（部分对象）、object（最终对象）、text（原始文本）、input（输入）、isLoading（加载中）、error（错误）',
         actions: 'submit 提交, stop 停止, clear 清空',
         fit: '信息抽取、分类、JSON 表单填充'
+      },
+      {
+        name: 'useChatThreads',
+        state: 'threads（线程）、activeThread（当前线程）、activeThreadId、persistenceError',
+        actions:
+          'createThread 创建, renameThread 重命名, archiveThread 归档, restoreThread 恢复, deleteThread 删除',
+        fit: 'Thread 侧边栏、本地索引和恢复验证'
+      },
+      {
+        name: 'useAgentContext',
+        state: 'snapshot（快照）、version（版本）、updatedAt（更新时间）',
+        actions: 'set 设置, patch 合并, reset 重置, subscribe 订阅',
+        fit: '把响应式应用状态暴露给 provider 或 agent 请求'
+      },
+      {
+        name: 'useAgentCapabilities',
+        state: 'capabilities（能力）、supports（支持矩阵）、isLoading（加载中）、error（错误）',
+        actions: 'refresh 刷新, clearError 清错',
+        fit: '根据运行时声明能力自适应 UI'
+      },
+      {
+        name: 'useAgentRun',
+        state:
+          'status（状态）、messages（消息）、streamData（流数据）、pendingInterrupts（待处理打断）、error（错误）',
+        actions: 'start 启动, resume 继续, stop 停止, reset 重置',
+        fit: '无 UI 的自有 agent event stream 状态'
+      },
+      {
+        name: 'usePromptSuggestions',
+        state: 'suggestions（建议）、isLoading（加载中）、error（错误）',
+        actions: 'load 加载, select 选择, clearError 清错',
+        fit: '输入区 chips 和任务入口，不接管 copilot 外壳'
       }
     ],
     tableLabels: {
@@ -2224,6 +2317,48 @@ const speechCode = computed(() => codeSamples[localeKey.value].speech)
 const transcriptionCode = computed(() => codeSamples[localeKey.value].transcription)
 const objectCode = computed(() => codeSamples[localeKey.value].object)
 const activeDemoHref = shallowRef<DemoHref>('#chat-demo')
+
+const quickChoiceHrefByLocale = {
+  en: {
+    useChat: '#chat-demo',
+    useChatThreads: '/reference/use-chat-threads',
+    useCompletion: '#completion-demo',
+    useGeneration: '/reference/use-generation',
+    useEmbedding: '#embedding-demo',
+    useRerank: '#rerank-demo',
+    useImage: '#image-demo',
+    useVideo: '#video-demo',
+    useSpeech: '#speech-demo',
+    useTranscription: '#transcription-demo',
+    useObject: '#object-demo',
+    useAgentContext: '/reference/use-agent-context',
+    useAgentCapabilities: '/reference/use-agent-capabilities',
+    useAgentRun: '/reference/use-agent-run',
+    usePromptSuggestions: '/reference/use-prompt-suggestions'
+  },
+  zh: {
+    useChat: '#chat-demo',
+    useChatThreads: '/zh/reference/use-chat-threads',
+    useCompletion: '#completion-demo',
+    useGeneration: '/zh/reference/use-generation',
+    useEmbedding: '#embedding-demo',
+    useRerank: '#rerank-demo',
+    useImage: '#image-demo',
+    useVideo: '#video-demo',
+    useSpeech: '#speech-demo',
+    useTranscription: '#transcription-demo',
+    useObject: '#object-demo',
+    useAgentContext: '/zh/reference/use-agent-context',
+    useAgentCapabilities: '/zh/reference/use-agent-capabilities',
+    useAgentRun: '/zh/reference/use-agent-run',
+    usePromptSuggestions: '/zh/reference/use-prompt-suggestions'
+  }
+} satisfies Record<LocaleKey, Record<string, string>>
+
+function getQuickChoiceHref(pick: string) {
+  return quickChoiceHrefByLocale[localeKey.value][pick] ?? '#composable-demos'
+}
+
 const sectionIds: DemoHref[] = [
   '#chat-demo',
   '#stream-demo',
@@ -2357,7 +2492,7 @@ onUnmounted(() => {
             v-for="choice in content.quickChoices"
             :key="choice.pick"
             class="showcase-brief__choice"
-            :href="`#${choice.pick.replace('use', '').toLowerCase()}-demo`"
+            :href="getQuickChoiceHref(choice.pick)"
           >
             <span>{{ choice.job }}</span>
             <strong>{{ choice.pick }}</strong>

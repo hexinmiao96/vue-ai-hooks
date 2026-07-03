@@ -73,7 +73,7 @@ For JSON Schema-backed structured output:
 
 ```tsx
 import { useObject } from 'vue-ai-hooks/react'
-import { openai } from 'vue-ai-hooks'
+import { jsonSchema, openai } from 'vue-ai-hooks'
 
 interface Ticket {
   title: string
@@ -85,14 +85,14 @@ export function ObjectBox() {
     useObject<Ticket>({
       provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY }),
       schemaName: 'ticket',
-      schema: {
+      schema: jsonSchema<Ticket>({
         type: 'object',
         properties: {
           title: { type: 'string' },
           priority: { type: 'string', enum: ['low', 'high'] }
         },
         required: ['title', 'priority']
-      }
+      })
     })
 
   return (
@@ -114,16 +114,16 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `useChat(options)` accepts `UseReactChatOptions`:
 
-| Option                                                                            | Description                                                                                           |
-| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `provider` / `transport`                                                          | A `ChatProvider`, including `openai()`, `openrouter()`, `proxyProvider()`, or `DefaultChatTransport`. |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                       | Proxy transport options used when no provider is passed.                                              |
-| `initialMessages`, `messages`, `initialInput`                                     | Initial React state.                                                                                  |
-| `defaultRequest`, `threadId`, `forwardedProps`, `context`                         | Defaults merged into provider requests.                                                               |
-| `generateId`                                                                      | Custom id generator for chat, user, assistant, and data ids.                                          |
-| `prepareSendMessagesRequest`                                                      | Final hook before a chat request is sent.                                                             |
-| `prepareReconnectToStreamRequest`                                                 | Final hook before a resumable stream request is sent.                                                 |
-| `onChunk`, `onData`, `onRequest`, `onResponse`, `onUpdate`, `onFinish`, `onError` | Lifecycle callbacks.                                                                                  |
+| Option                                                                                              | Description                                                                                           |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `provider` / `transport`                                                                            | A `ChatProvider`, including `openai()`, `openrouter()`, `proxyProvider()`, or `DefaultChatTransport`. |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                                         | Proxy transport options used when no provider is passed.                                              |
+| `initialMessages`, `messages`, `initialInput`                                                       | Initial React state.                                                                                  |
+| `defaultRequest`, `threadId`, `forwardedProps`, `context`                                           | Defaults merged into provider requests.                                                               |
+| `generateId`                                                                                        | Custom id generator for chat, user, assistant, and data ids.                                          |
+| `prepareSendMessagesRequest`                                                                        | Final hook before a chat request is sent.                                                             |
+| `prepareReconnectToStreamRequest`                                                                   | Final hook before a resumable stream request is sent.                                                 |
+| `onChunk`, `onData`, `onRequest`, `onResponse`, `onUpdate`, `onFinish`, `onFinishLegacy`, `onError` | Lifecycle callbacks.                                                                                  |
 
 `UseReactChatReturn` exposes plain React state and actions:
 
@@ -143,16 +143,16 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `useCompletion(options)` accepts `UseReactCompletionOptions`:
 
-| Option                                                       | Description                                                                     |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| `provider` / `transport`                                     | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`. |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`  | Proxy transport options used when no provider is passed.                        |
-| `initialInput`, `initialCompletion`                          | Initial React state.                                                            |
-| `defaultRequest`, `streamProtocol`                           | Defaults merged into each `CompletionRequest`.                                  |
-| `id`, `generateId`                                           | Stable id and custom id generator for request traces.                           |
-| `onUpdate`, `onRequest`, `onResponse`, `onFinish`, `onError` | Lifecycle callbacks for streamed text, traces, completion, and provider errors. |
-| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`       | Retry controls; retries only happen before the first streamed text delta.       |
-| `throttleMs`, `experimental_throttle`                        | Minimum wait in ms between React state updates during fast streams.             |
+| Option                                                                         | Description                                                                     |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| `provider` / `transport`                                                       | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`. |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                    | Proxy transport options used when no provider is passed.                        |
+| `initialInput`, `initialCompletion`                                            | Initial React state.                                                            |
+| `defaultRequest`, `streamProtocol`                                             | Defaults merged into each `CompletionRequest`.                                  |
+| `id`, `generateId`                                                             | Stable id and custom id generator for request traces.                           |
+| `onUpdate`, `onRequest`, `onResponse`, `onFinish`, `onFinishLegacy`, `onError` | Lifecycle callbacks for streamed text, traces, completion, and provider errors. |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                         | Retry controls; retries only happen before the first streamed text delta.       |
+| `throttleMs`, `experimental_throttle`                                          | Minimum wait in ms between React state updates during fast streams.             |
 
 `UseReactCompletionReturn` exposes plain React state and actions:
 
@@ -168,18 +168,27 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 | `clearError()`, `clearTrace()`, `clear()`                   | Reset error, trace, or the full completion state.                  |
 | `abortController`                                           | Active `AbortController`, or `null` when no stream is in flight.   |
 
+`onFinish(prompt, completion, info?)` follows AI SDK ordering. `onFinishLegacy(completion, info)` is retained for old call sites.
+
+- `stop()` triggers `onFinish` with `{ isAbort: true }` when a completion stream is in flight, and does not call `onError`.
+
+`onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })` is the AI SDK-style callback for `useChat`. `onFinishLegacy(message, info)` remains available for existing code.
+
 `useObject(options)` accepts `UseReactObjectOptions<T>`:
 
-| Option                                                                   | Description                                                                          |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `provider` / `transport`                                                 | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`.      |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`              | Proxy transport options used when no provider is passed. Defaults to `/api/object`.  |
-| `schema`, `schemaName`, `schemaDescription`, `strict`                    | JSON Schema response format sent through each `ChatRequest`.                         |
-| `initialInput`, `initialObject`, `initialValue`                          | Initial React state; `initialValue` seeds `partialObject`.                           |
-| `defaultRequest`, `id`, `generateId`                                     | Defaults merged into requests and stable ids for trace snapshots.                    |
-| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onError` | Lifecycle callbacks for streamed chunks, parsed partials, traces, and final objects. |
-| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                   | Retry controls; retries only happen before the first streamed chunk arrives.         |
-| `throttleMs`, `experimental_throttle`                                    | Minimum wait in ms between React state updates during fast streams.                  |
+| Option                                                                                     | Description                                                                          |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `provider` / `transport`                                                                   | A `ChatProvider`, including `openai()`, provider presets, or `proxyProvider()`.      |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                                | Proxy transport options used when no provider is passed. Defaults to `/api/object`.  |
+| `schema`, `schemaName`, `schemaDescription`, `strict`                                      | Raw JSON Schema or `jsonSchema()` wrapper sent through each `ChatRequest`.           |
+| `initialInput`, `initialObject`, `initialValue`                                            | Initial React state; `initialValue` seeds `partialObject`.                           |
+| `defaultRequest`, `id`, `generateId`                                                       | Defaults merged into requests and stable ids for trace snapshots.                    |
+| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onFinishLegacy`, `onError` | Lifecycle callbacks for streamed chunks, parsed partials, traces, and final objects. |
+
+`onFinish({ object, text, isAbort, error })` is the AI SDK-style callback for `useObject`. `onFinishLegacy(object, info)` remains available for existing code.
+It also fires on parse/validation failures with `object: undefined` and an `Error` in `error`.
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry` | Retry controls; retries only happen before the first streamed chunk arrives. |
+| `throttleMs`, `experimental_throttle` | Minimum wait in ms between React state updates during fast streams. |
 
 `UseReactObjectReturn<T>` exposes plain React state and actions:
 

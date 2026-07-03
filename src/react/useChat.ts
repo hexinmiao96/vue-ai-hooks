@@ -52,6 +52,15 @@ export interface ReactChatFinishInfo {
   finishReason?: ChatChunk['finishReason']
 }
 
+export type ReactAiSdkChatFinishCallback = (info: ReactChatFinishInfo) => void | Promise<void>
+
+export type ReactLegacyChatFinishCallback = (
+  message: Message,
+  info: ReactChatFinishInfo
+) => void | Promise<void>
+
+export type ReactChatFinishCallback = ReactAiSdkChatFinishCallback | ReactLegacyChatFinishCallback
+
 export interface ReactChatRequestInfo {
   kind: 'chat' | 'resume'
   id: string
@@ -135,7 +144,8 @@ export interface UseReactChatOptions<TData = unknown> extends RetryOptions, Stre
   onRequest?: (info: ReactChatRequestInfo) => void
   onResponse?: (info: ReactChatResponseInfo) => void
   onUpdate?: (message: Message) => void
-  onFinish?: (message: Message, info: ReactChatFinishInfo) => void
+  onFinish?: ReactChatFinishCallback
+  onFinishLegacy?: ReactLegacyChatFinishCallback
   onError?: (error: Error) => void
 }
 
@@ -273,6 +283,7 @@ export function useChat<
     onResponse,
     onUpdate,
     onFinish,
+    onFinishLegacy,
     onError
   } = options
 
@@ -331,6 +342,7 @@ export function useChat<
   const onResponseRef = useRef(onResponse)
   const onUpdateRef = useRef(onUpdate)
   const onFinishRef = useRef(onFinish)
+  const onFinishLegacyRef = useRef(onFinishLegacy)
   const onErrorRef = useRef(onError)
   const optionsRef = useRef(options)
 
@@ -341,6 +353,7 @@ export function useChat<
   onResponseRef.current = onResponse
   onUpdateRef.current = onUpdate
   onFinishRef.current = onFinish
+  onFinishLegacyRef.current = onFinishLegacy
   onErrorRef.current = onError
 
   const publishMessages = useCallback((nextMessages: Message[]) => {
@@ -596,16 +609,27 @@ export function useChat<
   const finishAssistant = useCallback(
     (assistant: Message, isAbort: boolean, isError: boolean, isDisconnect = false) => {
       const message = cloneMessage(assistant)
-      onFinishRef.current?.(message, {
+      const info = {
         message,
         messages: cloneMessages(messagesRef.current),
         isAbort,
         isError,
         isDisconnect,
         finishReason: message.metadata?.finishReason as ChatChunk['finishReason'] | undefined
-      })
+      }
+      const onFinish = onFinishRef.current
+      if (!onFinish) {
+        onFinishLegacyRef.current?.(message, info)
+        return
+      }
+      if (onFinish.length <= 1) {
+        void (onFinish as ReactAiSdkChatFinishCallback)(info)
+      } else {
+        void (onFinish as ReactLegacyChatFinishCallback)(message, info)
+      }
+      onFinishLegacyRef.current?.(message, info)
     },
-    []
+    [messagesRef]
   )
 
   const replaceAssistant = useCallback(

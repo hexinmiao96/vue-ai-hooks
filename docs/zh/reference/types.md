@@ -106,6 +106,88 @@ interface Message {
 `Message.parts` 是可选字段，`content` 仍保持向后兼容。它为 Vue UI 提供可以直接渲染的
 text、reasoning、source、file、自定义 data 和 `tool-*` 状态，避免从 assistant 文本里再解析结构。
 
+`getToolRenderParts()` 会从 `Message.parts`、assistant `toolCalls`、`role: 'tool'`
+结果消息，以及可选 pending tool calls 中推导稳定的工具渲染行：
+
+```ts
+type ToolRenderStatus = 'inProgress' | 'executing' | 'awaitingAction' | 'complete' | 'error'
+
+interface ToolRenderPart {
+  key: string
+  toolCallId: string
+  toolName: string
+  state: MessageToolPart['state']
+  status: ToolRenderStatus
+  pending: boolean
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+  messageId?: string
+}
+
+interface GetToolRenderPartsOptions {
+  messages: readonly Message[]
+  pendingToolCalls?: readonly ToolCall[]
+}
+```
+
+如果需要 AI SDK UI 风格的端到端类型，可以用 `UIMessage` 把 message metadata、自定义
+data parts 和推断出的 tools 组合起来：
+
+```ts
+type UIDataTypes = Record<string, unknown>
+type UITools = Record<string, { input: unknown; output: unknown }>
+
+type UIMessageDataPart<TDataTypes extends UIDataTypes = UIDataTypes> =
+  | { type: 'data'; id?: string; data: unknown; transient?: boolean }
+  | {
+      [TName in keyof TDataTypes & string]: {
+        type: `data-${TName}`
+        id?: string
+        data: TDataTypes[TName]
+        transient?: boolean
+      }
+    }[keyof TDataTypes & string]
+
+type UIMessageToolPart<TTools extends UITools = UITools> = {
+  [TName in keyof TTools & string]: {
+    type: `tool-${TName}`
+    toolCallId: string
+    toolName: TName
+    state: MessageToolPart['state']
+    input?: TTools[TName]['input']
+    inputText?: string
+    output?: TTools[TName]['output']
+    errorText?: string
+  }
+}[keyof TTools & string]
+
+type UIMessagePart<TDataTypes extends UIDataTypes = UIDataTypes, TTools extends UITools = UITools> =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | UIMessageDataPart<TDataTypes>
+  | UIMessageToolPart<TTools>
+
+interface UIMessage<
+  TMetadata extends Record<string, unknown> | never = Record<string, unknown>,
+  TDataTypes extends UIDataTypes = UIDataTypes,
+  TTools extends UITools = UITools
+> extends Omit<Message, 'metadata' | 'parts'> {
+  parts?: UIMessagePart<TDataTypes, TTools>[]
+  metadata?: TMetadata
+}
+```
+
+应用需要强类型渲染 parts，但不想接入 UI framework 时，可以把
+`UIMessage<Metadata, DataParts, InferUITools<typeof tools>>` 和
+`dataPartSchemas`、`messageMetadataSchema`、`defineToolHandlers()` 放在一起使用。
+
+审批按钮或手动结果表单可以渲染 `ToolRenderPart.status === 'awaitingAction'` 的行；
+已完成和失败的工具时间线则分别渲染 `status === 'complete'` 或 `'error'`。
+
 `convertToModelMessages(messages, options?)` 返回面向 provider/model 的消息，
 不会包含 UI-only 的 `parts`。它默认移除 `id` 和 `createdAt`，如果后端需要稳定链路字段也可以显式保留：
 
@@ -211,7 +293,9 @@ AI SDK 风格工具 helper 使用这些公开类型：
 interface JsonSchemaDefinition<TInput = unknown> {
   readonly kind: 'json-schema'
   readonly schema: Record<string, unknown>
-  readonly validate?: (value: unknown) => value is TInput
+  readonly validate?: (
+    value: unknown
+  ) => boolean | { success: true; value: TInput } | { success: false; error: Error }
 }
 
 type ToolInputSchema<TInput = unknown> = Record<string, unknown> | JsonSchemaDefinition<TInput>
@@ -239,16 +323,40 @@ interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   dynamic?: boolean
 }
 
-type AnyToolDefinition = ToolDefinition<never, unknown>
+type AnyToolDefinition = ToolDefinition<unknown, unknown>
 type ToolSet = Record<string, Tool | AnyToolDefinition>
 type ChatToolsInput = Tool[] | ToolSet
+
+type InferToolInput<TTool> =
+  TTool extends ToolDefinition<infer TInput, infer _TOutput> ? TInput : unknown
+type InferToolOutput<TTool> =
+  TTool extends ToolDefinition<infer _TInput, infer TOutput> ? Awaited<TOutput> : unknown
+type InferUITools<TTools extends ToolSet> = {
+  [K in keyof TTools]: {
+    input: InferToolInput<TTools[K]>
+    output: InferToolOutput<TTools[K]>
+  }
+}
+type ToolHandlerFor<TTool> = (
+  args: InferToolInput<TTool>,
+  context: ToolCallHandlerContext
+) => InferToolOutput<TTool> | Promise<InferToolOutput<TTool>>
+type ToolHandlersFor<TTools extends ToolSet> = {
+  [K in keyof TTools]?: ToolHandlerFor<TTools[K]>
+}
 ```
 
-`jsonSchema(schema)` 会把 JSON Schema 包装给 `tool({ inputSchema })` 使用。
-`tool()` 和 `dynamicTool()` 返回的 `ToolDefinition` 会由 `useChat({ tools })`
-归一化成 Provider 侧的 `Tool[]`；其中的 `execute` 会注册成本地 handler。tool result
+`jsonSchema(schema)` 会把 JSON Schema 包装给 `tool({ inputSchema })` 和
+`useObject({ schema })` 使用。可选的 `validate` 回调可以返回 boolean/type guard
+结果，也可以返回 AI SDK 风格的 `{ success, value/error }` 结果。`tool()` 和
+`dynamicTool()` 返回的 `ToolDefinition` 会由 `useChat({ tools })` 归一化成
+Provider 侧的 `Tool[]`；其中的 `execute` 会注册成本地 handler。tool result
 消息需要转换成模型可读文本或 `ContentPart[]` 时，`convertToModelMessages(messages, {
 tools })` 会读取 `toModelOutput`。
+
+handler 不写在工具定义里时，可以用 `defineToolHandlers(tools, handlers)`。它在运行时仍返回现有
+`Record<string, ToolCallHandler>` 形态，同时用 `ToolHandlersFor<Tools>` 让每个
+handler 参数跟对应工具 input 类型保持一致。
 
 工具执行回调使用和 `toolHandlers` 相同的已解析参数快照：
 
@@ -259,6 +367,27 @@ interface ToolCallHandlerContext {
   args: unknown
   context?: unknown
 }
+
+interface UIToolCall {
+  toolCallId: string
+  toolName: string
+  input: unknown
+  dynamic: boolean
+}
+
+interface ToolCallCallbackOptions {
+  toolCall: UIToolCall
+  messages: Message[]
+  args: unknown
+  context?: unknown
+}
+
+type AiSdkToolCallCallback = (options: ToolCallCallbackOptions) => void | Promise<void>
+type LegacyToolCallCallback = (
+  args: unknown,
+  context: ToolCallHandlerContext
+) => void | Promise<void>
+type ToolCallCallback = AiSdkToolCallCallback | LegacyToolCallCallback
 
 type ToolApprovalPredicate = (
   args: unknown,
@@ -302,6 +431,23 @@ interface ToolResultHandlerContext extends ToolCallHandlerContext {
 
 `PrepareStep` 用于自定义每个 assistant 步骤的请求。`stepNumber` 从 `0`
 开始；准备工具结果后的续跑请求时，`toolCalls` 会包含最新 assistant 步骤的工具调用。
+
+完成回调暴露 AI SDK UI 风格的对象形态，同时保留旧的双参数回调：
+
+```ts
+interface ChatFinishInfo {
+  message: Message
+  messages: Message[]
+  isAbort: boolean
+  isError: boolean
+  isDisconnect: boolean
+  finishReason?: ChatChunk['finishReason']
+}
+
+type AiSdkChatFinishCallback = (options: ChatFinishInfo) => void | Promise<void>
+type LegacyChatFinishCallback = (message: Message, info: ChatFinishInfo) => void | Promise<void>
+type ChatFinishCallback = AiSdkChatFinishCallback | LegacyChatFinishCallback
+```
 
 请求生命周期回调会暴露与 Provider 无关的请求快照：
 

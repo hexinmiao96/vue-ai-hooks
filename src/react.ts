@@ -9,6 +9,9 @@
 export {
   useChat,
   type ReactAppendChatOptions,
+  type ReactAiSdkChatFinishCallback,
+  type ReactChatFinishCallback,
+  type ReactLegacyChatFinishCallback,
   type ReactChatFinishInfo,
   type ReactChatRequestInfo,
   type ReactChatResponseInfo,
@@ -20,6 +23,8 @@ export {
 
 export {
   useCompletion,
+  type ReactAiSdkCompletionFinishCallback,
+  type ReactLegacyCompletionFinishCallback,
   type ReactCompletionFinishInfo,
   type ReactCompletionRequestInfo,
   type ReactCompletionResponseInfo,
@@ -32,7 +37,11 @@ export {
 export {
   useObject,
   type ReactObjectDeepPartial,
+  type ReactAiSdkObjectFinishCallback,
+  type ReactLegacyObjectFinishCallback,
   type ReactObjectFinishInfo,
+  type ReactObjectFinishCallback,
+  type ReactObjectFinishCallbackOptions,
   type ReactObjectRequestInfo,
   type ReactObjectResponseInfo,
   type ReactObjectStatus,

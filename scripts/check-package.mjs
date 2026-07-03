@@ -9,8 +9,8 @@ const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
 
 const [pack] = JSON.parse(output)
 const files = new Set(pack.files.map((file) => file.path))
-const maxPackageSize = 520_000
-const maxUnpackedSize = 2_410_000
+const maxPackageSize = 595_000
+const maxUnpackedSize = 2_780_000
 
 const requiredFiles = [
   'package.json',
@@ -20,26 +20,34 @@ const requiredFiles = [
   'SECURITY.md',
   'LICENSE',
   'src/index.ts',
+  'src/composables/useAgentCapabilities.ts',
+  'src/composables/useAgentContext.ts',
+  'src/composables/useAgentRun.ts',
   'src/composables/useChatThreads.ts',
+  'src/composables/usePromptSuggestions.ts',
   'src/react.ts',
   'src/react/useChat.ts',
   'src/react/useCompletion.ts',
   'src/react/useObject.ts',
   'src/utils/agentEvents.ts',
   'dist/index.mjs',
-  'dist/index.mjs.map',
   'dist/index.cjs',
-  'dist/index.cjs.map',
   'dist/index.d.ts',
   'dist/index.d.ts.map',
+  'dist/composables/useAgentCapabilities.d.ts',
+  'dist/composables/useAgentCapabilities.d.ts.map',
+  'dist/composables/useAgentContext.d.ts',
+  'dist/composables/useAgentContext.d.ts.map',
+  'dist/composables/useAgentRun.d.ts',
+  'dist/composables/useAgentRun.d.ts.map',
   'dist/composables/useChatThreads.d.ts',
   'dist/composables/useChatThreads.d.ts.map',
+  'dist/composables/usePromptSuggestions.d.ts',
+  'dist/composables/usePromptSuggestions.d.ts.map',
   'dist/utils/agentEvents.d.ts',
   'dist/utils/agentEvents.d.ts.map',
   'dist/react.mjs',
-  'dist/react.mjs.map',
   'dist/react.cjs',
-  'dist/react.cjs.map',
   'dist/react.d.ts',
   'dist/react.d.ts.map',
   'dist/react/useCompletion.d.ts',

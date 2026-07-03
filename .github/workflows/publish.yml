@@ -106,6 +106,9 @@ jobs:
       - name: Proxy example
         run: pnpm proxy:check
 
+      - name: Image demo
+        run: pnpm image:check
+
       - name: Threaded chat
         run: pnpm threaded-chat:check
 

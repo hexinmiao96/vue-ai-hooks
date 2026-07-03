@@ -364,13 +364,141 @@ describe('useCompletion', () => {
     await expect(complete('finish it')).resolves.toBe('finished')
 
     expect(onFinish).toHaveBeenCalledOnce()
-    expect(onFinish).toHaveBeenCalledWith('finished', {
+    expect(onFinish).toHaveBeenCalledWith('finish it', 'finished', {
       prompt: 'finish it',
       completion: 'finished',
       isAbort: false
     })
     expect(isLoading.value).toBe(false)
     expect(error.value).toBeNull()
+  })
+
+  it('supports inspect() for request/response lifecycle snapshots', async () => {
+    const { complete, inspect, setCompletion } = useCompletion({
+      provider: fakeProvider('inspected'),
+      initialCompletion: 'seed'
+    })
+
+    expect(inspect().hasRequest).toBe(false)
+    expect(inspect().hasResponse).toBe(false)
+
+    setCompletion('seed')
+    await expect(complete('inspect')).resolves.toBe('inspected')
+
+    const snapshot = inspect()
+    expect(snapshot.hasRequest).toBe(true)
+    expect(snapshot.hasResponse).toBe(true)
+    expect(snapshot.request).toMatchObject({
+      prompt: 'inspect',
+      attempt: 1,
+      request: expect.objectContaining({ prompt: 'inspect', stream: true })
+    })
+    expect(snapshot.response).toMatchObject({
+      prompt: 'inspect',
+      attempt: 1,
+      hasStream: true
+    })
+    expect(snapshot.timeline.map((event) => event.kind)).toEqual(
+      expect.arrayContaining(['request', 'response', 'stream'])
+    )
+    expect(snapshot.retries).toEqual([])
+  })
+
+  it('uses retryDelayMs callback when scheduling retry delay', async () => {
+    let calls = 0
+    const retryDelayMs = vi.fn(() => 42)
+    const provider = {
+      id: 'retry-completion-provider',
+      async completion() {
+        calls += 1
+        if (calls === 1) throw new Error('temporary completion failure')
+        return (async function* () {
+          yield 'retried'
+        })()
+      }
+    } as unknown as CompletionProvider
+    const { complete, inspect, error } = useCompletion({
+      provider,
+      maxRetries: 1,
+      retryDelayMs
+    })
+
+    await expect(complete('retry with delay')).resolves.toBe('retried')
+
+    expect(error.value).toBeNull()
+    expect(retryDelayMs).toHaveBeenCalledTimes(2)
+    expect(retryDelayMs).toHaveBeenNthCalledWith(1, expect.objectContaining({ attempt: 1 }))
+    const snapshot = inspect()
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      delayMs: 42,
+      error: expect.objectContaining({
+        name: 'Error',
+        message: 'temporary completion failure'
+      })
+    })
+    expect(snapshot.timeline).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'retry' })])
+    )
+  })
+
+  it('supports handleInputChange with string inputs', () => {
+    const { handleInputChange, input } = useCompletion({ provider: fakeProvider('unused') })
+
+    handleInputChange('string prompt')
+    expect(input.value).toBe('string prompt')
+
+    handleInputChange({})
+    expect(input.value).toBe('')
+  })
+
+  it('handles non-stream provider responses and records response metadata', async () => {
+    const onResponse = vi.fn()
+    const onError = vi.fn()
+    const provider = {
+      id: 'non-stream-provider',
+      async completion() {
+        return null as unknown as AsyncIterable<string>
+      }
+    } as unknown as CompletionProvider
+
+    const { complete, lastResponse, inspect } = useCompletion({
+      provider,
+      maxRetries: 0,
+      onResponse,
+      onError
+    })
+
+    await expect(complete('non stream')).rejects.toThrow()
+
+    expect(onResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        providerId: 'non-stream-provider',
+        attempt: 1,
+        hasStream: false
+      })
+    )
+    expect(onError).toHaveBeenCalled()
+    expect(lastResponse.value).toMatchObject({ hasStream: false })
+    expect(inspect().response).toMatchObject({ hasStream: false })
+  })
+
+  it('supports legacy onFinish callbacks', async () => {
+    const onFinishLegacy = vi.fn()
+    const { complete } = useCompletion({
+      provider: fakeProvider('finished'),
+      onFinishLegacy
+    })
+
+    await expect(complete('legacy finish')).resolves.toBe('finished')
+
+    expect(onFinishLegacy).toHaveBeenCalledOnce()
+    expect(onFinishLegacy).toHaveBeenCalledWith('finished', {
+      prompt: 'legacy finish',
+      completion: 'finished',
+      isAbort: false
+    })
   })
 
   it('throws if no prompt is available', async () => {
@@ -558,7 +686,7 @@ describe('useCompletion', () => {
 
     expect(error.value).toBeNull()
     expect(onFinish).toHaveBeenCalledOnce()
-    expect(onFinish).toHaveBeenCalledWith('partial', {
+    expect(onFinish).toHaveBeenCalledWith('abort', 'partial', {
       prompt: 'abort',
       completion: 'partial',
       isAbort: true

@@ -24,6 +24,7 @@ async function* runAgent(): AsyncGenerator<AgentEvent> {
   yield { type: 'progress', id: 'search', label: '搜索文档', value: 0.5 }
   yield { type: 'tool-call', id: 'call_1', name: 'lookupOrder', input: { orderId: 'A-42' } }
   yield { type: 'tool-result', id: 'call_1', name: 'lookupOrder', output: { status: 'paid' } }
+  yield { type: 'interrupt', id: 'approval_1', name: 'approveRefund', value: { amount: 49 } }
   yield { type: 'source', id: 'source_1', url: 'https://example.test/orders/A-42' }
   yield { type: 'finish', usage: { promptTokens: 12, completionTokens: 18, totalTokens: 30 } }
 }
@@ -38,6 +39,7 @@ async function* runAgent(): AsyncGenerator<AgentEvent> {
 | `tool-call`     | 工具输入已就绪，可渲染或审批    | `toolCalls` / `tool-input-available` |
 | `tool-result`   | 工具成功完成                    | `tool-output-available`              |
 | `tool-error`    | 工具失败，但 stream 可继续      | `tool-output-error`                  |
+| `interrupt`     | 人在回路 resume 点              | `data-agent-interrupt`               |
 | `source`        | URL 引用或外部来源              | `source-url`                         |
 | `file`          | 生成或附加的文件                | `file`                               |
 | `finish`        | 最终原因、usage 和可选 metadata | `finish`                             |
@@ -117,14 +119,15 @@ adapter 不执行工具，也不提供沙箱。它只保留足够的 id、名称
 让 `useChat` 和渲染器能展示稳定 timeline。持久人工审批、审批人审计轨迹、幂等执行和安全
 renderer contract 见 [工具审批配方](/zh/guide/tool-approvals)。
 
-## Data part 命名
+## Interrupt 和 Data part 命名
 
-progress 和不抛出的 agent 错误默认使用安全名称：
+interrupt、progress 和不抛出的 agent 错误默认使用安全名称：
 
 ```ts
 readAgentEventStream({
   events,
   progressDataType: 'data-agent-progress',
+  interruptDataType: 'data-agent-interrupt',
   errorDataType: 'data-agent-error'
 })
 ```
@@ -135,12 +138,14 @@ readAgentEventStream({
 readAgentEventStream({
   events,
   progressDataType: 'data-workflow-progress',
+  interruptDataType: 'data-workflow-interrupt',
   errorDataType: 'data-workflow-error'
 })
 ```
 
-progress 或 error 事件带上 `transient: true` 时，UI 会收到 `onData`，但不会把该
-part 存进消息 timeline。
+progress、interrupt 或 error 事件带上 `transient: true` 时，UI 会收到 `onData`，
+但不会把该 part 存进消息 timeline。浏览器负责 run 按钮和审批 UI 时，见
+[useAgentRun](/zh/reference/use-agent-run)。
 
 ## 生产注意事项
 

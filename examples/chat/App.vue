@@ -2,7 +2,11 @@
 import { computed, ref, shallowRef } from 'vue'
 import {
   DirectChatTransport,
+  getToolRenderParts,
+  useAgentContext,
+  useAgentContextRegistry,
   useChat,
+  usePromptSuggestions,
   deepseek,
   gemini,
   openai,
@@ -13,11 +17,14 @@ import type {
   ChatChunk,
   ChatRequest,
   ImageUrlPart,
+  Message,
   MessageContent,
   MessagePart,
-  MessageToolPart,
+  PromptSuggestion,
+  PromptSuggestionInput,
   Tool,
-  ToolCall
+  ToolCall,
+  ToolRenderPart
 } from 'vue-ai-hooks'
 
 type ProviderType =
@@ -259,6 +266,7 @@ const chunkCount = shallowRef(0)
 const approvalLog = shallowRef('No approval decision yet.')
 const fileInput = shallowRef<HTMLInputElement | null>(null)
 const selectedFiles = shallowRef<File[]>([])
+const agentContext = useAgentContextRegistry()
 
 // useChat returns both message stream state and imperative controls.
 // - messages/input: render + editor binding
@@ -291,6 +299,8 @@ const {
     : {
         provider
       }),
+  agentContext,
+  agentContextMessage: { title: 'Runtime chat context' },
   tools: [chargeCardTool],
   toolHandlers: {
     chargeCard(args) {
@@ -321,6 +331,61 @@ const pendingApprovals = computed(() =>
       args: checkoutFromCall(call)
     }))
 )
+useAgentContext(agentContext, {
+  description: 'Current local chat demo state',
+  value: () => ({
+    provider: providerType,
+    selectedFileCount: selectedFiles.value.length,
+    pendingApprovalCount: pendingApprovals.value.length
+  })
+})
+const promptSuggestionItems: PromptSuggestion[] = [
+  {
+    id: 'approval-demo',
+    title: 'Approval demo',
+    prompt: 'Run the checkout approval demo.',
+    description: 'Tool call + human approval'
+  },
+  {
+    id: 'trace-review',
+    title: 'Trace review',
+    prompt: 'Explain the latest request trace in one paragraph.',
+    description: 'Uses inspection output'
+  },
+  {
+    id: 'attachment-review',
+    title: 'Attachment review',
+    prompt: 'Review the attached image or text and list the important details.',
+    description: 'Works with file input'
+  },
+  {
+    id: 'handoff',
+    title: 'Handoff note',
+    prompt: 'Write a short handoff note with decisions, open questions, and next steps.',
+    description: 'Summarize the thread'
+  }
+]
+const suggestionLoadCount = shallowRef(0)
+const {
+  visibleSuggestions,
+  selectSuggestion,
+  reloadSuggestions,
+  isLoading: isLoadingSuggestions,
+  error: suggestionError
+} = usePromptSuggestions({
+  suggestions: promptSuggestionItems,
+  input,
+  messages,
+  max: 5,
+  async loader({ input: currentInput, messages: currentMessages, signal }) {
+    await sleep(40)
+    if (signal.aborted) return []
+
+    suggestionLoadCount.value += 1
+    return [buildContextSuggestion(currentInput, currentMessages, suggestionLoadCount.value)]
+  },
+  loadOnInit: true
+})
 
 const canStartDemo = computed(() => !isLoading.value && pendingApprovals.value.length === 0)
 const canSend = computed(
@@ -334,6 +399,17 @@ const inspectionTimeline = computed(() => inspection.value.timeline)
 const inspectionRetries = computed(() => inspection.value.retries)
 const lastRequestJson = computed(() => JSON.stringify(lastRequest.value, null, 2))
 const lastResponseJson = computed(() => JSON.stringify(lastResponse.value, null, 2))
+const toolRenderRows = computed(() =>
+  getToolRenderParts({ messages: messages.value, pendingToolCalls: pendingToolCalls.value })
+)
+const toolRenderRowsByMessageId = computed(() => {
+  const rows = new Map<string, ToolRenderPart[]>()
+  for (const row of toolRenderRows.value) {
+    const id = row.messageId ?? row.toolCallId
+    rows.set(id, [...(rows.get(id) ?? []), row])
+  }
+  return rows
+})
 
 async function copyInspectionCurl() {
   if (!inspection.value.curl) return
@@ -369,8 +445,7 @@ const renderedMessages = computed(() =>
     role: message.role,
     text: messageText(message.content),
     images: messageImages(message.content),
-    parts: visibleMessageParts(message.parts),
-    toolCalls: message.toolCalls ?? []
+    parts: visibleMessageParts(message.parts, toolRenderRowsByMessageId.value.get(message.id) ?? [])
   }))
 )
 
@@ -382,6 +457,44 @@ function handleFileChange(event: Event) {
 function clearSelectedFiles() {
   selectedFiles.value = []
   if (fileInput.value) fileInput.value.value = ''
+}
+
+function applySuggestion(suggestion: PromptSuggestion) {
+  const selected = selectSuggestion(suggestion)
+  if (!selected || isLoading.value) return
+  input.value = selected.prompt
+  clearSelectedFiles()
+}
+
+function buildContextSuggestion(
+  currentInput: string,
+  currentMessages: readonly Message[],
+  count: number
+): PromptSuggestionInput {
+  if (currentInput) {
+    return {
+      id: `dynamic-refine-${count}`,
+      title: 'Refine input',
+      prompt: `Improve this prompt before sending: ${currentInput}`,
+      description: `Loaded context #${count}`
+    }
+  }
+
+  if (currentMessages.length > 0) {
+    return {
+      id: `dynamic-recap-${count}`,
+      title: 'Thread recap',
+      prompt: 'Summarize the latest assistant response and list follow-up actions.',
+      description: `Loaded context #${count}`
+    }
+  }
+
+  return {
+    id: `dynamic-scope-${count}`,
+    title: 'Demo scope',
+    prompt: 'List what this local demo can do without an API key.',
+    description: `Loaded context #${count}`
+  }
 }
 
 function messageText(content: MessageContent): string {
@@ -397,10 +510,6 @@ function messageImages(content: MessageContent): ImageUrlPart[] {
   return content.filter((part): part is ImageUrlPart => part.type === 'image_url')
 }
 
-function isToolPart(part: MessagePart): part is MessageToolPart {
-  return part.type.startsWith('tool-')
-}
-
 function formatPreviewData(value: unknown): string {
   if (typeof value === 'string') return value
   const serialized = JSON.stringify(value)
@@ -408,10 +517,13 @@ function formatPreviewData(value: unknown): string {
   return serialized.length > 90 ? `${serialized.slice(0, 87)}...` : serialized
 }
 
-function visibleMessageParts(parts: MessagePart[] | undefined): RenderedMessagePart[] {
-  return (parts ?? [])
-    .filter((part) => part.type !== 'text')
-    .map((part, index) => {
+function visibleMessageParts(
+  parts: MessagePart[] | undefined,
+  toolRows: ToolRenderPart[]
+): RenderedMessagePart[] {
+  const structuredParts: RenderedMessagePart[] = (parts ?? [])
+    .filter((part) => part.type !== 'text' && !part.type.startsWith('tool-'))
+    .map((part, index): RenderedMessagePart => {
       if (part.type === 'reasoning') {
         return {
           key: part.id ?? `reasoning-${index}`,
@@ -438,21 +550,32 @@ function visibleMessageParts(parts: MessagePart[] | undefined): RenderedMessageP
           tone: 'file'
         }
       }
-      if (isToolPart(part)) {
-        return {
-          key: part.toolCallId,
-          kind: part.type,
-          label: `${part.toolName}: ${part.state}`,
-          tone: 'tool'
-        }
-      }
+      const dataPart = part as Extract<MessagePart, { type: 'data' | `data-${string}` }>
       return {
-        key: part.id ?? `${part.type}-${index}`,
-        kind: part.type,
-        label: formatPreviewData(part.data),
+        key: dataPart.id ?? `${dataPart.type}-${index}`,
+        kind: dataPart.type,
+        label: formatPreviewData(dataPart.data),
         tone: 'data'
       }
     })
+  return [...structuredParts, ...toolRows.map(renderToolPart)]
+}
+
+function renderToolPart(row: ToolRenderPart): RenderedMessagePart {
+  return {
+    key: row.key,
+    kind: `tool-${row.status}`,
+    label: `${row.toolName}: ${toolRenderLabel(row)}`,
+    tone: 'tool'
+  }
+}
+
+function toolRenderLabel(row: ToolRenderPart): string {
+  if (row.status === 'awaitingAction') return 'awaiting approval'
+  if (row.status === 'inProgress') return 'streaming input'
+  if (row.status === 'executing') return 'executing'
+  if (row.status === 'error') return row.errorText ?? 'failed'
+  return 'complete'
 }
 
 /**
@@ -572,9 +695,6 @@ async function rejectCheckout(callId: string) {
             <strong v-else>{{ part.label }}</strong>
           </li>
         </ul>
-        <ul v-if="m.toolCalls.length" class="tool-call-list" aria-label="tool calls">
-          <li v-for="call in m.toolCalls" :key="call.id">requested {{ call.function.name }}</li>
-        </ul>
       </article>
     </section>
 
@@ -612,6 +732,30 @@ async function rejectCheckout(callId: string) {
     <p class="approval-log">{{ approvalLog }}</p>
 
     <form class="composer" @submit="send">
+      <div class="suggestion-bar">
+        <div v-if="visibleSuggestions.length" class="suggestions" aria-label="prompt suggestions">
+          <button
+            v-for="suggestion in visibleSuggestions"
+            :key="suggestion.id"
+            type="button"
+            class="suggestion-chip"
+            :disabled="isLoading"
+            @click="applySuggestion(suggestion)"
+          >
+            <span>{{ suggestion.title }}</span>
+            <small v-if="suggestion.description">{{ suggestion.description }}</small>
+          </button>
+        </div>
+        <button
+          type="button"
+          class="suggestion-refresh"
+          :disabled="isLoadingSuggestions"
+          @click="reloadSuggestions"
+        >
+          {{ isLoadingSuggestions ? 'Loading suggestions' : 'Refresh suggestions' }}
+        </button>
+      </div>
+      <p v-if="suggestionError" class="suggestion-error">{{ suggestionError.message }}</p>
       <textarea
         v-model="input"
         rows="3"
@@ -715,22 +859,6 @@ h1 {
   color: #172033;
   font-size: 13px;
   font-weight: 700;
-}
-.tool-call-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0;
-  margin: 8px 0 0;
-  list-style: none;
-}
-.tool-call-list li {
-  padding: 4px 8px;
-  border: 1px solid #f59e0b;
-  border-radius: 999px;
-  color: #92400e;
-  background: #fffbeb;
-  font-size: 12px;
 }
 .message-parts {
   display: grid;
@@ -838,6 +966,43 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+.suggestion-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+.suggestions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.suggestion-chip {
+  min-width: 0;
+  padding: 8px 10px;
+  text-align: left;
+}
+.suggestion-chip span,
+.suggestion-chip small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.suggestion-chip span {
+  font-weight: 700;
+}
+.suggestion-chip small {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 11px;
+}
+.suggestion-refresh {
+  min-width: 132px;
+}
+.suggestion-error {
+  margin: 0;
+  color: #b00020;
+  font-size: 12px;
 }
 textarea {
   width: 100%;
@@ -950,6 +1115,15 @@ button:disabled {
   }
   .approval-request dl {
     grid-template-columns: 1fr;
+  }
+  .suggestion-bar {
+    grid-template-columns: 1fr;
+  }
+  .suggestions {
+    grid-template-columns: 1fr;
+  }
+  .suggestion-refresh {
+    width: 100%;
   }
 }
 </style>

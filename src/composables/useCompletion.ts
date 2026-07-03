@@ -31,6 +31,17 @@ export interface CompletionFinishInfo {
   isAbort: boolean
 }
 
+export type AiSdkCompletionFinishCallback = (
+  prompt: string,
+  completion: string,
+  info?: CompletionFinishInfo
+) => void
+
+export type LegacyCompletionFinishCallback = (
+  completion: string,
+  info: CompletionFinishInfo
+) => void
+
 export interface CompletionRequestInfo {
   id: string
   providerId: string
@@ -65,7 +76,8 @@ export interface UseCompletionOptions extends RetryOptions, StreamThrottleOption
   onUpdate?: (completion: string, delta: string) => void
   onRequest?: (info: CompletionRequestInfo) => void
   onResponse?: (info: CompletionResponseInfo) => void
-  onFinish?: (completion: string, info: CompletionFinishInfo) => void
+  onFinish?: AiSdkCompletionFinishCallback
+  onFinishLegacy?: LegacyCompletionFinishCallback
   onError?: (err: Error) => void
 }
 
@@ -155,6 +167,7 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
     onRequest,
     onResponse,
     onFinish,
+    onFinishLegacy,
     onError
   } = options
   const provider =
@@ -266,8 +279,10 @@ export function useCompletion(options: UseCompletionOptions = {}): UseCompletion
   }
 
   function finishCompletion(prompt: string, isAbort: boolean) {
-    if (!onFinish) return
-    onFinish(completion.value, { prompt, completion: completion.value, isAbort })
+    if (!onFinish && !onFinishLegacy) return
+    const info = { prompt, completion: completion.value, isAbort }
+    onFinish?.(prompt, completion.value, info)
+    onFinishLegacy?.(completion.value, info)
   }
 
   function requestInfo(

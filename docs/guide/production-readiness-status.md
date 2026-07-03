@@ -14,7 +14,7 @@ GitHub issues remain reserved for reproducible bugs.
 | Area                    | Current status            | Evidence                                                                                     |
 | ----------------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
 | Inspection              | Ready for app adoption    | `inspect()`, `inspectRequestTrace()`, timeline, retry records, provider trace, redacted curl |
-| Task demos              | Ready for onboarding      | Vue approval demo, React chat/completion/object demos, proxy, AI SDK stream, checklist       |
+| Task demos              | Ready for onboarding      | Vue approval demo, React chat/completion/object demos, image edit, proxy, AI SDK stream      |
 | Provider presets        | Ready behind app proxies  | OpenAI-compatible, DeepSeek, OpenRouter, Gemini, Anthropic, Moonshot, Zhipu, Ollama, vLLM    |
 | React support           | Migration bridge          | `vue-ai-hooks/react` exposes `useChat`, `useCompletion`, and `useObject`                     |
 | Tool approval           | Ready as backend contract | Durable approval record, renderer contract, replayed `runId`, stale `revision` conflicts     |
@@ -38,8 +38,9 @@ node scripts/production-readiness-local.mjs
 
 The gate covers format, secrets, source hygiene, lint, typecheck, test hygiene,
 coverage, build, dist, size, pack, install, changelog, metadata, community
-health, workflows, API docs, docs UX, proxy, threaded chat, UI message stream,
-tool approval, agent bridge, markdown links, examples, and docs build.
+health, workflows, API docs, docs UX, proxy, image edit, threaded chat, UI
+message stream, tool approval, agent bridge, markdown links, examples, and docs
+build.
 
 ## Release boundary
 

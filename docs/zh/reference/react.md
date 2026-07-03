@@ -71,7 +71,7 @@ JSON Schema 结构化输出可以使用：
 
 ```tsx
 import { useObject } from 'vue-ai-hooks/react'
-import { openai } from 'vue-ai-hooks'
+import { jsonSchema, openai } from 'vue-ai-hooks'
 
 interface Ticket {
   title: string
@@ -83,14 +83,14 @@ export function ObjectBox() {
     useObject<Ticket>({
       provider: openai({ apiKey: import.meta.env.VITE_OPENAI_KEY }),
       schemaName: 'ticket',
-      schema: {
+      schema: jsonSchema<Ticket>({
         type: 'object',
         properties: {
           title: { type: 'string' },
           priority: { type: 'string', enum: ['low', 'high'] }
         },
         required: ['title', 'priority']
-      }
+      })
     })
 
   return (
@@ -112,16 +112,16 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `useChat(options)` 接收 `UseReactChatOptions`：
 
-| 选项                                                                              | 说明                                                                                             |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `provider` / `transport`                                                          | `ChatProvider`，可以是 `openai()`、`openrouter()`、`proxyProvider()` 或 `DefaultChatTransport`。 |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                       | 没有传 provider 时使用的 proxy transport 配置。                                                  |
-| `initialMessages`, `messages`, `initialInput`                                     | 初始 React 状态。                                                                                |
-| `defaultRequest`, `threadId`, `forwardedProps`, `context`                         | 合并到 provider 请求里的默认值。                                                                 |
-| `generateId`                                                                      | 自定义 chat、user、assistant 和 data id 生成器。                                                 |
-| `prepareSendMessagesRequest`                                                      | chat 请求发出前的最终准备钩子。                                                                  |
-| `prepareReconnectToStreamRequest`                                                 | 恢复流请求发出前的最终准备钩子。                                                                 |
-| `onChunk`, `onData`, `onRequest`, `onResponse`, `onUpdate`, `onFinish`, `onError` | 生命周期回调。                                                                                   |
+| 选项                                                                                                | 说明                                                                                             |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `provider` / `transport`                                                                            | `ChatProvider`，可以是 `openai()`、`openrouter()`、`proxyProvider()` 或 `DefaultChatTransport`。 |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                                         | 没有传 provider 时使用的 proxy transport 配置。                                                  |
+| `initialMessages`, `messages`, `initialInput`                                                       | 初始 React 状态。                                                                                |
+| `defaultRequest`, `threadId`, `forwardedProps`, `context`                                           | 合并到 provider 请求里的默认值。                                                                 |
+| `generateId`                                                                                        | 自定义 chat、user、assistant 和 data id 生成器。                                                 |
+| `prepareSendMessagesRequest`                                                                        | chat 请求发出前的最终准备钩子。                                                                  |
+| `prepareReconnectToStreamRequest`                                                                   | 恢复流请求发出前的最终准备钩子。                                                                 |
+| `onChunk`, `onData`, `onRequest`, `onResponse`, `onUpdate`, `onFinish`, `onFinishLegacy`, `onError` | 生命周期回调。                                                                                   |
 
 `UseReactChatReturn` 暴露普通 React state 和操作：
 
@@ -140,16 +140,16 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 
 `useCompletion(options)` 接收 `UseReactCompletionOptions`：
 
-| 选项                                                         | 说明                                                                      |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `provider` / `transport`                                     | `ChatProvider`，可以是 `openai()`、Provider preset 或 `proxyProvider()`。 |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`  | 没有传 provider 时使用的 proxy transport 配置。                           |
-| `initialInput`, `initialCompletion`                          | 初始 React 状态。                                                         |
-| `defaultRequest`, `streamProtocol`                           | 合并到每次 `CompletionRequest` 的默认值。                                 |
-| `id`, `generateId`                                           | 请求 trace 使用的稳定 id 和自定义 id 生成器。                             |
-| `onUpdate`, `onRequest`, `onResponse`, `onFinish`, `onError` | 流式文本、trace、完成和 Provider 错误的生命周期回调。                     |
-| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`       | 重试控制；只有首个文本 delta 到达前的失败会重试。                         |
-| `throttleMs`, `experimental_throttle`                        | 快速流式响应期间 React state 更新的最小间隔。                             |
+| 选项                                                                           | 说明                                                                      |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `provider` / `transport`                                                       | `ChatProvider`，可以是 `openai()`、Provider preset 或 `proxyProvider()`。 |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                    | 没有传 provider 时使用的 proxy transport 配置。                           |
+| `initialInput`, `initialCompletion`                                            | 初始 React 状态。                                                         |
+| `defaultRequest`, `streamProtocol`                                             | 合并到每次 `CompletionRequest` 的默认值。                                 |
+| `id`, `generateId`                                                             | 请求 trace 使用的稳定 id 和自定义 id 生成器。                             |
+| `onUpdate`, `onRequest`, `onResponse`, `onFinish`, `onFinishLegacy`, `onError` | 流式文本、trace、完成和 Provider 错误的生命周期回调。                     |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                         | 重试控制；只有首个文本 delta 到达前的失败会重试。                         |
+| `throttleMs`, `experimental_throttle`                                          | 快速流式响应期间 React state 更新的最小间隔。                             |
 
 `UseReactCompletionReturn` 暴露普通 React state 和操作：
 
@@ -164,18 +164,27 @@ import { useChat, useCompletion, useObject } from 'vue-ai-hooks/react'
 | `clearError()`, `clearTrace()`, `clear()`                   | 重置错误、trace 或完整补全状态。                |
 | `abortController`                                           | 当前 `AbortController`，没有流进行时为 `null`。 |
 
+`onFinish(prompt, completion, info?)` 使用 AI SDK 顺序；兼容旧签名 `onFinishLegacy(completion, info)`。
+
+- `stop()` 会在补全流未结束时触发 `onFinish(prompt, '', { isAbort: true })`，并且不会触发 `onError`。
+
+`useChat` 的 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
+使用 AI SDK 风格，新代码优先使用该回调；`onFinishLegacy(message, info)` 保留旧签名兼容。
+
 `useObject(options)` 接收 `UseReactObjectOptions<T>`：
 
-| 选项                                                                     | 说明                                                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `provider` / `transport`                                                 | `ChatProvider`，可以是 `openai()`、Provider preset 或 `proxyProvider()`。 |
-| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`              | 没有传 provider 时使用的 proxy transport 配置；默认 `/api/object`。       |
-| `schema`, `schemaName`, `schemaDescription`, `strict`                    | 每次 `ChatRequest` 携带的 JSON Schema response format。                   |
-| `initialInput`, `initialObject`, `initialValue`                          | 初始 React 状态；`initialValue` 会填充 `partialObject`。                  |
-| `defaultRequest`, `id`, `generateId`                                     | 合并到请求里的默认值，以及 trace 快照使用的稳定 id。                      |
-| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onError` | 流式 chunk、已解析 partial、trace 和最终对象生命周期回调。                |
-| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`                   | 重试控制；只有首个 chunk 到达前的失败会重试。                             |
-| `throttleMs`, `experimental_throttle`                                    | 快速流式响应期间 React state 更新的最小间隔。                             |
+| 选项                                                                                       | 说明                                                                      |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `provider` / `transport`                                                                   | `ChatProvider`，可以是 `openai()`、Provider preset 或 `proxyProvider()`。 |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch`                                | 没有传 provider 时使用的 proxy transport 配置；默认 `/api/object`。       |
+| `schema`, `schemaName`, `schemaDescription`, `strict`                                      | 每次 `ChatRequest` 携带的原始 JSON Schema 或 `jsonSchema()` 包装对象。    |
+| `initialInput`, `initialObject`, `initialValue`                                            | 初始 React 状态；`initialValue` 会填充 `partialObject`。                  |
+| `defaultRequest`, `id`, `generateId`                                                       | 合并到请求里的默认值，以及 trace 快照使用的稳定 id。                      |
+| `onChunk`, `onPartial`, `onRequest`, `onResponse`, `onFinish`, `onFinishLegacy`, `onError` | 流式 chunk、已解析 partial、trace 和最终对象生命周期回调。                |
+
+`useObject` 的 `onFinish({ object, text, isAbort, error })` 为 AI SDK 风格；`onFinishLegacy(object, info)` 保留旧签名兼容。结构化输出解析/校验失败时也会回调 `onFinish`，此时 `object` 为 `undefined` 且 `error` 为对应异常。
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry` | 重试控制；只有首个 chunk 到达前的失败会重试。 |
+| `throttleMs`, `experimental_throttle` | 快速流式响应期间 React state 更新的最小间隔。 |
 
 `UseReactObjectReturn<T>` 暴露普通 React state 和操作：
 

@@ -26,7 +26,11 @@ import { cloneMessageSnapshot, cloneRequestSnapshot } from '../utils/lifecycle'
 import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
-import { validateJsonSchema } from '../utils/jsonSchema'
+import {
+  schemaToJsonSchema,
+  validateJsonSchema,
+  type JsonSchemaDefinition
+} from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import {
   inspectRequestTrace,
@@ -69,6 +73,25 @@ export interface ReactObjectFinishInfo<T = unknown> {
   error: Error | undefined
 }
 
+export interface ReactObjectFinishCallbackOptions<T = unknown> {
+  object: T | undefined
+  text: string
+  isAbort: boolean
+  error: Error | undefined
+}
+
+export type ReactAiSdkObjectFinishCallback<T = unknown> = (
+  options: ReactObjectFinishCallbackOptions<T>
+) => void | Promise<void>
+
+export type ReactLegacyObjectFinishCallback<T = unknown> = (
+  object: T,
+  info: ReactObjectFinishInfo<T>
+) => void | Promise<void>
+
+export type ReactObjectFinishCallback<T = unknown> =
+  ReactAiSdkObjectFinishCallback<T> | ReactLegacyObjectFinishCallback<T>
+
 export interface UseReactObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -79,7 +102,7 @@ export interface UseReactObjectOptions<T = unknown> extends RetryOptions, Stream
   body?: ProxyProviderConfig['body']
   fetch?: typeof fetch
   id?: string
-  schema: Record<string, unknown>
+  schema: Record<string, unknown> | JsonSchemaDefinition<T>
   schemaName?: string
   schemaDescription?: string
   strict?: boolean
@@ -92,7 +115,8 @@ export interface UseReactObjectOptions<T = unknown> extends RetryOptions, Stream
   onPartial?: (partialObject: ReactObjectDeepPartial<T>, text: string) => void
   onRequest?: (info: ReactObjectRequestInfo) => void
   onResponse?: (info: ReactObjectResponseInfo) => void
-  onFinish?: (object: T, info: ReactObjectFinishInfo<T>) => void
+  onFinish?: ReactObjectFinishCallback<T>
+  onFinishLegacy?: ReactLegacyObjectFinishCallback<T>
   onError?: (error: Error) => void
 }
 
@@ -172,6 +196,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
     onRequest,
     onResponse,
     onFinish,
+    onFinishLegacy,
     onError
   } = options
 
@@ -204,6 +229,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
     () => (requestApi ? { api: requestApi, credentials: requestCredentials } : {}),
     [requestApi, requestCredentials]
   )
+  const outputSchema = useMemo(() => schemaToJsonSchema(schema), [schema])
 
   const initialPartialObject =
     initialValue === undefined ? (initialObject as ReactObjectDeepPartial<T> | null) : initialValue
@@ -234,6 +260,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
   const onRequestRef = useRef(onRequest)
   const onResponseRef = useRef(onResponse)
   const onFinishRef = useRef(onFinish)
+  const onFinishLegacyRef = useRef(onFinishLegacy)
   const onErrorRef = useRef(onError)
 
   optionsRef.current = options
@@ -242,6 +269,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
   onRequestRef.current = onRequest
   onResponseRef.current = onResponse
   onFinishRef.current = onFinish
+  onFinishLegacyRef.current = onFinishLegacy
   onErrorRef.current = onError
 
   const setObject = useCallback((value: T | null) => {
@@ -356,7 +384,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
       type: 'json_schema',
       json_schema: {
         name: schemaName,
-        schema,
+        schema: outputSchema,
         strict
       }
     }
@@ -364,7 +392,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
       format.json_schema.description = schemaDescription
     }
     return format
-  }, [schema, schemaDescription, schemaName, strict])
+  }, [outputSchema, schemaDescription, schemaName, strict])
 
   const promptToMessage = useCallback(
     (prompt: string | Message): Message => {
@@ -514,7 +542,7 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
             ]
             const body = mergeRequestBody(defaultRequest.body, requestOptions.body)
             const headers = mergeRequestHeaders(defaultRequest.headers, requestOptions.headers)
-            const request: ChatRequest = {
+            const chatRequest: ChatRequest = {
               ...defaultRest,
               ...requestRest,
               ...(body ? { body } : {}),
@@ -524,10 +552,10 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
               signal: controller.signal,
               stream: true
             }
-            const info = requestInfo(request, retryAttempt + 1)
-            reportRequest(info)
-            const stream = await provider.chat(request)
-            reportResponse(info, stream)
+            const requestPayload = requestInfo(chatRequest, retryAttempt + 1)
+            reportRequest(requestPayload)
+            const stream = await provider.chat(chatRequest)
+            reportResponse(requestPayload, stream)
 
             for await (const chunk of stream) {
               if (controller.signal.aborted) break
@@ -562,17 +590,47 @@ export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseRe
               throw createAbortError()
             }
 
-            const finalObject = parseObject(nextText)
+            let finalObject: T
+            try {
+              finalObject = parseObject(nextText)
+            } catch (rawError) {
+              const parseError = normalizeError(rawError)
+              const finishInfo = {
+                object: undefined as T | undefined,
+                text: nextText,
+                isAbort: false,
+                error: parseError
+              }
+              const onFinish = onFinishRef.current
+              if (onFinish && onFinish.length <= 1) {
+                void (onFinish as ReactAiSdkObjectFinishCallback<T>)(finishInfo)
+              }
+              throw parseError
+            }
             setObject(finalObject)
             setPartialObject(finalObject as ReactObjectDeepPartial<T>)
             setText(nextText)
             setStatus('ready')
-            onFinishRef.current?.(finalObject, {
+            const finishInfo = {
               object: finalObject,
               text: nextText,
               isAbort: false,
               error: undefined
-            })
+            }
+            const onFinish = onFinishRef.current
+            if (!onFinish) {
+              onFinishLegacyRef.current?.(finalObject, finishInfo)
+            } else {
+              if (onFinish.length <= 1) {
+                void (onFinish as ReactAiSdkObjectFinishCallback<T>)(finishInfo)
+              } else {
+                void (onFinish as ReactLegacyObjectFinishCallback<T>)(
+                  finalObject,
+                  finishInfo as ReactObjectFinishInfo<T>
+                )
+              }
+              onFinishLegacyRef.current?.(finalObject, finishInfo)
+            }
             return finalObject
           } catch (rawError) {
             const nextError = normalizeError(rawError)

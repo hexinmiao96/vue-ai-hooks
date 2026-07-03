@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useChat } from '../src/react'
+import type { ReactChatFinishCallback, ReactLegacyChatFinishCallback } from '../src/react'
 import type { ChatProvider } from '../src/providers/types'
 import type { ChatChunk, ChatRequest } from '../src/types'
 
@@ -231,7 +232,7 @@ describe('react useChat', () => {
     const onChunk = vi.fn()
     const onData = vi.fn()
     const onUpdate = vi.fn()
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: unknown, _info: unknown) => undefined)
     const { result } = renderHook(() =>
       useChat({
         provider: fakeProvider(chunks),
@@ -288,6 +289,54 @@ describe('react useChat', () => {
     expect(result.current.streamData).toEqual([])
     expect(result.current.input).toBe('')
     expect(result.current.status).toBe('ready')
+  })
+
+  it('supports AI SDK-style chat onFinish callbacks', async () => {
+    const onFinish: ReactChatFinishCallback = vi.fn((_info: unknown) => undefined)
+    const { result } = renderHook(() =>
+      useChat({
+        provider: fakeProvider([{ content: 'Legacy' }]),
+        onFinish
+      })
+    )
+
+    await act(async () => {
+      await result.current.append('hello')
+    })
+
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    expect(onFinish).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.objectContaining({ content: 'Legacy' }),
+        messages: [
+          expect.objectContaining({ role: 'user', content: 'hello' }),
+          expect.objectContaining({ role: 'assistant', content: 'Legacy' })
+        ],
+        isAbort: false,
+        isError: false
+      })
+    )
+  })
+
+  it('supports explicit onFinishLegacy callback', async () => {
+    const onFinishLegacy: ReactLegacyChatFinishCallback = vi.fn(
+      (_message: unknown, _info: unknown) => undefined
+    )
+    const { result } = renderHook(() =>
+      useChat({
+        provider: fakeProvider([{ content: 'Legacy' }]),
+        onFinishLegacy
+      })
+    )
+
+    await act(async () => {
+      await result.current.append('hello')
+    })
+
+    expect(onFinishLegacy).toHaveBeenCalledWith(
+      expect.objectContaining({ content: 'Legacy' }),
+      expect.objectContaining({ isAbort: false, isError: false })
+    )
   })
 
   it('supports message replacement, object sends, current-message submits, and regenerate', async () => {
@@ -584,7 +633,7 @@ describe('react useChat', () => {
         return null as unknown as AsyncIterable<ChatChunk>
       }
     }
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: unknown, _info: unknown) => undefined)
     const { result } = renderHook(() => useChat({ provider, onFinish }))
 
     await act(async () => {
@@ -598,7 +647,7 @@ describe('react useChat', () => {
   })
 
   it('marks stopped streams as aborted before applying the next chunk', async () => {
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: unknown, _info: unknown) => undefined)
     let resolveOnAbort: (() => void) | undefined
     const provider: ChatProvider = {
       ...fakeProvider([]),
@@ -639,7 +688,7 @@ describe('react useChat', () => {
   })
 
   it('handles AbortError streams as aborted finishes', async () => {
-    const onFinish = vi.fn()
+    const onFinish = vi.fn((_message: unknown, _info: unknown) => undefined)
     const provider: ChatProvider = {
       ...fakeProvider([]),
       async chat(): Promise<AsyncIterable<ChatChunk>> {

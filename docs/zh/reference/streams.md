@@ -12,8 +12,8 @@ stream。
 `UIMessageStreamPart`、`UIMessageStreamSource`、`UIMessageStreamWriter` 和
 `UIMessageStreamParser`。Agent adapter 导出：
 `agentEventToChatChunk`、`agentEventToUIMessageStreamPart`、
-`readAgentEventStream`、`AgentEvent`、`AgentEventAdapterOptions`、
-`AgentEventSource` 和 `ReadAgentEventStreamOptions`。
+`readAgentEvents`、`readAgentEventStream`、`AgentEvent`、`AgentInterruptEvent`、
+`AgentEventAdapterOptions`、`AgentEventSource` 和 `ReadAgentEventStreamOptions`。
 
 如果想做不需要 key 的可运行契约检查，先启动 `pnpm example:proxy-server`，再向
 `/api/ui-message-stream` 发 POST 请求。该路由会输出 AI SDK UI message stream parts，
@@ -28,6 +28,7 @@ message stream 契约时，使用 agent event adapters：
 import {
   agentEventToUIMessageStreamPart,
   createUIMessageStreamResponse,
+  readAgentEvents,
   readAgentEventStream,
   type AgentEvent
 } from 'vue-ai-hooks'
@@ -37,11 +38,16 @@ async function* runAgent(): AsyncGenerator<AgentEvent> {
   yield { type: 'progress', id: 'lookup', label: '查询账户' }
   yield { type: 'tool-call', id: 'call_1', name: 'lookupAccount', input: { id: 'acct_1' } }
   yield { type: 'tool-result', id: 'call_1', name: 'lookupAccount', output: { status: 'active' } }
+  yield { type: 'interrupt', id: 'approval_1', name: 'approveCharge' }
   yield { type: 'finish', finishReason: 'stop' }
 }
 
 for await (const chunk of readAgentEventStream({ events: runAgent() })) {
   console.log(chunk)
+}
+
+for await (const event of readAgentEvents(runAgent())) {
+  console.log(event.type)
 }
 
 export function POST() {
@@ -58,6 +64,7 @@ async function* toParts(events: AsyncIterable<AgentEvent>) {
 ```
 
 `agentEventToChatChunk(event, options?)` 把单个 `AgentEvent` 转成 `ChatChunk`。
+`readAgentEvents(events, signal?)` 会读取原始 `AgentEvent`，不做转换。
 `readAgentEventStream({ events, signal, ...options })` 接受 `AgentEventSource`：
 iterable、async iterable 或 `ReadableStream<AgentEvent>`。
 `agentEventToUIMessageStreamPart(event, options?)` 把单个事件转成
@@ -65,10 +72,11 @@ iterable、async iterable 或 `ReadableStream<AgentEvent>`。
 
 `AgentEventAdapterOptions` 支持：
 
-| 选项               | 类型             | 默认值                | 说明                         |
-| ------------------ | ---------------- | --------------------- | ---------------------------- |
-| `progressDataType` | `data-${string}` | `data-agent-progress` | progress 事件的 data part。  |
-| `errorDataType`    | `data-${string}` | `data-agent-error`    | 不抛出错误事件的 data part。 |
+| 选项                | 类型             | 默认值                 | 说明                         |
+| ------------------- | ---------------- | ---------------------- | ---------------------------- |
+| `progressDataType`  | `data-${string}` | `data-agent-progress`  | progress 事件的 data part。  |
+| `interruptDataType` | `data-${string}` | `data-agent-interrupt` | interrupt 事件的 data part。 |
+| `errorDataType`     | `data-${string}` | `data-agent-error`     | 不抛出错误事件的 data part。 |
 
 任务级说明见 [Agent 事件](/zh/guide/agent-events)。
 

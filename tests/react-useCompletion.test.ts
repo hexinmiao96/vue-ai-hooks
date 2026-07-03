@@ -72,8 +72,29 @@ describe('react useCompletion', () => {
     expect(onResponse).toHaveBeenCalledWith(expect.objectContaining({ hasStream: true }))
     expect(onUpdate).toHaveBeenLastCalledWith('Hello React', ' React')
     expect(onFinish).toHaveBeenCalledWith(
+      'Say hello',
       'Hello React',
       expect.objectContaining({ prompt: 'Say hello', completion: 'Hello React', isAbort: false })
+    )
+  })
+
+  it('supports legacy onFinish callbacks', async () => {
+    const onFinishLegacy = vi.fn()
+    const { result } = renderHook(() =>
+      useCompletion({
+        provider: completionProvider(['Done'], []),
+        onFinishLegacy
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete('Legacy it')).resolves.toBe('Done')
+    })
+
+    expect(onFinishLegacy).toHaveBeenCalledOnce()
+    expect(onFinishLegacy).toHaveBeenCalledWith(
+      'Done',
+      expect.objectContaining({ prompt: 'Legacy it', completion: 'Done', isAbort: false })
     )
   })
 
@@ -214,6 +235,110 @@ describe('react useCompletion', () => {
     expect(result.current.lastRequest?.attempt).toBe(2)
   })
 
+  it('calls onRetry before retrying completion streams that fail before first delta', async () => {
+    const onRetry = vi.fn()
+    const requests: CompletionRequest[] = []
+    const provider: ChatProvider = {
+      ...completionProvider([], requests),
+      async completion(request): Promise<AsyncIterable<string>> {
+        requests.push(request)
+        throw new Error('temporary retryable failure')
+      }
+    }
+
+    const { result } = renderHook(() => useCompletion({ provider, maxRetries: 1, onRetry }))
+
+    await act(async () => {
+      await expect(result.current.complete('retry-should-call')).rejects.toThrow(
+        'temporary retryable failure'
+      )
+    })
+
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ attempt: 1, maxRetries: 1, error: expect.any(Error) })
+    )
+    expect(requests).toHaveLength(2)
+  })
+
+  it('does not call onError for abort error paths', async () => {
+    const onError = vi.fn()
+    let resolveOnAbort: (() => void) | undefined
+    const provider: ChatProvider = {
+      ...completionProvider([]),
+      async completion(request): Promise<AsyncIterable<string>> {
+        return (async function* () {
+          await new Promise<void>((resolve) => {
+            resolveOnAbort = resolve
+            request.signal?.addEventListener('abort', () => resolve(), { once: true })
+          })
+          yield 'ignored'
+        })()
+      }
+    }
+
+    const { result } = renderHook(() => useCompletion({ provider, onError }))
+
+    let pending!: Promise<string>
+    act(() => {
+      pending = result.current.complete('abort')
+    })
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(true)
+    })
+
+    act(() => {
+      result.current.stop()
+    })
+    resolveOnAbort?.()
+
+    await act(async () => {
+      await expect(pending).resolves.toBe('')
+    })
+
+    expect(onError).not.toHaveBeenCalled()
+    expect(result.current.error).toBeNull()
+  })
+
+  it('normalizes provider errors and calls onError', async () => {
+    const onError = vi.fn()
+    const onFinish = vi.fn()
+    const provider: ChatProvider = {
+      ...completionProvider([]),
+      async completion() {
+        throw 'provider failed'
+      }
+    }
+    const { result } = renderHook(() =>
+      useCompletion({
+        provider,
+        onError,
+        onFinish
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete('fail')).rejects.toThrow('provider failed')
+    })
+
+    await waitFor(() => {
+      expect(result.current.error).toBeInstanceOf(Error)
+      expect(result.current.error?.message).toBe('provider failed')
+      expect(result.current.status).toBe('error')
+      expect(result.current.isLoading).toBe(false)
+    })
+    expect(onError).toHaveBeenCalledOnce()
+    expect(onError).toHaveBeenCalledWith(result.current.error)
+    expect(onFinish).not.toHaveBeenCalled()
+
+    act(() => {
+      result.current.clearError()
+    })
+    expect(result.current.error).toBeNull()
+    expect(result.current.status).toBe('ready')
+  })
+
   it('captures inspect() timeline, retry and request trace metadata', async () => {
     let calls = 0
     const requests: CompletionRequest[] = []
@@ -305,6 +430,157 @@ describe('react useCompletion', () => {
     })
   })
 
+  it('uses retryDelayMs function while retrying', async () => {
+    const retryDelayMs = vi.fn(() => 20)
+    let calls = 0
+    const requests: CompletionRequest[] = []
+    const provider: ChatProvider = {
+      id: 'react-retry-delay-completion',
+      async chat() {
+        return (async function* () {
+          yield { content: '' }
+        })()
+      },
+      async completion(request): Promise<AsyncIterable<string>> {
+        requests.push(request)
+        calls += 1
+        if (calls === 1) {
+          const error = new Error('temporary completion failure')
+          Object.assign(error, { status: 429 })
+          throw error
+        }
+        return (async function* () {
+          yield 'retried'
+        })()
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { result } = renderHook(() =>
+      useCompletion({
+        provider,
+        maxRetries: 1,
+        retryDelayMs
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete('retry delay')).resolves.toBe('retried')
+    })
+
+    expect(retryDelayMs).toHaveBeenCalledTimes(2)
+    expect(retryDelayMs).toHaveBeenNthCalledWith(1, expect.objectContaining({ attempt: 1 }))
+    const snapshot = result.current.inspect()
+    expect(snapshot.retries).toHaveLength(1)
+    expect(snapshot.retries[0]).toMatchObject({
+      attempt: 1,
+      maxRetries: 1,
+      delayMs: 20,
+      error: expect.objectContaining({
+        name: 'Error',
+        message: 'temporary completion failure'
+      })
+    })
+    expect(requests).toHaveLength(2)
+    expect(requests[1]).toMatchObject({
+      prompt: 'retry delay',
+      stream: true
+    })
+  })
+
+  it('supports string and missing-target calls to handleInputChange', () => {
+    const { result } = renderHook(() => useCompletion({ provider: completionProvider(['ok']) }))
+
+    act(() => {
+      result.current.handleInputChange('string prompt')
+    })
+    expect(result.current.input).toBe('string prompt')
+
+    act(() => {
+      result.current.handleInputChange({})
+    })
+    expect(result.current.input).toBe('')
+  })
+
+  it('throws a clear error when no prompt can be resolved', async () => {
+    const { result } = renderHook(() =>
+      useCompletion({ provider: completionProvider(['ignored']) })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete()).rejects.toThrow('complete() requires a prompt')
+    })
+  })
+
+  it('handles non-iterable stream responses as non-stream in trace', async () => {
+    const provider: ChatProvider = {
+      id: 'react-non-stream',
+      async chat() {
+        return (async function* () {
+          yield { content: '' }
+        })()
+      },
+      async completion(): Promise<AsyncIterable<string>> {
+        return null as unknown as AsyncIterable<string>
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+
+    const { result } = renderHook(() =>
+      useCompletion({
+        provider,
+        maxRetries: 0
+      })
+    )
+
+    await act(async () => {
+      await expect(result.current.complete('non stream')).rejects.toThrow()
+    })
+
+    expect(result.current.lastResponse).toMatchObject({
+      hasStream: false,
+      attempt: 1,
+      prompt: 'non stream'
+    })
+  })
+
+  it('returns completed output and onFinish state for AbortError completion failures', async () => {
+    const onFinish = vi.fn()
+    const error = new Error('aborted')
+    error.name = 'AbortError'
+    const provider: ChatProvider = {
+      id: 'react-abort-failure',
+      async chat() {
+        return (async function* () {
+          yield { content: '' }
+        })()
+      },
+      async completion() {
+        throw error
+      },
+      async embedding() {
+        return { embeddings: [], model: 'fake', usage: { promptTokens: 0, totalTokens: 0 } }
+      }
+    }
+    const { result } = renderHook(() => useCompletion({ provider, onFinish }))
+
+    await act(async () => {
+      await expect(result.current.complete('abort')).resolves.toBe('')
+    })
+
+    expect(onFinish).toHaveBeenCalledWith(
+      'abort',
+      '',
+      expect.objectContaining({ isAbort: true, prompt: 'abort' })
+    )
+    expect(result.current.status).toBe('ready')
+    expect(result.current.error).toBeNull()
+  })
+
   it('clearTrace() also clears inspect snapshot state', async () => {
     const { result } = renderHook(() => useCompletion({ provider: completionProvider(['ok']) }))
 
@@ -368,6 +644,10 @@ describe('react useCompletion', () => {
 
     expect(result.current.status).toBe('ready')
     expect(result.current.completion).toBe('')
-    expect(onFinish).toHaveBeenCalledWith('', expect.objectContaining({ isAbort: true }))
+    expect(onFinish).toHaveBeenCalledWith(
+      'stop',
+      '',
+      expect.objectContaining({ isAbort: true, prompt: 'stop' })
+    )
   })
 })

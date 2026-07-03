@@ -4,6 +4,7 @@ Vue 3 composable for single-shot streaming completions.
 
 Public TypeScript types: `UseCompletionOptions`, `UseCompletionReturn`,
 `CompletionRequestInfo`, `CompletionResponseInfo`, `CompletionFinishInfo`,
+`AiSdkCompletionFinishCallback`, `LegacyCompletionFinishCallback`,
 `CompletionStreamProtocol`, `RetryOptions`, and `RetryContext`.
 
 ## Usage
@@ -30,33 +31,34 @@ const { complete } = useCompletion({
 
 ## Options
 
-| Name                    | Type                                                                   | Default           | Description                                             |
-| ----------------------- | ---------------------------------------------------------------------- | ----------------- | ------------------------------------------------------- |
-| `provider`              | `ChatProvider`                                                         | proxy             | The provider to use. Omit to use the default proxy.     |
-| `transport`             | `ChatProvider`                                                         | —                 | AI SDK-style alias for `provider`.                      |
-| `api`                   | `string`                                                               | `/api/completion` | Completion URL for the default proxy transport.         |
-| `baseURL`               | `string`                                                               | —                 | Base URL prepended to default proxy transport URLs.     |
-| `headers`               | `HeadersInit \| () => HeadersInit`                                     | —                 | Static or dynamic headers for the default proxy.        |
-| `body`                  | `Record<string, unknown> \| () => ...`                                 | —                 | Extra JSON body fields for the default proxy.           |
-| `credentials`           | `RequestCredentials`                                                   | —                 | Browser credentials mode for the default proxy.         |
-| `fetch`                 | `typeof fetch`                                                         | global            | Custom fetch implementation for the default proxy.      |
-| `id`                    | `string`                                                               | generated         | Completion state identifier. Matching ids share state.  |
-| `generateId`            | `IdGenerator`                                                          | `generateId`      | Generate an id when `id` is omitted.                    |
-| `initialInput`          | `string`                                                               | `''`              | Seed the form input prompt.                             |
-| `initialCompletion`     | `string`                                                               | `''`              | Seed the completion.                                    |
-| `defaultRequest`        | `Partial<CompletionRequest>`                                           | `{}`              | Default options.                                        |
-| `streamProtocol`        | `'text' \| 'data'`                                                     | —                 | AI SDK-compatible proxy stream protocol hint.           |
-| `maxRetries`            | `number`                                                               | `0`               | Retry attempts for failures before the first delta.     |
-| `retryDelayMs`          | `number \| (context: RetryContext) => number`                          | `0`               | Delay before each retry.                                |
-| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>` | —                 | Override the default retryable error decision.          |
-| `onRetry`               | `(error: Error, context: RetryContext) => void`                        | —                 | Called before a retry attempt waits and re-runs.        |
-| `throttleMs`            | `number`                                                               | —                 | Minimum wait in ms between reactive completion updates. |
-| `experimental_throttle` | `number`                                                               | —                 | AI SDK-compatible alias. Prefer `throttleMs`.           |
-| `onUpdate`              | `(completion: string, delta: string) => void`                          | —                 | Called after each non-empty streamed delta is appended. |
-| `onRequest`             | `(info: CompletionRequestInfo) => void`                                | —                 | Called with the final completion request before send.   |
-| `onResponse`            | `(info: CompletionResponseInfo) => void`                               | —                 | Called after the provider returns a completion stream.  |
-| `onFinish`              | `(completion: string, info: CompletionFinishInfo) => void`             | —                 | Called once the completion is finished.                 |
-| `onError`               | `(e: Error) => void`                                                   | —                 | Called on any error.                                    |
+| Name                    | Type                                                                        | Default           | Description                                                    |
+| ----------------------- | --------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------- |
+| `provider`              | `ChatProvider`                                                              | proxy             | The provider to use. Omit to use the default proxy.            |
+| `transport`             | `ChatProvider`                                                              | —                 | AI SDK-style alias for `provider`.                             |
+| `api`                   | `string`                                                                    | `/api/completion` | Completion URL for the default proxy transport.                |
+| `baseURL`               | `string`                                                                    | —                 | Base URL prepended to default proxy transport URLs.            |
+| `headers`               | `HeadersInit \| () => HeadersInit`                                          | —                 | Static or dynamic headers for the default proxy.               |
+| `body`                  | `Record<string, unknown> \| () => ...`                                      | —                 | Extra JSON body fields for the default proxy.                  |
+| `credentials`           | `RequestCredentials`                                                        | —                 | Browser credentials mode for the default proxy.                |
+| `fetch`                 | `typeof fetch`                                                              | global            | Custom fetch implementation for the default proxy.             |
+| `id`                    | `string`                                                                    | generated         | Completion state identifier. Matching ids share state.         |
+| `generateId`            | `IdGenerator`                                                               | `generateId`      | Generate an id when `id` is omitted.                           |
+| `initialInput`          | `string`                                                                    | `''`              | Seed the form input prompt.                                    |
+| `initialCompletion`     | `string`                                                                    | `''`              | Seed the completion.                                           |
+| `defaultRequest`        | `Partial<CompletionRequest>`                                                | `{}`              | Default options.                                               |
+| `streamProtocol`        | `'text' \| 'data'`                                                          | —                 | AI SDK-compatible proxy stream protocol hint.                  |
+| `maxRetries`            | `number`                                                                    | `0`               | Retry attempts for failures before the first delta.            |
+| `retryDelayMs`          | `number \| (context: RetryContext) => number`                               | `0`               | Delay before each retry.                                       |
+| `shouldRetry`           | `(error: Error, context: RetryContext) => boolean \| Promise<boolean>`      | —                 | Override the default retryable error decision.                 |
+| `onRetry`               | `(error: Error, context: RetryContext) => void`                             | —                 | Called before a retry attempt waits and re-runs.               |
+| `throttleMs`            | `number`                                                                    | —                 | Minimum wait in ms between reactive completion updates.        |
+| `experimental_throttle` | `number`                                                                    | —                 | AI SDK-compatible alias. Prefer `throttleMs`.                  |
+| `onUpdate`              | `(completion: string, delta: string) => void`                               | —                 | Called after each non-empty streamed delta is appended.        |
+| `onRequest`             | `(info: CompletionRequestInfo) => void`                                     | —                 | Called with the final completion request before send.          |
+| `onResponse`            | `(info: CompletionResponseInfo) => void`                                    | —                 | Called after the provider returns a completion stream.         |
+| `onFinish`              | `(prompt: string, completion: string, info?: CompletionFinishInfo) => void` | —                 | Called once the completion is finished.                        |
+| `onFinishLegacy`        | `(completion: string, info: CompletionFinishInfo) => void`                  | —                 | Legacy compatibility callback with completion-first arguments. |
+| `onError`               | `(e: Error) => void`                                                        | —                 | Called on any error.                                           |
 
 ## Return value
 
@@ -102,9 +104,10 @@ const { complete } = useCompletion({
   path keeps the existing SSE/JSON response support.
 - `handleSubmit()` clears `input` only after a successful completion. Provider
   errors leave the prompt available for retry.
-- `onFinish(completion, info)` keeps the final completion as the first argument
-  and passes `info.prompt`, `info.completion`, and `info.isAbort` as completion
-  metadata.
+- `stop()` aborts the active completion stream and triggers `onFinish(prompt, '', { isAbort: true })` with the current partial completion. It does not invoke `onError`.
+- `onFinish(prompt, completion, info?)` matches AI SDK ordering and passes the
+  same completion metadata in the optional third parameter.
+- `onFinishLegacy(completion, info)` is retained for older callback usage.
 - `onRequest(info)` receives the final `CompletionRequest` before the provider
   runs. `onResponse(info)` runs once the provider returns a stream. Both include
   the 1-based `attempt`, provider id, prompt, body, headers, and request snapshot.

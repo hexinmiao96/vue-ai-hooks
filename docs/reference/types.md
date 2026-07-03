@@ -109,6 +109,90 @@ interface Message {
 Vue UIs a render-ready structure for text, reasoning, sources, files, custom
 data, and `tool-*` states without parsing the assistant text.
 
+`getToolRenderParts()` derives stable tool renderer rows from `Message.parts`,
+assistant `toolCalls`, `role: 'tool'` result messages, and optional pending tool
+calls:
+
+```ts
+type ToolRenderStatus = 'inProgress' | 'executing' | 'awaitingAction' | 'complete' | 'error'
+
+interface ToolRenderPart {
+  key: string
+  toolCallId: string
+  toolName: string
+  state: MessageToolPart['state']
+  status: ToolRenderStatus
+  pending: boolean
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+  messageId?: string
+}
+
+interface GetToolRenderPartsOptions {
+  messages: readonly Message[]
+  pendingToolCalls?: readonly ToolCall[]
+}
+```
+
+For AI SDK UI-style end-to-end typing, compose message metadata, custom data
+parts, and inferred tools with `UIMessage`:
+
+```ts
+type UIDataTypes = Record<string, unknown>
+type UITools = Record<string, { input: unknown; output: unknown }>
+
+type UIMessageDataPart<TDataTypes extends UIDataTypes = UIDataTypes> =
+  | { type: 'data'; id?: string; data: unknown; transient?: boolean }
+  | {
+      [TName in keyof TDataTypes & string]: {
+        type: `data-${TName}`
+        id?: string
+        data: TDataTypes[TName]
+        transient?: boolean
+      }
+    }[keyof TDataTypes & string]
+
+type UIMessageToolPart<TTools extends UITools = UITools> = {
+  [TName in keyof TTools & string]: {
+    type: `tool-${TName}`
+    toolCallId: string
+    toolName: TName
+    state: MessageToolPart['state']
+    input?: TTools[TName]['input']
+    inputText?: string
+    output?: TTools[TName]['output']
+    errorText?: string
+  }
+}[keyof TTools & string]
+
+type UIMessagePart<TDataTypes extends UIDataTypes = UIDataTypes, TTools extends UITools = UITools> =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | UIMessageDataPart<TDataTypes>
+  | UIMessageToolPart<TTools>
+
+interface UIMessage<
+  TMetadata extends Record<string, unknown> | never = Record<string, unknown>,
+  TDataTypes extends UIDataTypes = UIDataTypes,
+  TTools extends UITools = UITools
+> extends Omit<Message, 'metadata' | 'parts'> {
+  parts?: UIMessagePart<TDataTypes, TTools>[]
+  metadata?: TMetadata
+}
+```
+
+Pair `UIMessage<Metadata, DataParts, InferUITools<typeof tools>>` with
+`dataPartSchemas`, `messageMetadataSchema`, and `defineToolHandlers()` when an
+app wants typed render parts without adopting a UI framework.
+
+Use `ToolRenderPart.status === 'awaitingAction'` to render approval buttons or a
+manual result form, and use `status === 'complete'` or `'error'` for finished
+tool timelines.
+
 `convertToModelMessages(messages, options?)` returns provider/model-facing
 messages without UI-only `parts`. It strips `id` and `createdAt` by default, and
 can preserve them when the backend needs stable trace fields:
@@ -219,7 +303,9 @@ AI SDK-style tool helpers use these public types:
 interface JsonSchemaDefinition<TInput = unknown> {
   readonly kind: 'json-schema'
   readonly schema: Record<string, unknown>
-  readonly validate?: (value: unknown) => value is TInput
+  readonly validate?: (
+    value: unknown
+  ) => boolean | { success: true; value: TInput } | { success: false; error: Error }
 }
 
 type ToolInputSchema<TInput = unknown> = Record<string, unknown> | JsonSchemaDefinition<TInput>
@@ -247,17 +333,42 @@ interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   dynamic?: boolean
 }
 
-type AnyToolDefinition = ToolDefinition<never, unknown>
+type AnyToolDefinition = ToolDefinition<unknown, unknown>
 type ToolSet = Record<string, Tool | AnyToolDefinition>
 type ChatToolsInput = Tool[] | ToolSet
+
+type InferToolInput<TTool> =
+  TTool extends ToolDefinition<infer TInput, infer _TOutput> ? TInput : unknown
+type InferToolOutput<TTool> =
+  TTool extends ToolDefinition<infer _TInput, infer TOutput> ? Awaited<TOutput> : unknown
+type InferUITools<TTools extends ToolSet> = {
+  [K in keyof TTools]: {
+    input: InferToolInput<TTools[K]>
+    output: InferToolOutput<TTools[K]>
+  }
+}
+type ToolHandlerFor<TTool> = (
+  args: InferToolInput<TTool>,
+  context: ToolCallHandlerContext
+) => InferToolOutput<TTool> | Promise<InferToolOutput<TTool>>
+type ToolHandlersFor<TTools extends ToolSet> = {
+  [K in keyof TTools]?: ToolHandlerFor<TTools[K]>
+}
 ```
 
-`jsonSchema(schema)` wraps a JSON Schema for `tool({ inputSchema })`. `tool()`
-and `dynamicTool()` return `ToolDefinition` values that `useChat({ tools })`
-normalizes into provider-facing `Tool[]`; `execute` functions are registered as
-local handlers. `toModelOutput` is read by `convertToModelMessages(messages, {
-tools })` when tool result messages need model-facing text or `ContentPart[]`
-content.
+`jsonSchema(schema)` wraps a JSON Schema for `tool({ inputSchema })` and
+`useObject({ schema })`. Its optional `validate` callback accepts either a
+boolean/type-guard result or the AI SDK-style `{ success, value/error }` result.
+`tool()` and `dynamicTool()` return `ToolDefinition` values that
+`useChat({ tools })` normalizes into provider-facing `Tool[]`; `execute`
+functions are registered as local handlers. `toModelOutput` is read by
+`convertToModelMessages(messages, { tools })` when tool result messages need
+model-facing text or `ContentPart[]` content.
+
+Use `defineToolHandlers(tools, handlers)` when handlers are declared outside the
+tool definitions. It returns the existing `Record<string, ToolCallHandler>`
+runtime shape while `ToolHandlersFor<Tools>` keeps each handler argument aligned
+with its tool input type.
 
 Tool execution callbacks use the same parsed argument snapshot as
 `toolHandlers`:
@@ -269,6 +380,27 @@ interface ToolCallHandlerContext {
   args: unknown
   context?: unknown
 }
+
+interface UIToolCall {
+  toolCallId: string
+  toolName: string
+  input: unknown
+  dynamic: boolean
+}
+
+interface ToolCallCallbackOptions {
+  toolCall: UIToolCall
+  messages: Message[]
+  args: unknown
+  context?: unknown
+}
+
+type AiSdkToolCallCallback = (options: ToolCallCallbackOptions) => void | Promise<void>
+type LegacyToolCallCallback = (
+  args: unknown,
+  context: ToolCallHandlerContext
+) => void | Promise<void>
+type ToolCallCallback = AiSdkToolCallCallback | LegacyToolCallCallback
 
 type ToolApprovalPredicate = (
   args: unknown,
@@ -315,6 +447,24 @@ default helper.
 `PrepareStep` customizes every assistant step request. `stepNumber` starts at
 `0`, and `toolCalls` contains the latest assistant step's tool calls when a
 follow-up request is being prepared.
+
+Finish callbacks expose the same object shape as AI SDK UI while keeping the
+legacy two-argument callback available:
+
+```ts
+interface ChatFinishInfo {
+  message: Message
+  messages: Message[]
+  isAbort: boolean
+  isError: boolean
+  isDisconnect: boolean
+  finishReason?: ChatChunk['finishReason']
+}
+
+type AiSdkChatFinishCallback = (options: ChatFinishInfo) => void | Promise<void>
+type LegacyChatFinishCallback = (message: Message, info: ChatFinishInfo) => void | Promise<void>
+type ChatFinishCallback = AiSdkChatFinishCallback | LegacyChatFinishCallback
+```
 
 Request lifecycle callbacks expose provider-agnostic snapshots:
 

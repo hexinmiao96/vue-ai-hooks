@@ -52,6 +52,14 @@ const files = {
   zhUseObject: readFileSync('docs/zh/reference/use-object.md', 'utf8'),
   useChatThreads: readFileSync('docs/reference/use-chat-threads.md', 'utf8'),
   zhUseChatThreads: readFileSync('docs/zh/reference/use-chat-threads.md', 'utf8'),
+  useAgentCapabilities: readFileSync('docs/reference/use-agent-capabilities.md', 'utf8'),
+  zhUseAgentCapabilities: readFileSync('docs/zh/reference/use-agent-capabilities.md', 'utf8'),
+  useAgentContext: readFileSync('docs/reference/use-agent-context.md', 'utf8'),
+  zhUseAgentContext: readFileSync('docs/zh/reference/use-agent-context.md', 'utf8'),
+  useAgentRun: readFileSync('docs/reference/use-agent-run.md', 'utf8'),
+  zhUseAgentRun: readFileSync('docs/zh/reference/use-agent-run.md', 'utf8'),
+  usePromptSuggestions: readFileSync('docs/reference/use-prompt-suggestions.md', 'utf8'),
+  zhUsePromptSuggestions: readFileSync('docs/zh/reference/use-prompt-suggestions.md', 'utf8'),
   types: readFileSync('docs/reference/types.md', 'utf8'),
   zhTypes: readFileSync('docs/zh/reference/types.md', 'utf8'),
   streams: readFileSync('docs/reference/streams.md', 'utf8'),
@@ -71,6 +79,7 @@ const files = {
   threadedChatExample: readFileSync('examples/threaded-chat/App.vue', 'utf8'),
   threadedChatPanel: readFileSync('examples/threaded-chat/ThreadChatPanel.vue', 'utf8'),
   threadedChatCheck: readFileSync('scripts/check-threaded-chat-demo.mjs', 'utf8'),
+  imageCheck: readFileSync('scripts/check-image-demo.mjs', 'utf8'),
   reactChatExample: readFileSync('examples/react-chat/App.tsx', 'utf8'),
   embeddingExample: readFileSync('examples/embedding/App.vue', 'utf8'),
   imageExample: readFileSync('examples/image/App.vue', 'utf8'),
@@ -106,6 +115,15 @@ expect(
 expect(
   files.home.includes('Start without an API key'),
   'English home page must tell users they can start without an API key'
+)
+expect(
+  files.home.includes('Fifteen composables') &&
+    files.home.includes('useAgentContext') &&
+    files.home.includes('useAgentCapabilities') &&
+    files.home.includes('useAgentRun') &&
+    files.home.includes('runtime capability discovery') &&
+    files.home.includes('headless agent run state'),
+  'English home page must include the current composable count and agent capabilities'
 )
 expect(
   files.home.includes('Choose Fit') && files.home.includes('/guide/choosing'),
@@ -171,8 +189,45 @@ expect(
   'VitePress sidebars must expose useChatThreads reference docs in English and Chinese'
 )
 expect(
+  files.config.includes("{ text: 'useAgentContext', link: '/reference/use-agent-context' }") &&
+    files.config.includes("{ text: 'useAgentContext', link: '/zh/reference/use-agent-context' }"),
+  'VitePress sidebars must expose useAgentContext reference docs in English and Chinese'
+)
+expect(
+  files.config.includes(
+    "{ text: 'useAgentCapabilities', link: '/reference/use-agent-capabilities' }"
+  ) &&
+    files.config.includes(
+      "{ text: 'useAgentCapabilities', link: '/zh/reference/use-agent-capabilities' }"
+    ),
+  'VitePress sidebars must expose useAgentCapabilities reference docs in English and Chinese'
+)
+expect(
+  files.config.includes("{ text: 'useAgentRun', link: '/reference/use-agent-run' }") &&
+    files.config.includes("{ text: 'useAgentRun', link: '/zh/reference/use-agent-run' }"),
+  'VitePress sidebars must expose useAgentRun reference docs in English and Chinese'
+)
+expect(
+  files.config.includes(
+    "{ text: 'usePromptSuggestions', link: '/reference/use-prompt-suggestions' }"
+  ) &&
+    files.config.includes(
+      "{ text: 'usePromptSuggestions', link: '/zh/reference/use-prompt-suggestions' }"
+    ),
+  'VitePress sidebars must expose usePromptSuggestions reference docs in English and Chinese'
+)
+expect(
   files.zhHome.includes('可以先不配置 API key'),
   'Chinese home page must tell users they can start without an API key'
+)
+expect(
+  files.zhHome.includes('十五个组合式函数') &&
+    files.zhHome.includes('useAgentContext') &&
+    files.zhHome.includes('useAgentCapabilities') &&
+    files.zhHome.includes('useAgentRun') &&
+    files.zhHome.includes('runtime 能力发现') &&
+    files.zhHome.includes('无 UI agent run 状态'),
+  'Chinese home page must include the current composable count and agent capabilities'
 )
 expect(
   files.zhHome.includes('选型对比') && files.zhHome.includes('/zh/guide/choosing'),
@@ -341,10 +396,13 @@ for (const snippet of [
   'agentEventToChatChunk',
   'agentEventToUIMessageStreamPart',
   'createUIMessageStreamResponse',
+  'interrupt',
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  'data-agent-interrupt',
   '[Agent bridge recipe](/guide/agent-bridge)',
+  '[useAgentRun](/reference/use-agent-run)',
   '[tool approval recipe](/guide/tool-approvals)',
   'Production notes'
 ]) {
@@ -358,10 +416,13 @@ for (const snippet of [
   'agentEventToChatChunk',
   'agentEventToUIMessageStreamPart',
   'createUIMessageStreamResponse',
+  'interrupt',
   'tool-call',
   'tool-result',
   'data-agent-progress',
+  'data-agent-interrupt',
   '[后端 Agent 桥接配方](/zh/guide/agent-bridge)',
+  '[useAgentRun](/zh/reference/use-agent-run)',
   '[工具审批配方](/zh/guide/tool-approvals)',
   '生产注意事项'
 ]) {
@@ -394,6 +455,7 @@ for (const snippet of [
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
+  'pnpm image:check',
   '## Production smoke test',
   'without duplicate `runId` writes',
   'branch_revision_conflict',
@@ -429,6 +491,7 @@ for (const snippet of [
   'inspectRequestTrace()',
   'pnpm check',
   'pnpm release:check',
+  'pnpm image:check',
   '## 生产 smoke test',
   '没有重复写入相同 `runId`',
   'branch_revision_conflict',
@@ -768,8 +831,21 @@ expect(
   files.chatExample.includes('const openAiKey =') &&
     files.chatExample.includes('DirectChatTransport') &&
     files.chatExample.includes("'sk-...'") &&
-    files.chatExample.includes("'local-tools'"),
-  'Chat example must fall back to DirectChatTransport-backed local-tools when no real OpenAI key is configured'
+    files.chatExample.includes("'local-tools'") &&
+    files.chatExample.includes('useAgentContextRegistry') &&
+    files.chatExample.includes('useAgentContext') &&
+    files.chatExample.includes('agentContextMessage') &&
+    files.chatExample.includes('Runtime chat context') &&
+    files.chatExample.includes('getToolRenderParts') &&
+    files.chatExample.includes('ToolRenderPart') &&
+    files.chatExample.includes('awaiting approval') &&
+    files.chatExample.includes('usePromptSuggestions') &&
+    files.chatExample.includes('visibleSuggestions') &&
+    files.chatExample.includes('reloadSuggestions') &&
+    files.chatExample.includes('isLoadingSuggestions') &&
+    files.chatExample.includes('applySuggestion') &&
+    files.chatExample.includes('suggestion-chip'),
+  'Chat example must fall back to DirectChatTransport-backed local-tools and expose agent context, tool render rows, plus static/dynamic prompt suggestion chips'
 )
 expect(
   files.reactChatExample.includes("from 'vue-ai-hooks/react'") &&
@@ -809,8 +885,26 @@ expect(
     files.zhReadme.includes('`useCompletion` 或 `useObject`，在 React 中复用') &&
     files.readme.includes('DirectChatTransport') &&
     files.readme.includes('DirectChatTransport({ onError })') &&
+    files.readme.includes('useAgentContextRegistry') &&
+    files.readme.includes('useAgentCapabilities') &&
+    files.readme.includes('useAgentRun') &&
+    files.readme.includes('usePromptSuggestions') &&
+    files.readme.includes('getToolRenderParts') &&
+    files.readme.includes('defineToolHandlers()') &&
     files.zhReadme.includes('DirectChatTransport') &&
     files.zhReadme.includes('DirectChatTransport({ onError })') &&
+    files.zhReadme.includes('useAgentContextRegistry') &&
+    files.zhReadme.includes('useAgentCapabilities') &&
+    files.zhReadme.includes('useAgentRun') &&
+    files.zhReadme.includes('usePromptSuggestions') &&
+    files.zhReadme.includes('getToolRenderParts') &&
+    files.zhReadme.includes('defineToolHandlers()') &&
+    files.readme.includes('Direct alternative') &&
+    files.readme.includes('Backend complement') &&
+    files.readme.includes('Vue DX benchmark') &&
+    files.zhReadme.includes('直接替代') &&
+    files.zhReadme.includes('后端互补层') &&
+    files.zhReadme.includes('Vue DX 标杆') &&
     files.readme.includes('**CopilotKit**') &&
     files.zhReadme.includes('**CopilotKit**') &&
     files.readme.includes('**VueUse**') &&
@@ -1031,8 +1125,14 @@ for (const snippet of [
 for (const snippet of [
   '# Choosing vue-ai-hooks',
   'Short answer',
-  'Current competitive snapshot',
-  'Snapshot date: 2026-07-01',
+  'Current positioning map',
+  'Snapshot date: 2026-07-03',
+  'claim that every row is a competitor',
+  'Direct alternative',
+  'Product-adjacent benchmark',
+  'not as the API shape to copy',
+  'Backend complement, not UI competitor',
+  'Vue DX benchmark, not AI competitor',
   'Decision table',
   'Vercel AI SDK',
   'CopilotKit',
@@ -1046,7 +1146,9 @@ for (const snippet of [
   'AG-UI docs',
   'event-based SSE protocol',
   'Architecture fit',
-  'What this package intentionally does not own'
+  'What this package intentionally does not own',
+  '## Competitive speed-to-first-chat matrix',
+  'Job to complete in your first week'
 ]) {
   expect(files.choosing.includes(snippet), `English choosing guide must include: ${snippet}`)
 }
@@ -1054,8 +1156,14 @@ for (const snippet of [
 for (const snippet of [
   '# 选择 vue-ai-hooks',
   '简短结论',
-  '当前竞品快照',
-  '快照日期：2026-07-01',
+  '当前定位图',
+  '快照日期：2026-07-03',
+  '不是把每一行都定义为竞品',
+  '直接替代',
+  '产品相邻标杆',
+  '不是要照搬的 API',
+  '后端互补层，不是 UI 竞品',
+  'Vue DX 标杆，不是 AI 竞品',
   '决策表',
   'Vercel AI SDK',
   'CopilotKit',
@@ -1067,7 +1175,9 @@ for (const snippet of [
   'Vue composables 和 components',
   'event-based SSE',
   '架构适配',
-  '本包刻意不负责什么'
+  '本包刻意不负责什么',
+  '## 一次上手决策矩阵',
+  '一周内要落地的任务'
 ]) {
   expect(files.zhChoosing.includes(snippet), `Chinese choosing guide must include: ${snippet}`)
 }
@@ -1310,11 +1420,13 @@ expect(
 )
 expect(
   files.packageJson.includes('"example:image"') &&
+    files.packageJson.includes('"image:check"') &&
     files.packageJson.includes('"example:threaded-chat"') &&
     files.packageJson.includes('"example:threaded-chat:build"') &&
     files.packageJson.includes('pnpm example:threaded-chat:build') &&
     files.packageJson.includes('"example:image:build"') &&
     files.packageJson.includes('pnpm example:image:build') &&
+    files.packageJson.includes('pnpm image:check') &&
     files.packageJson.includes('"example:video"') &&
     files.packageJson.includes('"example:video:build"') &&
     files.packageJson.includes('pnpm example:video:build') &&
@@ -1353,8 +1465,11 @@ for (const snippet of [
   '`/api/image`, `/api/video`, `/api/speech`, `/api/transcription`, `/api/object`, and',
   '`/api/rerank`',
   '`/api/ui-message-stream`',
+  'useAgentContext()',
+  'usePromptSuggestions()',
   'pnpm example:image',
   'deterministic local SVG',
+  'editImage()',
   'proxy `/api/image`',
   'pnpm example:video',
   'deterministic local storyboard',
@@ -1369,13 +1484,15 @@ for (const snippet of [
   'local ranking by default',
   'proxy `/api/rerank`',
   '`local-object` provider',
+  '## Demo acceptance checklist',
+  'Validate the first demo in each lane before you decide your integration path:',
   '## Which demo should I open first?',
   'Build a chat surface, structured parts, or approval flow',
   '[Streaming chat](#chat-demo)',
   'Add thread sidebar and local restore checks',
   'Test an AI SDK UI stream backend route',
   '[UI message stream route](#stream-demo)',
-  'Generate an image through an app route',
+  'Generate or edit an image through an app route',
   '[Image generation](#image-demo)',
   'Generate a video through an app route',
   '[Video generation](#video-demo)',
@@ -1404,8 +1521,11 @@ for (const snippet of [
   '`/api/transcription`、`/api/object` 和',
   '`/api/rerank`',
   '`/api/ui-message-stream`',
+  'useAgentContext()',
+  'usePromptSuggestions()',
   'pnpm example:image',
   '确定性的本地',
+  'editImage()',
   'proxy `/api/image`',
   'pnpm example:video',
   'storyboard',
@@ -1420,13 +1540,15 @@ for (const snippet of [
   '确定性的本地排序',
   'proxy `/api/rerank`',
   '`local-object` Provider',
+  '## Demo 验收清单',
+  '在决定接入路径前，先用这些条目快速验收：',
   '## 先看哪个示例？',
   '做聊天界面、结构化片段或工具审批',
   '[流式对话](#chat-demo)',
   '增加 thread 侧边栏和本地恢复验证',
   '测试 AI SDK UI stream 后端路由',
   '[UI message stream 路由](#stream-demo)',
-  '通过应用后端生成图片',
+  '通过应用后端生成或编辑图片',
   '[图片生成](#image-demo)',
   '通过应用后端生成视频',
   '[视频生成](#video-demo)',
@@ -1448,11 +1570,16 @@ expect(
 )
 expect(
   files.imageExample.includes('useImage') &&
+    files.imageExample.includes('editImage') &&
     files.imageExample.includes('localImageFetch') &&
     files.imageExample.includes('VITE_PROXY_IMAGE_URL') &&
     files.imageExample.includes('VITE_PROXY_BASE_URL') &&
-    files.imageExample.includes('previewUrl'),
-  'Image example must run without keys and switch to the proxy image route when configured'
+    files.imageExample.includes('source-panel') &&
+    files.imageExample.includes('operation: lastRequest.value.operation') &&
+    files.imageExample.includes('previewUrl') &&
+    files.imageCheck.includes('editImage') &&
+    files.imageCheck.includes("operation === 'edit'"),
+  'Image example must run generation and editing without keys, then switch to the proxy image route when configured'
 )
 expect(
   files.videoExample.includes('useVideo') &&
@@ -1509,7 +1636,20 @@ expect(
     files.demoShowcase.includes("{ job: 'Speech generation', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: 'Audio transcription', pick: 'useTranscription' }") &&
     files.demoShowcase.includes("{ job: 'Document reranking', pick: 'useRerank' }") &&
-    files.demoShowcase.includes("{ label: 'Composables', value: '10' }") &&
+    files.demoShowcase.includes(
+      "{ job: 'Thread sidebar and local restore', pick: 'useChatThreads' }"
+    ) &&
+    files.demoShowcase.includes("{ job: 'Custom generation job', pick: 'useGeneration' }") &&
+    files.demoShowcase.includes("{ job: 'Runtime app context', pick: 'useAgentContext' }") &&
+    files.demoShowcase.includes(
+      "{ job: 'Runtime capability flags', pick: 'useAgentCapabilities' }"
+    ) &&
+    files.demoShowcase.includes("{ job: 'Headless agent run state', pick: 'useAgentRun' }") &&
+    files.demoShowcase.includes(
+      "{ job: 'Composer task starters', pick: 'usePromptSuggestions' }"
+    ) &&
+    files.demoShowcase.includes("{ label: 'Runnable examples', value: '15' }") &&
+    files.demoShowcase.includes("{ label: 'Demo panels', value: '10' }") &&
     files.demoShowcase.includes("{ label: 'Image', href: '#image-demo' }") &&
     files.demoShowcase.includes("{ label: 'Video', href: '#video-demo' }") &&
     files.demoShowcase.includes("{ label: 'Speech', href: '#speech-demo' }") &&
@@ -1530,6 +1670,9 @@ expect(
     files.demoShowcase.includes('const transcriptionCode = computed') &&
     files.demoShowcase.includes('const rerankCode = computed') &&
     files.demoShowcase.includes('const streamCode = computed') &&
+    files.demoShowcase.includes("name: 'useVideo'") &&
+    files.demoShowcase.includes("name: 'useChatThreads'") &&
+    files.demoShowcase.includes("name: 'useAgentCapabilities'") &&
     files.demoShowcase.includes('id="image-demo"') &&
     files.demoShowcase.includes('id="stream-demo"') &&
     files.demoShowcase.includes('id="video-demo"') &&
@@ -1547,7 +1690,14 @@ expect(
     files.demoShowcase.includes("{ job: '语音生成', pick: 'useSpeech' }") &&
     files.demoShowcase.includes("{ job: '音频转写', pick: 'useTranscription' }") &&
     files.demoShowcase.includes("{ job: '文档重排', pick: 'useRerank' }") &&
-    files.demoShowcase.includes("{ label: '组合式函数', value: '10' }") &&
+    files.demoShowcase.includes("{ job: 'Thread 侧边栏和本地恢复', pick: 'useChatThreads' }") &&
+    files.demoShowcase.includes("{ job: '自定义生成任务', pick: 'useGeneration' }") &&
+    files.demoShowcase.includes("{ job: '运行时应用上下文', pick: 'useAgentContext' }") &&
+    files.demoShowcase.includes("{ job: '运行时能力开关', pick: 'useAgentCapabilities' }") &&
+    files.demoShowcase.includes("{ job: '无 UI Agent run 状态', pick: 'useAgentRun' }") &&
+    files.demoShowcase.includes("{ job: '输入区任务入口', pick: 'usePromptSuggestions' }") &&
+    files.demoShowcase.includes("{ label: '可运行示例', value: '15' }") &&
+    files.demoShowcase.includes("{ label: '展示面板', value: '10' }") &&
     files.demoShowcase.includes("{ label: '视频', href: '#video-demo' }") &&
     files.demoShowcase.includes("{ label: '语音', href: '#speech-demo' }") &&
     files.demoShowcase.includes("{ label: '转写', href: '#transcription-demo' }") &&
@@ -1574,13 +1724,17 @@ expect(
   files.streams.includes('pnpm example:proxy-server') &&
     files.streams.includes('/api/ui-message-stream') &&
     files.streams.includes('readUIMessageStream()') &&
+    files.streams.includes('readAgentEvents') &&
     files.streams.includes('readAgentEventStream') &&
     files.streams.includes('agentEventToUIMessageStreamPart') &&
+    files.streams.includes('data-agent-interrupt') &&
     files.zhStreams.includes('pnpm example:proxy-server') &&
     files.zhStreams.includes('/api/ui-message-stream') &&
     files.zhStreams.includes('readUIMessageStream()') &&
+    files.zhStreams.includes('readAgentEvents') &&
     files.zhStreams.includes('readAgentEventStream') &&
     files.zhStreams.includes('agentEventToUIMessageStreamPart') &&
+    files.zhStreams.includes('data-agent-interrupt') &&
     files.readme.includes('/api/ui-message-stream') &&
     files.zhReadme.includes('/api/ui-message-stream') &&
     files.proxyServer.includes("uiMessageStream: new Set(['/api/ui-message-stream'") &&
@@ -1779,10 +1933,10 @@ expect(
     files.zhUseRerank.includes('handleSubmit(e, opts?)') &&
     files.zhUseRerank.includes('后端错误会保留查询和文档') &&
     files.readme.includes('`useSpeech`, `useTranscription`, `useRerank`, and `useObject`') &&
-    files.readme.includes('All ten') &&
+    files.readme.includes('composables accept `initialInput`') &&
     files.readme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
     files.zhReadme.includes('`useVideo`、`useSpeech`、`useTranscription`、`useRerank` 和') &&
-    files.zhReadme.includes('十者都支持 `initialInput`') &&
+    files.zhReadme.includes('请求类组合式函数都支持 `initialInput`') &&
     files.zhReadme.includes('cosineSimilarity(result.embeddings[0], result.embeddings[1])') &&
     files.embeddingExample.includes('cosineSimilarity') &&
     files.aiSdkMigration.includes('AI SDK Core `cosineSimilarity()`') &&
@@ -1795,11 +1949,15 @@ expect(
     files.useImage.includes('# useImage') &&
     files.useImage.includes('app-owned backend') &&
     files.useImage.includes('generateImage(prompt?, opts?)') &&
+    files.useImage.includes('editImage(prompt, opts)') &&
+    files.useImage.includes('ImageEditOptions') &&
     files.useImage.includes('handleSubmit(e, opts?)') &&
     files.useImage.includes('Backend errors leave the prompt available for retry') &&
     files.zhUseImage.includes('# useImage') &&
     files.zhUseImage.includes('应用自有后端') &&
     files.zhUseImage.includes('generateImage(prompt?, opts?)') &&
+    files.zhUseImage.includes('editImage(prompt, opts)') &&
+    files.zhUseImage.includes('ImageEditOptions') &&
     files.zhUseImage.includes('handleSubmit(e, opts?)') &&
     files.zhUseImage.includes('后端错误会保留提示词') &&
     files.readme.includes('`useImage`') &&
@@ -1930,7 +2088,11 @@ expect(
     files.useChat.includes('SerializedMessage') &&
     files.useChat.includes('validateMessages(raw)') &&
     files.useChat.includes('safeValidateMessages(raw)') &&
-    files.useChat.includes('safeValidateUIMessages(raw)') &&
+    files.useChat.includes('safeValidateUIMessages({ messages') &&
+    files.useChat.includes('metadataSchema') &&
+    files.useChat.includes('dataSchemas') &&
+    files.useChat.includes('checking restored tool inputs') &&
+    files.useChat.includes('setMessages(result.data)') &&
     files.useChat.includes('persist.onLoadError') &&
     files.useChat.includes('persist.onClearError') &&
     files.useChat.includes('ValidateMessagesOptions') &&
@@ -1962,14 +2124,101 @@ for (const snippet of [
     `English useChatThreads docs must include: ${snippet}`
   )
 }
+for (const snippet of [
+  '# useAgentContextRegistry',
+  'Headless, Vue-scoped application context',
+  'useAgentContextRegistry',
+  'useAgentContext',
+  'formatAgentContexts',
+  'createAgentContextMessage',
+  'withAgentContextMessage',
+  'resolveAgentContexts',
+  'AgentContextInput',
+  'AgentContextSnapshot',
+  'agentContextMessage',
+  'The context message is part of the provider request only',
+  'agentContext.toJSON()'
+]) {
+  expect(
+    files.useAgentContext.includes(snippet),
+    `English useAgentContext docs must include: ${snippet}`
+  )
+}
+for (const snippet of [
+  '# useAgentCapabilities',
+  'Headless runtime capability discovery',
+  'useAgentCapabilities',
+  'summarizeAgentCapabilities',
+  'extractAgentCapabilities',
+  'AgentCapabilities',
+  'AgentCapabilitiesSupportSummary',
+  'LoadAgentCapabilitiesOptions',
+  'UseAgentCapabilitiesOptions',
+  'UseAgentCapabilitiesReturn',
+  'supports',
+  'loadCapabilities()',
+  'selectCapabilities',
+  '/api/agent/info',
+  "api: '/info'",
+  'does not create an agent instance, negotiate features, or render UI'
+]) {
+  expect(
+    files.useAgentCapabilities.includes(snippet),
+    `English useAgentCapabilities docs must include: ${snippet}`
+  )
+}
+for (const snippet of [
+  '# useAgentRun',
+  'Headless agent run state',
+  'AgentRunRequest',
+  'AgentRunHandler',
+  'AgentRunStatus',
+  'UseAgentRunOptions',
+  'UseAgentRunReturn',
+  'interrupt',
+  'resume()',
+  "status: 'completed' \\| 'interrupted'",
+  'data-agent-interrupt',
+  'agentEventToChatChunk()',
+  'does not render a copilot UI, execute tools, or call a provider'
+]) {
+  expect(files.useAgentRun.includes(snippet), `English useAgentRun docs must include: ${snippet}`)
+}
+for (const snippet of [
+  '# usePromptSuggestions',
+  'Headless prompt suggestion state',
+  'PromptSuggestionInput',
+  'PromptSuggestionFilter',
+  'PromptSuggestionLoader',
+  'PromptSuggestionLoaderContext',
+  'UsePromptSuggestionsOptions',
+  'UsePromptSuggestionsReturn',
+  'visibleSuggestions',
+  'isLoading',
+  'reloadSuggestions()',
+  'loadOnInit',
+  'selectSuggestion(id)',
+  'fill `useChat().input`',
+  'does not render UI, call a provider, or send messages'
+]) {
+  expect(
+    files.usePromptSuggestions.includes(snippet),
+    `English usePromptSuggestions docs must include: ${snippet}`
+  )
+}
 expect(
   files.useChat.includes('## Structured message parts') &&
     files.useChat.includes('Message.parts') &&
     files.useChat.includes('MessagePart') &&
     files.useChat.includes('data-*') &&
     files.useChat.includes("part.type.startsWith('tool-')") &&
+    files.useChat.includes('getToolRenderParts()') &&
+    files.useChat.includes('ToolRenderPart') &&
+    files.useChat.includes('awaitingAction') &&
+    files.useChat.includes('defineToolHandlers') &&
+    files.useChat.includes('InferUITools') &&
     files.useChat.includes('serializeMessages()'),
-  'English useChat docs must document structured Message.parts rendering and persistence'
+  'English useChat docs must document structured Message.parts rendering, tool render rows, and persistence'
 )
 expect(
   files.useChat.includes('sendAutomaticallyWhen') &&
@@ -1980,10 +2229,21 @@ expect(
     files.useChat.includes('`Tool[] \\| ToolSet`') &&
     files.useChat.includes('jsonSchema') &&
     files.useChat.includes('dynamicTool') &&
+    files.useChat.includes('ToolHandlersFor') &&
+    files.useChat.includes('defineToolHandlers') &&
     files.useChat.includes(
       'Provider requests still receive the normalized OpenAI-compatible `Tool[]`'
     ),
   'English useChat docs must document AI SDK-style tool result auto-send control'
+)
+expect(
+  files.useChat.includes('agentContext') &&
+    files.useChat.includes('AgentContextRegistry') &&
+    files.useChat.includes('agentContextMessage') &&
+    files.useChat.includes('## Agent context') &&
+    files.useChat.includes('useAgentContextRegistry()') &&
+    files.useChat.includes('kept out of the visible `messages` history'),
+  'English useChat docs must document agentContext request injection'
 )
 expect(
   files.zhUseChat.includes('共享内存中的聊天状态') &&
@@ -2032,7 +2292,11 @@ expect(
     files.zhUseChat.includes('SerializedMessage') &&
     files.zhUseChat.includes('validateMessages(raw)') &&
     files.zhUseChat.includes('safeValidateMessages(raw)') &&
-    files.zhUseChat.includes('safeValidateUIMessages(raw)') &&
+    files.zhUseChat.includes('safeValidateUIMessages({ messages') &&
+    files.zhUseChat.includes('metadataSchema') &&
+    files.zhUseChat.includes('dataSchemas') &&
+    files.zhUseChat.includes('校验恢复出来的 tool input') &&
+    files.zhUseChat.includes('setMessages(result.data)') &&
     files.zhUseChat.includes('persist.onLoadError') &&
     files.zhUseChat.includes('persist.onClearError') &&
     files.zhUseChat.includes('ValidateMessagesOptions') &&
@@ -2064,14 +2328,101 @@ for (const snippet of [
     `Chinese useChatThreads docs must include: ${snippet}`
   )
 }
+for (const snippet of [
+  '# useAgentContextRegistry',
+  'Vue 作用域应用上下文',
+  'useAgentContextRegistry',
+  'useAgentContext',
+  'formatAgentContexts',
+  'createAgentContextMessage',
+  'withAgentContextMessage',
+  'resolveAgentContexts',
+  'AgentContextInput',
+  'AgentContextSnapshot',
+  'agentContextMessage',
+  '不会追加到可见的 `messages` 历史里',
+  'agentContext.toJSON()'
+]) {
+  expect(
+    files.zhUseAgentContext.includes(snippet),
+    `Chinese useAgentContext docs must include: ${snippet}`
+  )
+}
+for (const snippet of [
+  '# useAgentCapabilities',
+  'runtime capability discovery',
+  'useAgentCapabilities',
+  'summarizeAgentCapabilities',
+  'extractAgentCapabilities',
+  'AgentCapabilities',
+  'AgentCapabilitiesSupportSummary',
+  'LoadAgentCapabilitiesOptions',
+  'UseAgentCapabilitiesOptions',
+  'UseAgentCapabilitiesReturn',
+  'supports',
+  'loadCapabilities()',
+  'selectCapabilities',
+  '/api/agent/info',
+  "api: '/info'",
+  '不会创建 agent 实例、协商功能，也不会渲染 UI'
+]) {
+  expect(
+    files.zhUseAgentCapabilities.includes(snippet),
+    `Chinese useAgentCapabilities docs must include: ${snippet}`
+  )
+}
+for (const snippet of [
+  '# useAgentRun',
+  '无 UI agent run 状态',
+  'AgentRunRequest',
+  'AgentRunHandler',
+  'AgentRunStatus',
+  'UseAgentRunOptions',
+  'UseAgentRunReturn',
+  'interrupt',
+  'resume()',
+  "`status` 为 `'completed' \\| 'interrupted'`",
+  'data-agent-interrupt',
+  'agentEventToChatChunk()',
+  '不渲染 copilot UI、不执行工具，也不会替你调用 Provider'
+]) {
+  expect(files.zhUseAgentRun.includes(snippet), `Chinese useAgentRun docs must include: ${snippet}`)
+}
+for (const snippet of [
+  '# usePromptSuggestions',
+  '无 UI prompt suggestion 状态',
+  'PromptSuggestionInput',
+  'PromptSuggestionFilter',
+  'PromptSuggestionLoader',
+  'PromptSuggestionLoaderContext',
+  'UsePromptSuggestionsOptions',
+  'UsePromptSuggestionsReturn',
+  'visibleSuggestions',
+  'isLoading',
+  'reloadSuggestions()',
+  'loadOnInit',
+  'selectSuggestion(id)',
+  '填入 `useChat().input`',
+  '不渲染 UI、不调用 Provider，也不会自动发送消息'
+]) {
+  expect(
+    files.zhUsePromptSuggestions.includes(snippet),
+    `Chinese usePromptSuggestions docs must include: ${snippet}`
+  )
+}
 expect(
   files.zhUseChat.includes('## 结构化消息 parts') &&
     files.zhUseChat.includes('Message.parts') &&
     files.zhUseChat.includes('MessagePart') &&
     files.zhUseChat.includes('data-*') &&
     files.zhUseChat.includes("part.type.startsWith('tool-')") &&
+    files.zhUseChat.includes('getToolRenderParts()') &&
+    files.zhUseChat.includes('ToolRenderPart') &&
+    files.zhUseChat.includes('awaitingAction') &&
+    files.zhUseChat.includes('defineToolHandlers') &&
+    files.zhUseChat.includes('InferUITools') &&
     files.zhUseChat.includes('serializeMessages()'),
-  'Chinese useChat docs must document structured Message.parts rendering and persistence'
+  'Chinese useChat docs must document structured Message.parts rendering, tool render rows, and persistence'
 )
 expect(
   files.zhUseChat.includes('sendAutomaticallyWhen') &&
@@ -2083,8 +2434,19 @@ expect(
     files.zhUseChat.includes('`Tool[] \\| ToolSet`') &&
     files.zhUseChat.includes('jsonSchema') &&
     files.zhUseChat.includes('dynamicTool') &&
+    files.zhUseChat.includes('ToolHandlersFor') &&
+    files.zhUseChat.includes('defineToolHandlers') &&
     files.zhUseChat.includes('Provider 请求仍会收到归一化后的 OpenAI-compatible `Tool[]`'),
   'Chinese useChat docs must document AI SDK-style tool result auto-send control'
+)
+expect(
+  files.zhUseChat.includes('agentContext') &&
+    files.zhUseChat.includes('AgentContextRegistry') &&
+    files.zhUseChat.includes('agentContextMessage') &&
+    files.zhUseChat.includes('## Agent context') &&
+    files.zhUseChat.includes('useAgentContextRegistry()') &&
+    files.zhUseChat.includes('不会写入可见'),
+  'Chinese useChat docs must document agentContext request injection'
 )
 expect(
   files.types.includes('type MessagePart =') &&
@@ -2092,11 +2454,22 @@ expect(
     files.types.includes('messageId?: string') &&
     files.types.includes('MessageToolPart') &&
     files.types.includes('tool-*') &&
+    files.types.includes('ToolRenderPart') &&
+    files.types.includes('GetToolRenderPartsOptions') &&
+    files.types.includes('ToolRenderStatus') &&
+    files.types.includes('interface UIMessage') &&
+    files.types.includes('type UIMessagePart') &&
+    files.types.includes('type UIMessageToolPart') &&
+    files.types.includes('type UIDataTypes') &&
+    files.types.includes('Pair `UIMessage<Metadata, DataParts, InferUITools<typeof tools>>`') &&
+    files.types.includes('awaitingAction') &&
     files.types.includes('ChatChunk.parts') &&
     files.types.includes('ChatChunk.messageId') &&
     files.types.includes('SendAutomaticallyWhen') &&
     files.types.includes('interface JsonSchemaDefinition') &&
     files.types.includes('type ToolSet') &&
+    files.types.includes('InferUITools') &&
+    files.types.includes('ToolHandlersFor') &&
     files.types.includes('type ChatToolsInput') &&
     files.types.includes('interface ModelMessage') &&
     files.types.includes('interface ConvertToModelMessagesOptions') &&
@@ -2105,8 +2478,9 @@ expect(
     files.types.includes('generateId(prefix?)') &&
     files.types.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.types.includes('jsonSchema(schema)') &&
-    files.types.includes('dynamicTool()'),
-  'English public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
+    files.types.includes('dynamicTool()') &&
+    files.types.includes('defineToolHandlers(tools, handlers)'),
+  'English public type docs must expose Message.parts, tool render rows, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
   files.zhTypes.includes('type MessagePart =') &&
@@ -2114,11 +2488,22 @@ expect(
     files.zhTypes.includes('messageId?: string') &&
     files.zhTypes.includes('MessageToolPart') &&
     files.zhTypes.includes('tool-*') &&
+    files.zhTypes.includes('ToolRenderPart') &&
+    files.zhTypes.includes('GetToolRenderPartsOptions') &&
+    files.zhTypes.includes('ToolRenderStatus') &&
+    files.zhTypes.includes('interface UIMessage') &&
+    files.zhTypes.includes('type UIMessagePart') &&
+    files.zhTypes.includes('type UIMessageToolPart') &&
+    files.zhTypes.includes('type UIDataTypes') &&
+    files.zhTypes.includes('UIMessage<Metadata, DataParts, InferUITools<typeof tools>>') &&
+    files.zhTypes.includes('awaitingAction') &&
     files.zhTypes.includes('ChatChunk.parts') &&
     files.zhTypes.includes('ChatChunk.messageId') &&
     files.zhTypes.includes('SendAutomaticallyWhen') &&
     files.zhTypes.includes('interface JsonSchemaDefinition') &&
     files.zhTypes.includes('type ToolSet') &&
+    files.zhTypes.includes('InferUITools') &&
+    files.zhTypes.includes('ToolHandlersFor') &&
     files.zhTypes.includes('type ChatToolsInput') &&
     files.zhTypes.includes('interface ModelMessage') &&
     files.zhTypes.includes('interface ConvertToModelMessagesOptions') &&
@@ -2127,8 +2512,9 @@ expect(
     files.zhTypes.includes('generateId(prefix?)') &&
     files.zhTypes.includes('type ChatRequestMessage = Message | ModelMessage') &&
     files.zhTypes.includes('jsonSchema(schema)') &&
-    files.zhTypes.includes('dynamicTool()'),
-  'Chinese public type docs must expose Message.parts, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
+    files.zhTypes.includes('dynamicTool()') &&
+    files.zhTypes.includes('defineToolHandlers(tools, handlers)'),
+  'Chinese public type docs must expose Message.parts, tool render rows, ChatChunk.parts, ChatChunk.messageId, and SendAutomaticallyWhen'
 )
 expect(
   files.types.includes('### `TranscriptionRequest`') &&
@@ -2170,7 +2556,8 @@ expect(
   'Public type docs must expose video, transcription, and rerank request/result contracts'
 )
 expect(
-  files.chatExample.includes('visibleMessageParts(message.parts)') &&
+  files.chatExample.includes('visibleMessageParts(message.parts,') &&
+    files.chatExample.includes('getToolRenderParts({ messages: messages.value') &&
     files.chatExample.includes('aria-label="structured message parts"') &&
     files.chatExample.includes("dataType: 'source-url'") &&
     files.chatExample.includes("dataType: 'file'") &&
@@ -2239,7 +2626,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, first-run paths, competitive positioning, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

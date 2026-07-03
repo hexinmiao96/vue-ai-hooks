@@ -75,6 +75,54 @@ export interface MessageToolPart {
   errorText?: string
 }
 
+export type UIDataTypes = Record<string, unknown>
+
+export type UITools = Record<string, { input: unknown; output: unknown }>
+
+type UIStringKey<T> = Extract<keyof T, string>
+
+type UIDataValue<TDataTypes extends UIDataTypes> =
+  UIStringKey<TDataTypes> extends never ? unknown : TDataTypes[UIStringKey<TDataTypes>]
+
+type UIToolInput<
+  TTools extends UITools,
+  TName extends UIStringKey<TTools>
+> = TTools[TName] extends { input: infer TInput } ? TInput : unknown
+
+type UIToolOutput<
+  TTools extends UITools,
+  TName extends UIStringKey<TTools>
+> = TTools[TName] extends { output: infer TOutput } ? TOutput : unknown
+
+export type UIMessageDataPart<TDataTypes extends UIDataTypes = UIDataTypes> =
+  | {
+      type: 'data'
+      id?: string
+      data: UIDataValue<TDataTypes>
+      transient?: boolean
+    }
+  | {
+      [TName in UIStringKey<TDataTypes>]: {
+        type: `data-${TName}`
+        id?: string
+        data: TDataTypes[TName]
+        transient?: boolean
+      }
+    }[UIStringKey<TDataTypes>]
+
+export type UIMessageToolPart<TTools extends UITools = UITools> = {
+  [TName in UIStringKey<TTools>]: {
+    type: `tool-${TName}`
+    toolCallId: string
+    toolName: TName
+    state: MessageToolPart['state']
+    input?: UIToolInput<TTools, TName>
+    inputText?: string
+    output?: UIToolOutput<TTools, TName>
+    errorText?: string
+  }
+}[UIStringKey<TTools>]
+
 /** Structured UI part for rendering modern chat messages. */
 export type MessagePart =
   | MessageTextPart
@@ -83,6 +131,17 @@ export type MessagePart =
   | MessageFilePart
   | MessageDataPart
   | MessageToolPart
+
+export type UIMessagePart<
+  TDataTypes extends UIDataTypes = UIDataTypes,
+  TTools extends UITools = UITools
+> =
+  | MessageTextPart
+  | MessageReasoningPart
+  | MessageSourcePart
+  | MessageFilePart
+  | UIMessageDataPart<TDataTypes>
+  | UIMessageToolPart<TTools>
 
 /** A preloaded file attachment that `useChat().append()` can convert into message content. */
 export interface ChatFileAttachment {
@@ -135,6 +194,15 @@ export interface Message {
   createdAt?: Date
   /** Provider-specific metadata. Useful for OpenAI's `logprobs` etc. */
   metadata?: Record<string, unknown>
+}
+
+export interface UIMessage<
+  TMetadata extends Record<string, unknown> | never = Record<string, unknown>,
+  TDataTypes extends UIDataTypes = UIDataTypes,
+  TTools extends UITools = UITools
+> extends Omit<Message, 'metadata' | 'parts'> {
+  parts?: UIMessagePart<TDataTypes, TTools>[]
+  metadata?: TMetadata
 }
 
 /** A provider/model-facing message without UI-only rendering parts. */
@@ -371,9 +439,19 @@ export interface GeneratedImage {
   metadata?: Record<string, unknown>
 }
 
+export type ImageOperation = 'generate' | 'edit'
+
+export type ImageEditInput = string | GeneratedImage
+
 /** Request payload for image generation through an app-owned backend. */
 export interface ImageGenerationRequest {
   prompt: string
+  /** Task kind for backends that share one image route for generation and editing. */
+  operation?: ImageOperation
+  /** Source image URL, data URL, base64 payload, or normalized image object for edits. */
+  image?: ImageEditInput | ImageEditInput[]
+  /** Optional mask URL, data URL, base64 payload, or normalized image object for edits. */
+  mask?: ImageEditInput
   /** Extra JSON body fields for proxy-specific request options. */
   body?: Record<string, unknown>
   model?: string

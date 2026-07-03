@@ -15,6 +15,8 @@ planning.
    focused parity for the most common remaining hooks.
 5. Strengthen tool approval and agent-event adapter patterns without turning the
    package into a full agent framework.
+6. Use AI SDK UI as the direct parity target. Track CopilotKit and AG-UI only
+   for headless agent UX contracts that fit this package's composable layer.
 
 ## Planned Releases
 
@@ -96,6 +98,10 @@ planning.
 - Added after 0.14.0: durable tool approval decision contracts for replayed
   `runId`, stale `revision`, `approval_revision_conflict`, and no-second-tool
   execution smoke coverage.
+- Added after 0.14.0: `useImage()` image editing request support, a no-key image
+  generation/editing demo path, and an `image:check` gate that verifies
+  `editImage()` source image, mask, response, and trace contracts from the
+  published bundle.
 - Added after 0.14.0: production readiness status pages that map inspection,
   demos, provider presets, React migration, approvals, threads, persistence, and
   agent bridge work to verifiable gates.

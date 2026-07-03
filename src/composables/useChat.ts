@@ -18,6 +18,7 @@ import type {
   MessageContent,
   ModelMessage,
   MessagePart,
+  MessageToolPart,
   MessageRole,
   ContentPart,
   StreamDataPart,
@@ -35,8 +36,18 @@ import { cloneMessageSnapshot as cloneMessage, cloneRequestSnapshot } from '../u
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
-import { validateJsonSchema } from '../utils/jsonSchema'
+import {
+  schemaToJsonSchema,
+  validateJsonSchema,
+  type JsonSchemaDefinition
+} from '../utils/jsonSchema'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
+import {
+  resolveAgentContexts,
+  withAgentContextMessage,
+  type AgentContextMessageOptions,
+  type AgentContextSource
+} from './useAgentContext'
 import {
   inspectRequestTrace,
   type InspectionRetryRecordInput,
@@ -52,6 +63,29 @@ export interface ToolCallHandlerContext {
   context?: unknown
 }
 
+export interface UIToolCall {
+  toolCallId: string
+  toolName: string
+  input: unknown
+  dynamic: boolean
+}
+
+export interface ToolCallCallbackOptions {
+  toolCall: UIToolCall
+  messages: Message[]
+  args: unknown
+  context?: unknown
+}
+
+export type AiSdkToolCallCallback = (options: ToolCallCallbackOptions) => void | Promise<void>
+
+export type LegacyToolCallCallback = (
+  args: unknown,
+  context: ToolCallHandlerContext
+) => void | Promise<void>
+
+export type ToolCallCallback = AiSdkToolCallCallback | LegacyToolCallCallback
+
 export type ToolCallHandler = (
   args: unknown,
   context: ToolCallHandlerContext
@@ -66,11 +100,7 @@ export interface ToolResultHandlerContext extends ToolCallHandlerContext {
   resultMessage: Message
 }
 
-export interface JsonSchemaDefinition<TInput = unknown> {
-  readonly kind: 'json-schema'
-  readonly schema: Record<string, unknown>
-  readonly validate?: (value: unknown) => value is TInput
-}
+export { jsonSchema, type JsonSchemaDefinition } from '../utils/jsonSchema'
 
 export type ToolInputSchema<TInput = unknown> =
   Record<string, unknown> | JsonSchemaDefinition<TInput>
@@ -107,15 +137,26 @@ export type ToolSet = Record<string, Tool | AnyToolDefinition>
 export type ChatToolsInput = Tool[] | ToolSet
 export type { ChatStreamProtocol }
 
-export function jsonSchema<TInput = unknown>(
-  schema: Record<string, unknown>,
-  options: { validate?: (value: unknown) => value is TInput } = {}
-): JsonSchemaDefinition<TInput> {
-  return {
-    kind: 'json-schema',
-    schema,
-    ...(options.validate ? { validate: options.validate } : {})
+export type InferToolInput<TTool> =
+  TTool extends ToolDefinition<infer TInput, infer _TOutput> ? TInput : unknown
+
+export type InferToolOutput<TTool> =
+  TTool extends ToolDefinition<infer _TInput, infer TOutput> ? Awaited<TOutput> : unknown
+
+export type InferUITools<TTools extends ToolSet> = {
+  [K in keyof TTools]: {
+    input: InferToolInput<TTools[K]>
+    output: InferToolOutput<TTools[K]>
   }
+}
+
+export type ToolHandlerFor<TTool> = (
+  args: InferToolInput<TTool>,
+  context: ToolCallHandlerContext
+) => InferToolOutput<TTool> | Promise<InferToolOutput<TTool>>
+
+export type ToolHandlersFor<TTools extends ToolSet> = {
+  [K in keyof TTools]?: ToolHandlerFor<TTools[K]>
 }
 
 export function tool<TInput = unknown, TOutput = unknown>(
@@ -134,6 +175,13 @@ export function dynamicTool<TInput = unknown, TOutput = unknown>(
     ...definition,
     dynamic: true
   }
+}
+
+export function defineToolHandlers<TTools extends ToolSet>(
+  _tools: TTools,
+  handlers: ToolHandlersFor<TTools>
+): Record<string, ToolCallHandler> {
+  return handlers as Record<string, ToolCallHandler>
 }
 
 export interface SendAutomaticallyWhenOptions {
@@ -159,6 +207,15 @@ export interface ChatFinishInfo {
   isDisconnect: boolean
   finishReason?: ChatChunk['finishReason']
 }
+
+export type AiSdkChatFinishCallback = (options: ChatFinishInfo) => void | Promise<void>
+
+export type LegacyChatFinishCallback = (
+  message: Message,
+  info: ChatFinishInfo
+) => void | Promise<void>
+
+export type ChatFinishCallback = AiSdkChatFinishCallback | LegacyChatFinishCallback
 
 export type ChatRequestLifecycleKind = 'chat' | 'resume'
 
@@ -300,6 +357,27 @@ export interface PruneMessagesOptions {
   reasoning?: PruneReasoningStrategy
 }
 
+export type ToolRenderStatus = 'inProgress' | 'executing' | 'awaitingAction' | 'complete' | 'error'
+
+export interface ToolRenderPart {
+  key: string
+  toolCallId: string
+  toolName: string
+  state: MessageToolPart['state']
+  status: ToolRenderStatus
+  pending: boolean
+  input?: unknown
+  inputText?: string
+  output?: unknown
+  errorText?: string
+  messageId?: string
+}
+
+export interface GetToolRenderPartsOptions {
+  messages: readonly Message[]
+  pendingToolCalls?: readonly ToolCall[]
+}
+
 export type SerializedMessage = Omit<Message, 'createdAt'> & { createdAt?: string }
 
 export interface ConvertToModelMessagesOptions {
@@ -347,10 +425,22 @@ export interface ValidateMessagesOptions<
   messageMetadataSchema?: MessageMetadataSchema<TMessageMetadata>
 }
 
-export type ValidateUIMessagesOptions<
+export interface ValidateUIMessagesOptions<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
-> = ValidateMessagesOptions<TData, TMessageMetadata>
+> extends ValidateMessagesOptions<TData, TMessageMetadata> {
+  messages?: unknown
+  metadataSchema?: MessageMetadataSchema<TMessageMetadata>
+  dataSchemas?: DataPartSchemas<TData>
+  tools?: ToolSet
+}
+
+type ResolvedValidateMessagesOptions<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+> = ValidateMessagesOptions<TData, TMessageMetadata> & {
+  tools?: ToolSet
+}
 
 export type SafeValidateMessagesResult =
   | {
@@ -362,7 +452,16 @@ export type SafeValidateMessagesResult =
       error: Error
     }
 
-export type SafeValidateUIMessagesResult = SafeValidateMessagesResult
+export type SafeValidateUIMessagesResult =
+  | {
+      success: true
+      messages: Message[]
+      data: Message[]
+    }
+  | {
+      success: false
+      error: Error
+    }
 
 export interface UseChatOptions<
   TData = unknown,
@@ -386,6 +485,8 @@ export interface UseChatOptions<
   id?: string
   threadId?: string
   forwardedProps?: Record<string, unknown>
+  agentContext?: AgentContextSource | false
+  agentContextMessage?: AgentContextMessageOptions
   context?: unknown
   generateId?: IdGenerator
   resume?: boolean
@@ -407,10 +508,10 @@ export interface UseChatOptions<
   onData?: (part: StreamDataPart<TData>) => void
   onRequest?: (info: ChatRequestInfo) => void
   onResponse?: (info: ChatResponseInfo) => void
-  onToolCall?: (args: unknown, context: ToolCallHandlerContext) => void
+  onToolCall?: ToolCallCallback
   onToolResult?: (result: unknown, context: ToolResultHandlerContext) => void
   onUpdate?: (m: Message) => void
-  onFinish?: (m: Message, info: ChatFinishInfo) => void
+  onFinish?: ChatFinishCallback
   onError?: (e: Error) => void
 }
 
@@ -524,6 +625,7 @@ export function hasToolCall(...toolNames: string[]): StopWhen {
 interface NormalizedChatTools {
   tools?: Tool[]
   toolHandlers?: Record<string, ToolCallHandler>
+  dynamicToolNames?: Set<string>
 }
 
 function mergeToolHandlers(
@@ -548,12 +650,14 @@ function normalizeChatTools(input?: ChatToolsInput): NormalizedChatTools {
 
   const tools: Tool[] = []
   const toolHandlers: Record<string, ToolCallHandler> = {}
+  const dynamicToolNames = new Set<string>()
 
   for (const [name, definition] of Object.entries(input)) {
     if (isWireTool(definition)) {
       tools.push(definition)
       continue
     }
+    if (definition.dynamic) dynamicToolNames.add(name)
 
     const parameters =
       definition.parameters ?? schemaToParameters(definition.inputSchema) ?? emptyObjectSchema()
@@ -574,7 +678,8 @@ function normalizeChatTools(input?: ChatToolsInput): NormalizedChatTools {
 
   return {
     ...(tools.length ? { tools } : {}),
-    ...(Object.keys(toolHandlers).length ? { toolHandlers } : {})
+    ...(Object.keys(toolHandlers).length ? { toolHandlers } : {}),
+    ...(dynamicToolNames.size ? { dynamicToolNames } : {})
   }
 }
 
@@ -590,12 +695,7 @@ function isWireTool(value: Tool | AnyToolDefinition): value is Tool {
 
 function schemaToParameters(schema?: ToolInputSchema): Record<string, unknown> | undefined {
   if (!schema) return undefined
-  if (isJsonSchemaDefinition(schema)) return schema.schema
-  return schema
-}
-
-function isJsonSchemaDefinition(value: ToolInputSchema): value is JsonSchemaDefinition {
-  return isRecord(value) && value.kind === 'json-schema' && isRecord(value.schema)
+  return schemaToJsonSchema(schema)
 }
 
 function emptyObjectSchema(): Record<string, unknown> {
@@ -932,11 +1032,15 @@ export function safeValidateMessages(
 /**
  * AI SDK-style helper that returns validated UI messages or throws.
  */
-export function validateUIMessages(
-  raw: unknown,
-  options: ValidateUIMessagesOptions = {}
+export function validateUIMessages<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+>(
+  rawOrOptions: unknown,
+  options: ValidateUIMessagesOptions<TData, TMessageMetadata> = {}
 ): Message[] {
-  const result = safeValidateMessages(raw, options)
+  const resolved = resolveValidateUIMessagesArgs(rawOrOptions, options)
+  const result = safeValidateMessages(resolved.raw, resolved.options)
   if (!result.success) throw result.error
   return result.messages
 }
@@ -944,16 +1048,73 @@ export function validateUIMessages(
 /**
  * AI SDK-style helper that returns a discriminated result instead of throwing.
  */
-export function safeValidateUIMessages(
-  raw: unknown,
-  options: ValidateUIMessagesOptions = {}
+export function safeValidateUIMessages<
+  TData = unknown,
+  TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
+>(
+  rawOrOptions: unknown,
+  options: ValidateUIMessagesOptions<TData, TMessageMetadata> = {}
 ): SafeValidateUIMessagesResult {
-  return safeValidateMessages(raw, options)
+  const resolved = resolveValidateUIMessagesArgs(rawOrOptions, options)
+  const result = safeValidateMessages(resolved.raw, resolved.options)
+  return result.success ? { ...result, data: result.messages } : result
 }
 
-function validateRestoredMessages(messages: Message[], options: ValidateMessagesOptions) {
+function resolveValidateUIMessagesArgs<TData, TMessageMetadata extends Record<string, unknown>>(
+  rawOrOptions: unknown,
+  options: ValidateUIMessagesOptions<TData, TMessageMetadata>
+): {
+  raw: unknown
+  options: ResolvedValidateMessagesOptions<TData, TMessageMetadata>
+} {
+  if (isRecord(rawOrOptions) && 'messages' in rawOrOptions) {
+    const input = rawOrOptions as unknown as ValidateUIMessagesOptions<TData, TMessageMetadata> & {
+      messages: unknown
+    }
+    return {
+      raw: input.messages,
+      options: normalizeValidateUIMessagesOptions({
+        ...input,
+        ...options,
+        messages: undefined
+      })
+    }
+  }
+
+  return {
+    raw: rawOrOptions,
+    options: normalizeValidateUIMessagesOptions(options)
+  }
+}
+
+function normalizeValidateUIMessagesOptions<
+  TData,
+  TMessageMetadata extends Record<string, unknown>
+>(
+  options: ValidateUIMessagesOptions<TData, TMessageMetadata>
+): ResolvedValidateMessagesOptions<TData, TMessageMetadata> {
+  const { metadataSchema, dataSchemas, messageMetadataSchema, dataPartSchemas, tools } = options
+  return {
+    ...((messageMetadataSchema ?? metadataSchema)
+      ? { messageMetadataSchema: messageMetadataSchema ?? metadataSchema }
+      : {}),
+    ...((dataPartSchemas ?? dataSchemas)
+      ? { dataPartSchemas: dataPartSchemas ?? dataSchemas }
+      : {}),
+    ...(tools ? { tools } : {})
+  }
+}
+
+function validateRestoredMessages(messages: Message[], options: ResolvedValidateMessagesOptions) {
   messages.forEach((message, messageIndex) => {
     validateRestoredMessageMetadata(message.metadata, options, `messages[${messageIndex}].metadata`)
+    message.toolCalls?.forEach((call, toolCallIndex) => {
+      validateRestoredToolCall(
+        call,
+        options,
+        `messages[${messageIndex}].toolCalls[${toolCallIndex}]`
+      )
+    })
     message.parts?.forEach((part, partIndex) => {
       if (isMessageDataPart(part)) {
         validateRestoredDataPart(
@@ -961,6 +1122,9 @@ function validateRestoredMessages(messages: Message[], options: ValidateMessages
           options,
           `messages[${messageIndex}].parts[${partIndex}].data`
         )
+      }
+      if (isToolMessagePart(part)) {
+        validateRestoredToolPart(part, options, `messages[${messageIndex}].parts[${partIndex}]`)
       }
     })
   })
@@ -1001,6 +1165,49 @@ function validateRestoredDataPart(
         : `${path} did not match validator`
       : validateJsonSchema(part.data, schema, path)
   if (error) throw new AiHooksError(`Stream data part did not match schema: ${error}`)
+}
+
+function validateRestoredToolCall(
+  toolCall: ToolCall,
+  options: ResolvedValidateMessagesOptions,
+  path: string
+) {
+  const tools = options.tools
+  if (!tools) return
+  const toolName = toolCall.function.name
+  const definition = tools[toolName]
+  if (!definition) throw new AiHooksError(`Tool "${toolName}" was not declared at ${path}`)
+  const input = parseToolInput(toolCall.function.arguments)
+  validateToolInput(toolName, input, definition, `${path}.function.arguments`)
+}
+
+function validateRestoredToolPart(
+  part: MessageToolPart,
+  options: ResolvedValidateMessagesOptions,
+  path: string
+) {
+  const tools = options.tools
+  if (!tools) return
+  const definition = tools[part.toolName]
+  if (!definition) throw new AiHooksError(`Tool "${part.toolName}" was not declared at ${path}`)
+  if ('input' in part) validateToolInput(part.toolName, part.input, definition, `${path}.input`)
+}
+
+function validateToolInput(
+  toolName: string,
+  input: unknown,
+  definition: Tool | AnyToolDefinition,
+  path: string
+) {
+  const schema = toolInputSchema(definition)
+  if (!schema) return
+  const error = validateJsonSchema(input, schema, path)
+  if (error) throw new AiHooksError(`Tool "${toolName}" input did not match schema: ${error}`)
+}
+
+function toolInputSchema(definition: Tool | AnyToolDefinition): ToolInputSchema | undefined {
+  if (isWireTool(definition)) return definition.function.parameters
+  return definition.inputSchema ?? definition.parameters
 }
 
 function normalizeValidationError(err: unknown): Error {
@@ -1123,6 +1330,120 @@ function hasContent(content: MessageContent): boolean {
 
 function isEmptyMessage(message: Message): boolean {
   return !hasContent(message.content) && !message.toolCalls?.length
+}
+
+/**
+ * Derive UI-safe tool render rows from chat messages and pending tool calls.
+ */
+export function getToolRenderParts(options: GetToolRenderPartsOptions): ToolRenderPart[] {
+  const pendingIds = new Set(options.pendingToolCalls?.map((call) => call.id) ?? [])
+  const rows: ToolRenderPart[] = []
+  const indexes = new Map<string, number>()
+
+  const upsert = (next: Omit<ToolRenderPart, 'key' | 'status' | 'pending'>) => {
+    const pending = pendingIds.has(next.toolCallId)
+    const row: ToolRenderPart = {
+      ...next,
+      key: next.toolCallId,
+      pending,
+      status: toolRenderStatus(next.state, pending)
+    }
+    const index = indexes.get(row.toolCallId)
+    if (index === undefined) {
+      indexes.set(row.toolCallId, rows.length)
+      rows.push(row)
+      return
+    }
+    const existing = rows[index]
+    rows[index] =
+      toolRenderStateRank(row.state) < toolRenderStateRank(existing.state)
+        ? { ...existing, ...row, state: existing.state, status: existing.status }
+        : { ...existing, ...row }
+  }
+
+  for (const message of options.messages) {
+    for (const part of message.parts ?? []) {
+      if (!isToolMessagePart(part)) continue
+      upsert({
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        state: part.state,
+        ...('input' in part ? { input: part.input } : {}),
+        ...(part.inputText !== undefined ? { inputText: part.inputText } : {}),
+        ...('output' in part ? { output: part.output } : {}),
+        ...(part.errorText !== undefined ? { errorText: part.errorText } : {}),
+        messageId: message.id
+      })
+    }
+
+    for (const call of message.toolCalls ?? []) {
+      upsert({
+        toolCallId: call.id,
+        toolName: call.function.name || 'tool',
+        state: 'input-available',
+        input: parseToolInput(call.function.arguments),
+        inputText: call.function.arguments,
+        messageId: message.id
+      })
+    }
+
+    if (message.role === 'tool' && message.toolCallId) {
+      const output = parseToolResultOutput(message.content)
+      const errorText = toolResultErrorText(output)
+      upsert({
+        toolCallId: message.toolCallId,
+        toolName: toolNameForResult(message, rows[indexes.get(message.toolCallId) ?? -1]),
+        state: errorText !== undefined ? 'output-error' : 'output-available',
+        ...(errorText !== undefined ? { errorText } : { output }),
+        messageId: message.id
+      })
+    }
+  }
+
+  return rows
+}
+
+function toolRenderStateRank(state: MessageToolPart['state']): number {
+  if (state === 'input-streaming') return 0
+  if (state === 'input-available') return 1
+  return 2
+}
+
+function toolRenderStatus(state: MessageToolPart['state'], pending: boolean): ToolRenderStatus {
+  if (state === 'input-streaming') return 'inProgress'
+  if (state === 'input-available') return pending ? 'awaitingAction' : 'executing'
+  if (state === 'output-error') return 'error'
+  return 'complete'
+}
+
+function parseToolInput(raw: string): unknown {
+  const trimmed = raw.trim()
+  if (!trimmed) return {}
+  try {
+    return JSON.parse(trimmed) as unknown
+  } catch {
+    return undefined
+  }
+}
+
+function parseToolResultOutput(content: MessageContent): unknown {
+  if (typeof content !== 'string') return content.map((part) => ({ ...part }))
+  if (!content.trim()) return ''
+  try {
+    return JSON.parse(content) as unknown
+  } catch {
+    return content
+  }
+}
+
+function toolResultErrorText(output: unknown): string | undefined {
+  return isRecord(output) && output.state === 'output-error' && typeof output.errorText === 'string'
+    ? output.errorText
+    : undefined
+}
+
+function toolNameForResult(message: Message, existing?: ToolRenderPart): string {
+  return message.name || existing?.toolName || 'tool'
 }
 
 function pruneHistoricalDetails(
@@ -1304,6 +1625,8 @@ export function useChat<
     defaultRequest = {},
     threadId: defaultThreadId,
     forwardedProps: defaultForwardedProps,
+    agentContext,
+    agentContextMessage,
     context: runtimeContext,
     onUpdate,
     onFinish,
@@ -1328,6 +1651,7 @@ export function useChat<
   } = options
   const normalizedDefaultTools = normalizeChatTools(defaultToolsInput)
   const defaultTools = normalizedDefaultTools.tools
+  const dynamicToolNames = normalizedDefaultTools.dynamicToolNames ?? new Set<string>()
   const toolHandlers = mergeToolHandlers(
     normalizedDefaultTools.toolHandlers,
     configuredToolHandlers
@@ -1728,14 +2052,19 @@ export function useChat<
   ) {
     if (!onFinish) return
     const message = { ...assistant }
-    onFinish(message, {
+    const info: ChatFinishInfo = {
       message,
       messages: messages.value.map((message) => ({ ...message })),
       isAbort,
       isError,
       isDisconnect,
       finishReason: assistant.metadata?.finishReason as ChatChunk['finishReason'] | undefined
-    })
+    }
+    if (onFinish.length <= 1) {
+      void (onFinish as AiSdkChatFinishCallback)(info)
+      return
+    }
+    void (onFinish as LegacyChatFinishCallback)(message, info)
   }
   function parseToolArgs(call: ToolCall): unknown {
     const raw = call.function.arguments.trim()
@@ -1787,6 +2116,34 @@ export function useChat<
       args,
       context: runtimeContext
     }
+  }
+  function toolCallCallbackOptions(
+    call: ToolCall,
+    args: unknown,
+    context: ToolCallHandlerContext
+  ): ToolCallCallbackOptions {
+    const toolName = call.function.name
+    return {
+      toolCall: {
+        toolCallId: call.id,
+        toolName,
+        input: args,
+        dynamic: dynamicToolNames.has(toolName)
+      },
+      messages: context.messages.map(cloneMessage),
+      args,
+      context: runtimeContext
+    }
+  }
+  async function notifyToolCall(args: unknown, context: ToolCallHandlerContext) {
+    if (!onToolCall) return
+    if (onToolCall.length <= 1) {
+      await (onToolCall as AiSdkToolCallCallback)(
+        toolCallCallbackOptions(context.toolCall, args, context)
+      )
+      return
+    }
+    await (onToolCall as LegacyToolCallCallback)(args, context)
   }
   function toolResultMessage(call: ToolCall, result: unknown): Message {
     return {
@@ -1887,28 +2244,29 @@ export function useChat<
     if (!handler) {
       throw new AiHooksError(`No tool handler registered for "${call.function.name}"`)
     }
-    if (notifyCall) onToolCall?.(args, context)
+    if (notifyCall) await notifyToolCall(args, context)
     const result = await handler(args, context)
     const resultMessage = toolResultMessage(call, result)
     reportToolResult(call, args, result, resultMessage)
     return resultMessage
   }
-  function awaitManualToolResults(
+  async function awaitManualToolResults(
     calls: ToolCall[],
     request: ChatRequest,
     context: SendChatContext
   ) {
-    for (const call of calls) {
-      const args = parseToolArgs(call)
-      onToolCall?.(args, toolContext(call, args))
-    }
     pendingToolCalls.value = [...calls]
     pendingToolRequest.value = { ...request }
     state.pendingToolSendContext = { ...context }
+    for (const call of calls) {
+      const args = parseToolArgs(call)
+      await notifyToolCall(args, toolContext(call, args))
+    }
   }
   async function executeReadyToolCalls(calls: ToolCall[], request: ChatRequest): Promise<boolean> {
     const toolMessages: Message[] = []
     const pendingCalls: ToolCall[] = []
+    const pendingNotifications: Array<{ args: unknown; context: ToolCallHandlerContext }> = []
 
     for (const call of calls) {
       const args = parseToolArgs(call)
@@ -1916,8 +2274,8 @@ export function useChat<
       const needsApproval = (await requiresToolApproval?.(args, context)) ?? false
 
       if (needsApproval || !toolHandlers) {
-        onToolCall?.(args, context)
         pendingCalls.push(call)
+        pendingNotifications.push({ args, context })
         continue
       }
 
@@ -1929,6 +2287,9 @@ export function useChat<
 
     pendingToolCalls.value = [...pendingCalls]
     pendingToolRequest.value = { ...request }
+    for (const notification of pendingNotifications) {
+      await notifyToolCall(notification.args, notification.context)
+    }
     return true
   }
 
@@ -2178,15 +2539,26 @@ export function useChat<
       id: id.value,
       signal
     }
-    const baseMessages = clonePrepareMessages(base.messages, clonePrepareMessages(request.messages))
+    const contextMessages = resolveAgentContexts(agentContext)
+    const requestWithContext =
+      contextMessages.length > 0
+        ? {
+            ...base,
+            messages: withAgentContextMessage(base.messages, contextMessages, agentContextMessage)
+          }
+        : base
+    const baseMessages = clonePrepareMessages(
+      requestWithContext.messages,
+      clonePrepareMessages(request.messages)
+    )
     const stepPrepared = await options.prepareStep?.({
       id: id.value,
       ...proxyRequestInfo,
       messages: baseMessages,
-      requestMetadata: base.metadata,
-      body: base.body,
-      headers: headersToRecord(base.headers),
-      request: { ...base, messages: base.messages.map(cloneMessage) },
+      requestMetadata: requestWithContext.metadata,
+      body: requestWithContext.body,
+      headers: headersToRecord(requestWithContext.headers),
+      request: { ...requestWithContext, messages: requestWithContext.messages.map(cloneMessage) },
       trigger: context.trigger,
       aiSdkTrigger: toAiSdkTrigger(context.trigger),
       messageId: context.messageId,
@@ -2196,7 +2568,7 @@ export function useChat<
         function: { ...call.function }
       }))
     })
-    const stepRequest = mergePreparedChatRequest(base, stepPrepared)
+    const stepRequest = mergePreparedChatRequest(requestWithContext, stepPrepared)
     const preparedMessages = clonePrepareMessages(stepRequest.messages, baseMessages)
     const prepared = await options.prepareSendMessagesRequest?.({
       id: id.value,
@@ -2292,7 +2664,7 @@ export function useChat<
     const calls = assistant.toolCalls
     if (!calls?.length) return
     if (!toolHandlers && !requiresToolApproval) {
-      awaitManualToolResults(calls, request, context)
+      await awaitManualToolResults(calls, request, context)
       return
     }
     if (remainingToolRoundtrips <= 0) {
