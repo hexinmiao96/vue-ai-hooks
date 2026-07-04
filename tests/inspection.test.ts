@@ -195,19 +195,48 @@ describe('inspection utilities', () => {
 
   it('adds retry records, stream events, provider trace, and redacted curl output', () => {
     const retryError = new AiHooksError('too many requests', { status: 429 })
+    const request = {
+      providerId: 'proxy',
+      api: '/api/chat',
+      attempt: 2,
+      headers: {
+        authorization: 'Bearer secret',
+        'x-tenant': 'tenant_1'
+      },
+      request: {
+        headers: {
+          Authorization: 'Bearer nested-secret',
+          accept: 'application/json'
+        }
+      },
+      body: {
+        message: "don't leak headers",
+        apiKey: 'body-secret',
+        accessToken: 'access-secret',
+        clientSecret: 'client-secret',
+        nested: {
+          completionTokens: 12,
+          privateKey: 'private-secret'
+        }
+      }
+    }
+    const streamMetadata = {
+      chunkIndex: 1,
+      Authorization: 'Bearer event-direct-secret',
+      apiKey: 'event-api-key',
+      sessionToken: 'event-session-token',
+      nested: {
+        password: 'event-password'
+      },
+      headers: {
+        Authorization: 'Bearer event-secret',
+        accept: 'text/event-stream'
+      }
+    }
     const snapshot = inspectRequestTrace({
       status: 'error',
       error: retryError,
-      lastRequest: {
-        providerId: 'proxy',
-        api: '/api/chat',
-        attempt: 2,
-        headers: {
-          authorization: 'Bearer secret',
-          'x-tenant': 'tenant_1'
-        },
-        body: { message: "don't leak headers" }
-      },
+      lastRequest: request,
       retries: [
         {
           attempt: 1,
@@ -223,7 +252,7 @@ describe('inspection utilities', () => {
           label: 'delta received',
           timestamp: '2026-07-01T00:00:02.000Z',
           attempt: 2,
-          metadata: { chunkIndex: 1 }
+          metadata: streamMetadata
         }
       ],
       curl: true,
@@ -262,9 +291,56 @@ describe('inspection utilities', () => {
     expect(snapshot.curl).toContain("-H 'x-tenant: tenant_1'")
     expect(snapshot.curl).toContain('--data-raw')
     expect(snapshot.curl).not.toContain('Bearer secret')
+    expect(snapshot.curl).not.toContain('body-secret')
+    expect(snapshot.curl).not.toContain('access-secret')
+    expect(snapshot.curl).not.toContain('client-secret')
+    expect(snapshot.curl).not.toContain('private-secret')
+    expect(snapshot.curl).toContain('"apiKey":"[redacted]"')
+    expect(snapshot.curl).toContain('"accessToken":"[redacted]"')
+    expect(snapshot.curl).toContain('"clientSecret":"[redacted]"')
+    expect(snapshot.curl).toContain('"privateKey":"[redacted]"')
+    expect(snapshot.request?.headers.authorization).toBe('[redacted]')
+    expect(snapshot.request?.headers['x-tenant']).toBe('tenant_1')
+    expect(snapshot.request?.request.headers.Authorization).toBe('[redacted]')
+    expect(snapshot.request?.request.headers.accept).toBe('application/json')
+    expect(snapshot.request?.body.apiKey).toBe('[redacted]')
+    expect(snapshot.request?.body.accessToken).toBe('[redacted]')
+    expect(snapshot.request?.body.clientSecret).toBe('[redacted]')
+    expect(snapshot.request?.body.nested.completionTokens).toBe(12)
+    expect(snapshot.request?.body.nested.privateKey).toBe('[redacted]')
+    expect(snapshot.timeline[1]?.metadata).toMatchObject({
+      chunkIndex: 1,
+      Authorization: '[redacted]',
+      apiKey: '[redacted]',
+      sessionToken: '[redacted]',
+      nested: {
+        password: '[redacted]'
+      },
+      headers: {
+        Authorization: '[redacted]',
+        accept: 'text/event-stream'
+      }
+    })
+    expect(request.headers.authorization).toBe('Bearer secret')
+    expect(request.body.apiKey).toBe('body-secret')
+    expect(request.body.accessToken).toBe('access-secret')
+    expect(request.body.clientSecret).toBe('client-secret')
+    expect(request.body.nested.privateKey).toBe('private-secret')
+    expect(streamMetadata.headers.Authorization).toBe('Bearer event-secret')
+    expect(streamMetadata.Authorization).toBe('Bearer event-direct-secret')
+    expect(streamMetadata.apiKey).toBe('event-api-key')
+    expect(streamMetadata.sessionToken).toBe('event-session-token')
+    expect(streamMetadata.nested.password).toBe('event-password')
   })
 
   it('creates standalone curl commands with request overrides', () => {
+    const jsonBody = JSON.stringify({
+      prompt: 'hello',
+      apiKey: 'json-secret',
+      nested: {
+        clientSecret: 'nested-json-secret'
+      }
+    })
     const curl = createInspectionCurl(
       {
         api: '/api/chat',
@@ -285,6 +361,28 @@ describe('inspection utilities', () => {
         "  -H 'accept: application/json' \\\n" +
         "  --data-raw 'raw body'"
     )
+
+    const jsonCurl = createInspectionCurl({
+      api: '/api/chat',
+      body: jsonBody
+    })
+    expect(jsonCurl).toContain('"apiKey":"[redacted]"')
+    expect(jsonCurl).toContain('"clientSecret":"[redacted]"')
+    expect(jsonCurl).not.toContain('json-secret')
+    expect(jsonCurl).not.toContain('nested-json-secret')
+
+    const snapshot = inspectRequestTrace({
+      lastRequest: {
+        providerId: 'proxy',
+        api: '/api/chat',
+        body: jsonBody
+      },
+      curl: true
+    })
+    expect(snapshot.request?.body).toBe(
+      '{"prompt":"hello","apiKey":"[redacted]","nested":{"clientSecret":"[redacted]"}}'
+    )
+    expect(snapshot.curl).not.toContain('json-secret')
     expect(createInspectionCurl({ providerId: 'direct' })).toBeNull()
   })
 

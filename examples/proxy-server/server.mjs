@@ -114,6 +114,7 @@ async function handleChat(request, response) {
   }
 
   const chatId = typeof body.id === 'string' && body.id ? body.id : `chat_${Date.now()}`
+  const traceId = createProxyTraceId('chat', body)
   const userText = latestUserText(body.messages)
   const chunks = [
     {
@@ -127,7 +128,12 @@ async function handleChat(request, response) {
     {
       finishReason: 'stop',
       usage: estimateChatUsage(body.messages, userText),
-      metadata: { chatId, provider: 'proxy-server-example' }
+      metadata: { chatId, provider: 'proxy-server-example' },
+      providerMetadata: {
+        provider: 'proxy-server-example',
+        route: 'chat',
+        traceId
+      }
     }
   ]
 
@@ -153,10 +159,18 @@ async function handleCompletion(request, response) {
   }
 
   const prompt = typeof body.prompt === 'string' ? body.prompt : ''
+  const traceId = createProxyTraceId('completion', body)
   sendSse(response, [
     { text: 'Completion from proxy: ' },
     { text: prompt || 'empty prompt' },
-    { text: '.' }
+    {
+      text: '.',
+      providerMetadata: {
+        provider: 'proxy-server-example',
+        route: 'completion',
+        traceId
+      }
+    }
   ])
 }
 
@@ -173,6 +187,11 @@ async function handleEmbedding(request, response) {
   sendJson(response, 200, {
     embeddings,
     model: body.model || 'proxy-example-embedding',
+    providerMetadata: {
+      provider: 'proxy-server-example',
+      route: 'embedding',
+      traceId: createProxyTraceId('embedding', body)
+    },
     usage: {
       promptTokens: texts.reduce((total, text) => total + estimateTokens(text), 0),
       totalTokens: texts.reduce((total, text) => total + estimateTokens(text), 0)
@@ -200,6 +219,13 @@ async function handleUpstreamChat(body, response) {
           upstreamModel: data.model || requestBody.model,
           proxyTraceId: traceId,
           upstreamTraceHeader: upstream.traceHeader || undefined
+        },
+        providerMetadata: {
+          provider: 'openai-compatible',
+          upstreamModel: data.model || requestBody.model,
+          proxyTraceId: traceId,
+          route: 'chat',
+          upstreamTraceHeader: upstream.traceHeader || undefined
         }
       }
     ]
@@ -225,7 +251,24 @@ async function handleUpstreamCompletion(body, response) {
     } else if (typeof choice?.message?.content === 'string') {
       text = choice.message.content
     }
-    sendSse(response, [{ text }])
+    sendSse(response, [
+      {
+        text,
+        metadata: {
+          provider: 'openai-compatible',
+          upstreamModel: data.model || requestBody.model,
+          proxyTraceId: traceId,
+          upstreamTraceHeader: upstream.traceHeader || undefined
+        },
+        providerMetadata: {
+          provider: 'openai-compatible',
+          upstreamModel: data.model || requestBody.model,
+          proxyTraceId: traceId,
+          route: 'completion',
+          upstreamTraceHeader: upstream.traceHeader || undefined
+        }
+      }
+    ])
   } catch (error) {
     sendUpstreamError(response, error)
   }
@@ -248,6 +291,7 @@ async function handleUpstreamEmbedding(body, response) {
       providerMetadata: {
         provider: 'openai-compatible',
         proxyTraceId: traceId,
+        route: 'embedding',
         upstreamTraceHeader: upstream.traceHeader || undefined
       }
     })
@@ -259,6 +303,7 @@ async function handleUpstreamEmbedding(body, response) {
 async function handleImage(request, response) {
   const body = await readJson(request)
   const prompt = typeof body.prompt === 'string' ? body.prompt : 'Vue AI Hooks'
+  const traceId = createProxyTraceId('image', body)
   const image = {
     url: imageSvgDataUrl(prompt),
     mediaType: 'image/svg+xml',
@@ -272,7 +317,9 @@ async function handleImage(request, response) {
     images: [image],
     model: body.model || 'proxy-example-image',
     providerMetadata: {
-      provider: 'proxy-server-example'
+      provider: 'proxy-server-example',
+      route: 'image',
+      traceId
     }
   })
 }
@@ -280,6 +327,7 @@ async function handleImage(request, response) {
 async function handleVideo(request, response) {
   const body = await readJson(request)
   const prompt = typeof body.prompt === 'string' ? body.prompt : 'Vue AI Hooks video demo'
+  const traceId = createProxyTraceId('video', body)
   const durationInSeconds = Number(body.duration) > 0 ? Number(body.duration) : 6
   const video = {
     url: videoStoryboardDataUrl(prompt),
@@ -295,7 +343,9 @@ async function handleVideo(request, response) {
     videos: [video],
     model: body.model || 'proxy-example-video',
     providerMetadata: {
-      provider: 'proxy-server-example'
+      provider: 'proxy-server-example',
+      route: 'video',
+      traceId
     }
   })
 }
@@ -303,6 +353,7 @@ async function handleVideo(request, response) {
 async function handleSpeech(request, response) {
   const body = await readJson(request)
   const text = typeof body.text === 'string' ? body.text : 'Vue AI Hooks speech demo'
+  const traceId = createProxyTraceId('speech', body)
   const audio = {
     url: silentWavDataUrl(),
     mediaType: 'audio/wav',
@@ -316,7 +367,9 @@ async function handleSpeech(request, response) {
     audio,
     model: body.model || 'proxy-example-speech',
     providerMetadata: {
-      provider: 'proxy-server-example'
+      provider: 'proxy-server-example',
+      route: 'speech',
+      traceId
     }
   })
 }
@@ -325,13 +378,16 @@ async function handleTranscription(request, response) {
   const body = await readJson(request)
   const audio = typeof body.audio === 'string' ? body.audio : ''
   const seed = deterministicSeed(audio || 'transcription')
+  const traceId = createProxyTraceId('transcription', body)
   sendJson(response, 200, {
     text: `Proxy transcript ${seed}: ${transcriptionLabel(audio)}`,
     language: body.language || 'en',
     durationInSeconds: 0,
     model: body.model || 'proxy-example-transcription',
     providerMetadata: {
-      provider: 'proxy-server-example'
+      provider: 'proxy-server-example',
+      route: 'transcription',
+      traceId
     }
   })
 }
@@ -355,7 +411,9 @@ async function handleRerank(request, response) {
     ranking: limitedRanking,
     model: body.model || 'proxy-example-rerank',
     providerMetadata: {
-      provider: 'proxy-server-example'
+      provider: 'proxy-server-example',
+      route: 'rerank',
+      traceId: createProxyTraceId('rerank', body)
     }
   })
 }
@@ -363,6 +421,7 @@ async function handleRerank(request, response) {
 async function handleObject(request, response) {
   const body = await readJson(request)
   const prompt = latestUserText(body.messages)
+  const traceId = createProxyTraceId('object', body)
   const object = {
     title: titleFromPrompt(prompt),
     priority: prompt.toLowerCase().includes('urgent') ? 'high' : 'low'
@@ -373,6 +432,11 @@ async function handleObject(request, response) {
     { content: text.slice(Math.ceil(text.length / 2)) },
     {
       finishReason: 'stop',
+      providerMetadata: {
+        provider: 'proxy-server-example',
+        route: 'object',
+        traceId
+      },
       usage: {
         promptTokens: estimateTokens(prompt),
         completionTokens: estimateTokens(text),
@@ -389,28 +453,52 @@ async function handleUIMessageStream(request, response) {
   const text = `UI stream accepted: ${prompt}`
   const firstBreak = Math.max(1, Math.ceil(text.length / 3))
   const secondBreak = Math.max(firstBreak + 1, Math.ceil((text.length * 2) / 3))
+  const traceId = createProxyTraceId('ui-message-stream', body)
+  const providerMetadata = {
+    provider: 'proxy-server-example',
+    route: 'ui-message-stream',
+    traceId
+  }
 
   sendSse(response, [
     {
       type: 'start',
       messageId,
-      messageMetadata: { provider: 'proxy-server-example', route: 'ui-message-stream' }
+      messageMetadata: providerMetadata,
+      providerMetadata
     },
     { type: 'text-start', id: 'text_1' },
-    { type: 'text-delta', id: 'text_1', delta: text.slice(0, firstBreak) },
-    { type: 'data-progress', id: 'progress_1', data: { step: 'accepted', value: 0.33 } },
-    { type: 'text-delta', id: 'text_1', delta: text.slice(firstBreak, secondBreak) },
+    {
+      type: 'text-delta',
+      id: 'text_1',
+      delta: text.slice(0, firstBreak),
+      providerMetadata
+    },
+    {
+      type: 'data-progress',
+      id: 'progress_1',
+      data: { step: 'accepted', value: 0.33 },
+      providerMetadata
+    },
+    {
+      type: 'text-delta',
+      id: 'text_1',
+      delta: text.slice(firstBreak, secondBreak),
+      providerMetadata
+    },
     {
       type: 'source-url',
       sourceId: 'docs_streams',
       url: 'https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/reference/streams.md',
-      title: 'Stream utilities'
+      title: 'Stream utilities',
+      providerMetadata
     },
-    { type: 'text-delta', id: 'text_1', delta: text.slice(secondBreak) },
-    { type: 'text-end', id: 'text_1' },
+    { type: 'text-delta', id: 'text_1', delta: text.slice(secondBreak), providerMetadata },
+    { type: 'text-end', id: 'text_1', providerMetadata },
     {
       type: 'finish',
       finishReason: 'stop',
+      providerMetadata,
       usage: {
         promptTokens: estimateTokens(prompt),
         completionTokens: estimateTokens(text),

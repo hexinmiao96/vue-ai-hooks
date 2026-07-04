@@ -12,7 +12,10 @@ import {
   waitForRetry
 } from '../utils/retry'
 import {
+  clearInspectionState,
   inspectRequestTrace,
+  recordInspectionStateEvent,
+  recordInspectionStateRetryAttempt,
   type InspectionRetryRecordInput,
   type InspectionTimelineEventInput,
   type RequestInspectionSnapshot
@@ -184,6 +187,10 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
   const [lastResponse, setLastResponse] = useState<ReactVideoGenerationResponseInfo | null>(null)
   const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
   const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
+  const inspectionRecords = {
+    setEvents: setInspectionEvents,
+    setRetries: setInspectionRetries
+  }
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -225,8 +232,7 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
-    setInspectionEvents([])
-    setInspectionRetries([])
+    clearInspectionState(inspectionRecords)
   }, [])
 
   const inspect = useCallback(
@@ -244,34 +250,8 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
   )
 
   const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
-    setInspectionEvents((current) => [
-      ...current,
-      {
-        ...event,
-        timestamp: event.timestamp ?? new Date()
-      }
-    ])
+    recordInspectionStateEvent(inspectionRecords, event)
   }, [])
-
-  const recordInspectionRetry = useCallback(
-    (errorToRecord: unknown, context: ReturnType<typeof createRetryContext>) => {
-      const delayMs =
-        typeof optionsRef.current.retryDelayMs === 'function'
-          ? optionsRef.current.retryDelayMs(context)
-          : (optionsRef.current.retryDelayMs ?? 0)
-      setInspectionRetries((current) => [
-        ...current,
-        {
-          attempt: context.attempt,
-          maxRetries: context.maxRetries,
-          error: errorToRecord,
-          delayMs,
-          timestamp: new Date()
-        }
-      ])
-    },
-    []
-  )
 
   const handleInputChange = useCallback(
     (
@@ -438,8 +418,7 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
       setVideosState([])
       setResult(null)
       setStatus('submitted')
-      setInspectionEvents([])
-      setInspectionRetries([])
+      clearInspectionState(inspectionRecords)
 
       try {
         let retryAttempt = 0
@@ -484,17 +463,10 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
             const context = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (await canRetry(optionsRef.current, context)) {
               retryAttempt += 1
-              recordInspectionEvent({
-                kind: 'retry',
-                label: 'retry planned',
-                attempt: context.attempt,
-                status,
-                metadata: {
-                  maxRetries: context.maxRetries,
-                  hasResponse: false
-                }
+              recordInspectionStateRetryAttempt(inspectionRecords, nextError, context, {
+                retryDelayMs: optionsRef.current.retryDelayMs,
+                status
               })
-              recordInspectionRetry(nextError, context)
               await waitForRetry(optionsRef.current, context, controller.signal)
               continue
             }
@@ -511,15 +483,7 @@ export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoRetur
         setIsLoading(false)
       }
     },
-    [
-      defaultRequest,
-      postVideo,
-      recordInspectionEvent,
-      recordInspectionRetry,
-      setResult,
-      setVideo,
-      setVideosState
-    ]
+    [defaultRequest, postVideo, recordInspectionEvent, setResult, setVideo, setVideosState]
   )
 
   const generate = useCallback(

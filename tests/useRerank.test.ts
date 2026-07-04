@@ -238,6 +238,10 @@ describe('useRerank', () => {
     expect(reranker.rerankedDocuments.value).toEqual(['retry doc'])
     expect(reranker.error.value).toBeNull()
     expect(onRetry).toHaveBeenCalledOnce()
+    expect(reranker.inspect().retries).toHaveLength(1)
+    expect(reranker.inspect().timeline).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'retry' })])
+    )
   })
 
   it('stop() aborts an in-flight rerank request without storing an error', async () => {

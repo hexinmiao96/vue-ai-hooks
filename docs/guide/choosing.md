@@ -108,13 +108,11 @@ Vue composables and components, chat UI components, frontend tools,
 human-in-the-loop hooks, and agent access. Its AG-UI docs describe an
 event-based SSE protocol for connecting frontends to agents.
 
-`vue-ai-hooks` deliberately stays lower-level. It does not ship a popup,
-sidebar, or full copilot shell. That keeps the package useful when your product
-already has a custom design system, chat surface, review flow, or audit panel.
-Copy only the parts that strengthen the headless Vue contract, such as context,
-capability discovery, or app-owned human review state. If you want a ready-made
-copilot UI with agent protocol integration, CopilotKit may be the faster
-starting point.
+`vue-ai-hooks` deliberately stays lower-level. It does not ship a full copilot
+shell, but it supports headless Vue composable primitives for reusable task starters,
+threaded chat state, and app-owned human review state. If you want a ready-made
+copilot UI with agent protocol integration, CopilotKit may be the faster starting
+point.
 
 ### Direct fetch and SSE parsing
 

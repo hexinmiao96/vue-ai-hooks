@@ -109,7 +109,7 @@ interface GenerationRunContext<TInput, TProgress, TChunk> {
 
 - `defaultBody` 和 `generate(input, { body })` 会在 `fetcher` 运行前合并；key 冲突时单次调用优先。
 - 最新的 `onRequest` 和 `onResponse` payload 也会暴露为 `lastRequest` 和
-  `lastResponse`，方便界面渲染诊断信息。
+  `lastResponse`，用于内部 trace 状态。UI 需要展示脱敏诊断信息时，应渲染 `inspect()` 输出。
 - `generate()` 不传 input 时会使用 `input.value`。两者都是 `undefined` 时会抛错。
 - 多个 `useGeneration()` 传入同一个 `id` 时，会共享 input、result、progress、chunks、status、error、loading 和 abort 状态。
 - 每次运行开始时，`result`、`progress` 和 `chunks` 都会重置。

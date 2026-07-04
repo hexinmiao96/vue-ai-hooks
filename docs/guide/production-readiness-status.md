@@ -11,15 +11,15 @@ GitHub issues remain reserved for reproducible bugs.
 
 ## Status matrix
 
-| Area                    | Current status            | Evidence                                                                                                                                |
-| ----------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Inspection              | Ready for app adoption    | `inspect()`, `inspectRequestTrace()`, timeline, retry records, provider trace, redacted curl                                            |
-| Task demos              | Ready for onboarding      | Vue approval demo, agent run approval, React chat/completion/object/image/video demos, image edit, proxy, AI SDK stream                 |
-| Provider presets        | Ready behind app proxies  | OpenAI-compatible, DeepSeek, OpenRouter, Gemini, Anthropic, Moonshot, Zhipu, Ollama, vLLM                                               |
-| React support           | Migration bridge          | `vue-ai-hooks/react` exposes `useChat`, `useCompletion`, `useObject`, `useImage`, `useVideo`, `usePromptSuggestions`, and `useAgentRun` |
-| Tool approval           | Ready as backend contract | Durable approval record, renderer contract, replayed `runId`, stale `revision` conflicts                                                |
-| Threads and persistence | Ready as app-owned model  | `useChatThreads`, server storage recipe, IndexedDB recipe, regenerate branch contracts                                                  |
-| Agent bridge            | Ready as projection layer | `AgentEvent`, LangChain/LangGraph recipes, route templates, interrupt/resume projection guardrails, AI SDK UI stream part conversion    |
+| Area                    | Current status            | Evidence                                                                                                                                                               |
+| ----------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inspection              | Ready for app adoption    | `inspect()`, `inspectRequestTrace()`, timeline, retry records, provider trace, redacted curl                                                                           |
+| Task demos              | Ready for onboarding      | Vue chat/completion/object/embedding demos, agent run approval, React chat/completion/object/image/video demos, image edit, proxy, AI SDK stream, demo UX smoke checks |
+| Provider presets        | Ready behind app proxies  | OpenAI-compatible, DeepSeek, OpenRouter, Gemini, Anthropic, Moonshot, Zhipu, Ollama, vLLM                                                                              |
+| React support           | Migration bridge          | `vue-ai-hooks/react` exposes `useChat`, `useCompletion`, `useObject`, `useImage`, `useVideo`, `usePromptSuggestions`, and `useAgentRun`                                |
+| Tool approval           | Ready as backend contract | Durable approval record, renderer contract, replayed `runId`, stale `revision` conflicts                                                                               |
+| Threads and persistence | Ready as app-owned model  | `useChatThreads`, server storage recipe, IndexedDB recipe, regenerate branch contracts                                                                                 |
+| Agent bridge            | Ready as projection layer | `AgentEvent`, LangChain/LangGraph recipes, route templates, interrupt/resume projection guardrails, AI SDK UI stream part conversion                                   |
 
 ## Required gates
 
@@ -38,9 +38,9 @@ node scripts/production-readiness-local.mjs
 
 The gate covers format, secrets, source hygiene, lint, typecheck, test hygiene,
 coverage, build, dist, size, pack, install, changelog, metadata, community
-health, workflows, API docs, docs UX, proxy, image edit, threaded chat, UI
-message stream, agent run, tool approval, agent bridge, agent route templates,
-markdown links, examples, and docs build.
+health, workflows, API docs, docs UX, proxy, image edit, demo UX,
+competitive benchmark, threaded chat, UI message stream, agent run, tool approval,
+agent bridge, agent route templates, markdown links, examples, and docs build.
 
 ## Release boundary
 

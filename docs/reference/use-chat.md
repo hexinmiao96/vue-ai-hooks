@@ -431,9 +431,10 @@ browser credentials mode.
 `vue-ai-hooks` providers abstract over fetch clients, `info.hasStream` tells you
 whether a stream was returned instead of exposing a raw `Response` object. Use
 these callbacks for tracing, analytics, request logging, and resume diagnostics.
-The same snapshots are also stored in `lastRequest` and `lastResponse`, so a
-debug panel can render the latest provider attempt without duplicating callback
-state.
+The same snapshots are also stored in `lastRequest` and `lastResponse` so you
+can build internal trace state without duplicating callback state. Render
+`inspect()` output in support panels when you need redacted request/response
+metadata.
 
 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
 receives the final assistant message and a snapshot of the conversation. The

@@ -33,6 +33,11 @@ expect(
   'CHANGELOG.md must reference Semantic Versioning'
 )
 expect(changelog.includes('## [Unreleased]'), 'CHANGELOG.md must keep an Unreleased section')
+const unreleasedSection = getSection(changelog, '## [Unreleased]')
+expect(
+  Boolean(unreleasedSection) && /^- /m.test(unreleasedSection),
+  'CHANGELOG.md Unreleased section must include a placeholder or change bullet'
+)
 
 for (const phrase of forbiddenStalePhrases) {
   expect(
@@ -77,6 +82,10 @@ if (currentSection) {
   expect(
     currentSection.includes('`prepublishOnly` now delegates to `release:check`'),
     `CHANGELOG.md ${packageJson.version} section must document current prepublishOnly behavior`
+  )
+  expect(
+    currentSection.includes('empty Unreleased sections'),
+    `CHANGELOG.md ${packageJson.version} section must document the Unreleased placeholder guard`
   )
   expect(
     Boolean(coverageThresholdPhrase) &&

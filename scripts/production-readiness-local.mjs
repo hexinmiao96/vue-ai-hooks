@@ -18,14 +18,21 @@ function bin(name) {
 
 function run(label, command, args = [], options = {}) {
   console.log(`\n> ${label}`)
-  const result = execFileSync(command, args, {
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-    ...options
-  })
+  try {
+    const result = execFileSync(command, args, {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+      ...options
+    })
 
-  if (result) {
-    console.log(result)
+    if (result) {
+      console.log(result)
+    }
+  } catch (error) {
+    if (typeof error?.status === 'number') {
+      process.exit(error.status)
+    }
+    throw error
   }
 }
 
@@ -50,9 +57,10 @@ const exampleBuilds = [
 ]
 
 run('Release cadence check', bin('node'), ['./scripts/check-release-cadence.mjs'])
+run('Release status', bin('node'), ['./scripts/release-status.mjs'])
 run('Format check', bin('prettier'), [
   '--check',
-  '**/*.{ts,tsx,vue,js,mjs,json,md,yml,yaml}',
+  '**/*.{ts,tsx,mts,cts,vue,js,jsx,mjs,cjs,html,json,md,yml,yaml}',
   '.prettierrc'
 ])
 run('Secrets scan', bin('node'), ['scripts/check-secrets.mjs'])
@@ -60,9 +68,14 @@ run('Source hygiene', bin('node'), ['scripts/check-source-hygiene.mjs'])
 run('Lint', bin('eslint'), [
   '--max-warnings',
   '0',
-  'src/**/*.{ts,vue}',
-  'tests/**/*.ts',
-  'examples/**/*.{ts,tsx,vue}'
+  'src/**/*.{ts,tsx,mts,cts,vue}',
+  'tests/**/*.{ts,tsx,mts,cts}',
+  'examples/**/*.{ts,tsx,mts,cts,vue}',
+  'scripts/**/*.{js,jsx,mjs,cjs}',
+  'docs/.vitepress/**/*.{ts,vue}',
+  'eslint.config.js',
+  'vite.config.ts',
+  'vitest.config.ts'
 ])
 run('Typecheck', bin('vue-tsc'), ['-p', 'tsconfig.json', '--noEmit'])
 run('Test hygiene', bin('node'), ['scripts/check-test-hygiene.mjs'])
@@ -87,6 +100,8 @@ run('API docs check', bin('node'), ['scripts/check-api-docs.mjs'])
 run('Docs UX check', bin('node'), ['scripts/check-docs-ux.mjs'])
 run('Proxy example check', bin('node'), ['scripts/check-proxy-example.mjs'])
 run('Image demo check', bin('node'), ['scripts/check-image-demo.mjs'])
+run('Demo UX check', bin('pnpm'), ['demo-ux:check'])
+run('Completion and object demo check', bin('node'), ['scripts/check-completion-object-demo.mjs'])
 run('React video demo check', bin('node'), ['scripts/check-react-video-demo.mjs'])
 run('Threaded chat demo check', bin('node'), ['scripts/check-threaded-chat-demo.mjs'])
 run('UI message stream demo check', bin('node'), ['scripts/check-ui-message-stream-demo.mjs'])
@@ -94,6 +109,7 @@ run('Agent run demo check', bin('node'), ['scripts/check-agent-run-demo.mjs'])
 run('Tool approval demo check', bin('node'), ['scripts/check-tool-approval-demo.mjs'])
 run('Agent bridge demo check', bin('node'), ['scripts/check-agent-bridge-demo.mjs'])
 run('Agent route templates check', bin('node'), ['scripts/check-agent-route-templates.mjs'])
+run('Competitive benchmark check', bin('node'), ['scripts/check-competitive-benchmark.mjs'])
 run('Markdown link check', bin('node'), ['scripts/check-markdown-links.mjs'])
 
 for (const [dir, out] of exampleBuilds) {

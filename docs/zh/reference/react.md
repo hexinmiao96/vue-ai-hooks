@@ -209,6 +209,37 @@ import {
 } from 'vue-ai-hooks/react'
 ```
 
+React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移核对：
+
+- Chat：`ReactAppendChatOptions`、`ReactAiSdkChatFinishCallback`、
+  `ReactChatFinishCallback`、`ReactChatFinishInfo`、`ReactChatRequestInfo`、
+  `ReactChatResponseInfo`、`ReactChatStatus`、`ReactLegacyChatFinishCallback`、
+  `ReactSendChatMessageInput`、`UseReactChatOptions`、`UseReactChatReturn`。
+- Completion：`ReactAiSdkCompletionFinishCallback`、
+  `ReactCompletionFinishInfo`、`ReactCompletionRequestInfo`、
+  `ReactCompletionResponseInfo`、`ReactCompletionStatus`、
+  `ReactCompletionStreamProtocol`、`ReactLegacyCompletionFinishCallback`、
+  `UseReactCompletionOptions`、`UseReactCompletionReturn`。
+- Object：`ReactAiSdkObjectFinishCallback`、`ReactLegacyObjectFinishCallback`、
+  `ReactObjectDeepPartial`、`ReactObjectFinishCallback`、
+  `ReactObjectFinishCallbackOptions`、`ReactObjectFinishInfo`、
+  `ReactObjectRequestInfo`、`ReactObjectResponseInfo`、`ReactObjectStatus`、
+  `UseReactObjectOptions`、`UseReactObjectReturn`。
+- 媒体和 Agent：`ReactImageEditOptions`、
+  `ReactImageGenerationRequestInfo`、`ReactImageGenerationResponseInfo`、
+  `ReactVideoGenerationRequestInfo`、`ReactVideoGenerationResponseInfo`、
+  `ReactAgentRunFinishInfo`、`ReactAgentRunHandler`、
+  `ReactAgentRunInspectionSnapshot`、`ReactAgentRunRequest`、
+  `ReactAgentRunRequestInfo`、`ReactAgentRunResponseInfo`、
+  `ReactAgentRunStatus`、`UseReactImageOptions`、`UseReactImageReturn`、
+  `UseReactVideoOptions`、`UseReactVideoReturn`、`UseReactAgentRunOptions`、
+  `UseReactAgentRunReturn`。
+- Prompt suggestions：`CreatePromptSuggestionRecipesOptions`、
+  `PromptSuggestionRecipe`、`PromptSuggestionRecipeCategory`、
+  `PromptSuggestionRecipeId`、`PromptSuggestionRecipeLocale`、
+  `PromptSuggestionRecipeMetadata`、`PromptSuggestionRecipeSurface`、
+  `UseReactPromptSuggestionsOptions`、`UseReactPromptSuggestionsReturn`。
+
 `useChat(options)` 接收 `UseReactChatOptions`：
 
 | 选项                                                                                                | 说明                                                                                             |

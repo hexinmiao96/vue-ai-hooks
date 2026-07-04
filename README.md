@@ -661,8 +661,8 @@ If you are connecting an app-owned agent service, use the
 [Agent events guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-events.md).
 For LangChain, LangGraph, or custom backend agent runtimes, use the
 [Agent bridge recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-bridge.md).
-When you need copyable Nuxt/Nitro, Next.js, Hono, or Fetch route shapes for that
-projection, start with the
+When you need copyable Nuxt/Nitro, Next.js, Hono, Express, Fastify, or Fetch
+route shapes for that projection, start with the
 [Agent route templates](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/agent-route-templates.md).
 For durable human approval around privileged tools, use the
 [Tool approval recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/tool-approvals.md).
@@ -803,7 +803,7 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.14.2** — a working foundation, not feature-complete. The core
+This is **v0.14.3** — a working foundation, not feature-complete. The core
 surface covers the main composables, provider/proxy adapters, tool flows,
 persistence, retries, stream data, metadata, shared state, and quality gates.
 This release adds `useChatThreads` for local thread indexes, active thread

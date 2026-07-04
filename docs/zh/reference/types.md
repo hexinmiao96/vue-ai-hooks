@@ -972,9 +972,13 @@ const snapshot = inspectRequestTrace({
 })
 ```
 
-设置 `curl: true` 后，snapshot 会带一个敏感 header 已脱敏的可复制请求命令。
-如果调试面板只需要 curl 命令，也可以直接使用导出的
-`createInspectionCurl(request, options?)`。
+返回 snapshot 前，`request`、`response` 和 timeline `metadata` 都会经过调试脱敏复制。
+敏感 header 以及 `apiKey`、`accessToken`、`clientSecret`、`password`、`privateKey`、
+`sessionToken` 等常见凭据字段会替换成 `"[redacted]"`，不会修改原始请求 metadata。
+
+设置 `curl: true` 后，snapshot 会带一个敏感 header 和凭据形态 body 字段已脱敏的可复制请求命令。
+`redactHeaders` 可以自定义 curl 命令里的 header 脱敏名单；snapshot 本身仍会应用内置的凭据字段脱敏。
+如果调试面板只需要 curl 命令，也可以直接使用导出的 `createInspectionCurl(request, options?)`。
 
 ## 重试选项
 

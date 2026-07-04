@@ -213,6 +213,38 @@ import {
 } from 'vue-ai-hooks/react'
 ```
 
+React-specific exported types are grouped by hook surface so API references stay
+searchable:
+
+- Chat: `ReactAppendChatOptions`, `ReactAiSdkChatFinishCallback`,
+  `ReactChatFinishCallback`, `ReactChatFinishInfo`, `ReactChatRequestInfo`,
+  `ReactChatResponseInfo`, `ReactChatStatus`, `ReactLegacyChatFinishCallback`,
+  `ReactSendChatMessageInput`, `UseReactChatOptions`, `UseReactChatReturn`.
+- Completion: `ReactAiSdkCompletionFinishCallback`,
+  `ReactCompletionFinishInfo`, `ReactCompletionRequestInfo`,
+  `ReactCompletionResponseInfo`, `ReactCompletionStatus`,
+  `ReactCompletionStreamProtocol`, `ReactLegacyCompletionFinishCallback`,
+  `UseReactCompletionOptions`, `UseReactCompletionReturn`.
+- Object: `ReactAiSdkObjectFinishCallback`, `ReactLegacyObjectFinishCallback`,
+  `ReactObjectDeepPartial`, `ReactObjectFinishCallback`,
+  `ReactObjectFinishCallbackOptions`, `ReactObjectFinishInfo`,
+  `ReactObjectRequestInfo`, `ReactObjectResponseInfo`, `ReactObjectStatus`,
+  `UseReactObjectOptions`, `UseReactObjectReturn`.
+- Media and agents: `ReactImageEditOptions`,
+  `ReactImageGenerationRequestInfo`, `ReactImageGenerationResponseInfo`,
+  `ReactVideoGenerationRequestInfo`, `ReactVideoGenerationResponseInfo`,
+  `ReactAgentRunFinishInfo`, `ReactAgentRunHandler`,
+  `ReactAgentRunInspectionSnapshot`, `ReactAgentRunRequest`,
+  `ReactAgentRunRequestInfo`, `ReactAgentRunResponseInfo`,
+  `ReactAgentRunStatus`, `UseReactImageOptions`, `UseReactImageReturn`,
+  `UseReactVideoOptions`, `UseReactVideoReturn`, `UseReactAgentRunOptions`,
+  `UseReactAgentRunReturn`.
+- Prompt suggestions: `CreatePromptSuggestionRecipesOptions`,
+  `PromptSuggestionRecipe`, `PromptSuggestionRecipeCategory`,
+  `PromptSuggestionRecipeId`, `PromptSuggestionRecipeLocale`,
+  `PromptSuggestionRecipeMetadata`, `PromptSuggestionRecipeSurface`,
+  `UseReactPromptSuggestionsOptions`, `UseReactPromptSuggestionsReturn`.
+
 `useChat(options)` accepts `UseReactChatOptions`:
 
 | Option                                                                                              | Description                                                                                           |

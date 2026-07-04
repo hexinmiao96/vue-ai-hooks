@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -13,12 +14,18 @@ const ignoredDirectories = new Set([
 const ignoredPaths = new Set(['docs/.vitepress/cache', 'docs/.vitepress/dist'])
 const scannedExtensions = new Set([
   '.env',
+  '.cjs',
+  '.cts',
   '.example',
+  '.html',
   '.js',
+  '.jsx',
   '.json',
   '.md',
   '.mjs',
+  '.mts',
   '.ts',
+  '.tsx',
   '.vue',
   '.yaml',
   '.yml'
@@ -35,10 +42,14 @@ const tokenPatterns = [
   {
     name: 'npm token',
     regex: /\bnpm_[A-Za-z0-9]{36,}\b/g
+  },
+  {
+    name: 'Google API key',
+    regex: /\bAIza[A-Za-z0-9_-]{35}\b/g
   }
 ]
-const envKeyPattern =
-  /^\s*(?:VITE_)?(?:OPENAI|ANTHROPIC|OPENROUTER|DEEPSEEK|AI)_(?:API_)?KEY\s*=\s*['"]?([^'"\s#]+)['"]?/gm
+const sensitiveEnvAssignmentPattern =
+  /^[^\S\r\n]*(?:export[^\S\r\n]+)?([A-Z][A-Z0-9_]*(?:API_KEY|KEY|AUTH_TOKEN|TOKEN|SECRET|PASSWORD))[^\S\r\n]*=[^\S\r\n]*['"]?([^'"\s#]*)['"]?/gm
 const placeholderValues = new Set([
   '',
   '<your-api-key>',
@@ -52,12 +63,13 @@ const placeholderValues = new Set([
   'sk-...',
   'sk-ant-...',
   'sk-or-v1-...',
-  'sk-proj-...'
+  'sk-proj-...',
+  'aiza...'
 ])
 const failures = []
 let scannedFiles = 0
 
-for (const file of walk('.')) {
+for (const file of collectScannableFiles()) {
   const content = readFileSync(file, 'utf8')
   scannedFiles += 1
 
@@ -67,12 +79,16 @@ for (const file of walk('.')) {
     }
   }
 
-  for (const match of content.matchAll(envKeyPattern)) {
-    const value = match[1].trim()
+  for (const match of content.matchAll(sensitiveEnvAssignmentPattern)) {
+    const name = match[1]
+    const value = match[2].trim()
 
-    if (value && !placeholderValues.has(value.toLowerCase())) {
+    if (!isSafePlaceholder(value)) {
       failures.push(
-        `${file}: non-placeholder API key assignment at ${lineFor(content, match.index ?? 0)}`
+        `${file}: non-placeholder sensitive env assignment ${name} at ${lineFor(
+          content,
+          match.index ?? 0
+        )}`
       )
     }
   }
@@ -84,6 +100,28 @@ if (failures.length) {
 }
 
 console.log(`Secret check passed for ${scannedFiles} files.`)
+
+function collectScannableFiles() {
+  const gitFiles = listGitCandidateFiles()
+  return gitFiles ?? [...walk('.')]
+}
+
+function listGitCandidateFiles() {
+  try {
+    const output = execFileSync(
+      'git',
+      ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+      {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      }
+    )
+
+    return output.split('\0').filter(Boolean).filter(shouldScan).filter(isSmallReadableFile).sort()
+  } catch {
+    return null
+  }
+}
 
 function* walk(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
@@ -103,11 +141,7 @@ function* walk(directory) {
       continue
     }
 
-    if (statSync(path).size > 1_000_000) {
-      continue
-    }
-
-    yield path
+    if (isSmallReadableFile(path)) yield path
   }
 }
 
@@ -127,4 +161,17 @@ function shouldScan(path) {
 
 function lineFor(content, index) {
   return content.slice(0, index).split('\n').length
+}
+
+function isSafePlaceholder(value) {
+  const normalized = value.toLowerCase()
+  return placeholderValues.has(normalized) || value.includes('...') || /^\$[A-Z0-9_]+$/.test(value)
+}
+
+function isSmallReadableFile(path) {
+  try {
+    return statSync(path).size <= 1_000_000
+  } catch {
+    return false
+  }
 }

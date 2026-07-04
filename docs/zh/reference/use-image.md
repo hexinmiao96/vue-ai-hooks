@@ -113,5 +113,5 @@ await handleSubmit(undefined, { aspectRatio: '16:9' })
 - `handleSubmit()` 只会在图片生成成功后清空 `input`；后端错误会保留提示词，方便重试。
 - `onRequest(info)` 和 `onResponse(info)` 会包含解析后的 `api`、credentials 模式、
   headers、最终 JSON body 和 retry attempt。同一份最新快照也会暴露为 `lastRequest`
-  和 `lastResponse`。
+  和 `lastResponse`，用于内部 trace 状态。UI 需要展示脱敏诊断信息时，应渲染 `inspect()` 输出。
 - `stop()` 会中止当前请求，并且不会把主动中止写入 `error`。

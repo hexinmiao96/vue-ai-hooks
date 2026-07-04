@@ -37,22 +37,27 @@ const props = withDefaults(
     apiPropsSectionId?: string
     apiMethodsSectionId?: string
     panelLabel?: string
-    previewLabel: string
-    codeLabel: string
-    copyLabel: string
-    copiedLabel: string
-    copyFailedLabel: string
+    previewLabel?: string
+    codeLabel?: string
+    copyLabel?: string
+    copiedLabel?: string
+    copyFailedLabel?: string
     apiRef?: ApiRef
     apiAriaLabel?: string
   }>(),
   {
+    id: undefined,
     anchorLabel: '跳转到此示例',
+    apiTitleId: undefined,
+    apiPropsSectionId: undefined,
+    apiMethodsSectionId: undefined,
     panelLabel: '示例面板',
     previewLabel: '预览',
     codeLabel: '代码',
     copyLabel: '复制',
     copiedLabel: '已复制',
     copyFailedLabel: '复制失败',
+    apiRef: undefined,
     apiAriaLabel: 'API 参考'
   }
 )

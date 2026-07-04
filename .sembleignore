@@ -1,3 +1,53 @@
 # Semble should index the library surface, examples, tests, and scripts.
-# VitePress internals are large/generated enough to slow project-wide retrieval.
+# Keep local retrieval focused on source content, not generated output or local secrets.
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output and caches
+dist/
+output/
+coverage/
+.nyc_output/
+.playwright-cli/
 docs/.vitepress/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env and local machine state
+.env
+.env.*
+.env.local
+.env.*.local
+.DS_Store
+.idea/
+
+# Local data, credentials, database dumps, and archives
+*.db
+*.db3
+*.dump
+*.sql
+*.key
+*.cer
+*.crt
+*.der
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.sqlite
+*.sqlite3
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.zip

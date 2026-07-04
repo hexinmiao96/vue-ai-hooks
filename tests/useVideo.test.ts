@@ -215,7 +215,7 @@ describe('useVideo', () => {
       if (calls === 1) return jsonResponse({ message: 'busy' }, { status: 503 })
       return jsonResponse({ videos: [{ url: 'https://cdn.example.test/retry.mp4' }] })
     })
-    const { generateVideo, video, error } = useVideo({
+    const { generateVideo, video, error, inspect } = useVideo({
       fetch: fetcher as unknown as typeof fetch,
       maxRetries: 1,
       onRetry
@@ -229,6 +229,10 @@ describe('useVideo', () => {
     expect(video.value?.url).toBe('https://cdn.example.test/retry.mp4')
     expect(error.value).toBeNull()
     expect(onRetry).toHaveBeenCalledOnce()
+    expect(inspect().retries).toHaveLength(1)
+    expect(inspect().timeline).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'retry' })])
+    )
   })
 
   it('stop() aborts an in-flight video request without storing an error', async () => {

@@ -34,8 +34,8 @@ storage, and operations.
   to LangChain, LangGraph, or a custom agent service instead of a direct model
   provider.
 - Start from [agent route templates](/guide/agent-route-templates) when you
-  need copyable Nuxt/Nitro, Next.js, Hono, or Fetch route shapes for that
-  projection.
+  need copyable Nuxt/Nitro, Next.js, Hono, Express, Fastify, Cloudflare, or
+  Fetch route shapes for that projection.
 - Keep agent checkpoints, retrieved documents, vector store credentials,
   LangSmith keys, and privileged tool state on the server.
 
@@ -100,6 +100,11 @@ Run one command before a release candidate:
 pnpm production:readiness
 ```
 
+`pnpm production:readiness` and `pnpm production:readiness:local` use the same
+Node runner, so the release-candidate gate has one execution definition. It
+includes the full `pnpm check` gate, `pnpm release:cadence`, and
+`pnpm release:status`.
+
 If your environment blocks `pnpm` wrapper execution, run:
 
 ```bash
@@ -108,14 +113,6 @@ pnpm production:readiness:local
 # or
 
 node scripts/production-readiness-local.mjs
-```
-
-Equivalent long form (full local gate, without security audit):
-
-```bash
-pnpm check
-pnpm release:cadence
-pnpm format:check && pnpm secrets:check && pnpm source:hygiene && pnpm lint && pnpm typecheck:all && pnpm test:hygiene && pnpm test:coverage && pnpm build && pnpm dist:check && pnpm size:check && pnpm pack:check && pnpm install:check && pnpm changelog:check && pnpm metadata:check && pnpm community:check && pnpm workflows:check && pnpm api:check && pnpm docs:ux:check && pnpm proxy:check && pnpm image:check && pnpm react-video:check && pnpm threaded-chat:check && pnpm ui-message-stream:check && pnpm agent-run:check && pnpm tool-approval:check && pnpm agent-bridge:check && pnpm agent-route-templates:check && pnpm links:check && pnpm examples:build && pnpm docs:build
 ```
 
 If you need the strictest publish path, run `pnpm release:check` (adds
@@ -146,20 +143,24 @@ VITE_CHAT_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm ex
     per-thread message stores restore independently.
 11. Run `pnpm agent-run:check` and confirm interrupt/resume, same-run replay,
     and inspection trace behavior stay intact.
-12. Run `pnpm agent-route-templates:check` and confirm the copyable agent route
+12. Run `pnpm demo-ux:check` and confirm completion/object UI traceability, summary render, and curl copy.
+13. Run `pnpm agent-route-templates:check` and confirm the copyable agent route
     templates pass executable fixture smoke for Nuxt/Nitro, Next.js, Hono,
-    Fetch, and LangGraph resume shapes.
-13. Reload one server-stored thread and confirm messages restore with `Date`
+    Express, Fastify, Cloudflare, Fetch, and LangGraph resume shapes.
+14. Run `pnpm competitive-benchmark:check` to verify competitor-positioning
+    docs, `threaded-chat`, route template docs, and API export surface are still
+    aligned before release.
+15. Reload one server-stored thread and confirm messages restore with `Date`
     values intact.
-14. Regenerate one assistant message, branch from the same user turn, reload, and
+16. Regenerate one assistant message, branch from the same user turn, reload, and
     confirm both branches restore without duplicate `runId` writes.
-15. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
+17. Send a stale branch `revision` and confirm `branch_revision_conflict`; start
     a second regenerate while one is streaming and confirm `run_in_progress` or
     same-`runId` resume behavior.
-16. Approve and reject one privileged tool request, then confirm duplicate
+18. Approve and reject one privileged tool request, then confirm duplicate
     `runId` submissions do not execute the tool twice and stale approval
     `revision` values return `approval_revision_conflict`.
-17. Confirm logs have trace ids but no provider API keys.
+19. Confirm logs have trace ids but no provider API keys.
 
 ## Issue policy
 

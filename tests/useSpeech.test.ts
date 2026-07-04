@@ -190,7 +190,7 @@ describe('useSpeech', () => {
       if (calls === 1) return jsonResponse({ message: 'busy' }, { status: 503 })
       return jsonResponse({ audio: { url: 'https://cdn.example.test/retry.wav' } })
     })
-    const { generateSpeech, audio, error } = useSpeech({
+    const { generateSpeech, audio, error, inspect } = useSpeech({
       fetch: fetcher as unknown as typeof fetch,
       maxRetries: 1,
       onRetry
@@ -204,6 +204,10 @@ describe('useSpeech', () => {
     expect(audio.value?.url).toBe('https://cdn.example.test/retry.wav')
     expect(error.value).toBeNull()
     expect(onRetry).toHaveBeenCalledOnce()
+    expect(inspect().retries).toHaveLength(1)
+    expect(inspect().timeline).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'retry' })])
+    )
   })
 
   it('stop() aborts an in-flight speech request without storing an error', async () => {

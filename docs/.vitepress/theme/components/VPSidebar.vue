@@ -75,16 +75,16 @@ watch(
 </script>
 
 <template>
-  <aside v-if="hasSidebar" class="VPSidebar" :class="{ open }" ref="navEl" @click.stop>
+  <aside v-if="hasSidebar" ref="navEl" class="VPSidebar" :class="{ open }" @click.stop>
     <div class="curtain" />
 
-    <nav class="nav" id="VPSidebarNav" aria-labelledby="sidebar-aria-label" tabindex="-1">
-      <span class="visually-hidden" id="sidebar-aria-label">
+    <nav id="VPSidebarNav" class="nav" aria-labelledby="sidebar-aria-label" tabindex="-1">
+      <span id="sidebar-aria-label" class="visually-hidden">
         {{ sidebarNavigationLabel }}
       </span>
 
       <slot name="sidebar-nav-before" />
-      <VPSidebarGroup :items="sidebarGroups" :key="key" />
+      <VPSidebarGroup :key="key" :items="sidebarGroups" />
       <slot name="sidebar-nav-after" />
     </nav>
   </aside>

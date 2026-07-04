@@ -490,7 +490,7 @@ describe('react useChat', () => {
       headers: { 'x-tenant': 'tenant_1' }
     })
     expect(snapshot.request?.request).toMatchObject({
-      headers: { Authorization: 'Bearer secret', 'x-tenant': 'tenant_1' },
+      headers: { Authorization: '[redacted]', 'x-tenant': 'tenant_1' },
       messages: [{ role: 'user', content: 'inspect this' }]
     })
     expect(snapshot.response).toMatchObject({

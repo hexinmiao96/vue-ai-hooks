@@ -124,20 +124,48 @@ const provider =
               baseURL: import.meta.env.VITE_OPENAI_BASE_URL
             })
 
-const { object, partialObject, text, input, status, isLoading, submit, stop, clear, error } =
-  useObject<Ticket>({
-    provider,
-    schema,
-    schemaName: 'support_ticket',
-    initialValue: { priority: 'low' }
-  })
+const {
+  object,
+  partialObject,
+  text,
+  input,
+  status,
+  isLoading,
+  submit,
+  stop,
+  clear,
+  error,
+  inspect,
+  clearTrace
+} = useObject<Ticket>({
+  provider,
+  schema,
+  schemaName: 'support_ticket',
+  initialValue: { priority: 'low' }
+})
 
 input.value = 'Urgent: customer cannot reset password and account access is blocked.'
 
 const visibleObject = computed(() => object.value ?? partialObject.value)
+const inspection = computed(() => inspect())
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
+const copied = computed(() => (inspection.value.curl ? 'Copy curl' : 'No curl'))
 
 async function run() {
   await submit(input.value)
+}
+
+function formatText(value: unknown) {
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+async function copyCurl() {
+  if (!inspection.value.curl) return
+  await navigator.clipboard.writeText(inspection.value.curl)
 }
 </script>
 
@@ -186,6 +214,24 @@ async function run() {
     <section class="panel">
       <h2 class="section-title">Raw JSON stream</h2>
       <pre class="raw-output">{{ text || status }}</pre>
+    </section>
+
+    <section class="panel">
+      <h2 class="section-title">Inspect</h2>
+      <p>{{ inspection.summary }}</p>
+      <div class="actions">
+        <button class="button" :disabled="!inspection.curl" type="button" @click="copyCurl">
+          {{ copied }}
+        </button>
+        <button class="button" type="button" @click="clearTrace">Clear trace</button>
+      </div>
+      <h3 class="section-title">Timeline JSON</h3>
+      <pre class="raw-output">{{ inspectionJson }}</pre>
+      <h3 class="section-title">Provider trace</h3>
+      <pre class="raw-output">{{ formatText(inspection.providerTrace) }}</pre>
+      <h3 class="section-title">Request / response</h3>
+      <pre class="raw-output">{{ formatText(inspection.request) }}</pre>
+      <pre class="raw-output">{{ formatText(inspection.response) }}</pre>
     </section>
   </main>
 </template>

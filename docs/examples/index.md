@@ -17,41 +17,43 @@ the API table only when you need an option or method.
 
 ## Which demo should I open first?
 
-| Goal                                                     | Start with                                                                           | Then read                                                 |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------- |
-| Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)                                                         | [useChat](/reference/use-chat)                            |
-| Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`                                                         | [useChatThreads](/reference/use-chat-threads)             |
-| Keep local history in async IndexedDB                    | [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async) | [Server storage](/guide/server-storage)                   |
-| Try the React chat migration entry                       | `pnpm example:react-chat`                                                            | [React hooks](/reference/react)                           |
-| Try the React completion migration entry                 | `pnpm example:react-completion`                                                      | [React hooks](/reference/react)                           |
-| Try the React structured output migration entry          | `pnpm example:react-object`                                                          | [React hooks](/reference/react)                           |
-| Try the React image generation migration entry           | `pnpm example:react-image`                                                           | [React hooks](/reference/react)                           |
-| Try the React video generation migration entry           | `pnpm example:react-video`                                                           | [React hooks](/reference/react)                           |
-| Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)                                              | [Stream utilities](/reference/streams)                    |
-| Turn one prompt into text                                | [Text completion](#completion-demo)                                                  | [useCompletion](/reference/use-completion)                |
-| Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)                                              | [useEmbedding](/reference/use-embedding)                  |
-| Run a custom async generation job                        | [Task-oriented demos](/guide/task-demos)                                             | [useGeneration](/reference/use-generation)                |
-| Generate or edit an image through an app route           | [Image generation](#image-demo)                                                      | [useImage](/reference/use-image)                          |
-| Generate a video through an app route                    | [Video generation](#video-demo)                                                      | [useVideo](/reference/use-video)                          |
-| Generate speech through an app route                     | [Speech generation](#speech-demo)                                                    | [useSpeech](/reference/use-speech)                        |
-| Turn audio into text through an app route                | [Audio transcription](#transcription-demo)                                           | [useTranscription](/reference/use-transcription)          |
-| Rerank search results through an app route               | [Document reranking](#rerank-demo)                                                   | [useRerank](/reference/use-rerank)                        |
-| Extract typed JSON from a prompt                         | [Structured object output](#object-demo)                                             | [useObject](/reference/use-object)                        |
-| Expose app state to agent requests                       | `pnpm example:chat`                                                                  | [useAgentContext](/reference/use-agent-context)           |
-| Render UI from runtime capability flags                  | [Task-oriented demos](/guide/task-demos)                                             | [useAgentCapabilities](/reference/use-agent-capabilities) |
-| Track a headless app-owned agent run                     | `pnpm example:agent-run`                                                             | [useAgentRun](/reference/use-agent-run)                   |
-| Add composer task starter chips                          | `pnpm example:chat`                                                                  | [usePromptSuggestions](/reference/use-prompt-suggestions) |
+| Goal                                                     | Start with                                                                                   | Then read                                                 |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Build a chat surface, structured parts, or approval flow | [Streaming chat](#chat-demo)                                                                 | [useChat](/reference/use-chat)                            |
+| Add thread sidebar and local restore checks              | `pnpm example:threaded-chat`                                                                 | [useChatThreads](/reference/use-chat-threads)             |
+| Keep local history in async IndexedDB                    | [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-adapter-async) | [Server storage](/guide/server-storage)                   |
+| Try the React chat migration entry                       | `pnpm example:react-chat`                                                                    | [React hooks](/reference/react)                           |
+| Try the React completion migration entry                 | `pnpm example:react-completion`                                                              | [React hooks](/reference/react)                           |
+| Try the React structured output migration entry          | `pnpm example:react-object`                                                                  | [React hooks](/reference/react)                           |
+| Try the React image generation migration entry           | `pnpm example:react-image`                                                                   | [React hooks](/reference/react)                           |
+| Try the React video generation migration entry           | `pnpm example:react-video`                                                                   | [React hooks](/reference/react)                           |
+| Test an AI SDK UI stream backend route                   | [UI message stream route](#stream-demo)                                                      | [Stream utilities](/reference/streams)                    |
+| Turn one prompt into text                                | [Text completion](#completion-demo)                                                          | [useCompletion](/reference/use-completion)                |
+| Compare text by semantic similarity                      | [Embedding similarity](#embedding-demo)                                                      | [useEmbedding](/reference/use-embedding)                  |
+| Run a custom async generation job                        | [Task-oriented demos](/guide/task-demos)                                                     | [useGeneration](/reference/use-generation)                |
+| Generate or edit an image through an app route           | [Image generation](#image-demo)                                                              | [useImage](/reference/use-image)                          |
+| Generate a video through an app route                    | [Video generation](#video-demo)                                                              | [useVideo](/reference/use-video)                          |
+| Generate speech through an app route                     | [Speech generation](#speech-demo)                                                            | [useSpeech](/reference/use-speech)                        |
+| Turn audio into text through an app route                | [Audio transcription](#transcription-demo)                                                   | [useTranscription](/reference/use-transcription)          |
+| Rerank search results through an app route               | [Document reranking](#rerank-demo)                                                           | [useRerank](/reference/use-rerank)                        |
+| Extract typed JSON from a prompt                         | [Structured object output](#object-demo)                                                     | [useObject](/reference/use-object)                        |
+| Expose app state to agent requests                       | `pnpm example:chat`                                                                          | [useAgentContext](/reference/use-agent-context)           |
+| Render UI from runtime capability flags                  | [Task-oriented demos](/guide/task-demos)                                                     | [useAgentCapabilities](/reference/use-agent-capabilities) |
+| Track a headless app-owned agent run                     | `pnpm example:agent-run`                                                                     | [useAgentRun](/reference/use-agent-run)                   |
+| Add composer task starter chips                          | `pnpm example:chat`                                                                          | [usePromptSuggestions](/reference/use-prompt-suggestions) |
 
 ## 5-minute path to production confidence
 
-1. `pnpm example:chat`  
+1. `pnpm example:chat`
    Confirm local stream + tool approval + `usePromptSuggestions()` chips.
-2. `pnpm example:proxy-server` and rerun the target demo with `VITE_CHAT_PROVIDER=proxy-route`.  
+2. `pnpm example:proxy-server` and rerun the target demo with `VITE_CHAT_PROVIDER=proxy-route`.
    Verify `/api/*` and `readUIMessageStream()` contract behavior.
-3. `pnpm example:threaded-chat`  
+3. `pnpm example:threaded-chat`
    Validate restore/recover flow before binding your real storage adapter.
-4. `pnpm example:agent-run`  
+4. `pnpm example:agent-run`
    Validate interrupt/resume, same-run replay safety, and inspection snapshots.
+5. `pnpm example:embedding`
+   Verify vector inputs, pairwise cosine similarities, and inspection trace lifecycle metadata.
 
 ## Common startup checks
 
@@ -72,6 +74,7 @@ Validate the first demo in each lane before you decide your integration path:
 | Image/video/speech flow    | Deterministic local output and editable request panel appears                                 | Verify `VITE_PROXY_BASE_URL` and the target media demo route                                    |
 | Proxy contract             | `/api/chat` and `/api/ui-message-stream` both return 200 in `curl`/browser                    | Run `pnpm example:proxy-server` in one terminal and `pnpm example:ui-message-stream` in another |
 | Structured output (object) | `local-object` prompt output renders and can switch to `/api/object`                          | Check `examples/object` + `useObject` reference                                                 |
+| Embedding similarity       | `Compute embeddings` shows vector matrix and trace summary updates                            | Check `examples/embedding` + `useEmbedding` reference                                           |
 
 ## Run the no-key demo first
 
@@ -121,7 +124,7 @@ For a no-key agent run flow, run `pnpm example:agent-run`. It uses
 `inspect()` / `clearTrace()` output beside the event log. Agent and
 tool-approval starter chips fill the run prompt before start.
 
-For no-server production pilots, follow the [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-async)
+For no-server production pilots, follow the [IndexedDB local durability](/guide/server-storage#indexeddb-local-durability-adapter-async)
 recipe after this step. It shows how to pre-load and flush thread state through
 an async local store while keeping the same thread/message shape used by server
 storage.

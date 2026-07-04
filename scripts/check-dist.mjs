@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { extractExports, extractRuntimeExports } from './lib/entry-exports.mjs'
 
 const root = new URL('../', import.meta.url)
 const fromRoot = (path) => new URL(path, root)
@@ -22,62 +23,12 @@ const requiredReactExportFields = {
   import: './dist/react.mjs',
   require: './dist/react.cjs'
 }
-const requiredRuntimeExports = [
-  'AiHooksError',
-  'agentEventToChatChunk',
-  'agentEventToUIMessageStreamPart',
-  'anthropic',
-  'classifyInspectionError',
-  'convertToModelMessages',
-  'cosineSimilarity',
-  'createIdGenerator',
-  'createInspectionCurl',
-  'createUIMessageStream',
-  'createUIMessageStreamParser',
-  'createUIMessageStreamResponse',
-  'deepseek',
-  'defineToolHandlers',
-  'deserializeChatThreads',
-  'deserializeChatThreadsState',
-  'DirectChatTransport',
-  'dynamicTool',
-  'formatSSEData',
-  'generateId',
-  'inspectRequestTrace',
-  'jsonSchema',
-  'moonshot',
-  'ollama',
-  'openai',
-  'openaiCompatible',
-  'openrouter',
-  'parseSSE',
-  'pipeUIMessageStreamToResponse',
-  'proxyProvider',
-  'readAgentEvents',
-  'readAgentEventStream',
-  'readUIMessageStream',
-  'serializeChatThreads',
-  'serializeChatThreadsState',
-  'tool',
-  'toChatChunks',
-  'validateMessages',
-  'vllm',
-  'useAgentCapabilities',
-  'useChat',
-  'useAgentRun',
-  'useChatThreads',
-  'useCompletion',
-  'useEmbedding',
-  'useImage',
-  'useRerank',
-  'useSpeech',
-  'useTranscription',
-  'useVideo',
-  'usePersist',
-  'zhipu'
-]
-const publicExports = extractExports(readFileSync(fromRoot('src/index.ts'), 'utf8'))
-const reactPublicExports = extractExports(readFileSync(fromRoot('src/react.ts'), 'utf8'))
+const indexSource = readFileSync(fromRoot('src/index.ts'), 'utf8')
+const reactSource = readFileSync(fromRoot('src/react.ts'), 'utf8')
+const publicExports = extractExports(indexSource)
+const reactPublicExports = extractExports(reactSource)
+const requiredRuntimeExports = extractRuntimeExports(indexSource)
+const requiredReactRuntimeExports = extractRuntimeExports(reactSource)
 
 function fail(message) {
   console.error(message)
@@ -162,6 +113,14 @@ for (const name of requiredRuntimeExports) {
     fail(`Missing CJS runtime export: ${name}`)
   }
 }
+for (const name of requiredReactRuntimeExports) {
+  if (!(name in reactEsm)) {
+    fail(`Missing ESM React runtime export: ${name}`)
+  }
+  if (!(name in reactCjs)) {
+    fail(`Missing CJS React runtime export: ${name}`)
+  }
+}
 
 assertEqual(esm.openai({ apiKey: 'test-key' }).id, 'openai-compatible', 'ESM openai provider id')
 assertEqual(esm.deepseek({ apiKey: 'test-key' }).id, 'deepseek', 'ESM deepseek provider id')
@@ -222,19 +181,3 @@ for (const name of reactPublicExports) {
 console.log(
   `Dist check passed for root and React ESM/CJS bundles, ${publicExports.length} root exports, and ${reactPublicExports.length} React exports.`
 )
-
-function extractExports(content) {
-  const names = new Set()
-  for (const match of content.matchAll(/export\s+(?:type\s+)?\{([\s\S]*?)\}\s+from/g)) {
-    for (const rawItem of match[1].split(',')) {
-      const item = rawItem.trim().replace(/^type\s+/, '')
-      if (!item) continue
-      const alias = item
-        .split(/\s+as\s+/)
-        .pop()
-        ?.trim()
-      if (alias) names.add(alias)
-    }
-  }
-  return [...names].sort((a, b) => a.localeCompare(b))
-}

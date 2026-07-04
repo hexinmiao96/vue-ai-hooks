@@ -351,6 +351,9 @@ show the final provider/proxy request after defaults, per-call options, proxy
 `prepareSendMessagesRequest`, `prepareStep`, and
 `prepareReconnectToStreamRequest` receive the same `api` and `credentials`
 fields for default chat proxy transports.
+Use `inspect()` / `inspectRequestTrace()` for the debug view you show to support
+teams so request, response, timeline metadata, and generated curl commands go
+through inspection redaction.
 
 ## Migration checklist
 
@@ -386,6 +389,6 @@ fields for default chat proxy transports.
     existing wire-format `Tool[]` plus `toolHandlers`.
 17. Move tool result code to `addToolOutput()`, `addToolResult({ toolCallId, output })`, or
     `addToolApprovalResponse()`.
-18. Add `lastRequest` and `lastResponse` to your debug view before swapping
-    production traffic.
+18. Add redacted `inspect()` / `inspectRequestTrace()` output to your debug view
+    before swapping production traffic.
 19. Run `pnpm release:check` or your app's equivalent gate before shipping.

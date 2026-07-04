@@ -126,5 +126,6 @@ cosine similarity range.
   Both include the 1-based `attempt`, provider id, input, body, headers, and
   request snapshot.
   The same latest snapshots are available as `lastRequest` and `lastResponse`
-  for rendering diagnostics in the UI.
+  for internal trace state. Render `inspect()` output when the UI needs redacted
+  diagnostics.
 - `maxRetries` retries failed embedding requests before committing any result.

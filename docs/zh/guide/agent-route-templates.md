@@ -40,6 +40,12 @@ interface ProjectedRunInput extends AgentRouteBody {
 export async function* runProjectedAgentEvents(
   input: ProjectedRunInput
 ): AsyncGenerator<AgentEvent> {
+  const providerMetadata = {
+    provider: 'agent-route-template',
+    route: 'chat',
+    ...(input.traceId ? { traceId: input.traceId } : {})
+  }
+
   yield {
     type: 'progress',
     id: 'agent-route-start',
@@ -49,6 +55,7 @@ export async function* runProjectedAgentEvents(
       threadId: input.threadId,
       runId: input.runId,
       traceId: input.traceId,
+      providerMetadata,
       checkpoint: '[redacted]'
     }
   }
@@ -60,7 +67,8 @@ export async function* runProjectedAgentEvents(
     finishReason: 'stop',
     metadata: {
       runId: input.runId,
-      traceId: input.traceId
+      traceId: input.traceId,
+      providerMetadata
     }
   }
 }
@@ -102,7 +110,12 @@ export async function* chatChunks(body: AgentRouteBody, signal?: AbortSignal) {
 export function assertAgentRouteBody(value: unknown): asserts value is AgentRouteBody {
   if (!value || typeof value !== 'object') throw new Error('invalid body')
   const body = value as Partial<AgentRouteBody>
-  if (!body.threadId || !body.runId || !Array.isArray(body.messages)) {
+  if (
+    !body.threadId ||
+    !body.runId ||
+    !Array.isArray(body.messages) ||
+    body.messages.length === 0
+  ) {
     throw new Error('invalid body')
   }
 }
@@ -205,9 +218,98 @@ app.post('/api/agent/runs/:runId/events.txt', async (c) => {
 export default app
 ```
 
+## Express
+
+用于传统 Express 服务时可用这个模板。请先在中间件完成 body 解析，再按服务端侧安全边界返回 stream。
+
+```ts
+import { Readable } from 'node:stream'
+import { assertAgentRouteBody, uiMessageStreamResponse } from './agent-route'
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    assertAgentRouteBody(req.body)
+    const response = uiMessageStreamResponse(req.body, req.signal)
+
+    res.status(response.status)
+    for (const [name, value] of response.headers.entries()) {
+      res.setHeader(name, value)
+    }
+    if (!response.body) {
+      return res.send()
+    }
+
+    return Readable.fromWeb(response.body).pipe(res)
+  } catch {
+    return res.status(400).json({ error: 'Agent route failed' })
+  }
+})
+```
+
+## Fastify
+
+适用于 Fastify 服务。请先在路由或 app 中完成 body 解析，并把路由返回的
+`Response` 流映射为 Fastify 可发送流，同时保留 trace 响应头。
+
+```ts
+import { Readable } from 'node:stream'
+import { assertAgentRouteBody, uiMessageStreamResponse } from './agent-route'
+
+function sendAgentRouteResponse(reply, response) {
+  reply.code(response.status)
+  for (const [name, value] of response.headers.entries()) {
+    reply.header(name, value)
+  }
+
+  if (!response.body) {
+    return reply.send()
+  }
+
+  return reply.send(Readable.fromWeb(response.body))
+}
+
+fastify.post('/api/chat', async (req, reply) => {
+  try {
+    assertAgentRouteBody(req.body)
+    return sendAgentRouteResponse(reply, uiMessageStreamResponse(req.body, req.signal))
+  } catch {
+    return reply.code(400).send({ error: 'Agent route failed' })
+  }
+})
+```
+
+## Cloudflare Workers
+
+Cloudflare Workers 使用 `fetch` 的原生形态。把 body 校验、`stream` 回应和错误返回
+放在同一层，异常一律返回 `agentRouteErrorResponse()`，避免把敏感细节返回给前端。
+
+```ts
+import {
+  assertAgentRouteBody,
+  uiMessageStreamResponse,
+  agentRouteErrorResponse
+} from './agent-route'
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+
+    try {
+      const body = await request.json()
+      assertAgentRouteBody(body)
+      return uiMessageStreamResponse(body, request.signal)
+    } catch {
+      return agentRouteErrorResponse()
+    }
+  }
+}
+```
+
 ## Web Fetch route
 
-Cloudflare Workers、Bun、Deno 或任何接受 Fetch API handler 的 runtime 可以用这个形态。
+适用于 Bun、Deno 或其他通用 Fetch API handler 形态。
 
 ```ts
 import {
@@ -268,9 +370,13 @@ app.post('/api/agent/runs/:runId/resume', async (c) => {
 - Interrupt event 使用 `data-agent-interrupt`，并且只携带审批人可看的字段：
   `approvalId`、`toolCallId`、`runId`、`threadId` 和脱敏摘要。
 - 路由响应包含 `x-agent-run-id`，有 trace 时也包含 `x-agent-trace-id`。
-- 非法请求体必须返回 HTTP 400，`error` 为 `Agent route failed`，且不泄露密钥或
-  后端 trace 原文。
+- `progress` 和 `finish` 事件 payload 应携带安全的可观测字段 `providerMetadata` 与
+  `traceId`，用于联动日志与排障。
+- 非法请求体，包括缺失 ID 和空 `messages`，必须返回 HTTP 400，`error` 为
+  `Agent route failed`，且不泄露密钥或后端 trace 原文。
 - 把模板复制进产品路由前，先运行 `pnpm build && pnpm agent-route-templates:check`。
-  这条检查包含 Nuxt/Nitro、Next.js、Hono、Fetch 和 LangGraph resume 形态的 executable
+  这条检查包含 Nuxt/Nitro、Next.js、Hono、Express、Fastify、Cloudflare、Fetch
+  和 LangGraph resume
+  形态的 executable
   fixture smoke，不会把这些框架加成依赖。
 - 如果路由还要投影 LangChain 或 LangGraph runtime 事件，再运行 `pnpm agent-bridge:check`。

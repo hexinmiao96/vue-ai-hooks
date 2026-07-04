@@ -161,7 +161,8 @@ a stream. Both include the 1-based `attempt`, provider id, request metadata,
 body, headers, and message snapshot. When the default proxy transport is used,
 they also include the configured proxy `api` and browser `credentials` mode.
 The same latest snapshots are available as `lastRequest` and `lastResponse` for
-rendering diagnostics in the UI.
+internal trace state. Render `inspect()` output when the UI needs redacted
+diagnostics.
 
 Pass `generateId` when prompt messages created by `submit('...')` need
 deterministic ids. It also generates the object state id when `id` is omitted.

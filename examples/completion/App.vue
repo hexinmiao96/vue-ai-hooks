@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useCompletion, gemini, openai, openrouter, proxyProvider } from 'vue-ai-hooks'
 
 /**
@@ -70,7 +71,25 @@ const provider =
 // - isLoading: controls UI disablement
 // - complete/stop: request start and abort hooks
 // - error: inline feedback
-const { completion, input, isLoading, complete, stop, error } = useCompletion({ provider })
+const { completion, input, isLoading, complete, stop, error, inspect, clearTrace } = useCompletion({
+  provider
+})
+
+const inspection = computed(() => inspect())
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
+
+function formatText(value: unknown) {
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+function copyCurl() {
+  if (!inspection.value.curl) return
+  void navigator.clipboard.writeText(inspection.value.curl)
+}
 
 /**
  * Trigger one completion request for the current prompt.
@@ -102,6 +121,19 @@ async function run() {
     <article v-if="completion" class="output">
       {{ completion }}
     </article>
+    <article v-else class="output">No completion yet.</article>
+
+    <section class="panel">
+      <h2>Inspect</h2>
+      <p class="output">{{ inspection.summary }}</p>
+      <div class="actions">
+        <button :disabled="!inspection.curl" type="button" @click="copyCurl">Copy curl</button>
+        <button type="button" @click="clearTrace">Clear trace</button>
+      </div>
+      <pre class="raw-output">{{ inspectionJson }}</pre>
+      <pre class="raw-output">{{ formatText(inspection.request) }}</pre>
+      <pre class="raw-output">{{ formatText(inspection.response) }}</pre>
+    </section>
   </main>
 </template>
 
@@ -136,6 +168,7 @@ button {
   background: #f7f7f7;
   border-radius: 8px;
   white-space: pre-wrap;
+  margin-bottom: 12px;
 }
 .error {
   color: #b00020;
@@ -144,5 +177,21 @@ button {
   margin: 0 0 12px;
   font-size: 12px;
   color: #334155;
+}
+
+.panel {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.raw-output {
+  margin: 8px 0 0;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
 }
 </style>

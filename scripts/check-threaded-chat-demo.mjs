@@ -10,6 +10,7 @@ const {
   deserializeChatThreadsState,
   deserializeMessages,
   serializeChatThreadsState,
+  inspectRequestTrace,
   useChat,
   useChatThreads
 } = await import(distEntry.href)
@@ -65,19 +66,81 @@ async function checkThreadIndexAndMessages() {
 
   const supportChat = useChat({
     id: supportThread.id,
+    threadId: supportThread.id,
     provider: createThreadProvider('Support answer ready.'),
     persist: { key: messageKey(supportThread.id), version: 1, storage }
   })
   await supportChat.append('Summarize the support request.')
   await nextTick()
 
+  const supportSnapshot = supportChat.inspect()
+  expect(
+    supportSnapshot.hasRequest,
+    'support thread chat should capture request snapshot after append'
+  )
+  expect(
+    supportSnapshot.hasResponse,
+    'support thread chat should capture response snapshot after append'
+  )
+  expect(
+    supportSnapshot.request?.id === supportThread.id,
+    'snapshot request should use thread id as id'
+  )
+  expect(
+    supportSnapshot.request?.request?.threadId === supportThread.id,
+    'snapshot request payload should include threadId'
+  )
+  const supportTrace = inspectRequestTrace({
+    lastRequest: supportSnapshot.request ?? undefined,
+    lastResponse: supportSnapshot.response ?? undefined,
+    now: '2026-07-02T08:03:00.000Z'
+  })
+  expect(
+    supportTrace.request?.providerId === 'threaded-chat-smoke',
+    'trace request should include provider id'
+  )
+  expect(
+    supportTrace.response?.providerId === 'threaded-chat-smoke',
+    'trace response should include provider id'
+  )
+  expect(
+    supportTrace.curl === null || typeof supportTrace.curl === 'string',
+    'trace snapshot should expose curl metadata field'
+  )
+  expect(supportTrace.timeline.length >= 1, 'trace timeline should have at least one event')
+
   const billingChat = useChat({
     id: billingThread.id,
+    threadId: billingThread.id,
     provider: createThreadProvider('Billing answer ready.'),
     persist: { key: messageKey(billingThread.id), version: 1, storage }
   })
   await billingChat.append('Summarize the billing request.')
   await nextTick()
+
+  const billingSnapshot = billingChat.inspect()
+  expect(
+    billingSnapshot.hasRequest,
+    'billing thread chat should capture request snapshot after append'
+  )
+  expect(
+    billingSnapshot.hasResponse,
+    'billing thread chat should capture response snapshot after append'
+  )
+  expect(
+    billingSnapshot.request?.request?.threadId === billingThread.id,
+    'billing request snapshot should include threadId'
+  )
+  const billingTrace = inspectRequestTrace({
+    lastRequest: billingSnapshot.request ?? undefined,
+    lastResponse: billingSnapshot.response ?? undefined,
+    now: '2026-07-02T08:06:00.000Z'
+  })
+  expect(billingTrace.status === 'ready', 'billing trace should be in ready state')
+  expect(
+    billingTrace.providerTrace && typeof billingTrace.providerTrace === 'object',
+    'billing trace should expose provider trace'
+  )
 
   threads.touchThread(supportThread.id, {
     updatedAt: new Date('2026-07-02T08:10:00.000Z'),

@@ -318,8 +318,7 @@ const {
   },
   onChunk: () => {
     chunkCount.value += 1
-  },
-  onError: (e) => console.error('chat error:', e)
+  }
 })
 
 const pendingApprovals = computed(() =>

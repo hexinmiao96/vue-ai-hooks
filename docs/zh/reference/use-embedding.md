@@ -118,5 +118,6 @@ const score = cosineSimilarity(queryEmbedding, documentEmbedding)
 - `onRequest(info)` 会在 Provider 执行前收到最终 `EmbeddingRequest`。
   `onResponse(info)` 会在 Provider 返回最终结果后执行。两者都包含从 1 开始的
   `attempt`、Provider id、input、body、headers 和请求快照。
-  同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
+  同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，用于内部 trace 状态。
+  UI 需要展示脱敏诊断信息时，应渲染 `inspect()` 输出。
 - `maxRetries` 会在提交任何 embedding 结果前重试失败请求。

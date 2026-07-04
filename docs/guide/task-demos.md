@@ -15,8 +15,11 @@ contract, then replace the local route with your app-owned backend.
 | ------------------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Vue chat with tool approval     | `pnpm example:chat`                                              | `examples/chat/App.vue` and [Tool approvals](/guide/tool-approvals)                                                                 | Click **Run approval demo**, approve or reject the tool.                                   |
 | React chat quickstart           | `pnpm example:react-chat`                                        | `examples/react-chat/App.tsx` and [React hooks](/reference/react)                                                                   | Send one prompt, call `stop()`, then inspect trace state.                                  |
+| Vue completion quickstart       | `pnpm example:completion`                                        | `examples/completion/App.vue` and [useCompletion](/reference/use-completion)                                                        | Run one completion and verify `status`, `inspect()`, and request/response trace.           |
+| Vue embedding quickstart        | `pnpm example:embedding`                                         | `examples/embedding/App.vue` and [useEmbedding](/reference/use-embedding)                                                           | Run one embedding request and verify `status`, `inspect()`, and request/response trace.    |
 | React completion quickstart     | `pnpm example:react-completion`                                  | `examples/react-completion/App.tsx` and [React hooks](/reference/react)                                                             | Run one completion and check request trace, then rerun with `VITE_EXAMPLE_PROVIDER=proxy`. |
 | React object quickstart         | `pnpm example:react-object`                                      | `examples/react-object/App.tsx` and [React hooks](/reference/react)                                                                 | Run a JSON schema extraction and verify object + trace output.                             |
+| Vue object quickstart           | `pnpm example:object`                                            | `examples/object/App.vue` and [useObject](/reference/use-object)                                                                    | Run one structured extraction and verify `object`, `status`, and inspection trace output.  |
 | React image quickstart          | `pnpm example:react-image`                                       | `examples/react-image/App.tsx` and [React hooks](/reference/react)                                                                  | Generate and edit an image, then inspect request trace and response JSON.                  |
 | React video quickstart          | `pnpm example:react-video`                                       | `examples/react-video/App.tsx` and [React hooks](/reference/react)                                                                  | Generate a storyboard, then inspect request trace and response JSON.                       |
 | Thread sidebar persistence      | `pnpm example:threaded-chat`                                     | `examples/threaded-chat/App.vue` and [useChatThreads](/reference/use-chat-threads)                                                  | Create, rename, archive, restore, and reopen a thread.                                     |
@@ -131,6 +134,46 @@ VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm examp
 The React completion example sends provider requests to `/api/completion` when the
 proxy path is enabled.
 
+## Vue completion quickstart
+
+Run no-key completion:
+
+```bash
+pnpm example:completion
+```
+
+Open the Vite URL and send a completion request. The Vue example uses a local
+`local-openai`-style provider until you set a real provider, so you can verify
+`useCompletion` lifecycle and inspection panels before wiring keys.
+
+To validate with your app-owned backend route, run:
+
+```bash
+VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:completion
+```
+
+The Vue completion example sends provider requests to `/api/completion` in proxy mode.
+
+## Vue embedding quickstart
+
+Run no-key embedding:
+
+```bash
+pnpm example:embedding
+```
+
+Open the Vite URL and run one embedding batch. The page uses a local provider by
+default, which renders vector output and pairwise cosine similarity while keeping the
+same request and trace controls as other demos.
+
+To validate with your app-owned backend route, run:
+
+```bash
+VITE_EXAMPLE_PROVIDER=proxy-route VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:embedding
+```
+
+The Vue embedding example sends provider requests to `/api/embedding` in proxy mode.
+
 ## React structured output quickstart
 
 Run no-key structured output extraction:
@@ -149,6 +192,26 @@ VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm examp
 ```
 
 The React object example sends provider requests to `/api/object` in proxy mode.
+
+## Vue object quickstart
+
+Run no-key structured extraction:
+
+```bash
+pnpm example:object
+```
+
+Open the Vite URL and submit a support prompt. The page now renders the parsed
+object fields plus raw stream text and `inspect()` output, so you can confirm
+schema parsing and trace shape before switching to a proxy-backed route.
+
+To validate the app-owned backend route, run:
+
+```bash
+VITE_EXAMPLE_PROVIDER=proxy VITE_PROXY_BASE_URL=http://127.0.0.1:8787 pnpm example:object
+```
+
+The Vue object example sends provider requests to `/api/object` in proxy mode.
 
 ## React image quickstart
 
@@ -291,7 +354,7 @@ explicit async hydration and save layer:
 This keeps your first production candidate testable without a database while still
 preparing the same thread/message shape used by the server-storage recipe.
 
-See [IndexedDB local durability (async)](/guide/server-storage#indexeddb-local-durability-async).
+See [IndexedDB local durability (async)](/guide/server-storage#indexeddb-local-durability-adapter-async).
 
 ## Server-side chat history
 
@@ -414,7 +477,7 @@ If the route should speak AI SDK UI message stream instead, convert events with
 `createUIMessageStreamResponse()`. See [Agent bridge](/guide/agent-bridge) for
 LangChain/LangGraph projection boundaries,
 [Agent route templates](/guide/agent-route-templates) for copyable Nuxt/Nitro,
-Next.js, Hono, and Fetch route shapes, and [Agent events](/guide/agent-events)
+Next.js, Hono, Express, Fastify, and Fetch route shapes, and [Agent events](/guide/agent-events)
 for the low-level adapter.
 
 ## Done criteria

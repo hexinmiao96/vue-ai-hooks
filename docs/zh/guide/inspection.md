@@ -9,7 +9,7 @@ Provider 或 proxy 路由什么内容。
 
 | 字段           | 用途                                                         |
 | -------------- | ------------------------------------------------------------ |
-| `lastRequest`  | 最新一次经过清洗的请求快照，包含 provider id 和 metadata。   |
+| `lastRequest`  | 最新一次请求 trace，包含 provider id 和应用自有 metadata。   |
 | `lastResponse` | 最新 provider/proxy 调用是否返回 stream 或响应结构。         |
 | `clearTrace()` | 只清空 request/response trace，不清空消息和输入。            |
 | `error`        | 当前组合式函数归一化后的错误。                               |
@@ -90,6 +90,14 @@ Provider 响应体复制进 summary。
 `providerTrace`，以及设置 `curl: true` 后生成的脱敏 `curl` 命令。只需要复制请求命令时，
 也可以单独调用导出的 `createInspectionCurl(request)`。
 
+调试脱敏会覆盖敏感 header，以及请求 body 和事件 metadata 里的 `apiKey`、`accessToken`、
+`clientSecret`、`password`、`privateKey`、`sessionToken` 等常见凭据字段。非敏感 metadata
+仍会保留，原始请求对象不会被修改。
+
+支持面板应使用脱敏后的 `inspection.request`、`inspection.response` 和
+`inspection.timeline`。`lastRequest` 和 `lastResponse` 是内部 trace ref，经过调试脱敏前可能仍包含
+应用自有 metadata。
+
 当 `useChat({ persist })` 从持久化层收到 `onLoadError`、`onError` 或
 `onClearError` 时，`inspect().timeline` 会记录 `persistence load failed`、
 `persistence save failed` 或 `persistence clear failed` 事件，并附带
@@ -103,7 +111,7 @@ cause。
 
 1. 确认 `lastRequest.providerId` 是预期的 Provider 或 proxy 路由。
 2. 检查 `lastRequest.messages`，确认消息顺序和 tool result 位置正确。
-3. 检查 `lastRequest.headers` 和 `lastRequest.body` 里的应用 metadata，不要暴露
+3. 检查 `inspection.request.headers` 和 `inspection.request.body` 里的应用 metadata，不要暴露
    Provider secret。
 4. 流式聊天路由应确认 `lastResponse.hasStream` 为 `true`。
 5. 如果 `status` 进入 `error`，展示 `error.message`，并保留输入便于用户重试。
