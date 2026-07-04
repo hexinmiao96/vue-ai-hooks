@@ -410,8 +410,8 @@ flush。`append()`、`regenerate()` 或 `resumeStream()` resolve 前一定会刷
 Provider 层抽象了不同 fetch 客户端，回调里不会暴露原始 `Response` 对象，而是通过
 `info.hasStream` 表示本次是否拿到了可消费的 stream。它适合做链路追踪、分析埋点、
 请求日志和 resume 诊断。
-同一份最新快照也会写入 `lastRequest` 和 `lastResponse`，方便调试面板直接渲染最近一次
-Provider 尝试，而不需要在 callback 里重复维护状态。
+同一份最新快照也会写入 `lastRequest` 和 `lastResponse`，方便内部保留 trace 状态，而不需要在
+callback 里重复维护状态。支持面板需要展示脱敏请求/响应 metadata 时，应渲染 `inspect()` 输出。
 
 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
 会收到最终助手消息和会话快照。旧的 `onFinish(message, info)` 签名仍然可用于已有代码。

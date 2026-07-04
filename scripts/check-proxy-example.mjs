@@ -175,6 +175,18 @@ async function checkChatRoute(path, chatId) {
     events.some((event) => event.metadata?.chatId === chatId),
     `${path} should include chat metadata`
   )
+  expect(
+    events.some((event) => event.providerMetadata?.provider === 'proxy-server-example'),
+    `${path} should include local proxy provider metadata`
+  )
+  expect(
+    events.some((event) => event.providerMetadata?.route === 'chat'),
+    `${path} should include chat route metadata`
+  )
+  expect(
+    events.some((event) => String(event.providerMetadata?.traceId || '').startsWith('proxy-')),
+    `${path} should include route trace id`
+  )
 }
 
 async function checkResumeRoute(path) {
@@ -192,6 +204,18 @@ async function checkCompletionRoute() {
       'Completion from proxy: write a status update.',
     '/api/completion should stream text chunks'
   )
+  expect(
+    events.some((event) => event.providerMetadata?.provider === 'proxy-server-example'),
+    '/api/completion should include providerMetadata when running locally'
+  )
+  expect(
+    events.some(
+      (event) =>
+        event.providerMetadata?.route === 'completion' &&
+        String(event.providerMetadata?.traceId || '').startsWith('proxy-')
+    ),
+    '/api/completion should include route-scoped proxy trace metadata'
+  )
 }
 
 async function checkEmbeddingRoute() {
@@ -202,6 +226,18 @@ async function checkEmbeddingRoute() {
     '/api/embedding should return deterministic vectors'
   )
   expect(response.usage?.totalTokens > 0, '/api/embedding should return usage metadata')
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/embedding should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'embedding',
+    '/api/embedding should expose embedding route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/embedding should expose proxy trace id'
+  )
 }
 
 async function checkImageRoute() {
@@ -212,6 +248,18 @@ async function checkImageRoute() {
   expect(response.image?.url?.startsWith('data:image/svg+xml'), '/api/image should return an SVG')
   expect(response.images?.length === 1, '/api/image should return one normalized image')
   expect(response.model === 'proxy-image-model', '/api/image should preserve the requested model')
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/image should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'image',
+    '/api/image should expose image route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/image should expose image trace id'
+  )
 
   const legacy = await postJson('/api/ai/image', { prompt: 'legacy image route' })
   expect(
@@ -233,6 +281,18 @@ async function checkVideoRoute() {
     '/api/video should preserve the requested duration'
   )
   expect(response.model === 'proxy-video-model', '/api/video should preserve the requested model')
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/video should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'video',
+    '/api/video should expose video route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/video should expose video trace id'
+  )
 
   const legacy = await postJson('/api/ai/video', { prompt: 'legacy video route' })
   expect(
@@ -249,6 +309,18 @@ async function checkSpeechRoute() {
   expect(response.audio?.url?.startsWith('data:audio/wav'), '/api/speech should return a WAV')
   expect(response.audio?.revisedText === 'Read the status update', '/api/speech should echo text')
   expect(response.model === 'proxy-speech-model', '/api/speech should preserve the requested model')
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/speech should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'speech',
+    '/api/speech should expose speech route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/speech should expose speech trace id'
+  )
 
   const legacy = await postJson('/api/ai/speech', { text: 'legacy speech route' })
   expect(
@@ -272,6 +344,18 @@ async function checkTranscriptionRoute() {
     response.model === 'proxy-transcription-model',
     '/api/transcription should preserve the requested model'
   )
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/transcription should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'transcription',
+    '/api/transcription should expose transcription route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/transcription should expose transcription trace id'
+  )
 
   const legacy = await postJson('/api/ai/transcription', { audio: 'legacy-audio-url' })
   expect(
@@ -293,6 +377,18 @@ async function checkRerankRoute() {
     '/api/rerank should rank the most relevant document first'
   )
   expect(response.model === 'proxy-rerank-model', '/api/rerank should preserve the requested model')
+  expect(
+    response.providerMetadata?.provider === 'proxy-server-example',
+    '/api/rerank should expose local proxy provider metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'rerank',
+    '/api/rerank should expose rerank route metadata'
+  )
+  expect(
+    String(response.providerMetadata?.traceId || '').startsWith('proxy-'),
+    '/api/rerank should expose rerank trace id'
+  )
 
   const legacy = await postJson('/api/ai/rerank', {
     query: 'legacy route',
@@ -315,6 +411,18 @@ async function checkObjectRoute() {
     object.title.includes('urgent account'),
     '/api/object should derive a title from the prompt'
   )
+  expect(
+    events.some((event) => event.providerMetadata?.provider === 'proxy-server-example'),
+    '/api/object should attach provider metadata on final chunk'
+  )
+  expect(
+    events.some(
+      (event) =>
+        event.providerMetadata?.route === 'object' &&
+        String(event.providerMetadata?.traceId || '').startsWith('proxy-')
+    ),
+    '/api/object should include route-scoped trace metadata'
+  )
 }
 
 async function checkUIMessageStreamRoute() {
@@ -325,6 +433,18 @@ async function checkUIMessageStreamRoute() {
   expect(
     events.some((event) => event.type === 'start' && event.messageId === 'msg_docs_demo'),
     '/api/ui-message-stream should emit a start part with messageId'
+  )
+  expect(
+    events.some(
+      (event) =>
+        event.providerMetadata?.provider === 'proxy-server-example' &&
+        event.providerMetadata?.route === 'ui-message-stream'
+    ),
+    '/api/ui-message-stream should include proxy provider metadata with route'
+  )
+  expect(
+    events.some((event) => String(event.providerMetadata?.traceId || '').startsWith('proxy-')),
+    '/api/ui-message-stream should include route trace metadata'
   )
   expect(
     events
@@ -348,6 +468,14 @@ async function checkUIMessageStreamRoute() {
     legacy.some((event) => event.type === 'data-progress'),
     '/api/ai/ui-message-stream should emit progress data parts'
   )
+  expect(
+    legacy.some(
+      (event) =>
+        event.providerMetadata?.provider === 'proxy-server-example' &&
+        event.providerMetadata?.route === 'ui-message-stream'
+    ),
+    '/api/ai/ui-message-stream should include proxy provider metadata with route for legacy path'
+  )
 }
 
 async function checkUpstreamChatRoute() {
@@ -370,6 +498,15 @@ async function checkUpstreamChatRoute() {
     ),
     '/api/chat should include sanitized upstream trace metadata'
   )
+  expect(
+    events.some(
+      (event) =>
+        event.providerMetadata?.provider === 'openai-compatible' &&
+        event.providerMetadata?.route === 'chat' &&
+        String(event.providerMetadata?.proxyTraceId || '').startsWith('proxy-')
+    ),
+    '/api/chat should include upstream providerMetadata'
+  )
 
   const replay = await getSse('/api/chat/upstream-chat/stream')
   expect(
@@ -384,6 +521,25 @@ async function checkUpstreamCompletionRoute() {
     events.map((event) => event.text || '').join('') === 'Upstream completion: write release notes',
     '/api/completion should normalize OpenAI-compatible completion responses'
   )
+  expect(
+    events.some(
+      (event) =>
+        event.providerMetadata?.provider === 'openai-compatible' &&
+        event.providerMetadata?.upstreamModel === 'fake-upstream-model' &&
+        String(event.providerMetadata?.proxyTraceId || '').startsWith('proxy-')
+    ),
+    '/api/completion should include upstream metadata for traceability'
+  )
+  expect(
+    events.some(
+      (event) =>
+        event.metadata?.provider === 'openai-compatible' &&
+        event.metadata?.upstreamModel === 'fake-upstream-model' &&
+        String(event.metadata?.proxyTraceId || '').startsWith('proxy-') &&
+        event.providerMetadata?.route === 'completion'
+    ),
+    '/api/completion should include upstream metadata for traceability'
+  )
 }
 
 async function checkUpstreamEmbeddingRoute() {
@@ -395,6 +551,10 @@ async function checkUpstreamEmbeddingRoute() {
   expect(
     String(response.providerMetadata?.proxyTraceId || '').startsWith('proxy-'),
     '/api/embedding should include sanitized proxy trace metadata'
+  )
+  expect(
+    response.providerMetadata?.route === 'embedding',
+    '/api/embedding should expose embedding route provider metadata'
   )
 }
 

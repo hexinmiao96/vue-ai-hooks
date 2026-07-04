@@ -93,7 +93,9 @@ SDK UI stream parts 返回给 `vue-ai-hooks`。
 components、前端工具、human-in-the-loop hooks 和 agent 访问能力。它的 AG-UI
 文档描述了用 event-based SSE 把前端连接到 agent 的协议。
 
-`vue-ai-hooks` 刻意保持更底层。它不提供 popup、sidebar 或完整 copilot 外壳。这样当你的产品已经有自定义设计系统、聊天界面、审批流或审计面板时，包面更轻，也更容易嵌入。只复制能强化无 UI Vue 契约的部分，例如 context、capability discovery 或应用自有人工审核状态。如果你想要开箱的 copilot UI 并直接接 agent protocol，CopilotKit 可能是更快起点。
+`vue-ai-hooks` 刻意保持更底层。它不提供完整的开箱即用 copilot 外壳，但支持可复用的无 UI
+Vue 原语（例如 task-starter、Thread 侧边栏状态和应用级人工审核状态）。如果你想要即插即用
+copilot UI 并直接接入 agent protocol，CopilotKit 可能是更快起点。
 
 ### 手写 fetch 和 SSE 解析
 

@@ -10,7 +10,7 @@ The main composables expose:
 
 | Field          | Use it for                                                                  |
 | -------------- | --------------------------------------------------------------------------- |
-| `lastRequest`  | The latest sanitized request snapshot, including provider id and metadata.  |
+| `lastRequest`  | The latest request trace, including provider id and app-owned metadata.     |
 | `lastResponse` | Whether the latest provider/proxy call returned a stream or response shape. |
 | `clearTrace()` | Clears request/response trace state without clearing messages or input.     |
 | `error`        | The normalized error shown by the current composable.                       |
@@ -26,7 +26,8 @@ debugging migration code.
 - `timeline` for request/response/stream/retry/error events
 - normalized `retries` and categorized `error` summary
 - compact `providerTrace`
-- redacted `curl` command when `curl` generation is enabled
+- redacted request/response metadata and `curl` command when `curl` generation
+  is enabled
 
 ## Copyable debug panel
 
@@ -92,6 +93,16 @@ The same snapshot already includes a `timeline`, normalized `retries`, a compact
 `createInspectionCurl(request)` is exported separately when you only need the
 copyable request command.
 
+Inspection redaction covers sensitive headers plus common credential fields such
+as `apiKey`, `accessToken`, `clientSecret`, `password`, `privateKey`, and
+`sessionToken` inside request bodies and event metadata. Non-sensitive metadata
+stays visible, and the original request objects are not mutated.
+
+Use the redacted `inspection.request`, `inspection.response`, and
+`inspection.timeline` values for support panels. Treat `lastRequest` and
+`lastResponse` as internal trace refs that may still contain app-owned metadata
+before the inspection redaction pass.
+
 When `useChat({ persist })` receives `onLoadError`, `onError`, or
 `onClearError` from the persistence layer, `inspect().timeline` records
 `persistence load failed`, `persistence save failed`, or
@@ -108,8 +119,8 @@ the response and logs you show to users.
    expected.
 2. Check `lastRequest.messages` to verify message order and tool result
    placement.
-3. Check `lastRequest.headers` and `lastRequest.body` for app-owned metadata,
-   not provider secrets.
+3. Check `inspection.request.headers` and `inspection.request.body` for
+   app-owned metadata, not provider secrets.
 4. Confirm `lastResponse.hasStream` is `true` for streaming chat routes.
 5. If `status` reaches `error`, show `error.message` and keep the input so the
    user can retry.

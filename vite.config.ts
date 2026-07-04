@@ -11,7 +11,7 @@ export default defineConfig({
   },
   build: {
     emptyOutDir: false,
-    sourcemap: true,
+    sourcemap: 'hidden',
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),

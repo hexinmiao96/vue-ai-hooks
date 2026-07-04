@@ -148,7 +148,8 @@ format。可以传入原始 JSON Schema，也可以传入导出的 `jsonSchema<T
 1 开始的 `attempt`、Provider id、request metadata、body、headers 和消息快照。
 使用默认 proxy transport 时，还会包含配置后的 proxy `api` 和浏览器
 `credentials` 模式。
-同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，方便界面渲染诊断信息。
+同一份最新快照也会暴露为 `lastRequest` 和 `lastResponse`，用于内部 trace 状态。
+UI 需要展示脱敏诊断信息时，应渲染 `inspect()` 输出。
 
 传入 `generateId` 可以让 `submit('...')` 自动创建的 prompt message 使用稳定 ID。
 未传 `id` 时，它也会生成 object 状态 id。如果调用 `submit(message)` 时已经提供

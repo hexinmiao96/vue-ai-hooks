@@ -24,16 +24,16 @@ The repo is a single package at the root. Examples live in `examples/`.
 ```bash
 pnpm test         # run unit tests once
 pnpm test:coverage # run tests with coverage thresholds
-pnpm test:hygiene # reject focused, skipped, or todo test markers
+pnpm test:hygiene # reject focused, skipped, todo, or expected-failing test markers
 pnpm test:watch   # watch mode
 pnpm security:audit # dependency vulnerability audit; requires registry access
 pnpm typecheck    # vue-tsc strict check
 pnpm typecheck:all # type-check src, tests, and examples
-pnpm lint         # eslint
-pnpm format       # format repository files with Prettier
-pnpm format:check # verify repository formatting without writing files
-pnpm secrets:check # scan committed files for likely API keys and tokens
-pnpm source:hygiene # reject conflict markers, debugger statements, and source console output
+pnpm lint         # lint src, tests, examples, scripts, docs theme, and root config files with ESLint, including TS/TSX/MTS/CTS/Vue/JS/JSX/MJS/CJS/HTML sources
+pnpm format       # format repository files with Prettier, including TS/TSX/MTS/CTS/Vue/JS/JSX/MJS/CJS/HTML sources
+pnpm format:check # verify repository formatting without writing files, including TS/TSX/MTS/CTS/Vue/JS/JSX/MJS/CJS/HTML sources
+pnpm secrets:check # scan Git-tracked and unignored candidate files, including TS/TSX/MTS/CTS/Vue/JS/JSX/MJS/CJS/HTML/Markdown/env candidate files, for provider keys, auth tokens, and sensitive env assignments
+pnpm source:hygiene # reject trailing whitespace, conflict markers in root metadata/workflows and docs theme source, debugger statements, TS/TSX/MTS/CTS/Vue/JS/JSX/MJS/CJS/HTML source console output, and broad suppression comments in source/docs/scripts
 pnpm build        # type-check + bundle to dist/
 pnpm dist:check   # verify built ESM/CJS package entries
 pnpm size:check   # verify published bundle size budgets
@@ -47,11 +47,12 @@ pnpm release:cadence # reject a second npm version in the same Asia/Shanghai day
 pnpm release:status # print npm registry status and the current release window
 pnpm api:check   # verify public exports, reference docs, and VitePress guide/reference navigation
 pnpm docs:ux:check # verify docs onboarding paths, examples language routing, and demo navigation
-pnpm links:check # verify local Markdown links
+pnpm links:check # verify local Markdown links/images, anchors, unsafe protocols, and repo-boundary escapes
 pnpm examples:build # verify all example apps build
 pnpm docs:build   # verify the VitePress docs build
 pnpm check        # full local gate before opening a PR
-pnpm release:check # dependency audit plus the full local gate before publishing
+pnpm production:readiness # release-candidate gate with release status and local checks
+pnpm release:check # dependency audit, unpublished-version release cadence, and the full local gate before publishing
 pnpm prepublishOnly # npm lifecycle publish gate; delegates to pnpm release:check
 pnpm example:chat # run the chat example app
 ```
@@ -99,8 +100,10 @@ implementation. Most providers that follow the OpenAI REST spec can use
 Run `pnpm build && pnpm size:check` before submitting changes that affect
 runtime code. Current published bundle budgets:
 
-- `dist/index.mjs`: 127,200 bytes raw, 30,600 bytes gzip.
-- `dist/index.cjs`: 89,700 bytes raw, 26,600 bytes gzip.
+- `dist/index.mjs`: 149,500 bytes raw, 36,000 bytes gzip.
+- `dist/index.cjs`: 109,000 bytes raw, 32,000 bytes gzip.
+- `dist/react.mjs`: 67,500 bytes raw, 16,800 bytes gzip.
+- `dist/react.cjs`: 47,500 bytes raw, 14,000 bytes gzip.
 
 ## Commit messages
 
@@ -142,15 +145,16 @@ Configure npm with these trusted publisher settings before pushing a release tag
 - Workflow filename: `publish.yml`
 - Allowed action: `npm publish`
 
-Then create and push a tag matching `package.json`, for example `v0.14.2`.
+Then create and push a tag matching `package.json`, for example `v0.14.3`.
 
 Release checklist:
 
 1. Run `pnpm release:status` and confirm the next npm version is allowed by the
    daily release cadence.
 2. Update `CHANGELOG.md` and the `package.json` version.
-3. Run `pnpm release:check`; it includes the daily release cadence gate.
-4. Create a tag that exactly matches the package version, for example `v0.14.2`.
+3. Run `pnpm release:check`; it includes the daily release cadence gate and
+   rejects versions that are already published.
+4. Create a tag that exactly matches the package version, for example `v0.14.3`.
 5. Push the tag and confirm the GitHub Actions publish workflow completes.
    The publish workflow intentionally runs only from `v*` tags; there is no
    manual publish dispatch path.

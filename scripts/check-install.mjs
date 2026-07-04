@@ -1,12 +1,19 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { extractRuntimeExports } from './lib/entry-exports.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const tempRoot = mkdtempSync(join(tmpdir(), 'vue-ai-hooks-install-'))
 const viteBin = join(root, 'node_modules/vite/bin/vite.js')
+const expectedRootRuntimeExports = extractRuntimeExports(
+  readFileSync(join(root, 'src/index.ts'), 'utf8')
+)
+const expectedReactRuntimeExports = extractRuntimeExports(
+  readFileSync(join(root, 'src/react.ts'), 'utf8')
+)
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -39,6 +46,7 @@ try {
     join(tempRoot, 'esm-check.mjs'),
     `
 import { createRequire } from 'node:module'
+import * as rootEntry from 'vue-ai-hooks'
 import {
   AiHooksError,
   createInspectionCurl,
@@ -50,6 +58,8 @@ import {
   useChat
 } from 'vue-ai-hooks'
 
+const expectedRootRuntimeExports = ${JSON.stringify(expectedRootRuntimeExports)}
+const expectedReactRuntimeExports = ${JSON.stringify(expectedReactRuntimeExports)}
 const require = createRequire(import.meta.url)
 const packageJson = require('vue-ai-hooks/package.json')
 
@@ -80,8 +90,18 @@ if (createPromptSuggestionRecipes({ include: ['find-risks'] })[0]?.id !== 'find-
 if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
   throw new Error('ESM createInspectionCurl export failed')
 }
+for (const name of expectedRootRuntimeExports) {
+  if (!(name in rootEntry)) {
+    throw new Error(\`ESM root runtime export missing: \${name}\`)
+  }
+}
 
 const reactEntry = await import('vue-ai-hooks/react')
+for (const name of expectedReactRuntimeExports) {
+  if (!(name in reactEntry)) {
+    throw new Error(\`ESM React runtime export missing: \${name}\`)
+  }
+}
 if (typeof reactEntry.useChat !== 'function') {
   throw new Error('ESM React useChat export failed')
 }
@@ -113,6 +133,7 @@ if (typeof reactEntry.useVideo !== 'function') {
   writeFileSync(
     join(tempRoot, 'cjs-check.cjs'),
     `
+const rootEntry = require('vue-ai-hooks')
 const {
   AiHooksError,
   anthropic,
@@ -120,7 +141,9 @@ const {
   createPromptSuggestionRecipes,
   openaiCompatible,
   useCompletion
-} = require('vue-ai-hooks')
+} = rootEntry
+const expectedRootRuntimeExports = ${JSON.stringify(expectedRootRuntimeExports)}
+const expectedReactRuntimeExports = ${JSON.stringify(expectedReactRuntimeExports)}
 const packageJson = require('vue-ai-hooks/package.json')
 
 if (packageJson.name !== 'vue-ai-hooks') {
@@ -144,8 +167,18 @@ if (createPromptSuggestionRecipes({ include: ['find-risks'] })[0]?.id !== 'find-
 if (!createInspectionCurl({ api: '/api/chat' })?.includes('/api/chat')) {
   throw new Error('CJS createInspectionCurl export failed')
 }
+for (const name of expectedRootRuntimeExports) {
+  if (!(name in rootEntry)) {
+    throw new Error(\`CJS root runtime export missing: \${name}\`)
+  }
+}
 
 const reactEntry = require('vue-ai-hooks/react')
+for (const name of expectedReactRuntimeExports) {
+  if (!(name in reactEntry)) {
+    throw new Error(\`CJS React runtime export missing: \${name}\`)
+  }
+}
 if (typeof reactEntry.useChat !== 'function') {
   throw new Error('CJS React useChat export failed')
 }

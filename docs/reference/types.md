@@ -998,9 +998,17 @@ const snapshot = inspectRequestTrace({
 })
 ```
 
+Before returning the snapshot, `request`, `response`, and timeline `metadata`
+are copied through the inspection redaction pass. Sensitive headers and common
+credential field names such as `apiKey`, `accessToken`, `clientSecret`,
+`password`, `privateKey`, and `sessionToken` are replaced with `"[redacted]"`
+without mutating the original request metadata.
+
 Set `curl: true` to include a copyable request command with sensitive headers
-redacted. `createInspectionCurl(request, options?)` is also exported for
-standalone panels that only need the curl command.
+and credential-shaped body fields redacted. `redactHeaders` customizes header
+names for the curl command, while the snapshot still applies the built-in
+credential-field redaction. `createInspectionCurl(request, options?)` is also
+exported for standalone panels that only need the curl command.
 
 ## Retry options
 

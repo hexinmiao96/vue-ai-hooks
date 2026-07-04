@@ -43,7 +43,9 @@ stay server-side.
 ### Request inspection
 
 All main composables now expose `lastRequest`, `lastResponse`, and
-`clearTrace()` so you can build debug panels without wrapping every provider:
+`clearTrace()` so you can keep internal request trace state without wrapping
+every provider. Use `inspect()` / `inspectRequestTrace()` when a debug panel
+needs redacted support output:
 
 ```ts
 const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
@@ -113,7 +115,7 @@ messages still work.
 1. Upgrade the package and run type checks.
 2. Keep existing provider calls working first.
 3. Move browser production calls to default proxy transports or `proxyProvider`.
-4. Add `lastRequest` / `lastResponse` to your internal debug view.
+4. Add `inspect()` / `inspectRequestTrace()` output to your internal debug view.
 5. Add `timeoutMs` for direct provider experiments.
 6. Replace generic DeepSeek configs with `deepseek()`.
 

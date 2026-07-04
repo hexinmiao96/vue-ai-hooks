@@ -192,7 +192,7 @@ describe('useTranscription', () => {
       if (calls === 1) return jsonResponse({ message: 'busy' }, { status: 503 })
       return jsonResponse({ text: 'retry transcript' })
     })
-    const { transcribeAudio, transcription, error } = useTranscription({
+    const { transcribeAudio, transcription, error, inspect } = useTranscription({
       fetch: fetcher as unknown as typeof fetch,
       maxRetries: 1,
       onRetry
@@ -206,6 +206,10 @@ describe('useTranscription', () => {
     expect(transcription.value).toBe('retry transcript')
     expect(error.value).toBeNull()
     expect(onRetry).toHaveBeenCalledOnce()
+    expect(inspect().retries).toHaveLength(1)
+    expect(inspect().timeline).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'retry' })])
+    )
   })
 
   it('stop() aborts an in-flight transcription request without storing an error', async () => {

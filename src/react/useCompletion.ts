@@ -12,7 +12,6 @@ import type { ChatProvider } from '../providers/types'
 import type {
   AiRequestStatus,
   CompletionRequest,
-  RetryContext,
   IdGenerator,
   RetryOptions,
   StreamThrottleOptions
@@ -24,7 +23,10 @@ import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import {
+  clearInspectionState,
   inspectRequestTrace,
+  recordInspectionStateEvent,
+  recordInspectionStateRetryAttempt,
   type InspectionRetryRecordInput,
   type InspectionTimelineEventInput,
   type RequestInspectionSnapshot
@@ -192,6 +194,10 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   const [lastResponse, setLastResponse] = useState<ReactCompletionResponseInfo | null>(null)
   const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
   const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
+  const inspectionRecords = {
+    setEvents: setInspectionEvents,
+    setRetries: setInspectionRetries
+  }
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const completionRef = useRef(completion)
@@ -226,8 +232,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
-    setInspectionEvents([])
-    setInspectionRetries([])
+    clearInspectionState(inspectionRecords)
   }, [])
 
   const inspect = useCallback(
@@ -245,27 +250,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
   )
 
   const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
-    setInspectionEvents((current) => [
-      ...current,
-      { ...event, timestamp: event.timestamp ?? new Date() }
-    ])
-  }, [])
-
-  const recordInspectionRetry = useCallback((errorToRecord: unknown, context: RetryContext) => {
-    const delayMs =
-      typeof optionsRef.current.retryDelayMs === 'function'
-        ? optionsRef.current.retryDelayMs(context)
-        : (optionsRef.current.retryDelayMs ?? 0)
-    setInspectionRetries((current) => [
-      ...current,
-      {
-        attempt: context.attempt,
-        maxRetries: context.maxRetries,
-        error: errorToRecord,
-        delayMs,
-        timestamp: new Date()
-      }
-    ])
+    recordInspectionStateEvent(inspectionRecords, event)
   }, [])
 
   const clearError = useCallback(() => {
@@ -380,8 +365,7 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
       setError(null)
       setCompletion('')
       setStatus('submitted')
-      setInspectionEvents([])
-      setInspectionRetries([])
+      clearInspectionState(inspectionRecords)
 
       try {
         let retryAttempt = 0
@@ -457,17 +441,10 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
             throttler.flush()
             const context = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (!receivedDelta && (await canRetry(currentOptions, context))) {
-              recordInspectionEvent({
-                kind: 'retry',
-                label: 'retry planned',
-                attempt: context.attempt,
-                status,
-                metadata: {
-                  maxRetries: context.maxRetries,
-                  hasResponse: false
-                }
+              recordInspectionStateRetryAttempt(inspectionRecords, nextError, context, {
+                retryDelayMs: optionsRef.current.retryDelayMs,
+                status
               })
-              recordInspectionRetry(nextError, context)
               retryAttempt += 1
               throttler.cancel()
               await waitForRetry(currentOptions, context, controller.signal)
@@ -504,7 +481,6 @@ export function useCompletion(options: UseReactCompletionOptions = {}): UseReact
       reportResponse,
       requestInfo,
       recordInspectionEvent,
-      recordInspectionRetry,
       setCompletion,
       streamProtocol
     ]

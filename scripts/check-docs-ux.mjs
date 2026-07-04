@@ -6,6 +6,8 @@ const files = {
   zhHome: readFileSync('docs/zh/index.md', 'utf8'),
   choosing: readFileSync('docs/guide/choosing.md', 'utf8'),
   zhChoosing: readFileSync('docs/zh/guide/choosing.md', 'utf8'),
+  competitiveBenchmark: readFileSync('docs/guide/competitive-benchmark.md', 'utf8'),
+  zhCompetitiveBenchmark: readFileSync('docs/zh/guide/competitive-benchmark.md', 'utf8'),
   gettingStarted: readFileSync('docs/guide/getting-started.md', 'utf8'),
   zhGettingStarted: readFileSync('docs/zh/guide/getting-started.md', 'utf8'),
   taskDemos: readFileSync('docs/guide/task-demos.md', 'utf8'),
@@ -100,6 +102,7 @@ const files = {
   roadmap: readFileSync('ROADMAP.md', 'utf8')
 }
 const failures = []
+const packageJson = JSON.parse(files.packageJson)
 
 expect(
   files.config.includes("{ text: 'Examples', link: '/examples/' }"),
@@ -503,6 +506,15 @@ for (const snippet of [
     `English production checklist must include: ${snippet}`
   )
 }
+expect(
+  files.productionChecklist.includes('pnpm release:status'),
+  'English production checklist must include the release status gate'
+)
+expect(
+  files.productionChecklist.includes('Node runner') &&
+    files.productionChecklist.includes(packageJson.scripts?.['production:readiness']),
+  'English production checklist must describe the shared production readiness runner'
+)
 
 for (const snippet of [
   '# 生产检查清单',
@@ -549,6 +561,15 @@ for (const snippet of [
     `Chinese production checklist must include: ${snippet}`
   )
 }
+expect(
+  files.zhProductionChecklist.includes('pnpm release:status'),
+  'Chinese production checklist must include the release status gate'
+)
+expect(
+  files.zhProductionChecklist.includes('同一个\nNode runner') &&
+    files.zhProductionChecklist.includes(packageJson.scripts?.['production:readiness']),
+  'Chinese production checklist must describe the shared production readiness runner'
+)
 
 for (const snippet of [
   '# Production readiness status',
@@ -1136,8 +1157,8 @@ expect(
     files.zhReadme.includes('/docs/zh/guide/regenerate-branches.md') &&
     files.readme.includes('/docs/guide/tool-approvals.md') &&
     files.zhReadme.includes('/docs/zh/guide/tool-approvals.md') &&
-    files.readme.includes('Nuxt/Nitro, Next.js, Hono, or Fetch') &&
-    files.zhReadme.includes('Nuxt/Nitro、Next.js、Hono 或 Fetch') &&
+    files.readme.includes('Nuxt/Nitro, Next.js, Hono, Express, Fastify, or Fetch') &&
+    files.zhReadme.includes('Nuxt/Nitro、Next.js、Hono、Express、Fastify 或 Fetch') &&
     files.readme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.zhReadme.includes('PROXY_UPSTREAM_BASE_URL') &&
     files.readme.includes('PROXY_UPSTREAM_TIMEOUT_MS') &&
@@ -1182,6 +1203,19 @@ for (const snippet of [
     `Chinese getting started must include provider preset: ${snippet}`
   )
 }
+
+expect(
+  files.competitiveBenchmark.includes('## Current checkpoint against direct alternatives') &&
+    files.competitiveBenchmark.includes('In-scope direct benchmark score: **8 / 8**') &&
+    files.competitiveBenchmark.includes('Current execution score (snapshot: 2026-07-04)') &&
+    files.competitiveBenchmark.includes('Next 30-day target:') &&
+    files.zhCompetitiveBenchmark.includes('## 与目标的一致性') &&
+    files.zhCompetitiveBenchmark.includes('范围内直对标基准分：**8 / 8**') &&
+    files.zhCompetitiveBenchmark.includes('当前执行进度（快照：2026-07-04）') &&
+    files.zhCompetitiveBenchmark.includes('下 30 天目标') &&
+    files.zhCompetitiveBenchmark.includes('可观测化'),
+  'Competitive benchmark docs must align score and snapshot wording between English and Chinese'
+)
 
 for (const snippet of [
   '`moonshot(config)`',
@@ -1718,6 +1752,9 @@ for (const snippet of [
   '[Audio transcription](#transcription-demo)',
   'Rerank search results through an app route',
   '[Document reranking](#rerank-demo)',
+  '`pnpm example:embedding`',
+  'Embedding similarity',
+  'Compare text by semantic similarity',
   'Extract typed JSON from a prompt',
   '[Structured object output](#object-demo)'
 ]) {
@@ -1761,6 +1798,9 @@ for (const snippet of [
   'pnpm example:rerank',
   '确定性的本地排序',
   'proxy `/api/rerank`',
+  'pnpm example:embedding',
+  '做语义相似度比较',
+  '向量相似度',
   '`local-object` Provider',
   '## Demo 验收清单',
   '在决定接入路径前，先用这些条目快速验收：',

@@ -1,15 +1,23 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { extractExports, extractExportSources } from './lib/entry-exports.mjs'
 
 const source = readFileSync('src/index.ts', 'utf8')
+const reactSource = readFileSync('src/react.ts', 'utf8')
 const vitePressConfig = readFileSync('docs/.vitepress/config.ts', 'utf8')
 const englishDocs = readReferenceDocs('docs/reference')
 const chineseDocs = readReferenceDocs('docs/zh/reference')
 const exports = extractExports(source)
-const publicEntryFailures = validatePublicEntry(source)
+const reactExports = extractExports(reactSource)
+const publicEntryFailures = [
+  ...validatePublicEntry('src/index.ts', source, isAllowedRootPublicSource),
+  ...validatePublicEntry('src/react.ts', reactSource, isAllowedReactPublicSource)
+]
 const docsNavigationFailures = validateDocsNavigation(vitePressConfig)
 const missingEnglish = missingExports(englishDocs, exports)
 const missingChinese = missingExports(chineseDocs, exports)
+const missingReactEnglish = missingExports(englishDocs, reactExports)
+const missingReactChinese = missingExports(chineseDocs, reactExports)
 const missingRequirements = [
   ['English AiHooksError instanceof example', englishDocs, /instanceof\s+AiHooksError/],
   ['English AiHooksError status docs', englishDocs, /\bstatus\b/],
@@ -33,12 +41,19 @@ if (docsNavigationFailures.length) {
   process.exit(1)
 }
 
-if (missingEnglish.length || missingChinese.length) {
+if (
+  missingEnglish.length ||
+  missingChinese.length ||
+  missingReactEnglish.length ||
+  missingReactChinese.length
+) {
   console.error(
     [
       'API docs check failed. Missing public export references:',
       formatMissing('English reference docs', missingEnglish),
-      formatMissing('Chinese reference docs', missingChinese)
+      formatMissing('Chinese reference docs', missingChinese),
+      formatMissing('English React reference docs', missingReactEnglish),
+      formatMissing('Chinese React reference docs', missingReactChinese)
     ]
       .filter(Boolean)
       .join('\n')
@@ -53,7 +68,9 @@ if (missingRequirements.length) {
   process.exit(1)
 }
 
-console.log(`API docs check passed for ${exports.length} public exports.`)
+console.log(
+  `API docs check passed for ${exports.length} root exports and ${reactExports.length} React exports.`
+)
 
 function missingExports(docs, exports) {
   return exports.filter((name) => !new RegExp(`\\b${escapeRegExp(name)}\\b`).test(docs))
@@ -63,66 +80,40 @@ function formatMissing(label, names) {
   return names.length ? `${label}:\n${names.map((name) => `- ${name}`).join('\n')}` : ''
 }
 
-function extractExports(content) {
-  const names = new Set()
-  for (const match of content.matchAll(/export\s+(?:type\s+)?\{([\s\S]*?)\}\s+from/g)) {
-    for (const rawItem of match[1].split(',')) {
-      const item = rawItem.trim().replace(/^type\s+/, '')
-      if (!item) continue
-      const alias = item
-        .split(/\s+as\s+/)
-        .pop()
-        ?.trim()
-      if (alias) names.add(alias)
-    }
-  }
-  return [...names].sort((a, b) => a.localeCompare(b))
-}
-
-function validatePublicEntry(content) {
+function validatePublicEntry(filePath, content, isAllowedSource) {
   const failures = []
 
   if (!content.includes('@packageDocumentation')) {
-    failures.push('src/index.ts must keep package documentation metadata')
+    failures.push(`${filePath} must keep package documentation metadata`)
   }
 
   for (const match of content.matchAll(/export\s+\*\s+from\s+['"]([^'"]+)['"]/g)) {
-    failures.push(`wildcard export is not allowed: ${match[1]}`)
+    failures.push(`${filePath} wildcard export is not allowed: ${match[1]}`)
   }
 
   for (const sourcePath of extractExportSources(content)) {
     if (!sourcePath.startsWith('./')) {
-      failures.push(`export source must be relative: ${sourcePath}`)
+      failures.push(`${filePath} export source must be relative: ${sourcePath}`)
       continue
     }
 
     if (sourcePath.includes('/_')) {
-      failures.push(`internal implementation module must not be public: ${sourcePath}`)
+      failures.push(`${filePath} internal implementation module must not be public: ${sourcePath}`)
     }
 
-    if (!isAllowedPublicSource(sourcePath)) {
-      failures.push(`unexpected public export source: ${sourcePath}`)
+    if (!isAllowedSource(sourcePath)) {
+      failures.push(`${filePath} unexpected public export source: ${sourcePath}`)
     }
 
     if (!sourceExists(sourcePath)) {
-      failures.push(`export source does not exist: ${sourcePath}`)
+      failures.push(`${filePath} export source does not exist: ${sourcePath}`)
     }
   }
 
   return failures
 }
 
-function extractExportSources(content) {
-  const sources = new Set()
-  for (const match of content.matchAll(
-    /export\s+(?:type\s+)?\{[\s\S]*?\}\s+from\s+['"]([^'"]+)['"]/g
-  )) {
-    sources.add(match[1])
-  }
-  return [...sources].sort((a, b) => a.localeCompare(b))
-}
-
-function isAllowedPublicSource(sourcePath) {
+function isAllowedRootPublicSource(sourcePath) {
   return (
     sourcePath === './types' ||
     sourcePath === './utils/agentEvents' ||
@@ -131,6 +122,10 @@ function isAllowedPublicSource(sourcePath) {
     sourcePath.startsWith('./composables/use') ||
     sourcePath.startsWith('./providers/')
   )
+}
+
+function isAllowedReactPublicSource(sourcePath) {
+  return sourcePath === './types' || sourcePath.startsWith('./react/use')
 }
 
 function sourceExists(sourcePath) {

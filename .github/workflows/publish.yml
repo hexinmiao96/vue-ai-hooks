@@ -9,6 +9,10 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish package
@@ -17,6 +21,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -109,6 +115,12 @@ jobs:
       - name: Image demo
         run: pnpm image:check
 
+      - name: Demo UX visual check
+        run: pnpm demo-ux:check
+
+      - name: Completion and object demo
+        run: pnpm completion-object:check
+
       - name: React video demo
         run: pnpm react-video:check
 
@@ -129,6 +141,9 @@ jobs:
 
       - name: Agent route templates
         run: pnpm agent-route-templates:check
+
+      - name: Competitive benchmark
+        run: pnpm competitive-benchmark:check
 
       - name: Links
         run: pnpm links:check

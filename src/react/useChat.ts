@@ -33,7 +33,10 @@ import { headersToRecord, mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
 import {
+  clearInspectionState,
   inspectRequestTrace,
+  recordInspectionStateEvent,
+  recordInspectionStateRetryAttempt,
   type InspectionRetryRecordInput,
   type InspectionTimelineEventInput,
   type RequestInspectionSnapshot
@@ -328,6 +331,10 @@ export function useChat<
   const [lastResponse, setLastResponse] = useState<ReactChatResponseInfo | null>(null)
   const [inspectionEvents, setInspectionEvents] = useState<InspectionTimelineEventInput[]>([])
   const [inspectionRetries, setInspectionRetries] = useState<InspectionRetryRecordInput[]>([])
+  const inspectionRecords = {
+    setEvents: setInspectionEvents,
+    setRetries: setInspectionRetries
+  }
   const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const idRef = useRef(id)
@@ -385,8 +392,7 @@ export function useChat<
   const clearTrace = useCallback(() => {
     setLastRequest(null)
     setLastResponse(null)
-    setInspectionEvents([])
-    setInspectionRetries([])
+    clearInspectionState(inspectionRecords)
   }, [])
 
   const inspect = useCallback(
@@ -404,31 +410,8 @@ export function useChat<
   )
 
   const recordInspectionEvent = useCallback((event: InspectionTimelineEventInput) => {
-    setInspectionEvents((current) => [
-      ...current,
-      { ...event, timestamp: event.timestamp ?? new Date() }
-    ])
+    recordInspectionStateEvent(inspectionRecords, event)
   }, [])
-
-  const recordInspectionRetry = useCallback(
-    (errorToRecord: unknown, context: ReturnType<typeof createRetryContext>) => {
-      const delayMs =
-        typeof optionsRef.current.retryDelayMs === 'function'
-          ? optionsRef.current.retryDelayMs(context)
-          : (optionsRef.current.retryDelayMs ?? 0)
-      setInspectionRetries((current) => [
-        ...current,
-        {
-          attempt: context.attempt,
-          maxRetries: context.maxRetries,
-          error: errorToRecord,
-          delayMs,
-          timestamp: new Date()
-        }
-      ])
-    },
-    []
-  )
 
   const clearError = useCallback(() => {
     setError(null)
@@ -808,8 +791,7 @@ export function useChat<
       setIsLoading(true)
       setError(null)
       setStatus('submitted')
-      setInspectionEvents([])
-      setInspectionRetries([])
+      clearInspectionState(inspectionRecords)
       let retryAttempt = 0
       const maxRetries = getMaxRetries(optionsRef.current)
 
@@ -858,17 +840,10 @@ export function useChat<
             }
             const retryContext = createRetryContext(nextError, retryAttempt + 1, maxRetries)
             if (!receivedChunk && (await canRetry(optionsRef.current, retryContext))) {
-              recordInspectionEvent({
-                kind: 'retry',
-                label: 'retry planned',
-                attempt: retryContext.attempt,
-                status,
-                metadata: {
-                  maxRetries: retryContext.maxRetries,
-                  hasResponse: false
-                }
+              recordInspectionStateRetryAttempt(inspectionRecords, nextError, retryContext, {
+                retryDelayMs: optionsRef.current.retryDelayMs,
+                status
               })
-              recordInspectionRetry(nextError, retryContext)
               retryAttempt += 1
               await waitForRetry(optionsRef.current, retryContext, controller.signal)
               setStatus('submitted')
@@ -893,7 +868,7 @@ export function useChat<
         setIsLoading(false)
       }
     },
-    [applyChunk, finishAssistant, recordInspectionEvent, recordInspectionRetry, reportError, status]
+    [applyChunk, finishAssistant, recordInspectionEvent, reportError, status]
   )
 
   const streamReply = useCallback(

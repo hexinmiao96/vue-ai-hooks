@@ -434,12 +434,12 @@ const chat = useChat({
 
 `DefaultChatTransportOptions` 扩展自 `ProxyProviderConfig`，并额外支持：
 
-| 选项                              | 类型                                 | 默认值      | 说明                                                     |
-| --------------------------------- | ------------------------------------ | ----------- | -------------------------------------------------------- |
-| `api`                             | `string`                             | `/api/chat` | AI SDK 兼容的 chat endpoint 别名。                       |
-| `prepareSendMessagesRequest`      | `(options) => ProxyRequestOverride`  | -           | 调整最终 chat 请求的 URL、headers、body 或 credentials。 |
-| `prepareReconnectToStreamRequest` | `(options) => ProxyRequestOverride`  | -           | 调整最终恢复流请求的 URL、headers 或 credentials。       |
-| 其他 `ProxyProviderConfig` 选项   | 见 [`proxyProvider`](#proxyprovider) | -           | `baseURL`、`chatUrl`、`resumeUrl`、`headers` 等。        |
+| 选项                              | 类型                                        | 默认值      | 说明                                                     |
+| --------------------------------- | ------------------------------------------- | ----------- | -------------------------------------------------------- |
+| `api`                             | `string`                                    | `/api/chat` | AI SDK 兼容的 chat endpoint 别名。                       |
+| `prepareSendMessagesRequest`      | `(options) => ProxyRequestOverride`         | -           | 调整最终 chat 请求的 URL、headers、body 或 credentials。 |
+| `prepareReconnectToStreamRequest` | `(options) => ProxyRequestOverride`         | -           | 调整最终恢复流请求的 URL、headers 或 credentials。       |
+| 其他 `ProxyProviderConfig` 选项   | 见 [`proxyProvider`](#proxyprovider-config) | -           | `baseURL`、`chatUrl`、`resumeUrl`、`headers` 等。        |
 
 `chatUrl` 仍然兼容已有 `proxyProvider()` 风格配置。如果同时设置 `api` 和
 `chatUrl`，以 `chatUrl` 为准。底层 `prepareRequest` 也仍然可用，并且会在

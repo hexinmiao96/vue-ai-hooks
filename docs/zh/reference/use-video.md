@@ -99,5 +99,5 @@ await handleSubmit(undefined, { aspectRatio: '9:16', duration: 4 })
 - `handleSubmit()` 只会在视频生成成功后清空 `input`。后端错误会保留提示词，方便重试。
 - `onRequest(info)` 和 `onResponse(info)` 会包含解析后的 `api`、credentials 模式、
   headers、最终 JSON body 和 retry attempt。同样的最新快照也可通过 `lastRequest` 和
-  `lastResponse` 读取。
+  `lastResponse` 读取，用于内部 trace 状态。UI 需要展示脱敏诊断信息时，应渲染 `inspect()` 输出。
 - `stop()` 会中止当前请求，并且 abort 不会写入 `error`。

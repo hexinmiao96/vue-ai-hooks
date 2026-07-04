@@ -30,5 +30,31 @@ pnpm-debug.log*
 
 # Env
 .env
+.env.*
+!.env.example
+!**/.env.example
 .env.local
 .env.*.local
+
+# Local data, credentials, database dumps, and archives
+*.db
+*.db3
+*.dump
+*.sql
+*.key
+*.cer
+*.crt
+*.der
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.sqlite
+*.sqlite3
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.zip

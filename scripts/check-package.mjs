@@ -1,6 +1,11 @@
 import { execFileSync } from 'node:child_process'
 import { dirname, normalize, posix } from 'node:path'
 import { readFileSync } from 'node:fs'
+import {
+  extractExportSources,
+  resolveExportDeclarationFile,
+  resolveExportSourceFile
+} from './lib/entry-exports.mjs'
 
 const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
   encoding: 'utf8',
@@ -11,6 +16,22 @@ const [pack] = JSON.parse(output)
 const files = new Set(pack.files.map((file) => file.path))
 const maxPackageSize = 595_000
 const maxUnpackedSize = 2_780_000
+const indexSource = readFileSync('src/index.ts', 'utf8')
+const reactSource = readFileSync('src/react.ts', 'utf8')
+const publicExportSources = unique([
+  ...extractExportSources(indexSource),
+  ...extractExportSources(reactSource)
+])
+const requiredPublicSourceFiles = unique([
+  'src/index.ts',
+  'src/react.ts',
+  ...publicExportSources.map(resolveExportSourceFile)
+])
+const requiredPublicDeclarationFiles = unique([
+  'dist/index.d.ts',
+  'dist/react.d.ts',
+  ...publicExportSources.map(resolveExportDeclarationFile)
+])
 
 const requiredFiles = [
   'package.json',
@@ -18,56 +39,17 @@ const requiredFiles = [
   'README.zh-CN.md',
   'CHANGELOG.md',
   'SECURITY.md',
+  'SUPPORT.md',
+  'CODE_OF_CONDUCT.md',
   'LICENSE',
-  'src/index.ts',
-  'src/composables/useAgentCapabilities.ts',
-  'src/composables/useAgentContext.ts',
-  'src/composables/useAgentRun.ts',
-  'src/composables/useChatThreads.ts',
-  'src/composables/usePromptSuggestions.ts',
-  'src/react.ts',
-  'src/react/useAgentRun.ts',
-  'src/react/useChat.ts',
-  'src/react/useCompletion.ts',
-  'src/react/useImage.ts',
-  'src/react/useObject.ts',
-  'src/react/usePromptSuggestions.ts',
-  'src/react/useVideo.ts',
-  'src/utils/agentEvents.ts',
   'dist/index.mjs',
   'dist/index.cjs',
-  'dist/index.d.ts',
   'dist/index.d.ts.map',
-  'dist/composables/useAgentCapabilities.d.ts',
-  'dist/composables/useAgentCapabilities.d.ts.map',
-  'dist/composables/useAgentContext.d.ts',
-  'dist/composables/useAgentContext.d.ts.map',
-  'dist/composables/useAgentRun.d.ts',
-  'dist/composables/useAgentRun.d.ts.map',
-  'dist/composables/useChatThreads.d.ts',
-  'dist/composables/useChatThreads.d.ts.map',
-  'dist/composables/usePromptSuggestions.d.ts',
-  'dist/composables/usePromptSuggestions.d.ts.map',
-  'dist/utils/agentEvents.d.ts',
-  'dist/utils/agentEvents.d.ts.map',
   'dist/react.mjs',
   'dist/react.cjs',
-  'dist/react.d.ts',
   'dist/react.d.ts.map',
-  'dist/react/useAgentRun.d.ts',
-  'dist/react/useAgentRun.d.ts.map',
-  'dist/react/useChat.d.ts',
-  'dist/react/useChat.d.ts.map',
-  'dist/react/useCompletion.d.ts',
-  'dist/react/useCompletion.d.ts.map',
-  'dist/react/useImage.d.ts',
-  'dist/react/useImage.d.ts.map',
-  'dist/react/useObject.d.ts',
-  'dist/react/useObject.d.ts.map',
-  'dist/react/usePromptSuggestions.d.ts',
-  'dist/react/usePromptSuggestions.d.ts.map',
-  'dist/react/useVideo.d.ts',
-  'dist/react/useVideo.d.ts.map'
+  ...requiredPublicSourceFiles,
+  ...requiredPublicDeclarationFiles
 ]
 
 const forbiddenPrefixes = [
@@ -87,12 +69,14 @@ const forbiddenFilePatterns = [
   /(^|\/)\.env(?:\.|$)/,
   /(^|\/)\.npmrc$/,
   /\.log$/,
-  /\.tgz$/,
+  /^dist\/.*\.(?:js|cjs|mjs)\.map$/,
+  /\.(?:7z|rar|tar|tar\.gz|tgz|zip)$/,
   /\.tmp$/,
   /\.bak$/,
   /\.swp$/,
   /~$/,
-  /\.(?:pem|key|p12|pfx)$/
+  /\.(?:cer|crt|der|jks|key|keystore|p12|pem|pfx)$/,
+  /\.(?:db|db3|dump|sql|sqlite|sqlite3)$/
 ]
 const missing = requiredFiles.filter((file) => !files.has(file))
 const forbidden = [...files].filter(isForbiddenPackageFile)
@@ -105,6 +89,9 @@ const brokenDeclarationMapSources = [...files]
 const brokenDeclarationSourceMaps = [...files]
   .filter((file) => file.endsWith('.d.ts'))
   .flatMap((file) => findBrokenDeclarationSourceMaps(file, files))
+const brokenRuntimeBundleReferences = [...files]
+  .filter((file) => /^dist\/.*\.(?:js|cjs|mjs)$/.test(file))
+  .flatMap((file) => findBrokenRuntimeBundleReferences(file, files))
 const sizeFailures = []
 
 if (pack.size > maxPackageSize) {
@@ -125,6 +112,7 @@ if (
   brokenReadmeLinks.length ||
   brokenDeclarationMapSources.length ||
   brokenDeclarationSourceMaps.length ||
+  brokenRuntimeBundleReferences.length ||
   sizeFailures.length
 ) {
   if (missing.length) {
@@ -146,6 +134,11 @@ if (
   if (brokenDeclarationSourceMaps.length) {
     console.error(
       `Broken declaration source maps:\n${brokenDeclarationSourceMaps.map((line) => `- ${line}`).join('\n')}`
+    )
+  }
+  if (brokenRuntimeBundleReferences.length) {
+    console.error(
+      `Broken runtime bundle references:\n${brokenRuntimeBundleReferences.map((line) => `- ${line}`).join('\n')}`
     )
   }
   if (sizeFailures.length) {
@@ -236,6 +229,32 @@ function findBrokenDeclarationSourceMaps(file, packageFiles) {
     }
   }
   return broken
+}
+
+function findBrokenRuntimeBundleReferences(file, packageFiles) {
+  const content = readFileSync(file, 'utf8')
+  const broken = []
+  const patterns = [
+    /(?:import|export)\s+[^'"]*\s+from\s+["'](\.\/[^"']+)["']/g,
+    /import\(["'](\.\/[^"']+)["']\)/g,
+    /require\(["'](\.\/[^"']+)["']\)/g,
+    /sourceMappingURL=([^\s]+)/g
+  ]
+
+  for (const pattern of patterns) {
+    for (const match of content.matchAll(pattern)) {
+      const target = normalizePackagePath(posix.join(dirname(file), match[1]))
+      if (!target || !packageFiles.has(target)) {
+        broken.push(`${file}: ${match[1]}`)
+      }
+    }
+  }
+
+  return broken
+}
+
+function unique(values) {
+  return [...new Set(values)]
 }
 
 function formatBytes(bytes) {

@@ -450,12 +450,12 @@ const chat = useChat({
 
 `DefaultChatTransportOptions` extends `ProxyProviderConfig` with:
 
-| Option                              | Type                                  | Default     | Description                                                        |
-| ----------------------------------- | ------------------------------------- | ----------- | ------------------------------------------------------------------ |
-| `api`                               | `string`                              | `/api/chat` | AI SDK-compatible alias for the chat endpoint.                     |
-| `prepareSendMessagesRequest`        | `(options) => ProxyRequestOverride`   | -           | Adjust final chat request URL, headers, body, or credentials.      |
-| `prepareReconnectToStreamRequest`   | `(options) => ProxyRequestOverride`   | -           | Adjust final resume request URL, headers, or credentials.          |
-| other `ProxyProviderConfig` options | see [`proxyProvider`](#proxyprovider) | -           | `baseURL`, `chatUrl`, `resumeUrl`, `headers`, `body`, and `fetch`. |
+| Option                              | Type                                         | Default     | Description                                                        |
+| ----------------------------------- | -------------------------------------------- | ----------- | ------------------------------------------------------------------ |
+| `api`                               | `string`                                     | `/api/chat` | AI SDK-compatible alias for the chat endpoint.                     |
+| `prepareSendMessagesRequest`        | `(options) => ProxyRequestOverride`          | -           | Adjust final chat request URL, headers, body, or credentials.      |
+| `prepareReconnectToStreamRequest`   | `(options) => ProxyRequestOverride`          | -           | Adjust final resume request URL, headers, or credentials.          |
+| other `ProxyProviderConfig` options | see [`proxyProvider`](#proxyprovider-config) | -           | `baseURL`, `chatUrl`, `resumeUrl`, `headers`, `body`, and `fetch`. |
 
 `chatUrl` still works for existing `proxyProvider()`-style configuration. When
 both `api` and `chatUrl` are set, `chatUrl` wins. The lower-level

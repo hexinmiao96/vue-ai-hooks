@@ -30,8 +30,8 @@ watchEffect(() => {
       <template #nav-bar-content-before><slot name="nav-bar-content-before" /></template>
       <template #nav-bar-content-after><slot name="nav-bar-content-after" /></template>
     </VPNavBar>
-    <VPNavScreen :open="isScreenOpen" @close="closeScreen"
-      ><template #nav-screen-content-before><slot name="nav-screen-content-before" /></template>
+    <VPNavScreen :open="isScreenOpen" @close="closeScreen">
+      <template #nav-screen-content-before><slot name="nav-screen-content-before" /></template>
       <template #nav-screen-content-after><slot name="nav-screen-content-after" /></template>
     </VPNavScreen>
   </header>

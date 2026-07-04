@@ -24,6 +24,10 @@ expect(
   workflows.ci.includes('uses: actions/checkout@v5'),
   'CI workflow must use actions/checkout@v5'
 )
+expect(
+  workflows.ci.includes('persist-credentials: false'),
+  'CI workflow must not persist checkout credentials'
+)
 expect(workflows.ci.includes('uses: actions/setup-node@v5'), 'CI workflow must set up Node')
 expect(
   hasYamlValue(workflows.ci, 'node-version', `[${supportedNodeVersions.join(', ')}]`),
@@ -34,6 +38,10 @@ expect(workflows.ci.includes('uses: pnpm/action-setup@v6'), 'CI workflow must se
 expect(
   hasYamlValue(workflows.ci, 'version', pnpmVersion),
   'CI workflow pnpm version must match packageManager'
+)
+expect(
+  workflows.ci.includes('pnpm install --frozen-lockfile'),
+  'CI workflow must install dependencies with the frozen lockfile'
 )
 expect(
   workflows.ci.includes('permissions:\n  contents: read'),
@@ -52,6 +60,10 @@ expect(
 for (const command of localCheckCommands) {
   expect(workflows.ci.includes(command), `CI workflow must include local check command: ${command}`)
 }
+expect(
+  workflows.ci.includes('pnpm security:audit'),
+  'CI workflow must run the dependency security audit'
+)
 expect(workflows.ci.includes('pnpm format:check'), 'CI workflow must verify formatting')
 expect(workflows.ci.includes('pnpm secrets:check'), 'CI workflow must scan for committed secrets')
 expect(
@@ -61,7 +73,7 @@ expect(
 expect(workflows.ci.includes('pnpm size:check'), 'CI workflow must verify bundle size budgets')
 expect(
   workflows.ci.includes('pnpm test:hygiene'),
-  'CI workflow must reject focused, skipped, or todo tests'
+  'CI workflow must reject focused, skipped, todo, or expected-failing tests'
 )
 expect(
   workflows.ci.includes('pnpm changelog:check'),
@@ -86,12 +98,33 @@ expect(
   'Publish workflow must use actions/checkout@v5'
 )
 expect(
+  workflows.publish.includes('persist-credentials: false'),
+  'Publish workflow must not persist checkout credentials'
+)
+expect(
   workflows.publish.includes('uses: actions/setup-node@v5'),
   'Publish workflow must set up Node'
+)
+expect(workflows.publish.includes('concurrency:'), 'Publish workflow must define concurrency')
+expect(
+  workflows.publish.includes('group: publish-${{ github.ref }}'),
+  'Publish workflow must serialize runs per pushed tag'
+)
+expect(
+  workflows.publish.includes('cancel-in-progress: false'),
+  'Publish workflow must not cancel an in-progress npm publish'
 )
 expect(
   hasYamlValue(workflows.publish, 'node-version', publishNodeVersion),
   'Publish workflow must use the newest supported Node version'
+)
+expect(
+  hasYamlValue(workflows.publish, 'registry-url', 'https://registry.npmjs.org'),
+  'Publish workflow must configure the npm registry URL'
+)
+expect(
+  workflows.publish.includes('npm install -g npm@latest'),
+  'Publish workflow must use the current npm CLI for provenance publishing'
 )
 expect(
   workflows.publish.includes('uses: pnpm/action-setup@v6'),
@@ -100,6 +133,10 @@ expect(
 expect(
   hasYamlValue(workflows.publish, 'version', pnpmVersion),
   'Publish workflow pnpm version must match packageManager'
+)
+expect(
+  workflows.publish.includes('pnpm install --frozen-lockfile'),
+  'Publish workflow must install dependencies with the frozen lockfile'
 )
 expect(
   workflows.publish.includes("if: github.ref_type == 'tag'"),
@@ -115,6 +152,10 @@ for (const command of localCheckCommands) {
     `Publish workflow must include local check command: ${command}`
   )
 }
+expect(
+  workflows.publish.includes('pnpm security:audit'),
+  'Publish workflow must run the dependency security audit'
+)
 expect(workflows.publish.includes('pnpm format:check'), 'Publish workflow must verify formatting')
 expect(
   workflows.publish.includes('pnpm secrets:check'),
@@ -130,7 +171,7 @@ expect(
 )
 expect(
   workflows.publish.includes('pnpm test:hygiene'),
-  'Publish workflow must reject focused, skipped, or todo tests'
+  'Publish workflow must reject focused, skipped, todo, or expected-failing tests'
 )
 expect(
   workflows.publish.includes('pnpm changelog:check'),
@@ -181,6 +222,10 @@ expect(
 expect(
   workflows.codeql.includes('uses: actions/checkout@v5'),
   'CodeQL workflow must use actions/checkout@v5'
+)
+expect(
+  workflows.codeql.includes('persist-credentials: false'),
+  'CodeQL workflow must not persist checkout credentials'
 )
 expect(workflows.codeql.includes('github/codeql-action/init@v4'), 'CodeQL init action must use v4')
 expect(
@@ -275,6 +320,10 @@ expect(
 expect(
   workflows.dependabot.includes('package-ecosystem: github-actions'),
   'Dependabot must maintain GitHub Actions'
+)
+expect(
+  workflows.dependabot.match(/directory: \//g)?.length === 2,
+  'Dependabot updates must target the repository root for npm and GitHub Actions'
 )
 expect(
   workflows.dependabot.match(/interval: weekly/g)?.length === 2,

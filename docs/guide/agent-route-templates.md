@@ -42,6 +42,12 @@ interface ProjectedRunInput extends AgentRouteBody {
 export async function* runProjectedAgentEvents(
   input: ProjectedRunInput
 ): AsyncGenerator<AgentEvent> {
+  const providerMetadata = {
+    provider: 'agent-route-template',
+    route: 'chat',
+    ...(input.traceId ? { traceId: input.traceId } : {})
+  }
+
   yield {
     type: 'progress',
     id: 'agent-route-start',
@@ -51,6 +57,7 @@ export async function* runProjectedAgentEvents(
       threadId: input.threadId,
       runId: input.runId,
       traceId: input.traceId,
+      providerMetadata,
       checkpoint: '[redacted]'
     }
   }
@@ -62,7 +69,8 @@ export async function* runProjectedAgentEvents(
     finishReason: 'stop',
     metadata: {
       runId: input.runId,
-      traceId: input.traceId
+      traceId: input.traceId,
+      providerMetadata
     }
   }
 }
@@ -104,7 +112,12 @@ export async function* chatChunks(body: AgentRouteBody, signal?: AbortSignal) {
 export function assertAgentRouteBody(value: unknown): asserts value is AgentRouteBody {
   if (!value || typeof value !== 'object') throw new Error('invalid body')
   const body = value as Partial<AgentRouteBody>
-  if (!body.threadId || !body.runId || !Array.isArray(body.messages)) {
+  if (
+    !body.threadId ||
+    !body.runId ||
+    !Array.isArray(body.messages) ||
+    body.messages.length === 0
+  ) {
     throw new Error('invalid body')
   }
 }
@@ -210,9 +223,102 @@ app.post('/api/agent/runs/:runId/events.txt', async (c) => {
 export default app
 ```
 
+## Express
+
+Use this in legacy Express services. Keep body parsing on your route or app-level
+middleware and return/stream the `Response` from `createUIMessageStreamResponse()`
+as-is. Browser-safe trace headers stay in headers, while approval and checkpoint
+state stay server-side.
+
+```ts
+import { Readable } from 'node:stream'
+import { assertAgentRouteBody, uiMessageStreamResponse } from './agent-route'
+
+app.post('/api/chat', async (req, res) => {
+  try {
+    assertAgentRouteBody(req.body)
+    const response = uiMessageStreamResponse(req.body, req.signal)
+
+    res.status(response.status)
+    for (const [name, value] of response.headers.entries()) {
+      res.setHeader(name, value)
+    }
+    if (!response.body) {
+      return res.send()
+    }
+
+    return Readable.fromWeb(response.body).pipe(res)
+  } catch {
+    return res.status(400).json({ error: 'Agent route failed' })
+  }
+})
+```
+
+## Fastify
+
+Use this in Fastify services. Keep body parsing on your route or app-level
+middleware, map the returned `Response` stream, and preserve trace headers.
+
+```ts
+import { Readable } from 'node:stream'
+import { assertAgentRouteBody, uiMessageStreamResponse } from './agent-route'
+
+function sendAgentRouteResponse(reply, response) {
+  reply.code(response.status)
+  for (const [name, value] of response.headers.entries()) {
+    reply.header(name, value)
+  }
+
+  if (!response.body) {
+    return reply.send()
+  }
+
+  return reply.send(Readable.fromWeb(response.body))
+}
+
+fastify.post('/api/chat', async (req, reply) => {
+  try {
+    assertAgentRouteBody(req.body)
+    return sendAgentRouteResponse(reply, uiMessageStreamResponse(req.body, req.signal))
+  } catch {
+    return reply.code(400).send({ error: 'Agent route failed' })
+  }
+})
+```
+
+## Cloudflare Workers
+
+Use this exact shape for Workers' `fetch` handler. Keep route validation and
+streaming headers in the same place, and return `agentRouteErrorResponse()`
+for malformed requests.
+
+```ts
+import {
+  assertAgentRouteBody,
+  uiMessageStreamResponse,
+  agentRouteErrorResponse
+} from './agent-route'
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    if (request.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 })
+    }
+
+    try {
+      const body = await request.json()
+      assertAgentRouteBody(body)
+      return uiMessageStreamResponse(body, request.signal)
+    } catch {
+      return agentRouteErrorResponse()
+    }
+  }
+}
+```
+
 ## Web Fetch route
 
-Use this shape for Cloudflare Workers, Bun, Deno, or any runtime that accepts a
+Use this shape for Bun, Deno, or any runtime that accepts a
 Fetch API handler.
 
 ```ts
@@ -275,13 +381,16 @@ app.post('/api/agent/runs/:runId/resume', async (c) => {
 - Interrupt events use `data-agent-interrupt` and contain only reviewer-safe
   fields: `approvalId`, `toolCallId`, `runId`, `threadId`, and a redacted
   summary.
+- `progress` and `finish` event payloads include safe observability metadata:
+  `providerMetadata` and `traceId` that does not leak secret values.
 - Route responses include `x-agent-run-id` and, when available,
   `x-agent-trace-id`.
 - Run `pnpm build && pnpm agent-route-templates:check` before copying these
   templates into a product route. The check includes executable fixture smoke
-  coverage for the Nuxt/Nitro, Next.js, Hono, Fetch, and LangGraph resume shapes
-  without adding those frameworks as dependencies.
-- Invalid request bodies must return `Agent route failed` at HTTP 400 with no
-  secrets or provider identifiers.
+  coverage for the Nuxt/Nitro, Next.js, Hono, Express, Fastify, Cloudflare,
+  Fetch, and LangGraph resume shapes without adding those frameworks as
+  dependencies.
+- Invalid request bodies, including missing IDs and empty `messages`, must return
+  `Agent route failed` at HTTP 400 with no secrets or provider identifiers.
 - Run `pnpm agent-bridge:check` when the route also projects LangChain or
   LangGraph runtime events.

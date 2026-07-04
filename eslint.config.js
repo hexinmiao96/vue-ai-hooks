@@ -17,7 +17,19 @@ export default [
   js.configs.recommended,
   ...vue.configs['flat/recommended'],
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['**/*.{js,jsx,mjs,cjs}'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      parserOptions: {
+        ecmaVersion: 2022,
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module'
+      },
+      globals: sharedGlobals
+    }
+  },
+  {
+    files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {
@@ -42,7 +54,7 @@ export default [
     }
   },
   {
-    files: ['**/*.{ts,tsx,vue}'],
+    files: ['**/*.{ts,tsx,mts,cts,vue}'],
     rules: {
       'vue/multi-word-component-names': 'off',
       'vue/max-attributes-per-line': 'off',

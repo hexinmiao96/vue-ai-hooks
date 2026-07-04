@@ -1,4 +1,4 @@
-import { AiHooksError, type AiRequestStatus } from '../types'
+import { AiHooksError, type AiRequestStatus, type RetryContext, type RetryOptions } from '../types'
 
 export type InspectionStatus =
   AiRequestStatus | 'idle' | 'running' | 'interrupted' | 'completed' | 'aborted'
@@ -112,6 +112,26 @@ export interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unkno
   timestamp: string
 }
 
+interface InspectionRecordRefs {
+  events: { value: InspectionTimelineEventInput[] }
+  retries: { value: InspectionRetryRecordInput[] }
+}
+
+interface InspectionRecordSetters {
+  setEvents: (
+    updater: (current: InspectionTimelineEventInput[]) => InspectionTimelineEventInput[]
+  ) => void
+  setRetries: (
+    updater: (current: InspectionRetryRecordInput[]) => InspectionRetryRecordInput[]
+  ) => void
+}
+
+interface InspectionRetryAttemptOptions {
+  retryDelayMs?: RetryOptions['retryDelayMs']
+  status?: InspectionStatus
+  hasResponse?: boolean
+}
+
 const DEFAULT_REDACTED_HEADERS = [
   'authorization',
   'proxy-authorization',
@@ -123,6 +143,130 @@ const DEFAULT_REDACTED_HEADERS = [
   'anthropic-api-key',
   'x-goog-api-key'
 ]
+const DEFAULT_REDACTED_FIELDS = [
+  ...DEFAULT_REDACTED_HEADERS,
+  'accessToken',
+  'authToken',
+  'bearerToken',
+  'clientSecret',
+  'credential',
+  'credentials',
+  'idToken',
+  'passphrase',
+  'password',
+  'privateKey',
+  'refreshToken',
+  'secret',
+  'sessionToken',
+  'token',
+  'upstreamApiKey'
+]
+
+export function clearInspectionRecords(records: InspectionRecordRefs) {
+  records.events.value = []
+  records.retries.value = []
+}
+
+export function clearInspectionState(records: InspectionRecordSetters) {
+  records.setEvents(() => [])
+  records.setRetries(() => [])
+}
+
+export function recordInspectionEvent(
+  records: InspectionRecordRefs,
+  event: InspectionTimelineEventInput
+) {
+  records.events.value = [
+    ...records.events.value,
+    { ...event, timestamp: event.timestamp ?? new Date() }
+  ]
+}
+
+export function recordInspectionStateEvent(
+  records: InspectionRecordSetters,
+  event: InspectionTimelineEventInput
+) {
+  records.setEvents((current) => [
+    ...current,
+    { ...event, timestamp: event.timestamp ?? new Date() }
+  ])
+}
+
+export function recordInspectionRetry(
+  records: InspectionRecordRefs,
+  errorToRecord: unknown,
+  context: RetryContext,
+  retryDelayMs?: RetryOptions['retryDelayMs']
+) {
+  const delayMs = typeof retryDelayMs === 'function' ? retryDelayMs(context) : (retryDelayMs ?? 0)
+  records.retries.value = [
+    ...records.retries.value,
+    {
+      attempt: context.attempt,
+      maxRetries: context.maxRetries,
+      error: errorToRecord,
+      delayMs,
+      timestamp: new Date()
+    }
+  ]
+}
+
+export function recordInspectionStateRetry(
+  records: InspectionRecordSetters,
+  errorToRecord: unknown,
+  context: RetryContext,
+  retryDelayMs?: RetryOptions['retryDelayMs']
+) {
+  const delayMs = typeof retryDelayMs === 'function' ? retryDelayMs(context) : (retryDelayMs ?? 0)
+  records.setRetries((current) => [
+    ...current,
+    {
+      attempt: context.attempt,
+      maxRetries: context.maxRetries,
+      error: errorToRecord,
+      delayMs,
+      timestamp: new Date()
+    }
+  ])
+}
+
+export function recordInspectionRetryAttempt(
+  records: InspectionRecordRefs,
+  errorToRecord: unknown,
+  context: RetryContext,
+  options: InspectionRetryAttemptOptions = {}
+) {
+  recordInspectionEvent(records, {
+    kind: 'retry',
+    label: 'retry planned',
+    attempt: context.attempt,
+    status: options.status,
+    metadata: {
+      maxRetries: context.maxRetries,
+      hasResponse: options.hasResponse ?? false
+    }
+  })
+  recordInspectionRetry(records, errorToRecord, context, options.retryDelayMs)
+}
+
+export function recordInspectionStateRetryAttempt(
+  records: InspectionRecordSetters,
+  errorToRecord: unknown,
+  context: RetryContext,
+  options: InspectionRetryAttemptOptions = {}
+) {
+  recordInspectionStateEvent(records, {
+    kind: 'retry',
+    label: 'retry planned',
+    attempt: context.attempt,
+    status: options.status,
+    metadata: {
+      maxRetries: context.maxRetries,
+      hasResponse: options.hasResponse ?? false
+    }
+  })
+  recordInspectionStateRetry(records, errorToRecord, context, options.retryDelayMs)
+}
 
 export function classifyInspectionError(error: unknown): InspectionErrorSummary | null {
   if (error == null) return null
@@ -166,11 +310,13 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
     options.curl === undefined || options.curl === false
       ? null
       : createInspectionCurl(request, options.curl === true ? {} : options.curl)
+  const safeRequest = sanitizeInspectionValue(request)
+  const safeResponse = sanitizeInspectionValue(response)
 
   return {
     status,
-    request,
-    response,
+    request: safeRequest,
+    response: safeResponse,
     error,
     ...(traceId !== undefined ? { traceId } : {}),
     ...readStringFieldEntry(metadataSources, 'providerId', 'providerId'),
@@ -218,7 +364,7 @@ export function createInspectionCurl(
     options.headers ?? requestRecord?.headers,
     options.redactHeaders ?? DEFAULT_REDACTED_HEADERS
   )
-  const body = options.body ?? requestRecord?.body
+  const body = sanitizeBodySnapshot(options.body ?? requestRecord?.body)
   const command = options.command ?? 'curl'
   const parts = [`${command} -X ${quoteShell(method)} ${quoteShell(api)}`]
 
@@ -382,8 +528,12 @@ function normalizeTimelineEvent(
   event: InspectionTimelineEventInput,
   fallbackTimestamp: string
 ): InspectionTimelineEvent {
+  const metadata =
+    event.metadata === undefined ? undefined : sanitizeInspectionValue(event.metadata)
+
   return {
     ...event,
+    ...(metadata !== undefined ? { metadata } : {}),
     timestamp: normalizeTimestamp(event.timestamp ?? fallbackTimestamp)
   }
 }
@@ -461,11 +611,84 @@ function isInspectionErrorSummary(value: unknown): value is InspectionErrorSumma
 }
 
 function sanitizeHeaders(headers: unknown, redactedHeaders: readonly string[]): [string, string][] {
-  const redacted = new Set(redactedHeaders.map((header) => header.toLowerCase()))
   return headerEntries(headers).map(([name, value]) => [
     name,
-    redacted.has(name.toLowerCase()) ? '[redacted]' : value
+    isSensitiveInspectionKey(name, redactedHeaders) ? '[redacted]' : value
   ])
+}
+
+function sanitizeInspectionValue<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizeInspectionValue(item)) as T
+  }
+  if (typeof Headers !== 'undefined' && value instanceof Headers) {
+    return new Headers(sanitizeHeaders(value, DEFAULT_REDACTED_HEADERS)) as T
+  }
+  if (!isPlainRecord(value)) return value
+
+  const sanitized: Record<string, unknown> = {}
+  for (const [key, field] of Object.entries(value)) {
+    sanitized[key] = isSensitiveInspectionFieldKey(key)
+      ? '[redacted]'
+      : key.toLowerCase() === 'headers'
+        ? sanitizeHeaderSnapshot(field)
+        : key.toLowerCase() === 'body'
+          ? sanitizeBodySnapshot(field)
+          : sanitizeInspectionValue(field)
+  }
+  return sanitized as T
+}
+
+function sanitizeBodySnapshot(body: unknown): unknown {
+  if (typeof body !== 'string') return sanitizeInspectionValue(body)
+
+  const trimmed = body.trim()
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return body
+
+  try {
+    return JSON.stringify(sanitizeInspectionValue(JSON.parse(body)))
+  } catch {
+    return body
+  }
+}
+
+function sanitizeHeaderSnapshot(headers: unknown): unknown {
+  if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+    return new Headers(sanitizeHeaders(headers, DEFAULT_REDACTED_HEADERS))
+  }
+  if (Array.isArray(headers)) {
+    return sanitizeHeaders(headers, DEFAULT_REDACTED_HEADERS)
+  }
+  if (isRecord(headers)) {
+    return Object.fromEntries(sanitizeHeaders(headers, DEFAULT_REDACTED_HEADERS))
+  }
+  return headers
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!isRecord(value)) return false
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
+
+function isSensitiveInspectionKey(
+  key: string,
+  redactedHeaders: readonly string[] = DEFAULT_REDACTED_HEADERS
+): boolean {
+  const normalized = normalizeInspectionKey(key)
+  return redactedHeaders.some((header) => normalizeInspectionKey(header) === normalized)
+}
+
+function isSensitiveInspectionFieldKey(key: string): boolean {
+  const normalized = normalizeInspectionKey(key)
+  return (
+    DEFAULT_REDACTED_FIELDS.some((field) => normalizeInspectionKey(field) === normalized) ||
+    ['apikey', 'token', 'secret', 'privatekey'].some((suffix) => normalized.endsWith(suffix))
+  )
+}
+
+function normalizeInspectionKey(key: string): string {
+  return key.replace(/[-_\s]/g, '').toLowerCase()
 }
 
 function headerEntries(headers: unknown): [string, string][] {

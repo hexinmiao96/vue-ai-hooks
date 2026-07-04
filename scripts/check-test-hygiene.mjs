@@ -2,7 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const testDir = 'tests'
-const forbiddenTestMarker = /\b(?:describe|it|test)(?:\s*\.\s*\w+)*\s*\.\s*(?:only|skip|todo)\b/
+const forbiddenTestMarker =
+  /\b(?:describe|it|test)(?:\s*\.\s*\w+)*\s*\.\s*(?:only|skip|skipIf|todo|fails)\b/
 const failures = []
 
 for (const file of collectTestFiles(testDir)) {
@@ -11,7 +12,9 @@ for (const file of collectTestFiles(testDir)) {
 
   lines.forEach((line, index) => {
     if (forbiddenTestMarker.test(line)) {
-      failures.push(`${file}:${index + 1} contains focused, skipped, or todo test marker`)
+      failures.push(
+        `${file}:${index + 1} contains focused, skipped, todo, or expected-failing test marker`
+      )
     }
   })
 }

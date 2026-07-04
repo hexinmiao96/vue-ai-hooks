@@ -116,7 +116,8 @@ events.
 - `defaultBody` and `generate(input, { body })` are merged before `fetcher`
   runs. Per-call keys win when they overlap.
 - The latest `onRequest` and `onResponse` payloads are also exposed through
-  `lastRequest` and `lastResponse` for rendering diagnostics in the UI.
+  `lastRequest` and `lastResponse` for internal trace state. Render `inspect()`
+  output when the UI needs redacted diagnostics.
 - `generate()` uses `input.value` when no input argument is passed. It throws if
   both are `undefined`.
 - Passing the same `id` to multiple `useGeneration()` calls shares input,

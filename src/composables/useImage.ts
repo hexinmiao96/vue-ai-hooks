@@ -19,7 +19,14 @@ import { requestJson } from '../utils/fetch'
 import { mergeHeaders } from '../utils/headers'
 import { mergeRequestBody } from '../utils/requestBody'
 import { cloneRequestSnapshot } from '../utils/lifecycle'
-import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
+import {
+  clearInspectionRecords,
+  inspectRequestTrace,
+  recordInspectionRetryAttempt,
+  type InspectionRetryRecordInput,
+  type InspectionTimelineEventInput,
+  type RequestInspectionSnapshot
+} from '../utils/inspection'
 import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -129,9 +136,22 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
   const status = ref<AiRequestStatus>('ready')
   const isLoading = ref(false)
   const error = ref<Error | null>(null)
-  const { lastRequest, lastResponse, clearTrace, recordRequest, recordResponse } =
-    createRequestTrace<ImageGenerationRequestInfo, ImageGenerationResponseInfo>()
+  const inspectionEvents = ref<InspectionTimelineEventInput[]>([])
+  const inspectionRetries = ref<InspectionRetryRecordInput[]>([])
+  const inspectionRecords = { events: inspectionEvents, retries: inspectionRetries }
+  const {
+    lastRequest,
+    lastResponse,
+    clearTrace: clearRequestTrace,
+    recordRequest,
+    recordResponse
+  } = createRequestTrace<ImageGenerationRequestInfo, ImageGenerationResponseInfo>()
   const abortController = shallowRef<AbortController | null>(null)
+
+  function clearTrace() {
+    clearRequestTrace()
+    clearInspectionRecords(inspectionRecords)
+  }
 
   function stop() {
     abortController.value?.abort()
@@ -179,6 +199,8 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
       error: error.value,
       lastRequest: lastRequest.value,
       lastResponse: lastResponse.value,
+      events: inspectionEvents.value,
+      retries: inspectionRetries.value,
       curl: true
     })
   }
@@ -272,6 +294,7 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
     images.value = []
     result.value = null
     status.value = 'submitted'
+    clearInspectionRecords(inspectionRecords)
 
     try {
       let retryAttempt = 0
@@ -305,6 +328,10 @@ export function useImage(options: UseImageOptions = {}): UseImageReturn {
           }
           const context = createRetryContext(e, retryAttempt + 1, maxRetries)
           if (await canRetry(options, context)) {
+            recordInspectionRetryAttempt(inspectionRecords, e, context, {
+              retryDelayMs: options.retryDelayMs,
+              status: status.value
+            })
             retryAttempt += 1
             await waitForRetry(options, context, controller.signal)
             continue

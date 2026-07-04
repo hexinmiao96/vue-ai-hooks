@@ -9,6 +9,187 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No unreleased changes pending.
 
+## [0.14.3] - 2026-07-04
+
+### Added
+
+- Added competitive readiness checks and documentation that keep task demos,
+  production readiness guidance, agent route templates, and example workflows
+  aligned with the current public API.
+- Added completion, object, embedding, proxy, threaded chat, and route-template
+  smoke checks to the local production readiness gate.
+- Added regression coverage for changelog validation so stale release-gate
+  wording, empty Unreleased sections, and mismatched coverage threshold notes
+  keep failing before release.
+- Added regression coverage for the shared public export parser used by API docs,
+  dist, install, and pack checks.
+- Added regression coverage for bundle size validation so raw and gzip budget
+  overruns keep failing before release.
+- Added regression coverage for the release wrapper so already-published
+  versions stop before dependency audit and full local gates.
+- Added regression coverage for community health validation so ownership,
+  support-route, and security-policy drift keep failing before release.
+- Added regression coverage for workflow guardrails so CI frozen-lockfile and
+  token-free provenance publishing rules keep failing before release.
+- Added regression coverage for API docs validation so public export docs,
+  React reference coverage, and allowed entrypoint sources keep failing before
+  release.
+- Added regression coverage for metadata validation so package version docs,
+  production-readiness coverage, and no-runtime-dependency policy drift keep
+  failing before release.
+- Added regression coverage for docs UX validation so language routing,
+  competitive positioning, and examples local-run entrypoints keep failing
+  before release.
+- Added regression coverage for competitive benchmark validation so shell
+  ownership wording, bilingual snapshot dates, and runtime smoke exports keep
+  failing before release.
+- Added regression coverage for proxy example validation so legacy route
+  compatibility and provider trace metadata keep failing before release.
+- Added source hygiene coverage for trailing whitespace so Markdown and source
+  files cannot reintroduce invisible diff noise before release.
+- Added a strict `release:check` wrapper so local `prepublishOnly` rejects
+  already-published package versions before npm publish.
+- Added child-status preserving failure handling to the local production
+  readiness runner.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+- Consolidated shared inspection retry bookkeeping across image, video, speech,
+  transcription, and rerank composables to reduce repeated bundle code.
+- Consolidated shared React inspection retry bookkeeping across chat,
+  completion, object, image, and video hooks to reduce repeated bundle code.
+- Synchronized contributor bundle-size policy with the root and React budgets
+  enforced by `pnpm size:check`.
+- Unified production readiness commands behind one Node runner so release-candidate
+  gate coverage cannot drift between package scripts.
+- Added metadata guards that keep the production readiness runner aligned with
+  `pnpm check` and `pnpm examples:build`.
+- Expanded dist checks to derive root and React runtime export coverage from
+  source entrypoints instead of a hand-maintained partial list.
+- Expanded install checks to verify installed ESM and CJS packages expose every
+  root and React runtime export from the source entrypoints.
+- Expanded pack checks to derive required public source and declaration files
+  from the root and React source entrypoints.
+- Expanded pack pollution checks to reject credential stores, database dumps,
+  local database files, and archive formats before npm packaging.
+- Added regression coverage for pack validation so tarball credential pollution
+  and broken package README links keep failing before release.
+- Strengthened pack checks to reject runtime bundle sourcemaps while still
+  allowing declaration maps for TypeScript consumers.
+- Strengthened pack checks to require published support and code-of-conduct
+  community files in the actual npm tarball.
+- Strengthened metadata checks so package file whitelists keep the source and
+  declaration-map globs that pack validation relies on.
+- Strengthened metadata checks to derive public source and declaration whitelist
+  coverage from the root and React source entrypoints.
+- Shared entrypoint export and source parsing across API docs, dist, install,
+  and pack checks so public-surface gates use the same source-derived export
+  model.
+- Expanded API docs checks and React reference docs to cover every
+  `vue-ai-hooks/react` export.
+- Strengthened API entrypoint checks so `vue-ai-hooks/react` can only re-export
+  from approved public React sources.
+- Expanded example inspection panels and proxy example coverage so request
+  lifecycle traces, retries, provider metadata, and backend boundaries are
+  visible in runnable demos.
+- Strengthened source hygiene checks to block browser-facing console output and
+  to verify `.gitignore` / `.sembleignore` continue excluding dependencies,
+  build outputs, logs, environment files, local data, database dumps, credential
+  stores, and archives.
+- Added regression coverage for the source hygiene ignore audit so `.gitignore`
+  and `.sembleignore` cannot silently drop generated-output or credential
+  exclusions.
+- Hardened Semble local-cache ignore rules so semantic retrieval indexes source
+  content instead of generated output or local machine state.
+- Corrected competitive benchmark wording so full copilot shell widgets remain
+  an explicit app/product-layer non-goal instead of a `vue-ai-hooks` claim.
+- Expanded source hygiene checks to include root release metadata and GitHub
+  workflow files when scanning for merge conflict markers.
+- Added tag-scoped concurrency to the npm publish workflow so duplicate tag runs
+  cannot publish the same package version in parallel.
+- Disabled persisted checkout credentials in CI, CodeQL, and npm publish
+  workflows to reduce unnecessary token exposure during release gates.
+- Expanded secret scanning to catch generic provider key, auth token, secret, and
+  proxy upstream env assignments instead of only a small provider allowlist.
+- Updated secret scanning to follow Git ignore rules, so ignored local `.env`
+  files do not block the gate while tracked and unignored candidate files are
+  still scanned.
+- Strengthened Markdown link checks to reject unsafe protocols and local links
+  that escape the repository, including same-prefix sibling paths.
+- Expanded Markdown link checks to validate local anchors, including headings
+  and VitePress component-provided ids, and corrected stale provider and
+  IndexedDB documentation anchors.
+- Expanded Markdown link checks to validate local image targets and reject
+  unsafe image protocols before docs changes can ship.
+- Expanded source hygiene scanning to include TSX and JSX browser-facing source
+  files, so React examples cannot bypass console/debugger/suppression checks.
+- Expanded secret scanning to include TSX and JSX files, so React examples
+  cannot bypass committed provider key and token checks.
+- Expanded source hygiene and secret scanning to include MTS, CTS, and CJS files
+  so alternate module-format sources cannot bypass local quality gates.
+- Expanded Prettier format gates to include JSX, MTS, CTS, and CJS files so
+  formatting coverage matches the source hygiene and secret scanning scope.
+- Expanded ESLint coverage to include repository quality gate scripts, with
+  shared JS/MJS globals for Node and Web API-based checks.
+- Expanded ESLint coverage to include root config files so package, build, test,
+  and lint configuration changes stay inside the local quality gate.
+- Expanded ESLint TypeScript and script globs to include MTS, CTS, JSX, and CJS
+  sources so lint coverage stays aligned with format, hygiene, and secret gates.
+- Expanded Prettier, source hygiene, and secret scanning to include HTML files
+  so runnable example entrypoints cannot bypass local quality gates.
+- Expanded ESLint coverage to include the VitePress docs config and theme
+  components, and fixed existing theme lint warnings.
+- Expanded source hygiene scanning to include VitePress config and theme source
+  while continuing to ignore generated VitePress cache and build output.
+- Expanded source hygiene suppression checks to reject broad TypeScript, lint,
+  formatter, and coverage suppressions in VitePress source.
+- Aligned `production:readiness` direct Prettier and ESLint targets with the full
+  local quality gate so release-candidate checks cannot drift to a narrower
+  source scope.
+- Strengthened workflow guardrail checks so CI and npm publish workflows must
+  keep the dependency security audit step.
+- Strengthened workflow guardrail checks so CI and npm publish workflows must
+  install dependencies with `pnpm install --frozen-lockfile`.
+- Strengthened workflow guardrail checks so npm publishing keeps the npm registry
+  URL and current npm CLI setup required for provenance publishing.
+- Strengthened workflow guardrail checks so Dependabot keeps root npm and GitHub
+  Actions dependency updates enabled.
+- Expanded Vitest and TypeScript test coverage to include `.test.tsx` files so
+  React-facing TSX specs cannot bypass the standard test gate.
+- Added regression coverage for the test hygiene script so focused, skipped, and
+  todo test markers must keep failing the local gate.
+- Expanded test hygiene checks to reject Vitest `skipIf` conditional skip
+  markers.
+- Expanded test hygiene checks to reject Vitest expected-failing test markers.
+
+### Fixed
+
+- Fixed Express agent route templates and executable fixtures so copied routes
+  pipe `Readable.fromWeb(response.body)` through the real response stream.
+- Updated Fastify and Express route fixture checks to exercise the documented
+  response adapter paths instead of bypassing them with raw `Response` returns.
+
+### Security
+
+- Redacted sensitive headers from `inspectRequestTrace()` request, response, and
+  timeline metadata snapshots while preserving non-sensitive header visibility
+  for debugging.
+- Redacted direct header-like secret fields such as `apiKey` and `Authorization`
+  from inspection snapshots and generated curl bodies, including nested request
+  bodies and event metadata.
+- Redacted common credential fields such as `accessToken`, `clientSecret`,
+  `password`, and `privateKey` from inspection snapshots and generated curl
+  bodies without mutating the original request metadata.
+- Redacted credential fields inside JSON-string request bodies before building
+  inspection snapshots and generated curl commands.
+- Clarified inspection, reference, and migration docs so support panels use
+  redacted `inspection.*` snapshots instead of raw `lastRequest` /
+  `lastResponse` trace refs.
+
 ## [0.14.2] - 2026-07-03
 
 ### Changed

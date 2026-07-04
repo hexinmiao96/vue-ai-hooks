@@ -109,4 +109,5 @@ await handleSubmit(undefined, { topN: 1 })
   Backend errors leave the query and documents available for retry.
 - `onRequest(info)` and `onResponse(info)` include the resolved `api`,
   credentials mode, headers, final JSON body, and retry attempt. The same latest
-  snapshots are available as `lastRequest` and `lastResponse`.
+  snapshots are available as `lastRequest` and `lastResponse` for internal trace
+  state. Render `inspect()` output when the UI needs redacted diagnostics.

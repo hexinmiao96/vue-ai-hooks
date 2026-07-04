@@ -105,4 +105,5 @@ await handleSubmit(undefined, { topN: 1 })
 - `handleSubmit()` 只会在重排成功后清空 `input`；后端错误会保留查询和文档，方便重试。
 - `onRequest(info)` 和 `onResponse(info)` 会包含解析后的 `api`、credentials 模式、
   headers、最终 JSON body 和 retry attempt。同一份最新快照也会暴露为
-  `lastRequest` 和 `lastResponse`。
+  `lastRequest` 和 `lastResponse`，用于内部 trace 状态。UI 需要展示脱敏诊断信息时，应渲染
+  `inspect()` 输出。

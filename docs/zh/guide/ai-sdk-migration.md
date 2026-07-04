@@ -326,6 +326,7 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
 ```
 
 `useCompletion()` 和 `useObject()` 也提供同样的 trace refs。这些 refs 会展示默认值、单次调用选项、proxy `api`、credentials、body、headers 和 retry attempt 合并后的最终 provider/proxy 请求。默认 chat proxy transport 下，`prepareSendMessagesRequest`、`prepareStep` 和 `prepareReconnectToStreamRequest` 也会收到同一组 `api` 和 `credentials` 字段。
+给支持团队看的调试视图应使用 `inspect()` / `inspectRequestTrace()`，让 request、response、timeline metadata 和生成的 curl 命令先经过调试脱敏。
 
 ## 迁移清单
 
@@ -354,5 +355,5 @@ const { lastRequest, lastResponse, clearTrace } = useChat({ api: '/api/chat' })
     wire-format `Tool[]` 加 `toolHandlers`。
 17. 将工具结果逻辑迁移到 `addToolOutput()`、`addToolResult({ toolCallId, output })` 或
     `addToolApprovalResponse()`。
-18. 在切换生产流量前，把 `lastRequest` 和 `lastResponse` 接入调试视图。
+18. 在切换生产流量前，把脱敏后的 `inspect()` / `inspectRequestTrace()` 输出接入调试视图。
 19. 发布前运行 `pnpm release:check` 或你项目等价的门禁。

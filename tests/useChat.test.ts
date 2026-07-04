@@ -1706,7 +1706,7 @@ describe('useChat', () => {
       attempt: 2,
       body: { tenantId: 'tenant_1' },
       headers: {
-        Authorization: 'Bearer secret',
+        Authorization: '[redacted]',
         'x-tenant': 'tenant_1'
       }
     })

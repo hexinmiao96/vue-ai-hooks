@@ -114,7 +114,8 @@ const { complete } = useCompletion({
   When the default proxy transport is used, they also include the configured
   proxy `api` and browser `credentials` mode.
   The same latest snapshots are available as `lastRequest` and `lastResponse`
-  for rendering diagnostics in the UI.
+  for internal trace state. Render `inspect()` output when the UI needs redacted
+  diagnostics.
 - When `maxRetries` is enabled, streaming completions only retry before the
   first delta arrives.
 - Set `throttleMs` to batch reactive `completion` and `onUpdate` updates during

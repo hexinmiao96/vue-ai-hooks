@@ -53,7 +53,7 @@ const demoMenuItems = computed(() => {
     </span>
     <template v-for="item in demoMenuItems" :key="JSON.stringify(item)">
       <VPNavBarMenuLink v-if="'link' in item" :item="item" />
-      <component v-else-if="'component' in item" :is="item.component" v-bind="item.props" />
+      <component :is="item.component" v-else-if="'component' in item" v-bind="item.props" />
       <VPNavBarMenuGroup v-else :item="item" />
     </template>
   </nav>

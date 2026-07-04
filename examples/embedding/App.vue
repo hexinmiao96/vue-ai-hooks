@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   cosineSimilarity,
   useEmbedding,
@@ -78,7 +78,22 @@ const provider =
 // - embed: executes one batch embedding request
 // - isLoading: disables repeated submissions
 // - error: renders provider/model request issues
-const { embed, isLoading, error } = useEmbedding({ provider })
+const { embed, isLoading, error, inspect, clearTrace } = useEmbedding({ provider })
+
+const inspection = computed(() => inspect())
+const inspectionJson = computed(() => JSON.stringify(inspection.value, null, 2))
+const traceSummary = computed(
+  () =>
+    inspection.value.summary || (isLoading.value ? 'Running embedding request' : 'No request yet.')
+)
+
+const inspectionRequest = computed(() => JSON.stringify(inspection.value.request ?? {}, null, 2))
+const inspectionResponse = computed(() => JSON.stringify(inspection.value.response ?? {}, null, 2))
+
+async function copyCurl() {
+  if (!inspection.value?.curl) return
+  await navigator.clipboard.writeText(inspection.value.curl)
+}
 
 const a = ref('A cat sat on the mat.')
 const b = ref('A kitten rested on the rug.')
@@ -148,6 +163,27 @@ async function run() {
         </tr>
       </tbody>
     </table>
+
+    <section class="trace-panel" aria-label="request inspection">
+      <p class="inspect-summary">{{ traceSummary }}</p>
+      <div class="inspect-actions">
+        <button type="button" :disabled="!inspection?.curl" @click="copyCurl">Copy curl</button>
+        <button type="button" @click="clearTrace">Clear trace</button>
+      </div>
+
+      <details>
+        <summary>Inspect payload</summary>
+        <pre class="raw-output">{{ inspectionJson }}</pre>
+      </details>
+      <details>
+        <summary>Request</summary>
+        <pre class="raw-output">{{ inspectionRequest }}</pre>
+      </details>
+      <details>
+        <summary>Response</summary>
+        <pre class="raw-output">{{ inspectionResponse }}</pre>
+      </details>
+    </section>
   </main>
 </template>
 
@@ -192,5 +228,25 @@ td {
   margin: 0 0 12px;
   font-size: 12px;
   color: #334155;
+}
+.trace-panel {
+  margin-top: 16px;
+}
+.inspect-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.inspect-summary {
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+.raw-output {
+  white-space: pre-wrap;
+  background: #f8fafc;
+  padding: 8px;
+  margin: 6px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
 }
 </style>
