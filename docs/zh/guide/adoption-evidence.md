@@ -148,8 +148,58 @@ pnpm smoke
 - 业务 proxy 集成保持由应用负责：session 校验、tenant 路由、run-id 幂等提示、trace id 和上游错误整形都在后端。
 - 强制 `502` 失败能产生可用 trace summary，且没有暴露测试 session token 或 body secret。
 
+## Run 4：已有业务应用预检
+
+| 字段       | 值                                                                    |
+| ---------- | --------------------------------------------------------------------- |
+| 日期       | 2026-07-05                                                            |
+| 宿主应用   | `/Volumes/SSD/MovedFromMac/project/huijun-hhz-fronted`                |
+| 包版本     | 尚未安装 `vue-ai-hooks`                                               |
+| 技术栈     | Vue `3.5.12`、Vite `5.1.4`、TypeScript `5.3.3`、Element Plus `2.11.1` |
+| Smoke 工具 | 仅执行预检命令                                                        |
+| 包管理器   | pnpm `11.7.0`                                                         |
+| Node       | Node `22.22.1`                                                        |
+| 结果       | 被宿主应用 typecheck 基线阻断，尚未进入 smoke                         |
+
+### 覆盖路径
+
+- 选中一个真实 Vue 3 业务应用，具备 auth、tenant 上下文、现有 `/admin-api` proxy 路由和 Spring 风格后端
+  API 路径。
+- 在添加 `vue-ai-hooks` 前，先验证应用有正常本地 install/build 路径。
+- 用 `CI=true pnpm install --frozen-lockfile` 重建被忽略的 `node_modules`。
+- 确认 `pnpm build:local` 能生成 production `dist`。
+- 确认高内存 `pnpm ts:check` 能进入类型检查阶段，但失败于宿主应用既有 TypeScript 错误。
+
+### 命令
+
+```bash
+CI=true pnpm install --frozen-lockfile
+pnpm build:local
+NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check > /tmp/huijun-hhz-fronted-tscheck-20260705.log 2>&1
+```
+
+### 证据
+
+- `pnpm list vue-ai-hooks --depth 0` 显示 smoke 改动前未安装该包。
+- 宿主 workspace 允许 pnpm 11 build scripts 后，`CI=true pnpm install --frozen-lockfile`
+  通过；涉及 `@parcel/watcher`、`@swc/core`、`core-js`、`core-js-pure`、`es5-ext`、`esbuild` 和
+  `vue-demi`。
+- `pnpm build:local` 输出 `Build successful. Please see dist directory`。生成的 `dist` 有 1502
+  个文件，约 28 MB。
+- `NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check` 退出码为 `2`，日志 1896 行，包含 1682 条
+  `error TS`。
+- 主要错误聚集在 `qchat-uikit-web-main`、`chatManage`、`mall/trade`、`pay`、`crm`、`erp`、
+  `bpmnProcessDesigner`、`flexwork` 和 `utils/nim`。
+
+### 发现的摩擦点
+
+- 目标应用预检前已有用户改动：`.env.local` 和未跟踪的 `AGENTS.md`。预检期间没有修改应用源码。
+- pnpm 11 会为该宿主应用生成 `pnpm-workspace.yaml` build-script allowlist 要求；没有它时，install 会在
+  typecheck/build 前中断。
+- 在宿主项目既有 TypeScript 基线清理前，不能把 `pnpm ts:check` 作为 Run 4 adoption gate。
+
 ### 下一轮采用验证
 
-把同一条 smoke 放进已有业务应用，而不是临时宿主。先按[已有业务应用接入
-smoke](/zh/guide/existing-app-adoption-smoke)清单执行，再记录 time-to-first-chat、第一次真实 proxy 失败，以及不读库源码时
-thread restore 是否仍容易理解。
+只有当门禁调整为 build-only 加浏览器 smoke 时，才在这个宿主应用里按[已有业务应用接入
+smoke](/zh/guide/existing-app-adoption-smoke)清单继续。否则先选择一个更干净的真实 Vue 3 业务应用，或先修复该宿主应用的
+typecheck 基线。
