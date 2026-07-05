@@ -62,8 +62,60 @@ pnpm smoke
   “no secret leakage plus actionable failure summary,” not “must contain a
   `[REDACTED]` marker.”
 
+## Run 2: Nuxt/Nitro host app
+
+| Field       | Value                                                              |
+| ----------- | ------------------------------------------------------------------ |
+| Date        | 2026-07-05                                                         |
+| Host app    | `/tmp/vue-ai-hooks-adoption-nuxt-smoke-0.14.3-20260705`            |
+| Package     | `vue-ai-hooks@0.14.3` from the npm registry                        |
+| Stack       | Nuxt `4.4.8`, Nitro `2.13.4`, Vite `7.3.6`, Vue `3.5.39`           |
+| Smoke tool  | Playwright `1.56.1` with Chromium headless                         |
+| Package mgr | pnpm `11.7.0`                                                      |
+| Node        | Node `22.22.1`                                                     |
+| Result      | Passed after documenting Nuxt-specific dependency setup and dev UX |
+
+### Covered paths
+
+- No-key local chat through `DirectChatTransport` inside a Nuxt 4 app.
+- Nitro `server/api/chat.post.ts` route returning an SSE `chat-chunk` response
+  to `proxyProvider({ chatUrl: '/api/chat' })`.
+- `useChatThreads()` local persistence with versioned `localStorage` key
+  restore in the Nuxt client.
+- Nitro `server/api/fail.post.ts` forced `500` failure inspected through
+  `inspect()`.
+- Failure trace remained useful and did not expose the test header/body secrets.
+
+### Commands
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm smoke
+```
+
+### Evidence
+
+- `pnpm list vue-ai-hooks nuxt vue vue-router playwright --depth 0` resolved
+  `vue-ai-hooks@0.14.3`, Nuxt `4.4.8`, Vue `3.5.39`, Vue Router `5.1.0`, and
+  Playwright `1.56.1`.
+- `pnpm build` passed Nuxt production build with Nitro `node-server` output.
+- `pnpm smoke` launched Nuxt dev server and browser automation.
+- Browser smoke ended with `nuxt adoption smoke passed for vue-ai-hooks@0.14.3`.
+
+### Friction found
+
+- pnpm blocked the transient Nuxt host app until `allowBuilds.esbuild: true` and
+  `allowBuilds['@parcel/watcher']: true` were set. This is host-project setup
+  friction.
+- Nuxt dev initially discovered `vue-ai-hooks` at runtime and refreshed before
+  the first click. Adding `vite.optimizeDeps.include: ['vue-ai-hooks']` made the
+  browser smoke stable.
+- The Nuxt/Nitro route shape stayed straightforward: `.post.ts` API route,
+  `readBody(event)`, and an SSE `Response`.
+
 ### Next adoption pass
 
-Run the same smoke against a second host app that uses Nuxt/Nitro or a real app
-backend proxy. Record time-to-first-chat, the first proxy failure, and whether
+Run the same smoke against a real app backend proxy or an existing business
+application. Record time-to-first-chat, the first proxy failure, and whether
 thread restore stays understandable without reading library source.
