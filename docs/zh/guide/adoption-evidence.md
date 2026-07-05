@@ -150,5 +150,6 @@ pnpm smoke
 
 ### 下一轮采用验证
 
-把同一条 smoke 放进已有业务应用，而不是临时宿主。记录 time-to-first-chat、第一次真实 proxy 失败，以及不读库源码时 thread
-restore 是否仍容易理解。
+把同一条 smoke 放进已有业务应用，而不是临时宿主。先按[已有业务应用接入
+smoke](/zh/guide/existing-app-adoption-smoke)清单执行，再记录 time-to-first-chat、第一次真实 proxy 失败，以及不读库源码时
+thread restore 是否仍容易理解。

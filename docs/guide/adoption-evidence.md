@@ -171,5 +171,6 @@ pnpm smoke
 ### Next adoption pass
 
 Run the same smoke inside an existing business application instead of a throwaway
-host. Record time-to-first-chat, the first real proxy failure, and whether thread
-restore stays understandable without reading library source.
+host. Use the [Existing app adoption smoke](/guide/existing-app-adoption-smoke)
+checklist, then record time-to-first-chat, the first real proxy failure, and
+whether thread restore stays understandable without reading library source.

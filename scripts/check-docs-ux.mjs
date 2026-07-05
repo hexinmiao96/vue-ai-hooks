@@ -18,6 +18,8 @@ const files = {
   zhProductionReadinessStatus: readFileSync('docs/zh/guide/production-readiness-status.md', 'utf8'),
   adoptionReadiness: readFileSync('docs/guide/adoption-readiness.md', 'utf8'),
   zhAdoptionReadiness: readFileSync('docs/zh/guide/adoption-readiness.md', 'utf8'),
+  existingAppAdoptionSmoke: readFileSync('docs/guide/existing-app-adoption-smoke.md', 'utf8'),
+  zhExistingAppAdoptionSmoke: readFileSync('docs/zh/guide/existing-app-adoption-smoke.md', 'utf8'),
   adoptionEvidence: readFileSync('docs/guide/adoption-evidence.md', 'utf8'),
   zhAdoptionEvidence: readFileSync('docs/zh/guide/adoption-evidence.md', 'utf8'),
   upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
@@ -177,6 +179,15 @@ expect(
   files.config.includes("{ text: 'Adoption evidence', link: '/guide/adoption-evidence' }") &&
     files.config.includes("{ text: '采用证据', link: '/zh/guide/adoption-evidence' }"),
   'VitePress sidebars must expose adoption evidence pages in English and Chinese'
+)
+expect(
+  files.config.includes(
+    "{ text: 'Existing app smoke', link: '/guide/existing-app-adoption-smoke' }"
+  ) &&
+    files.config.includes(
+      "{ text: '已有应用 smoke', link: '/zh/guide/existing-app-adoption-smoke' }"
+    ),
+  'VitePress sidebars must expose existing app smoke guides in English and Chinese'
 )
 expect(
   files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
@@ -624,6 +635,7 @@ for (const snippet of [
   '## Adoption loop',
   'at least three real host apps',
   '[Adoption evidence](/guide/adoption-evidence)',
+  '[Existing app adoption smoke](/guide/existing-app-adoption-smoke)',
   '[adoption evidence log](/guide/adoption-evidence)',
   'time-to-first-chat',
   'inspectRequestTrace()',
@@ -641,6 +653,30 @@ for (const snippet of [
   expect(
     files.adoptionReadiness.includes(snippet),
     `English adoption readiness guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Existing app adoption smoke',
+  '[Adoption evidence](/guide/adoption-evidence)',
+  '## Success criteria',
+  'No provider API key or provider secret',
+  'time-to-first-chat',
+  'app-owned proxy receives app session context',
+  'inspectRequestTrace()',
+  'useChatThreads',
+  "chatUrl: '/api/adoption-smoke/chat'",
+  "'x-tenant-id'",
+  'persist: { key: `adoption-smoke:messages:${activeThread.id}`, version: 1 }',
+  '## Backend proxy contract',
+  '?forceFailure=502',
+  'does not include the test session token',
+  '## Evidence template',
+  '## Run N: existing business app - <app name>'
+]) {
+  expect(
+    files.existingAppAdoptionSmoke.includes(snippet),
+    `English existing app adoption smoke guide must include: ${snippet}`
   )
 }
 
@@ -751,6 +787,7 @@ for (const snippet of [
   '## 采用闭环',
   '至少用三个真实宿主应用',
   '[采用证据](/zh/guide/adoption-evidence)',
+  '[已有业务应用接入\nsmoke](/zh/guide/existing-app-adoption-smoke)',
   '[采用证据记录](/zh/guide/adoption-evidence)',
   'time-to-first-chat',
   'inspectRequestTrace()',
@@ -768,6 +805,29 @@ for (const snippet of [
   expect(
     files.zhAdoptionReadiness.includes(snippet),
     `Chinese adoption readiness guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 已有业务应用接入 smoke',
+  '[采用证据](/zh/guide/adoption-evidence)',
+  '## 成功标准',
+  '浏览器代码里没有 provider API key',
+  'time-to-first-chat',
+  '应用自有 proxy 能收到应用 session 上下文',
+  'inspectRequestTrace()',
+  'useChatThreads',
+  "chatUrl: '/api/adoption-smoke/chat'",
+  "'x-run-id'",
+  '后端 proxy 契约',
+  '?forceFailure=502',
+  '不包含测试 session token',
+  '## 证据模板',
+  '## Run N：已有业务应用 - <应用名>'
+]) {
+  expect(
+    files.zhExistingAppAdoptionSmoke.includes(snippet),
+    `Chinese existing app adoption smoke guide must include: ${snippet}`
   )
 }
 
@@ -3193,7 +3253,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, adoption readiness, adoption evidence, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, adoption readiness, existing app smoke, adoption evidence, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {
