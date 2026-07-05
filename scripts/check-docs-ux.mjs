@@ -683,13 +683,33 @@ for (const snippet of [
   "allowBuilds['@parcel/watcher']: true",
   "vite.optimizeDeps.include: ['vue-ai-hooks']",
   '`readBody(event)`',
-  'SSE `Response`',
-  'real app backend proxy',
-  'existing business\napplication'
+  'SSE `Response`'
 ]) {
   expect(
     files.adoptionEvidence.includes(snippet),
     `English adoption evidence guide must include Nuxt run detail: ${snippet}`
+  )
+}
+for (const snippet of [
+  '## Run 3: business backend proxy host app',
+  '`/tmp/vue-ai-hooks-adoption-business-proxy-smoke-0.14.3-20260705`',
+  'Node HTTP business API',
+  'App-owned business backend proxy at `/api/business/chat`',
+  '`proxyProvider()` with app session header',
+  '`x-tenant-id`',
+  '`x-run-id`',
+  'business context body',
+  'Backend audit route validating session token, tenant, and run id contract',
+  'Forced business proxy `502` failure inspected through `inspect()`',
+  'pnpm install',
+  'business proxy adoption smoke passed for vue-ai-hooks@0.14.3',
+  'predeclared `allowBuilds.esbuild: true`',
+  'session validation, tenant\n  routing, run-id idempotency hints',
+  'existing business application instead of a throwaway\nhost'
+]) {
+  expect(
+    files.adoptionEvidence.includes(snippet),
+    `English adoption evidence guide must include business proxy run detail: ${snippet}`
   )
 }
 
@@ -790,12 +810,33 @@ for (const snippet of [
   "allowBuilds['@parcel/watcher']: true",
   "vite.optimizeDeps.include: ['vue-ai-hooks']",
   '`readBody(event)`',
-  'SSE\n  `Response`',
-  '真实应用后端 proxy 或已有业务应用'
+  'SSE\n  `Response`'
 ]) {
   expect(
     files.zhAdoptionEvidence.includes(snippet),
     `Chinese adoption evidence guide must include Nuxt run detail: ${snippet}`
+  )
+}
+for (const snippet of [
+  '## Run 3：业务后端 proxy 宿主应用',
+  '`/tmp/vue-ai-hooks-adoption-business-proxy-smoke-0.14.3-20260705`',
+  'Node HTTP business API',
+  '应用自有业务后端 proxy：`/api/business/chat`',
+  '`proxyProvider()` 携带应用 session header',
+  '`x-tenant-id`',
+  '`x-run-id`',
+  '业务上下文 body',
+  '后端 audit route 校验 session token、tenant 和 run id 契约',
+  '构造业务 proxy `502` 失败，并通过 `inspect()` 检查',
+  'pnpm install',
+  'business proxy adoption smoke passed for vue-ai-hooks@0.14.3',
+  'allowBuilds.esbuild: true',
+  'session 校验、tenant 路由、run-id 幂等提示',
+  '已有业务应用，而不是临时宿主'
+]) {
+  expect(
+    files.zhAdoptionEvidence.includes(snippet),
+    `Chinese adoption evidence guide must include business proxy run detail: ${snippet}`
   )
 }
 
