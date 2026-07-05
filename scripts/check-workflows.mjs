@@ -201,8 +201,12 @@ expect(
   'Publish workflow must allow OIDC id-token for npm provenance'
 )
 expect(
-  workflows.publish.includes('npm publish --access public --provenance'),
-  'Publish command must use public provenance publishing'
+  workflows.publish.includes('npm publish --access public --provenance --tag "$publish_tag"'),
+  'Publish command must use public provenance publishing with an explicit dist-tag'
+)
+expect(
+  workflows.publish.includes('publish_tag="next"'),
+  'Publish workflow must publish prerelease versions with the next dist-tag'
 )
 expect(
   workflows.publish.includes('test "v${version}" = "$GITHUB_REF_NAME"'),

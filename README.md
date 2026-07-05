@@ -803,7 +803,7 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v1.0.0-rc.1** — a release candidate for the stable 1.0 adoption
+This is **v1.0.0-rc.2** — a release candidate for the stable 1.0 adoption
 surface. The core surface covers the main composables, provider/proxy adapters,
 tool flows, persistence, retries, stream data, metadata, shared state, and
 quality gates. The release candidate adds a CI-level OSS adoption smoke that

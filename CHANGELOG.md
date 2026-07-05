@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No unreleased changes pending.
 
-## [1.0.0-rc.1] - 2026-07-05
+## [1.0.0-rc.2] - 2026-07-05
 
 ### Added
 
@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prerelease npm publishing now uses an explicit dist-tag so RC versions publish
+  under `next` instead of being rejected by the npm registry.
 - Kept empty Unreleased sections guarded by the existing changelog placeholder
   check while preparing the first release-candidate changelog entry.
 
