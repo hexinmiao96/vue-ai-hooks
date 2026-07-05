@@ -10,7 +10,10 @@ library from a hardened package into something external teams can adopt with
 low support friction.
 
 Record completed host-app runs in
-[Adoption evidence](/guide/adoption-evidence).
+[Adoption evidence](/guide/adoption-evidence). When the target is no longer a
+throwaway host app, run the
+[Existing app adoption smoke](/guide/existing-app-adoption-smoke) checklist
+first.
 
 ## Current baseline
 
