@@ -18,6 +18,8 @@ const files = {
   zhProductionReadinessStatus: readFileSync('docs/zh/guide/production-readiness-status.md', 'utf8'),
   adoptionReadiness: readFileSync('docs/guide/adoption-readiness.md', 'utf8'),
   zhAdoptionReadiness: readFileSync('docs/zh/guide/adoption-readiness.md', 'utf8'),
+  adoptionEvidence: readFileSync('docs/guide/adoption-evidence.md', 'utf8'),
+  zhAdoptionEvidence: readFileSync('docs/zh/guide/adoption-evidence.md', 'utf8'),
   upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
   zhUpgrade04: readFileSync('docs/zh/guide/upgrade-0.4.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
@@ -170,6 +172,11 @@ expect(
     "{ text: 'Adoption and 1.0 readiness', link: '/guide/adoption-readiness' }"
   ) && files.config.includes("{ text: '采用和 1.0 准备', link: '/zh/guide/adoption-readiness' }"),
   'VitePress sidebars must expose adoption readiness pages in English and Chinese'
+)
+expect(
+  files.config.includes("{ text: 'Adoption evidence', link: '/guide/adoption-evidence' }") &&
+    files.config.includes("{ text: '采用证据', link: '/zh/guide/adoption-evidence' }"),
+  'VitePress sidebars must expose adoption evidence pages in English and Chinese'
 )
 expect(
   files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
@@ -616,6 +623,8 @@ for (const snippet of [
   '`0.14.x` has release gates',
   '## Adoption loop',
   'at least three real host apps',
+  '[Adoption evidence](/guide/adoption-evidence)',
+  '[adoption evidence log](/guide/adoption-evidence)',
   'time-to-first-chat',
   'inspectRequestTrace()',
   'useChatThreads()',
@@ -632,6 +641,35 @@ for (const snippet of [
   expect(
     files.adoptionReadiness.includes(snippet),
     `English adoption readiness guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Adoption evidence',
+  '[Adoption and 1.0 readiness](/guide/adoption-readiness)',
+  '## Run 1: clean Vite host app',
+  '2026-07-05',
+  '`vue-ai-hooks@0.14.3`',
+  'Vue `3.5.22`, Vite `6.4.3`, TypeScript `5.8.3`',
+  'Playwright `1.56.1`',
+  'pnpm `11.7.0`',
+  'Node `22.22.1`',
+  'No-key local chat through `DirectChatTransport`',
+  'App-owned `/api/chat` proxy',
+  '`useChatThreads()` local persistence',
+  'Forced proxy `500` failure inspected through `inspect()`',
+  'pnpm install --frozen-lockfile',
+  'pnpm build',
+  'pnpm smoke',
+  'adoption smoke passed for vue-ai-hooks@0.14.3',
+  'allowBuilds.esbuild: true',
+  'adoption-smoke:threads:v1',
+  'no secret leakage plus actionable failure summary',
+  'Next adoption pass'
+]) {
+  expect(
+    files.adoptionEvidence.includes(snippet),
+    `English adoption evidence guide must include: ${snippet}`
   )
 }
 
@@ -672,6 +710,8 @@ for (const snippet of [
   '`0.14.x` 已经有',
   '## 采用闭环',
   '至少用三个真实宿主应用',
+  '[采用证据](/zh/guide/adoption-evidence)',
+  '[采用证据记录](/zh/guide/adoption-evidence)',
   'time-to-first-chat',
   'inspectRequestTrace()',
   'useChatThreads()',
@@ -688,6 +728,35 @@ for (const snippet of [
   expect(
     files.zhAdoptionReadiness.includes(snippet),
     `Chinese adoption readiness guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# 采用证据',
+  '[采用和 1.0 准备](/zh/guide/adoption-readiness)',
+  '## Run 1：干净 Vite 宿主应用',
+  '2026-07-05',
+  '`vue-ai-hooks@0.14.3`',
+  'Vue `3.5.22`、Vite `6.4.3`、TypeScript `5.8.3`',
+  'Playwright `1.56.1`',
+  'pnpm `11.7.0`',
+  'Node `22.22.1`',
+  '通过 `DirectChatTransport` 跑通 no-key local chat',
+  '应用自有 `/api/chat` proxy',
+  '`useChatThreads()` 使用带版本的 `localStorage` key',
+  '构造 proxy `500` 失败，并通过 `inspect()` 检查',
+  'pnpm install --frozen-lockfile',
+  'pnpm build',
+  'pnpm smoke',
+  'adoption smoke passed for vue-ai-hooks@0.14.3',
+  'allowBuilds.esbuild: true',
+  'adoption-smoke:threads:v1',
+  '不泄漏 secret 且 failure summary 可用',
+  '下一轮采用验证'
+]) {
+  expect(
+    files.zhAdoptionEvidence.includes(snippet),
+    `Chinese adoption evidence guide must include: ${snippet}`
   )
 }
 
@@ -3044,7 +3113,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, adoption readiness, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, adoption readiness, adoption evidence, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

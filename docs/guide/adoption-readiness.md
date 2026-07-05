@@ -9,6 +9,9 @@ Use this page after the production-readiness gates pass. The goal is to turn the
 library from a hardened package into something external teams can adopt with
 low support friction.
 
+Record completed host-app runs in
+[Adoption evidence](/guide/adoption-evidence).
+
 ## Current baseline
 
 - `0.14.x` has release gates for format, source hygiene, tests, coverage, build,
@@ -33,7 +36,8 @@ Run this loop with at least three real host apps before calling the API stable.
 4. Add one approval or agent bridge flow only when the host app already needs
    tools, interrupts, or backend agent events.
 5. File only reproducible bugs in GitHub issues. Put friction notes, missing
-   examples, and unclear docs in discussions or pull requests.
+   examples, and unclear docs in discussions, pull requests, or the
+   [adoption evidence log](/guide/adoption-evidence).
 
 Track these numbers for each app:
 
