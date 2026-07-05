@@ -34,6 +34,23 @@ describe('release status script', () => {
     expect(output).toContain('wait for the next Asia/Shanghai calendar day')
   })
 
+  it('reports when a stable release can promote a same-day prerelease', () => {
+    const output = runReleaseStatus({
+      RELEASE_STATUS_PACKAGE_VERSION: '1.0.0',
+      RELEASE_STATUS_NOW: '2026-07-05T09:00:00.000Z',
+      RELEASE_STATUS_REGISTRY_JSON: JSON.stringify({
+        time: {
+          ...registry.time,
+          '1.0.0-rc.2': '2026-07-05T06:58:27.366Z'
+        },
+        'dist-tags.latest': '0.14.3'
+      })
+    })
+
+    expect(output).toContain('Release window: eligible; promoting same-day prerelease')
+    expect(output).toContain('tag the stable version')
+  })
+
   it('reports when a new version is eligible on a later release day', () => {
     const output = runReleaseStatus({
       RELEASE_STATUS_PACKAGE_VERSION: '0.15.0',

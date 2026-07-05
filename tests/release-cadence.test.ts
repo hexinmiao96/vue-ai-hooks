@@ -38,6 +38,22 @@ describe('release cadence script', () => {
     ).toThrow(/already published on 2026-07-02/)
   })
 
+  it('allows stable promotion after a same-day prerelease of the same version', () => {
+    const output = runReleaseCadence({
+      RELEASE_CADENCE_PACKAGE_VERSION: '1.0.0',
+      RELEASE_CADENCE_NOW: '2026-07-05T09:00:00.000Z',
+      RELEASE_CADENCE_REQUIRE_UNPUBLISHED: 'true',
+      RELEASE_CADENCE_REGISTRY_JSON: JSON.stringify({
+        time: {
+          ...registry.time,
+          '1.0.0-rc.2': '2026-07-05T06:58:27.366Z'
+        }
+      })
+    })
+
+    expect(output).toContain('promoting same-day prerelease 1.0.0-rc.2 to stable 1.0.0')
+  })
+
   it('allows a new unpublished version on the next release day', () => {
     const output = runReleaseCadence({
       RELEASE_CADENCE_PACKAGE_VERSION: '0.15.0',
