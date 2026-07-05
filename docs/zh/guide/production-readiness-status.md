@@ -46,7 +46,8 @@ node scripts/production-readiness-local.mjs
 pnpm release:status
 ```
 
-不要在同一个 Asia/Shanghai 自然日再次发布 npm 版本。release cadence 检查已经接入本地、CI 和 publish 路径。
+不要在同一个 Asia/Shanghai 自然日再次发布 npm 版本，除非是把同一版本基线的 prerelease 证据（例如
+`1.0.0-rc.2`）晋级为稳定版 `1.0.0`。release cadence 检查已经接入本地、CI 和 publish 路径。
 
 ## 下一轮采用验证
 

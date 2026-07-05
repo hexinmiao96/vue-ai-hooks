@@ -35,12 +35,21 @@ if (currentPublishedAt) {
   const versions = publishedToday.map(([version, publishedAt]) => {
     return `${version} at ${publishedAt.toISOString()}`
   })
-  lines.push(
-    `Registry status: ${packageName}@${packageVersion} is not published yet.`,
-    `Release window: blocked; ${packageName} already published on ${today}.`,
-    `Published versions today: ${versions.join(', ')}.`,
-    `Next action: wait for the next ${releaseTimeZone} calendar day before publishing.`
-  )
+  if (canPromotePrereleaseToStable(packageVersion, publishedToday)) {
+    lines.push(
+      `Registry status: ${packageName}@${packageVersion} is not published yet.`,
+      `Release window: eligible; promoting same-day prerelease to stable ${packageVersion}.`,
+      `Published prereleases today: ${versions.join(', ')}.`,
+      'Next action: run pnpm release:check, tag the stable version, push the tag, and confirm the publish workflow.'
+    )
+  } else {
+    lines.push(
+      `Registry status: ${packageName}@${packageVersion} is not published yet.`,
+      `Release window: blocked; ${packageName} already published on ${today}.`,
+      `Published versions today: ${versions.join(', ')}.`,
+      `Next action: wait for the next ${releaseTimeZone} calendar day before publishing.`
+    )
+  }
 } else {
   lines.push(
     `Registry status: ${packageName}@${packageVersion} is not published yet.`,
@@ -90,4 +99,20 @@ function parseDate(value) {
 
 function isVersionKey(value) {
   return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
+}
+
+function canPromotePrereleaseToStable(version, publishedEntries) {
+  return (
+    isStableVersion(version) &&
+    publishedEntries.length > 0 &&
+    publishedEntries.every(([publishedVersion]) => isPrereleaseOf(publishedVersion, version))
+  )
+}
+
+function isStableVersion(version) {
+  return /^\d+\.\d+\.\d+$/.test(version)
+}
+
+function isPrereleaseOf(version, stableVersion) {
+  return version.startsWith(`${stableVersion}-`) && isVersionKey(version)
 }

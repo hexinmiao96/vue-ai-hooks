@@ -38,6 +38,14 @@ const publishedToday = Object.entries(publishedTimes)
   .sort(([, left], [, right]) => left.getTime() - right.getTime())
 
 if (publishedToday.length > 0) {
+  if (canPromotePrereleaseToStable(packageVersion, publishedToday)) {
+    const prereleases = publishedToday.map(([version]) => version).join(', ')
+    console.log(
+      `Release cadence check passed: promoting same-day prerelease ${prereleases} to stable ${packageVersion}.`
+    )
+    process.exit(0)
+  }
+
   const versions = publishedToday.map(([version, publishedAt]) => {
     const time = publishedAt.toISOString()
     return `${version} at ${time}`
@@ -95,4 +103,20 @@ function parseDate(value) {
 
 function isVersionKey(value) {
   return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(value)
+}
+
+function canPromotePrereleaseToStable(version, publishedEntries) {
+  return (
+    isStableVersion(version) &&
+    publishedEntries.length > 0 &&
+    publishedEntries.every(([publishedVersion]) => isPrereleaseOf(publishedVersion, version))
+  )
+}
+
+function isStableVersion(version) {
+  return /^\d+\.\d+\.\d+$/.test(version)
+}
+
+function isPrereleaseOf(version, stableVersion) {
+  return version.startsWith(`${stableVersion}-`) && isVersionKey(version)
 }

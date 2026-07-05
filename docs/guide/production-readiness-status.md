@@ -54,8 +54,10 @@ Check the registry and release window without publishing:
 pnpm release:status
 ```
 
-Do not publish another npm version on the same Asia/Shanghai calendar day. The
-release cadence check is part of the local, CI, and publish paths.
+Do not publish another npm version on the same Asia/Shanghai calendar day,
+except when promoting same-version prerelease evidence such as `1.0.0-rc.2` to
+the stable `1.0.0` release. The release cadence check is part of the local, CI,
+and publish paths.
 
 ## Next adoption pass
 

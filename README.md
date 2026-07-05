@@ -803,13 +803,13 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v1.0.0-rc.2** — a release candidate for the stable 1.0 adoption
-surface. The core surface covers the main composables, provider/proxy adapters,
-tool flows, persistence, retries, stream data, metadata, shared state, and
-quality gates. The release candidate adds a CI-level OSS adoption smoke that
-packs the current package, installs it into a pinned external Vue 3 admin app,
-and verifies local chat, app-owned proxy chat, thread restore, and redacted
-failure traces. Production thread storage remains host-owned; see the
+This is **v1.0.0** — the stable 1.0 adoption surface. The core surface covers
+the main composables, provider/proxy adapters, tool flows, persistence, retries,
+stream data, metadata, shared state, and quality gates. The stable release
+includes a CI-level OSS adoption smoke that packs the current package, installs
+it into a pinned external Vue 3 admin app, and verifies local chat, app-owned
+proxy chat, thread restore, and redacted failure traces. Production thread
+storage remains host-owned; see the
 [server storage recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/server-storage.md)
 for tenant-scoped thread indexes, message bodies, and storage adapter contracts.
 Feature planning lives in

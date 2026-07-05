@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No unreleased changes pending.
 
+## [1.0.0] - 2026-07-05
+
+### Added
+
+- Promoted the 1.0 stable release after validating the RC line with CI release
+  gates, package installation checks, example builds, docs builds, demo smokes,
+  competitive benchmark checks, and OSS adoption smoke coverage.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+- Stable npm publishing now uses the `latest` dist-tag, while prerelease
+  versions continue to publish under `next`.
+- Release cadence now allows the narrow same-day path from same-version
+  prerelease evidence to the matching stable release.
+
+### Fixed
+
+- Kept empty Unreleased sections guarded by the existing changelog placeholder
+  check while preparing the stable 1.0 changelog entry.
+
 ## [1.0.0-rc.2] - 2026-07-05
 
 ### Added
