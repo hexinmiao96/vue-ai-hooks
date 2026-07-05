@@ -48,6 +48,11 @@ pnpm release:status
 
 不要在同一个 Asia/Shanghai 自然日再次发布 npm 版本。release cadence 检查已经接入本地、CI 和 publish 路径。
 
+## 下一轮采用验证
+
+这些门禁通过之后，用[采用和 1.0 准备](/zh/guide/adoption-readiness)收集真实宿主应用证据，再声明公共
+API 稳定。
+
 ## 剩余非目标
 
 - 不在浏览器保存 Provider key、vector store 凭据或特权工具 secret。

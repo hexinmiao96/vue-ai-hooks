@@ -108,6 +108,20 @@ planning.
 - Continue validating these production recipes through local and CI gates before
   the next release.
 
+### 0.15.x to 1.0 readiness
+
+- Shift the main risk from feature completeness to adoption evidence: at least
+  three real host apps should complete chat, proxy, persistence, and inspection
+  setup before public API stability is declared.
+- Track time-to-first-chat, proxy setup failures, thread restore behavior,
+  redacted trace usefulness, install confidence, and support-loop quality in the
+  adoption readiness guide.
+- Freeze the promoted public surface around documented stability levels,
+  migration notes, compatibility matrix coverage, and the existing
+  production-readiness gates.
+- Keep GitHub issues limited to reproducible bugs; use discussions, docs PRs,
+  and this roadmap for adoption friction and planning.
+
 ### Later
 
 - Expand React support toward shared stream helpers only where it improves
