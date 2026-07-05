@@ -672,6 +672,26 @@ for (const snippet of [
     `English adoption evidence guide must include: ${snippet}`
   )
 }
+for (const snippet of [
+  '## Run 2: Nuxt/Nitro host app',
+  '`/tmp/vue-ai-hooks-adoption-nuxt-smoke-0.14.3-20260705`',
+  'Nuxt `4.4.8`, Nitro `2.13.4`, Vite `7.3.6`, Vue `3.5.39`',
+  'Nitro `server/api/chat.post.ts` route',
+  "proxyProvider({ chatUrl: '/api/chat' })",
+  'Nitro `server/api/fail.post.ts` forced `500` failure',
+  'nuxt adoption smoke passed for vue-ai-hooks@0.14.3',
+  "allowBuilds['@parcel/watcher']: true",
+  "vite.optimizeDeps.include: ['vue-ai-hooks']",
+  '`readBody(event)`',
+  'SSE `Response`',
+  'real app backend proxy',
+  'existing business\napplication'
+]) {
+  expect(
+    files.adoptionEvidence.includes(snippet),
+    `English adoption evidence guide must include Nuxt run detail: ${snippet}`
+  )
+}
 
 for (const snippet of [
   '# 生产可用性状态',
@@ -757,6 +777,25 @@ for (const snippet of [
   expect(
     files.zhAdoptionEvidence.includes(snippet),
     `Chinese adoption evidence guide must include: ${snippet}`
+  )
+}
+for (const snippet of [
+  '## Run 2：Nuxt/Nitro 宿主应用',
+  '`/tmp/vue-ai-hooks-adoption-nuxt-smoke-0.14.3-20260705`',
+  'Nuxt `4.4.8`、Nitro `2.13.4`、Vite `7.3.6`、Vue `3.5.39`',
+  'Nitro `server/api/chat.post.ts` 返回 SSE `chat-chunk`',
+  "proxyProvider({ chatUrl: '/api/chat' })",
+  'Nitro `server/api/fail.post.ts` 构造 `500` 失败',
+  'nuxt adoption smoke passed for vue-ai-hooks@0.14.3',
+  "allowBuilds['@parcel/watcher']: true",
+  "vite.optimizeDeps.include: ['vue-ai-hooks']",
+  '`readBody(event)`',
+  'SSE\n  `Response`',
+  '真实应用后端 proxy 或已有业务应用'
+]) {
+  expect(
+    files.zhAdoptionEvidence.includes(snippet),
+    `Chinese adoption evidence guide must include Nuxt run detail: ${snippet}`
   )
 }
 
