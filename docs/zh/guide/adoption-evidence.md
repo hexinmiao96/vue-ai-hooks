@@ -103,7 +103,52 @@ pnpm smoke
 - Nuxt/Nitro 路由形态保持简单：`.post.ts` API route、`readBody(event)` 和 SSE
   `Response`。
 
+## Run 3：业务后端 proxy 宿主应用
+
+| 字段       | 值                                                                     |
+| ---------- | ---------------------------------------------------------------------- |
+| 日期       | 2026-07-05                                                             |
+| 宿主应用   | `/tmp/vue-ai-hooks-adoption-business-proxy-smoke-0.14.3-20260705`      |
+| 包版本     | npm registry 上的 `vue-ai-hooks@0.14.3`                                |
+| 技术栈     | Vue `3.5.22`、Vite `6.4.3`、TypeScript `5.8.3`、Node HTTP business API |
+| Smoke 工具 | Playwright `1.56.1` + Chromium headless                                |
+| 包管理器   | pnpm `11.7.0`                                                          |
+| Node       | Node `22.22.1`                                                         |
+| 结果       | 未发现新的包级接入摩擦                                                 |
+
+### 覆盖路径
+
+- 应用自有业务后端 proxy：`/api/business/chat`。
+- `proxyProvider()` 携带应用 session header、`x-tenant-id`、`x-run-id` 和业务上下文 body。
+- 后端 audit route 校验 session token、tenant 和 run id 契约。
+- `useChatThreads()` 使用带版本的 `localStorage` key 完成本地持久化恢复。
+- 构造业务 proxy `502` 失败，并通过 `inspect()` 检查。
+- 失败 trace 可诊断，且没有暴露测试用 session/body secret。
+
+### 命令
+
+```bash
+pnpm install
+pnpm build
+pnpm smoke
+```
+
+### 证据
+
+- `pnpm list vue-ai-hooks vue vite @vitejs/plugin-vue playwright --depth 0` 解析到
+  `vue-ai-hooks@0.14.3`、Vue `3.5.22`、Vite `6.4.3`、`@vitejs/plugin-vue@5.2.4` 和
+  Playwright `1.56.1`。
+- `pnpm build` 通过 `vue-tsc` 和 Vite production build。
+- `pnpm smoke` 启动业务 proxy、Vite 宿主应用和浏览器自动化。
+- 浏览器 smoke 输出 `business proxy adoption smoke passed for vue-ai-hooks@0.14.3`。
+
+### 发现的摩擦点
+
+- 宿主 workspace 预先声明 `allowBuilds.esbuild: true` 后，没有出现新的 `vue-ai-hooks` 包级摩擦。
+- 业务 proxy 集成保持由应用负责：session 校验、tenant 路由、run-id 幂等提示、trace id 和上游错误整形都在后端。
+- 强制 `502` 失败能产生可用 trace summary，且没有暴露测试 session token 或 body secret。
+
 ### 下一轮采用验证
 
-用真实应用后端 proxy 或已有业务应用继续跑同一条 smoke。记录
-time-to-first-chat、第一次 proxy 失败，以及不读库源码时 thread restore 是否仍容易理解。
+把同一条 smoke 放进已有业务应用，而不是临时宿主。记录 time-to-first-chat、第一次真实 proxy 失败，以及不读库源码时 thread
+restore 是否仍容易理解。
