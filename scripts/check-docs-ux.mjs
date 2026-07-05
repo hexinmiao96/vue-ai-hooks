@@ -16,6 +16,8 @@ const files = {
   zhProductionChecklist: readFileSync('docs/zh/guide/production-checklist.md', 'utf8'),
   productionReadinessStatus: readFileSync('docs/guide/production-readiness-status.md', 'utf8'),
   zhProductionReadinessStatus: readFileSync('docs/zh/guide/production-readiness-status.md', 'utf8'),
+  adoptionReadiness: readFileSync('docs/guide/adoption-readiness.md', 'utf8'),
+  zhAdoptionReadiness: readFileSync('docs/zh/guide/adoption-readiness.md', 'utf8'),
   upgrade04: readFileSync('docs/guide/upgrade-0.4.md', 'utf8'),
   zhUpgrade04: readFileSync('docs/zh/guide/upgrade-0.4.md', 'utf8'),
   upgrade03: readFileSync('docs/guide/upgrade-0.3.md', 'utf8'),
@@ -162,6 +164,12 @@ expect(
       "{ text: '生产可用性状态', link: '/zh/guide/production-readiness-status' }"
     ),
   'VitePress sidebars must expose production readiness status pages in English and Chinese'
+)
+expect(
+  files.config.includes(
+    "{ text: 'Adoption and 1.0 readiness', link: '/guide/adoption-readiness' }"
+  ) && files.config.includes("{ text: '采用和 1.0 准备', link: '/zh/guide/adoption-readiness' }"),
+  'VitePress sidebars must expose adoption readiness pages in English and Chinese'
 )
 expect(
   files.config.includes("{ text: 'Proxy recipes', link: '/guide/proxy-recipes' }") &&
@@ -591,6 +599,7 @@ for (const snippet of [
   'CI, CodeQL, OpenSSF Scorecard',
   'daily release cadence',
   'Do not publish another npm version on the same Asia/Shanghai calendar day',
+  '[Adoption and 1.0 readiness](/guide/adoption-readiness)',
   'Do not turn this package into a backend agent framework',
   'Do not add React hooks only for symmetry',
   '`useChat`, `useCompletion`, `useObject`, `useImage`, `useVideo`, `usePromptSuggestions`, and `useAgentRun`'
@@ -598,6 +607,31 @@ for (const snippet of [
   expect(
     files.productionReadinessStatus.includes(snippet),
     `English production readiness status must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '# Adoption and 1.0 readiness',
+  '## Current baseline',
+  '`0.14.x` has release gates',
+  '## Adoption loop',
+  'at least three real host apps',
+  'time-to-first-chat',
+  'inspectRequestTrace()',
+  'useChatThreads()',
+  '## 1.0 exit criteria',
+  'compatibility matrix covers Vue 3, Vite, Nuxt/Nitro, current Node LTS',
+  'pnpm production:readiness',
+  'pnpm links:check',
+  'pnpm docs:build',
+  'GitHub issues are for reproducible bugs',
+  '## Do not chase',
+  'A hosted backend service',
+  'A full backend agent framework'
+]) {
+  expect(
+    files.adoptionReadiness.includes(snippet),
+    `English adoption readiness guide must include: ${snippet}`
   )
 }
 
@@ -621,6 +655,7 @@ for (const snippet of [
   'CI、CodeQL、OpenSSF Scorecard',
   'release cadence',
   '同一个 Asia/Shanghai 自然日',
+  '[采用和 1.0 准备](/zh/guide/adoption-readiness)',
   '不把这个包做成后端 Agent 框架',
   '不为了对称而扩 React hook',
   '`useChat`、`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun`'
@@ -629,6 +664,42 @@ for (const snippet of [
     files.zhProductionReadinessStatus.includes(snippet),
     `Chinese production readiness status must include: ${snippet}`
   )
+}
+
+for (const snippet of [
+  '# 采用和 1.0 准备',
+  '## 当前基线',
+  '`0.14.x` 已经有',
+  '## 采用闭环',
+  '至少用三个真实宿主应用',
+  'time-to-first-chat',
+  'inspectRequestTrace()',
+  'useChatThreads()',
+  '## 1.0 退出标准',
+  '兼容矩阵覆盖 Vue 3、Vite、Nuxt/Nitro、当前 Node LTS',
+  'pnpm production:readiness',
+  'pnpm links:check',
+  'pnpm docs:build',
+  'GitHub issue 只放可复现 bug',
+  '## 不追这些',
+  '托管后端服务',
+  '完整后端 Agent 框架'
+]) {
+  expect(
+    files.zhAdoptionReadiness.includes(snippet),
+    `Chinese adoption readiness guide must include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '### 0.15.x to 1.0 readiness',
+  'at least\n  three real host apps',
+  'time-to-first-chat',
+  'redacted trace usefulness',
+  'documented stability levels',
+  'GitHub issues limited to reproducible bugs'
+]) {
+  expect(files.roadmap.includes(snippet), `Roadmap must include adoption readiness: ${snippet}`)
 }
 
 for (const snippet of [
@@ -2973,7 +3044,7 @@ if (failures.length) {
 }
 
 console.log(
-  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
+  'Docs UX check passed for language routing, roadmap, inspection, production readiness status, adoption readiness, first-run paths, positioning map, provider presets, examples local run recipe, examples task chooser, server storage, regenerate branches, tool approvals, agent bridge, form helpers, transcription/rerank docs, shared chat state, provider trace refs, message pruning, message persistence, proxy stream compatibility, file attachments, and demo navigation.'
 )
 
 function expect(condition, message) {

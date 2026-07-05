@@ -57,6 +57,12 @@ pnpm release:status
 Do not publish another npm version on the same Asia/Shanghai calendar day. The
 release cadence check is part of the local, CI, and publish paths.
 
+## Next adoption pass
+
+After these gates pass, use
+[Adoption and 1.0 readiness](/guide/adoption-readiness) to collect real host-app
+evidence before declaring the public API stable.
+
 ## Remaining non-goals
 
 - Do not store provider keys, vector store credentials, or privileged tool
