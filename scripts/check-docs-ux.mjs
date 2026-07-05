@@ -740,12 +740,33 @@ for (const snippet of [
   'pnpm install',
   'business proxy adoption smoke passed for vue-ai-hooks@0.14.3',
   'predeclared `allowBuilds.esbuild: true`',
-  'session validation, tenant\n  routing, run-id idempotency hints',
-  'existing business application instead of a throwaway\nhost'
+  'session validation, tenant\n  routing, run-id idempotency hints'
 ]) {
   expect(
     files.adoptionEvidence.includes(snippet),
     `English adoption evidence guide must include business proxy run detail: ${snippet}`
+  )
+}
+for (const snippet of [
+  '## Run 4: existing business app preflight',
+  '`/Volumes/SSD/MovedFromMac/project/huijun-hhz-fronted`',
+  '`vue-ai-hooks` not installed yet',
+  'Vue `3.5.12`, Vite `5.1.4`, TypeScript `5.3.3`, Element Plus `2.11.1`',
+  'Blocked before smoke by host-app typecheck baseline',
+  'existing\n  `/admin-api` proxy routing',
+  'CI=true pnpm install --frozen-lockfile',
+  'Build successful. Please see dist directory',
+  '1502 files and was about 28 MB',
+  '1682 `error TS` entries',
+  '`qchat-uikit-web-main`',
+  '`chatManage`',
+  'pnpm 11 generated a `pnpm-workspace.yaml` build-script allowlist requirement',
+  'build-only plus\nbrowser smoke',
+  'host-app typecheck baseline first'
+]) {
+  expect(
+    files.adoptionEvidence.includes(snippet),
+    `English adoption evidence guide must include existing app preflight detail: ${snippet}`
   )
 }
 
@@ -891,12 +912,33 @@ for (const snippet of [
   'pnpm install',
   'business proxy adoption smoke passed for vue-ai-hooks@0.14.3',
   'allowBuilds.esbuild: true',
-  'session 校验、tenant 路由、run-id 幂等提示',
-  '已有业务应用，而不是临时宿主'
+  'session 校验、tenant 路由、run-id 幂等提示'
 ]) {
   expect(
     files.zhAdoptionEvidence.includes(snippet),
     `Chinese adoption evidence guide must include business proxy run detail: ${snippet}`
+  )
+}
+for (const snippet of [
+  '## Run 4：已有业务应用预检',
+  '`/Volumes/SSD/MovedFromMac/project/huijun-hhz-fronted`',
+  '尚未安装 `vue-ai-hooks`',
+  'Vue `3.5.12`、Vite `5.1.4`、TypeScript `5.3.3`、Element Plus `2.11.1`',
+  '被宿主应用 typecheck 基线阻断',
+  '现有 `/admin-api` proxy 路由',
+  'CI=true pnpm install --frozen-lockfile',
+  'Build successful. Please see dist directory',
+  '1502\n  个文件，约 28 MB',
+  '1682 条\n  `error TS`',
+  '`qchat-uikit-web-main`',
+  '`chatManage`',
+  '`pnpm-workspace.yaml` build-script allowlist',
+  'build-only 加浏览器 smoke',
+  'typecheck 基线'
+]) {
+  expect(
+    files.zhAdoptionEvidence.includes(snippet),
+    `Chinese adoption evidence guide must include existing app preflight detail: ${snippet}`
   )
 }
 

@@ -168,9 +168,66 @@ pnpm smoke
 - The forced `502` failure produced an actionable trace summary without exposing
   the test session token or body secret.
 
+## Run 4: existing business app preflight
+
+| Field       | Value                                                                 |
+| ----------- | --------------------------------------------------------------------- |
+| Date        | 2026-07-05                                                            |
+| Host app    | `/Volumes/SSD/MovedFromMac/project/huijun-hhz-fronted`                |
+| Package     | `vue-ai-hooks` not installed yet                                      |
+| Stack       | Vue `3.5.12`, Vite `5.1.4`, TypeScript `5.3.3`, Element Plus `2.11.1` |
+| Smoke tool  | Preflight commands only                                               |
+| Package mgr | pnpm `11.7.0`                                                         |
+| Node        | Node `22.22.1`                                                        |
+| Result      | Blocked before smoke by host-app typecheck baseline                   |
+
+### Covered paths
+
+- Selected a real Vue 3 business app with auth, tenant context, existing
+  `/admin-api` proxy routing, and Spring-style backend API paths.
+- Verified the app has a normal local install/build path before adding
+  `vue-ai-hooks`.
+- Recreated the ignored `node_modules` tree using frozen install
+  (`CI=true pnpm install --frozen-lockfile`).
+- Confirmed `pnpm build:local` can produce a production `dist`.
+- Confirmed high-memory `pnpm ts:check` reaches the typechecking phase but fails
+  on pre-existing host-app TypeScript errors.
+
+### Commands
+
+```bash
+CI=true pnpm install --frozen-lockfile
+pnpm build:local
+NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check > /tmp/huijun-hhz-fronted-tscheck-20260705.log 2>&1
+```
+
+### Evidence
+
+- `pnpm list vue-ai-hooks --depth 0` returned no installed package before smoke
+  changes.
+- `CI=true pnpm install --frozen-lockfile` passed after the host workspace
+  allowed pnpm 11 build scripts for `@parcel/watcher`, `@swc/core`, `core-js`,
+  `core-js-pure`, `es5-ext`, `esbuild`, and `vue-demi`.
+- `pnpm build:local` ended with `Build successful. Please see dist directory`.
+  The generated `dist` had 1502 files and was about 28 MB.
+- `NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check` exited `2` with 1896
+  log lines and 1682 `error TS` entries.
+- The largest error clusters were in `qchat-uikit-web-main`, `chatManage`,
+  `mall/trade`, `pay`, `crm`, `erp`, `bpmnProcessDesigner`, `flexwork`, and
+  `utils/nim`.
+
+### Friction found
+
+- The target app already had user changes before preflight: `.env.local` and an
+  untracked `AGENTS.md`. No app source file was changed during preflight.
+- pnpm 11 generated a `pnpm-workspace.yaml` build-script allowlist requirement
+  for this host app. Without it, install aborted before typecheck/build.
+- `pnpm ts:check` cannot be used as the Run 4 adoption gate until the host
+  project's existing TypeScript baseline is cleaned up.
+
 ### Next adoption pass
 
-Run the same smoke inside an existing business application instead of a throwaway
-host. Use the [Existing app adoption smoke](/guide/existing-app-adoption-smoke)
-checklist, then record time-to-first-chat, the first real proxy failure, and
-whether thread restore stays understandable without reading library source.
+Use the [Existing app adoption smoke](/guide/existing-app-adoption-smoke)
+checklist in this host app only if the gate is changed to build-only plus
+browser smoke. Otherwise, pick a cleaner existing Vue 3 business app or fix the
+host-app typecheck baseline first.
