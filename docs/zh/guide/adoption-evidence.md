@@ -203,3 +203,60 @@ NODE_OPTIONS=--max-old-space-size=8192 pnpm ts:check > /tmp/huijun-hhz-fronted-t
 只有当门禁调整为 build-only 加浏览器 smoke 时，才在这个宿主应用里按[已有业务应用接入
 smoke](/zh/guide/existing-app-adoption-smoke)清单继续。否则先选择一个更干净的真实 Vue 3 业务应用，或先修复该宿主应用的
 typecheck 基线。
+
+## Run 5：OSS 后台应用 - v3-admin-vite
+
+| 字段       | 值                                                                    |
+| ---------- | --------------------------------------------------------------------- |
+| 日期       | 2026-07-05                                                            |
+| 宿主应用   | `un-pany/v3-admin-vite` at `273065d2860a3acc5724cfdbdf36927da1dc9080` |
+| 包版本     | 当前 package tarball 中的 `vue-ai-hooks@0.14.3`                       |
+| 技术栈     | Vue `3.5.38`、Vite `7.3.5`、TypeScript `5.9.3`、Element Plus `2.14.2` |
+| Smoke 工具 | Playwright `1.56.1` + Chromium headless                               |
+| 包管理器   | pnpm `11.7.0`                                                         |
+| Node       | Node `22.22.1`                                                        |
+| 结果       | 本地通过，并提升为 CI 级 OSS 接入 smoke                               |
+
+### 覆盖路径
+
+- 把当前本地 `vue-ai-hooks` package 安装进真实外部 Vue 3 后台模板。
+- 加入隐藏 `/vue-ai-hooks-validation` 路由，不改变正常菜单或受 auth 保护的业务页。
+- 通过 `DirectChatTransport` 跑通 no-key local chat。
+- 通过 `/api/validation/chat` 跑通应用自有 proxy chat，由宿主应用提供 session token、tenant id 和 run id。
+- 刷新后恢复 `useChatThreads()` 和持久化消息。
+- 通过 `inspect()` 捕获构造的应用 proxy `502` 失败。
+- 确认失败 trace 可诊断，且没有暴露测试 session token 或 body secret。
+
+### 命令
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm test -- --run
+pnpm smoke:vue-ai-hooks
+```
+
+现在可重复的 CI 门禁是：
+
+```bash
+pnpm build
+pnpm oss-adoption:check
+```
+
+### 证据
+
+- GitHub API 确认 `un-pany/v3-admin-vite` 是公开、MIT 许可，并围绕 Vue、Vite、TypeScript、Pinia、Element
+  Plus 和 Vue Router。
+- `pnpm build` 通过外部应用的 `vue-tsc` 和 Vite production build。
+- `pnpm test -- --run` 通过外部应用 3 个测试文件、14 个测试。
+- `pnpm smoke:vue-ai-hooks` 启动 validation backend、Vite dev server 和浏览器自动化。
+- 浏览器 smoke 输出 `v3-admin-vite smoke passed for vue-ai-hooks@0.14.3`。
+- `pnpm oss-adoption:check` 现在会用固定上游 archive 和当前本地 package tarball 重建同一条集成。
+
+### 发现的摩擦点
+
+- 本地直连 GitHub `git ls-remote` 被 reset，但 GitHub API 和 codeload archive 可访问。因此 CI smoke 使用固定的
+  codeload archive，不使用 `git clone`。
+- 外部应用默认 hash 路由，浏览器 smoke 必须打开 `/#/vue-ai-hooks-validation`。
+- pnpm 11 要求生成宿主应用显式允许 `@parcel/watcher` 和 `esbuild` 的 build script。
+- 外部应用的 Vite MCP 插件会在 dev server 启动时重写 MCP 配置文件，但 smoke 在临时 checkout 中运行，不会持久化这些生成改动。

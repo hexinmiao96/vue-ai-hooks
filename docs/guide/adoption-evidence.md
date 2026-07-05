@@ -231,3 +231,72 @@ Use the [Existing app adoption smoke](/guide/existing-app-adoption-smoke)
 checklist in this host app only if the gate is changed to build-only plus
 browser smoke. Otherwise, pick a cleaner existing Vue 3 business app or fix the
 host-app typecheck baseline first.
+
+## Run 5: OSS admin app - v3-admin-vite
+
+| Field       | Value                                                                 |
+| ----------- | --------------------------------------------------------------------- |
+| Date        | 2026-07-05                                                            |
+| Host app    | `un-pany/v3-admin-vite` at `273065d2860a3acc5724cfdbdf36927da1dc9080` |
+| Package     | `vue-ai-hooks@0.14.3` from the current package tarball                |
+| Stack       | Vue `3.5.38`, Vite `7.3.5`, TypeScript `5.9.3`, Element Plus `2.14.2` |
+| Smoke tool  | Playwright `1.56.1` with Chromium headless                            |
+| Package mgr | pnpm `11.7.0`                                                         |
+| Node        | Node `22.22.1`                                                        |
+| Result      | Passed locally and promoted to CI-level OSS adoption smoke            |
+
+### Covered paths
+
+- Installed the current local `vue-ai-hooks` package into a real external Vue 3
+  admin template.
+- Added a hidden `/vue-ai-hooks-validation` route without changing the app's
+  normal menu or auth-protected pages.
+- Ran no-key local chat through `DirectChatTransport`.
+- Ran app-owned proxy chat through `/api/validation/chat`, with session token,
+  tenant id, and run id supplied by the host app.
+- Restored `useChatThreads()` and persisted messages after reload.
+- Captured a forced app proxy `502` failure through `inspect()`.
+- Verified the failure trace stayed actionable and did not expose the test
+  session token or body secret.
+
+### Commands
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm test -- --run
+pnpm smoke:vue-ai-hooks
+```
+
+The repeatable CI gate is now:
+
+```bash
+pnpm build
+pnpm oss-adoption:check
+```
+
+### Evidence
+
+- GitHub API confirmed `un-pany/v3-admin-vite` is public, MIT licensed, and
+  tagged around Vue, Vite, TypeScript, Pinia, Element Plus, and Vue Router.
+- `pnpm build` passed the external app's `vue-tsc` and Vite production build.
+- `pnpm test -- --run` passed 3 test files and 14 tests in the external app.
+- `pnpm smoke:vue-ai-hooks` launched the validation backend, Vite dev server,
+  and browser automation.
+- Browser smoke ended with
+  `v3-admin-vite smoke passed for vue-ai-hooks@0.14.3`.
+- `pnpm oss-adoption:check` now recreates the same integration from a pinned
+  upstream archive and the current local package tarball.
+
+### Friction found
+
+- Direct `git ls-remote` to GitHub reset locally, while GitHub API and codeload
+  archive access worked. The CI smoke therefore uses the pinned codeload archive
+  instead of `git clone`.
+- The external app defaults to hash routing, so the browser smoke must open
+  `/#/vue-ai-hooks-validation`.
+- pnpm 11 required explicit generated-host build-script approval for
+  `@parcel/watcher` and `esbuild`.
+- The external app's Vite MCP plugin rewrites MCP config files at dev-server
+  start, but the smoke runs in a temporary checkout and does not persist those
+  generated changes.

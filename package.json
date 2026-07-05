@@ -1,6 +1,6 @@
 {
   "name": "vue-ai-hooks",
-  "version": "0.14.3",
+  "version": "1.0.0-rc.1",
   "description": "Vue 3 Composable library for building AI-powered applications, with optional React chat, completion, object, image, video, prompt suggestion, and agent entries. useChat, useCompletion, useEmbedding, useImage, useVideo, useSpeech, useTranscription, useRerank, useObject, useAgentContext, useAgentCapabilities, useAgentRun, usePromptSuggestions — multi-provider, streaming-first, fully typed.",
   "type": "module",
   "packageManager": "pnpm@11.7.0",
@@ -200,6 +200,7 @@
     "dist:check": "node scripts/check-dist.mjs",
     "size:check": "node scripts/check-size.mjs",
     "install:check": "node scripts/check-install.mjs",
+    "oss-adoption:check": "node scripts/check-oss-adoption-smoke.mjs",
     "links:check": "node scripts/check-markdown-links.mjs",
     "pack:check": "node scripts/check-package.mjs",
     "release:check": "node scripts/release-check.mjs",

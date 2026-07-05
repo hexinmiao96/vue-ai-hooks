@@ -14,6 +14,8 @@ const pnpmVersion = packageJson.packageManager?.match(/^pnpm@(.+)$/)?.[1]
 const minimumNodeMajor = packageJson.engines?.node.match(/^>=(\d+)\./)?.[1]
 const supportedNodeVersions = ['18.x', '20.x', '22.x', '24.x']
 const publishNodeVersion = supportedNodeVersions.at(-1)?.replace('.x', '')
+const ciTestJob = extractWorkflowJob(workflows.ci, 'test')
+const ciOssAdoptionJob = extractWorkflowJob(workflows.ci, 'oss-adoption')
 
 expect(pnpmVersion, 'packageManager must pin a pnpm version')
 expect(
@@ -40,7 +42,7 @@ expect(
   'CI workflow pnpm version must match packageManager'
 )
 expect(
-  workflows.ci.includes('pnpm install --frozen-lockfile'),
+  ciTestJob.includes('pnpm install --frozen-lockfile'),
   'CI workflow must install dependencies with the frozen lockfile'
 )
 expect(
@@ -58,32 +60,41 @@ expect(
   'CI matrix must run every supported Node version before failing'
 )
 for (const command of localCheckCommands) {
-  expect(workflows.ci.includes(command), `CI workflow must include local check command: ${command}`)
+  expect(ciTestJob.includes(command), `CI workflow must include local check command: ${command}`)
 }
 expect(
-  workflows.ci.includes('pnpm security:audit'),
+  ciTestJob.includes('pnpm security:audit'),
   'CI workflow must run the dependency security audit'
 )
-expect(workflows.ci.includes('pnpm format:check'), 'CI workflow must verify formatting')
-expect(workflows.ci.includes('pnpm secrets:check'), 'CI workflow must scan for committed secrets')
+expect(ciTestJob.includes('pnpm format:check'), 'CI workflow must verify formatting')
+expect(ciTestJob.includes('pnpm secrets:check'), 'CI workflow must scan for committed secrets')
+expect(ciTestJob.includes('pnpm source:hygiene'), 'CI workflow must scan for source hygiene issues')
+expect(ciTestJob.includes('pnpm size:check'), 'CI workflow must verify bundle size budgets')
 expect(
-  workflows.ci.includes('pnpm source:hygiene'),
-  'CI workflow must scan for source hygiene issues'
-)
-expect(workflows.ci.includes('pnpm size:check'), 'CI workflow must verify bundle size budgets')
-expect(
-  workflows.ci.includes('pnpm test:hygiene'),
+  ciTestJob.includes('pnpm test:hygiene'),
   'CI workflow must reject focused, skipped, todo, or expected-failing tests'
 )
 expect(
-  workflows.ci.includes('pnpm changelog:check'),
+  ciTestJob.includes('pnpm changelog:check'),
   'CI workflow must verify changelog release readiness'
 )
 expect(
-  workflows.ci.includes('pnpm community:check'),
+  ciTestJob.includes('pnpm community:check'),
   'CI workflow must verify community health templates'
 )
-expect(workflows.ci.includes('pnpm workflows:check'), 'CI workflow must verify workflow guardrails')
+expect(ciTestJob.includes('pnpm workflows:check'), 'CI workflow must verify workflow guardrails')
+expect(
+  ciOssAdoptionJob.includes('name: OSS adoption smoke'),
+  'CI workflow must include the external OSS adoption smoke job'
+)
+expect(
+  ciOssAdoptionJob.includes('node-version: 22'),
+  'OSS adoption smoke job must run once on the primary Node version'
+)
+expect(
+  ciOssAdoptionJob.includes('pnpm oss-adoption:check'),
+  'CI workflow must run the OSS adoption smoke check'
+)
 
 expect(
   workflows.publish.includes("tags:\n      - 'v*'"),
@@ -375,6 +386,14 @@ function hasYamlValue(workflow, key, value) {
   return new RegExp(
     `(^|\\n)\\s*${escapeRegExp(key)}:\\s*['"]?${escapeRegExp(String(value))}['"]?(\\s|\\n|$)`
   ).test(workflow)
+}
+
+function extractWorkflowJob(workflow, jobName) {
+  const match = workflow.match(
+    new RegExp(`\\n  ${escapeRegExp(jobName)}:\\n[\\s\\S]*?(?=\\n  [\\w-]+:\\n|\\n*$)`)
+  )
+
+  return match?.[0] ?? ''
 }
 
 function escapeRegExp(value) {

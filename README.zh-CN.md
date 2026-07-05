@@ -659,14 +659,13 @@ retryable 错误，而不是原样暴露上游错误体。
 
 ## 项目状态
 
-这是 **v0.14.3**，是一个可工作的基础版本，但还不是功能完备版本。核心能力已覆盖主要
-composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和
-质量门禁。本版本新增 `useChatThreads`，用于本地 thread 索引、当前 thread、重命名、
-归档、恢复、删除、最近更新时间和 Date-safe thread 持久化。当前后续工作聚焦生产 agent
-桥接配方、审批决策契约、重新生成/分支工作流，以及面向 tenant 级 thread index、message body 和应用自有 storage adapter contract 的
-[服务端存储配方](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/server-storage.md)，并补齐 `revision`、`runId` 和 restore smoke test 的重新生成/分支冲突处理，以及审批重放和冲突检查。功能规划放在
-[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub
-issue 只记录可复现 bug。
+这是 **v1.0.0-rc.1**，是面向稳定 1.0 采用面的 release candidate。核心能力已覆盖主要
+composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和质量门禁。这个 RC
+新增 CI 级 OSS 接入 smoke：打包当前 package，安装进固定的外部 Vue 3 后台应用，并验证 local chat、应用自有 proxy
+chat、thread restore 和脱敏失败 trace。生产 thread storage 仍由宿主应用负责；tenant 级 thread index、message body 和
+storage adapter contract 见
+[服务端存储配方](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/zh/guide/server-storage.md)。功能规划放在
+[ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md)；GitHub issue 只记录可复现 bug。
 
 ## 已知限制
 
