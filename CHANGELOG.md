@@ -9,6 +9,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - No unreleased changes pending.
 
+## [1.0.0-rc.1] - 2026-07-05
+
+### Added
+
+- Added a CI-level OSS adoption smoke that packs the current local package,
+  installs it into pinned `un-pany/v3-admin-vite`, injects a hidden validation
+  route, and verifies external Vue 3 app build plus browser smoke.
+- Added bilingual OSS adoption smoke documentation and adoption evidence for the
+  `v3-admin-vite` integration.
+
+### Changed
+
+- Release notes keep the active publishing contract visible:
+  `prepublishOnly` now delegates to `release:check`.
+- Coverage thresholds remain at least 98% statements, 90% branches, 96%
+  functions, and 98% lines for this release.
+- CI now runs the OSS adoption smoke once on the primary Node version instead
+  of repeating the external app download and browser run across the full Node
+  matrix.
+- Workflow guardrails now require the OSS adoption smoke job so future CI edits
+  cannot silently remove the external integration gate.
+
+### Fixed
+
+- Kept empty Unreleased sections guarded by the existing changelog placeholder
+  check while preparing the first release-candidate changelog entry.
+
 ## [0.14.3] - 2026-07-04
 
 ### Added

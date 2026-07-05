@@ -13,7 +13,8 @@ Record completed host-app runs in
 [Adoption evidence](/guide/adoption-evidence). When the target is no longer a
 throwaway host app, run the
 [Existing app adoption smoke](/guide/existing-app-adoption-smoke) checklist
-first.
+first. The pinned [OSS adoption smoke](/guide/oss-adoption-smoke) turns one
+external Vue 3 admin integration into a repeatable CI gate.
 
 ## Current baseline
 
@@ -23,6 +24,8 @@ first.
 - Production docs cover provider-safe browser boundaries, app-owned proxy
   routes, durable thread storage, regenerate branches, tool approvals,
   inspection, and agent-event projection.
+- `pnpm oss-adoption:check` installs the current local package tarball into a
+  pinned external Vue 3 admin app, then runs its build and browser smoke.
 - The next risk is not missing infrastructure. The next risk is unclear first
   adoption: what a new app can finish in one sitting, where it gets stuck, and
   which APIs need a stability promise before `1.0`.

@@ -803,17 +803,16 @@ the [testing guide](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/g
 
 ## Project status
 
-This is **v0.14.3** — a working foundation, not feature-complete. The core
-surface covers the main composables, provider/proxy adapters, tool flows,
-persistence, retries, stream data, metadata, shared state, and quality gates.
-This release adds `useChatThreads` for local thread indexes, active thread
-selection, rename, archive, restore, delete, recency updates, and Date-safe
-thread persistence. Current follow-up work is focused on production agent bridge
-recipes, approval decision contracts, regenerate/branch workflows, and the
+This is **v1.0.0-rc.1** — a release candidate for the stable 1.0 adoption
+surface. The core surface covers the main composables, provider/proxy adapters,
+tool flows, persistence, retries, stream data, metadata, shared state, and
+quality gates. The release candidate adds a CI-level OSS adoption smoke that
+packs the current package, installs it into a pinned external Vue 3 admin app,
+and verifies local chat, app-owned proxy chat, thread restore, and redacted
+failure traces. Production thread storage remains host-owned; see the
 [server storage recipe](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/docs/guide/server-storage.md)
-for tenant-scoped thread indexes, message bodies, and app-owned storage adapter
-contracts, with regenerate/branch conflict handling for `revision`, `runId`, and
-restore smoke tests, plus approval replay/conflict checks. Feature planning lives in
+for tenant-scoped thread indexes, message bodies, and storage adapter contracts.
+Feature planning lives in
 [ROADMAP.md](https://github.com/hexinmiao96/vue-ai-hooks/blob/main/ROADMAP.md);
 GitHub issues are reserved for reproducible bugs.
 
