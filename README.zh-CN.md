@@ -659,7 +659,7 @@ retryable 错误，而不是原样暴露上游错误体。
 
 ## 项目状态
 
-这是 **v1.0.0-rc.1**，是面向稳定 1.0 采用面的 release candidate。核心能力已覆盖主要
+这是 **v1.0.0-rc.2**，是面向稳定 1.0 采用面的 release candidate。核心能力已覆盖主要
 composable、Provider/proxy 适配、工具流、持久化、重试、流数据、metadata、共享状态和质量门禁。这个 RC
 新增 CI 级 OSS 接入 smoke：打包当前 package，安装进固定的外部 Vue 3 后台应用，并验证 local chat、应用自有 proxy
 chat、thread restore 和脱敏失败 trace。生产 thread storage 仍由宿主应用负责；tenant 级 thread index、message body 和
