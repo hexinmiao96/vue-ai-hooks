@@ -1,7 +1,7 @@
 # React hooks
 
 `vue-ai-hooks/react` 是可选 React 入口。目前它提供 React 版 `useChat`、
-`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun`，也补充了 `useEmbedding` 与 `useSpeech`，用于流式 React UI，并复用根入口里的
+`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun`，也补充了 `useEmbedding`、`useGeneration`、`useSpeech`、`useTranscription` 与 `useRerank`，用于流式 React UI，并复用根入口里的
 Provider、Proxy transport、请求追踪与 stream 格式。
 
 只有使用这个子路径时，消费侧应用才需要安装 React：
@@ -24,9 +24,12 @@ import {
   useChat,
   useCompletion,
   useEmbedding,
+  useGeneration,
   useImage,
   useObject,
+  useRerank,
   useSpeech,
+  useTranscription,
   useVideo
 } from 'vue-ai-hooks/react'
 ```
@@ -233,6 +236,9 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
   `UseReactCompletionOptions`、`UseReactCompletionReturn`。
 - Embedding：`ReactEmbeddingRequestInfo`、`ReactEmbeddingResponseInfo`、
   `UseReactEmbeddingOptions`、`UseReactEmbeddingReturn`。
+- Generation：`GenerateOptions`、`GenerationFetcher`、`GenerationRequestInfo`、
+  `GenerationResponseInfo`、`GenerationRunContext`、`UseReactGenerationOptions`、
+  `UseReactGenerationReturn`。
 - Object：`ReactAiSdkObjectFinishCallback`、`ReactLegacyObjectFinishCallback`、
   `ReactObjectDeepPartial`、`ReactObjectFinishCallback`、
   `ReactObjectFinishCallbackOptions`、`ReactObjectFinishInfo`、
@@ -242,12 +248,16 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
   `ReactImageGenerationRequestInfo`、`ReactImageGenerationResponseInfo`、
   `ReactVideoGenerationRequestInfo`、`ReactVideoGenerationResponseInfo`、
   `ReactSpeechGenerationRequestInfo`、`ReactSpeechGenerationResponseInfo`、
+  `ReactTranscriptionRequestInfo`、`ReactTranscriptionResponseInfo`、
+  `ReactRerankRequestInfo`、`ReactRerankResponseInfo`、
   `ReactAgentRunFinishInfo`、`ReactAgentRunHandler`、
   `ReactAgentRunInspectionSnapshot`、`ReactAgentRunRequest`、
   `ReactAgentRunRequestInfo`、`ReactAgentRunResponseInfo`、
   `ReactAgentRunStatus`、`UseReactImageOptions`、`UseReactImageReturn`、
   `UseReactVideoOptions`、`UseReactVideoReturn`、`UseReactSpeechOptions`、
-  `UseReactSpeechReturn`、`UseReactAgentRunOptions`、`UseReactAgentRunReturn`。
+  `UseReactSpeechReturn`、`UseReactTranscriptionOptions`、
+  `UseReactTranscriptionReturn`、`UseReactRerankOptions`、
+  `UseReactRerankReturn`、`UseReactAgentRunOptions`、`UseReactAgentRunReturn`。
 - Prompt suggestions：`CreatePromptSuggestionRecipesOptions`、
   `PromptSuggestionRecipe`、`PromptSuggestionRecipeCategory`、
   `PromptSuggestionRecipeId`、`PromptSuggestionRecipeLocale`、

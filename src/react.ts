@@ -44,6 +44,17 @@ export {
 } from './react/useEmbedding'
 
 export {
+  useGeneration,
+  type GenerateOptions,
+  type GenerationFetcher,
+  type GenerationRequestInfo,
+  type GenerationResponseInfo,
+  type GenerationRunContext,
+  type UseReactGenerationOptions,
+  type UseReactGenerationReturn
+} from './react/useGeneration'
+
+export {
   useImage,
   type ReactImageGenerationRequestInfo,
   type ReactImageGenerationResponseInfo,
@@ -67,6 +78,22 @@ export {
   type UseReactSpeechOptions,
   type UseReactSpeechReturn
 } from './react/useSpeech'
+
+export {
+  useTranscription,
+  type ReactTranscriptionRequestInfo,
+  type ReactTranscriptionResponseInfo,
+  type UseReactTranscriptionOptions,
+  type UseReactTranscriptionReturn
+} from './react/useTranscription'
+
+export {
+  useRerank,
+  type ReactRerankRequestInfo,
+  type ReactRerankResponseInfo,
+  type UseReactRerankOptions,
+  type UseReactRerankReturn
+} from './react/useRerank'
 
 export {
   createPromptSuggestionRecipes,
@@ -141,10 +168,15 @@ export type {
   EmbeddingRequest,
   EmbeddingResult,
   GeneratedAudio,
+  RerankDocument,
+  RerankRequest,
+  RerankResult,
   ResponseFormat,
   RetryContext,
   RetryOptions,
   SpeechGenerationRequest,
   SpeechGenerationResult,
-  StreamThrottleOptions
+  StreamThrottleOptions,
+  TranscriptionRequest,
+  TranscriptionResult
 } from './types'

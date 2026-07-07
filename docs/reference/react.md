@@ -1,12 +1,12 @@
 # React hooks
 
 `vue-ai-hooks/react` is the optional React entry. It exposes `useChat`,
-`useCompletion`, `useEmbedding`, and `useObject` for core React hooks, plus `useImage`, `useVideo`, `useSpeech`, `usePromptSuggestions`, and `useAgentRun`, so React consumers can use the same
+`useCompletion`, `useEmbedding`, `useGeneration`, and `useObject` for core React hooks, plus `useImage`, `useVideo`, `useSpeech`, `useTranscription`, `useRerank`, `usePromptSuggestions`, and `useAgentRun`, so React consumers can use the same
 providers, proxy transport, request tracing, and stream formats as the Vue entry.
 Core migration exports still include `useChat`, `useCompletion`, and `useObject`.
-Core React exports are `useChat`, `useCompletion`, `useEmbedding`, and `useObject` for the most common workflow.
+Core React exports are `useChat`, `useCompletion`, `useEmbedding`, `useGeneration`, and `useObject` for the most common workflow.
 
-For app-owned media flows, it also exposes `useImage`, `useVideo`, and `useSpeech`.
+For app-owned media flows, it also exposes `useImage`, `useVideo`, `useSpeech`, and `useTranscription`. Search and retrieval screens can use `useRerank`.
 
 Install React in the consuming app only when you use this subpath:
 
@@ -28,9 +28,12 @@ import {
   useChat,
   useCompletion,
   useEmbedding,
+  useGeneration,
   useImage,
   useObject,
+  useRerank,
   useSpeech,
+  useTranscription,
   useVideo
 } from 'vue-ai-hooks/react'
 ```
@@ -239,6 +242,9 @@ searchable:
   `UseReactCompletionOptions`, `UseReactCompletionReturn`.
 - Embedding: `ReactEmbeddingRequestInfo`, `ReactEmbeddingResponseInfo`,
   `UseReactEmbeddingOptions`, `UseReactEmbeddingReturn`.
+- Generation: `GenerateOptions`, `GenerationFetcher`, `GenerationRequestInfo`,
+  `GenerationResponseInfo`, `GenerationRunContext`,
+  `UseReactGenerationOptions`, `UseReactGenerationReturn`.
 - Object: `ReactAiSdkObjectFinishCallback`, `ReactLegacyObjectFinishCallback`,
   `ReactObjectDeepPartial`, `ReactObjectFinishCallback`,
   `ReactObjectFinishCallbackOptions`, `ReactObjectFinishInfo`,
@@ -248,12 +254,16 @@ searchable:
   `ReactImageGenerationRequestInfo`, `ReactImageGenerationResponseInfo`,
   `ReactVideoGenerationRequestInfo`, `ReactVideoGenerationResponseInfo`,
   `ReactSpeechGenerationRequestInfo`, `ReactSpeechGenerationResponseInfo`,
+  `ReactTranscriptionRequestInfo`, `ReactTranscriptionResponseInfo`,
+  `ReactRerankRequestInfo`, `ReactRerankResponseInfo`,
   `ReactAgentRunFinishInfo`, `ReactAgentRunHandler`,
   `ReactAgentRunInspectionSnapshot`, `ReactAgentRunRequest`,
   `ReactAgentRunRequestInfo`, `ReactAgentRunResponseInfo`,
   `ReactAgentRunStatus`, `UseReactImageOptions`, `UseReactImageReturn`,
   `UseReactVideoOptions`, `UseReactVideoReturn`, `UseReactSpeechOptions`,
-  `UseReactSpeechReturn`, `UseReactAgentRunOptions`, `UseReactAgentRunReturn`.
+  `UseReactSpeechReturn`, `UseReactTranscriptionOptions`,
+  `UseReactTranscriptionReturn`, `UseReactRerankOptions`,
+  `UseReactRerankReturn`, `UseReactAgentRunOptions`, `UseReactAgentRunReturn`.
 - Prompt suggestions: `CreatePromptSuggestionRecipesOptions`,
   `PromptSuggestionRecipe`, `PromptSuggestionRecipeCategory`,
   `PromptSuggestionRecipeId`, `PromptSuggestionRecipeLocale`,

@@ -88,11 +88,14 @@ import {
   useChat as useReactChat,
   useCompletion as useReactCompletion,
   useEmbedding as useReactEmbedding,
+  useGeneration as useReactGeneration,
   useImage as useReactImage,
   useObject as useReactObject,
   usePromptSuggestions as useReactPromptSuggestions,
+  useRerank as useReactRerank,
   useAgentRun as useReactAgentRun,
   useSpeech as useReactSpeech,
+  useTranscription as useReactTranscription,
   useVideo as useReactVideo
 } from 'vue-ai-hooks/react'
 import type {
@@ -412,6 +415,8 @@ import type {
   ReactCompletionResponseInfo,
   ReactEmbeddingRequestInfo,
   ReactEmbeddingResponseInfo,
+  UseReactGenerationOptions,
+  UseReactGenerationReturn,
   ReactAgentRunFinishInfo,
   ReactAgentRunInspectionSnapshot,
   ReactAgentRunRequest,
@@ -440,10 +445,18 @@ import type {
   ReactVideoGenerationResponseInfo,
   ReactSpeechGenerationRequestInfo,
   ReactSpeechGenerationResponseInfo,
+  ReactTranscriptionRequestInfo,
+  ReactTranscriptionResponseInfo,
+  ReactRerankRequestInfo,
+  ReactRerankResponseInfo,
   UseReactVideoOptions,
   UseReactVideoReturn,
   UseReactSpeechOptions,
-  UseReactSpeechReturn
+  UseReactSpeechReturn,
+  UseReactTranscriptionOptions,
+  UseReactTranscriptionReturn,
+  UseReactRerankOptions,
+  UseReactRerankReturn
 } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
@@ -463,6 +476,20 @@ describe('public API types', () => {
     const reactOptions: UseReactChatOptions = { provider }
     const reactCompletionOptions: UseReactCompletionOptions = { provider }
     const reactEmbeddingOptions: UseReactEmbeddingOptions = { provider }
+    const reactGenerationOptions: UseReactGenerationOptions<
+      string,
+      { url: string },
+      { percent: number },
+      string
+    > = {
+      fetcher: async (input, context) => {
+        expectTypeOf(input).toEqualTypeOf<string>()
+        expectTypeOf(context).toEqualTypeOf<
+          GenerationRunContext<string, { percent: number }, string>
+        >()
+        return { url: input }
+      }
+    }
     const answerSchema = jsonSchema<{ answer: string }>({
       type: 'object',
       properties: { answer: { type: 'string' } }
@@ -479,6 +506,12 @@ describe('public API types', () => {
     }
     const reactSpeechOptions: UseReactSpeechOptions = {
       api: '/api/react-speech'
+    }
+    const reactTranscriptionOptions: UseReactTranscriptionOptions = {
+      api: '/api/react-transcription'
+    }
+    const reactRerankOptions: UseReactRerankOptions<string> = {
+      api: '/api/react-rerank'
     }
     const reactPromptSuggestionOptions: UseReactPromptSuggestionsOptions = {
       suggestions: ['Summarize this thread'],
@@ -502,12 +535,15 @@ describe('public API types', () => {
     expect(typeof useReactChat).toBe('function')
     expect(typeof useReactCompletion).toBe('function')
     expect(typeof useReactEmbedding).toBe('function')
+    expect(typeof useReactGeneration).toBe('function')
     expect(typeof useReactObject).toBe('function')
     expect(typeof useReactImage).toBe('function')
+    expect(typeof useReactRerank).toBe('function')
     expect(typeof useReactPromptSuggestions).toBe('function')
     expect(typeof useReactAgentRun).toBe('function')
     expect(typeof useReactVideo).toBe('function')
     expect(typeof useReactSpeech).toBe('function')
+    expect(typeof useReactTranscription).toBe('function')
     expect(typeof createReactPromptSuggestionRecipes).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
     expectTypeOf<
@@ -560,6 +596,14 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactEmbeddingReturn['lastResponse']
     >().toEqualTypeOf<ReactEmbeddingResponseInfo | null>()
+    expectTypeOf(reactGenerationOptions).toMatchTypeOf<
+      UseReactGenerationOptions<string, { url: string }, { percent: number }, string>
+    >()
+    expectTypeOf<
+      ReturnType<typeof useReactGeneration<string, { url: string }, { percent: number }, string>>
+    >().toEqualTypeOf<
+      UseReactGenerationReturn<string, { url: string }, { percent: number }, string>
+    >()
     expectTypeOf<ReactObjectFinishInfo<{ answer: string }>>().toMatchTypeOf<{
       object: { answer: string }
       text: string
@@ -658,6 +702,47 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactSpeechReturn['lastResponse']
     >().toEqualTypeOf<ReactSpeechGenerationResponseInfo | null>()
+    expectTypeOf(reactTranscriptionOptions).toMatchTypeOf<UseReactTranscriptionOptions>()
+    expectTypeOf<
+      ReturnType<typeof useReactTranscription>
+    >().toEqualTypeOf<UseReactTranscriptionReturn>()
+    expectTypeOf<UseReactTranscriptionReturn>().toMatchTypeOf<{
+      transcription: string
+      text: string
+      transcribe: (
+        audio?: string,
+        options?: Partial<TranscriptionRequest>
+      ) => Promise<TranscriptionResult>
+      transcribeAudio: (
+        audio?: string,
+        options?: Partial<TranscriptionRequest>
+      ) => Promise<TranscriptionResult>
+    }>()
+    expectTypeOf<
+      UseReactTranscriptionReturn['lastRequest']
+    >().toEqualTypeOf<ReactTranscriptionRequestInfo | null>()
+    expectTypeOf<
+      UseReactTranscriptionReturn['lastResponse']
+    >().toEqualTypeOf<ReactTranscriptionResponseInfo | null>()
+    expectTypeOf(reactRerankOptions).toMatchTypeOf<UseReactRerankOptions<string>>()
+    expectTypeOf<ReturnType<typeof useReactRerank<string>>>().toEqualTypeOf<
+      UseReactRerankReturn<string>
+    >()
+    expectTypeOf<UseReactRerankReturn<string>>().toMatchTypeOf<{
+      rerankedDocuments: string[]
+      ranking: RerankResult<string>['ranking']
+      rerank: (
+        query?: string,
+        documents?: string[],
+        options?: Partial<RerankRequest<string>>
+      ) => Promise<RerankResult<string>>
+    }>()
+    expectTypeOf<
+      UseReactRerankReturn<string>['lastRequest']
+    >().toEqualTypeOf<ReactRerankRequestInfo<string> | null>()
+    expectTypeOf<
+      UseReactRerankReturn<string>['lastResponse']
+    >().toEqualTypeOf<ReactRerankResponseInfo<string> | null>()
     expectTypeOf(reactPromptSuggestionOptions).toMatchTypeOf<UseReactPromptSuggestionsOptions>()
     expectTypeOf(createReactPromptSuggestionRecipes({ include: ['find-risks'] })).toMatchTypeOf<
       PromptSuggestion[]
