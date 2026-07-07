@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { AiRequestStatus, IdGenerator, RetryOptions, StreamThrottleOptions } from '../types'
 import { createId } from '../utils/id'
 import { canRetry, createRetryContext, getMaxRetries, waitForRetry } from '../utils/retry'
@@ -84,6 +84,96 @@ function createAbortError() {
   return error
 }
 
+interface ReactGenerationState<TInput, TResult, TProgress, TChunk> {
+  input: TInput | undefined
+  result: TResult | null
+  progress: TProgress | null
+  chunks: TChunk[]
+  status: AiRequestStatus
+  isLoading: boolean
+  error: Error | null
+  lastRequest: GenerationRequestInfo<TInput> | null
+  lastResponse: GenerationResponseInfo<TInput, TResult> | null
+  abortController: AbortController | null
+}
+
+interface ReactGenerationStore<TInput, TResult, TProgress, TChunk> {
+  initialInput: TInput | undefined
+  initialResult: TResult | null
+  initialProgress: TProgress | null
+  getSnapshot: () => ReactGenerationState<TInput, TResult, TProgress, TChunk>
+  subscribe: (listener: () => void) => () => void
+  setState: (patch: Partial<ReactGenerationState<TInput, TResult, TProgress, TChunk>>) => void
+  retain: () => void
+  release: () => number
+}
+
+const generationStores = new Map<
+  string,
+  ReactGenerationStore<unknown, unknown, unknown, unknown>
+>()
+
+function createGenerationStore<TInput, TResult, TProgress, TChunk>(
+  initialInput: TInput | undefined,
+  initialResult: TResult | null,
+  initialProgress: TProgress | null
+): ReactGenerationStore<TInput, TResult, TProgress, TChunk> {
+  const listeners = new Set<() => void>()
+  let retainCount = 0
+  let state: ReactGenerationState<TInput, TResult, TProgress, TChunk> = {
+    input: initialInput,
+    result: initialResult,
+    progress: initialProgress,
+    chunks: [],
+    status: 'ready',
+    isLoading: false,
+    error: null,
+    lastRequest: null,
+    lastResponse: null,
+    abortController: null
+  }
+
+  return {
+    initialInput,
+    initialResult,
+    initialProgress,
+    getSnapshot: () => state,
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
+    setState(patch) {
+      state = { ...state, ...patch }
+      listeners.forEach((listener) => listener())
+    },
+    retain() {
+      retainCount += 1
+    },
+    release() {
+      retainCount = Math.max(0, retainCount - 1)
+      return retainCount
+    }
+  }
+}
+
+function getGenerationStore<TInput, TResult, TProgress, TChunk>(
+  id: string,
+  initialInput: TInput | undefined,
+  initialResult: TResult | null,
+  initialProgress: TProgress | null
+): ReactGenerationStore<TInput, TResult, TProgress, TChunk> {
+  const existing = generationStores.get(id)
+  if (existing) return existing as ReactGenerationStore<TInput, TResult, TProgress, TChunk>
+
+  const store = createGenerationStore<TInput, TResult, TProgress, TChunk>(
+    initialInput,
+    initialResult,
+    initialProgress
+  )
+  generationStores.set(id, store as ReactGenerationStore<unknown, unknown, unknown, unknown>)
+  return store
+}
+
 export function useGeneration<
   TInput = string,
   TResult = unknown,
@@ -96,78 +186,83 @@ export function useGeneration<
 
   const createRuntimeId = options.generateId ?? createId
   const [id] = useState(() => options.id ?? createRuntimeId('generation'))
-  const [input, setInputState] = useState<TInput | undefined>(options.initialInput)
-  const [result, setResultState] = useState<TResult | null>(options.initialResult ?? null)
-  const [progress, setProgress] = useState<TProgress | null>(options.initialProgress ?? null)
-  const [chunks, setChunks] = useState<TChunk[]>([])
-  const [status, setStatus] = useState<AiRequestStatus>('ready')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
-  const [lastRequest, setLastRequest] = useState<GenerationRequestInfo<TInput> | null>(null)
-  const [lastResponse, setLastResponse] = useState<GenerationResponseInfo<TInput, TResult> | null>(
-    null
+  const store = getGenerationStore<TInput, TResult, TProgress, TChunk>(
+    id,
+    options.initialInput,
+    options.initialResult ?? null,
+    options.initialProgress ?? null
   )
-  const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
 
-  const inputRef = useRef(input)
+  const inputRef = useRef(state.input)
   const abortControllerRef = useRef<AbortController | null>(null)
   const optionsRef = useRef(options)
   const chunksRef = useRef<TChunk[]>([])
   optionsRef.current = options
-  inputRef.current = input
+  inputRef.current = state.input
+  chunksRef.current = state.chunks
 
   const setInput = useCallback((value: TInput | undefined) => {
     inputRef.current = value
-    setInputState(value)
-  }, [])
+    store.setState({ input: value })
+  }, [store])
 
   const setResult = useCallback((value: TResult | null) => {
-    setResultState(value)
-  }, [])
+    store.setState({ result: value })
+  }, [store])
 
   const clearTrace = useCallback(() => {
-    setLastRequest(null)
-    setLastResponse(null)
-  }, [])
+    store.setState({ lastRequest: null, lastResponse: null })
+  }, [store])
 
   const inspect = useCallback(
     () =>
       inspectRequestTrace({
-        status,
-        error,
-        lastRequest,
-        lastResponse,
+        status: state.status,
+        error: state.error,
+        lastRequest: state.lastRequest,
+        lastResponse: state.lastResponse,
         curl: true
       }),
-    [error, lastRequest, lastResponse, status]
+    [state.error, state.lastRequest, state.lastResponse, state.status]
   )
 
   const stop = useCallback(() => {
-    abortControllerRef.current?.abort()
+    const controller = abortControllerRef.current ?? store.getSnapshot().abortController
+    controller?.abort()
     abortControllerRef.current = null
-    setAbortController(null)
-    setIsLoading(false)
-    setStatus('ready')
-  }, [])
+    store.setState({
+      abortController: null,
+      isLoading: false,
+      status: 'ready'
+    })
+  }, [store])
 
-  useEffect(() => () => stop(), [stop])
+  useEffect(() => {
+    store.retain()
+    return () => {
+      if (store.release() === 0) stop()
+    }
+  }, [stop, store])
 
   const clearError = useCallback(() => {
-    setError(null)
-    setStatus('ready')
-  }, [])
+    store.setState({ error: null, status: 'ready' })
+  }, [store])
 
   const clear = useCallback(() => {
     stop()
-    setInput(optionsRef.current.initialInput)
-    setResultState(optionsRef.current.initialResult ?? null)
-    setProgress(optionsRef.current.initialProgress ?? null)
+    inputRef.current = store.initialInput
     chunksRef.current = []
-    setChunks([])
-    setError(null)
+    store.setState({
+      input: store.initialInput,
+      result: store.initialResult,
+      progress: store.initialProgress,
+      chunks: [],
+      error: null,
+      status: 'ready'
+    })
     clearTrace()
-    setStatus('ready')
-  }, [clearTrace, setInput, stop])
+  }, [clearTrace, stop, store])
 
   const requestInfo = useCallback(
     (
@@ -193,15 +288,17 @@ export function useGeneration<
 
       const controller = new AbortController()
       abortControllerRef.current = controller
-      setAbortController(controller)
+      store.setState({ abortController: controller })
       setInput(finalInput)
-      setResultState(optionsRef.current.initialResult ?? null)
-      setProgress(optionsRef.current.initialProgress ?? null)
       chunksRef.current = []
-      setChunks([])
-      setError(null)
-      setIsLoading(true)
-      setStatus('submitted')
+      store.setState({
+        result: optionsRef.current.initialResult ?? null,
+        progress: optionsRef.current.initialProgress ?? null,
+        chunks: [],
+        error: null,
+        isLoading: true,
+        status: 'submitted'
+      })
 
       try {
         let retryAttempt = 0
@@ -214,12 +311,12 @@ export function useGeneration<
           let pendingChunks: TChunk[] = []
           const throttler = createStreamUpdateThrottler(getThrottleMs(currentOptions), () => {
             if (hasPendingProgress) {
-              setProgress(nextProgress)
+              store.setState({ progress: nextProgress })
               if (nextProgress !== null) currentOptions.onProgress?.(nextProgress)
               hasPendingProgress = false
             }
             if (pendingChunks.length) {
-              setChunks([...chunksRef.current])
+              store.setState({ chunks: [...chunksRef.current] })
               for (const chunk of pendingChunks) currentOptions.onChunk?.(chunk)
               pendingChunks = []
             }
@@ -234,7 +331,7 @@ export function useGeneration<
               reportProgress(value) {
                 if (controller.signal.aborted) return
                 receivedUpdate = true
-                setStatus('streaming')
+                store.setState({ status: 'streaming' })
                 nextProgress = value
                 hasPendingProgress = true
                 throttler.schedule()
@@ -242,24 +339,25 @@ export function useGeneration<
               reportChunk(chunk) {
                 if (controller.signal.aborted) return
                 receivedUpdate = true
-                setStatus('streaming')
+                store.setState({ status: 'streaming' })
                 chunksRef.current = [...chunksRef.current, chunk]
                 pendingChunks = [...pendingChunks, chunk]
                 throttler.schedule()
               }
             }
 
-            setLastRequest(info)
-            setLastResponse(null)
+            store.setState({ lastRequest: info, lastResponse: null })
             currentOptions.onRequest?.(info)
             const finalResult = await currentOptions.fetcher(finalInput, context)
             if (controller.signal.aborted) throw createAbortError()
 
             throttler.flush()
-            setResultState(finalResult)
-            setStatus('ready')
             const response = { ...info, result: finalResult }
-            setLastResponse(response)
+            store.setState({
+              result: finalResult,
+              status: 'ready',
+              lastResponse: response
+            })
             currentOptions.onResponse?.(response)
             currentOptions.onFinish?.(finalResult)
             return finalResult
@@ -267,8 +365,7 @@ export function useGeneration<
             const nextError = normalizeError(rawError)
             throttler.flush()
             if (nextError.name === 'AbortError' || controller.signal.aborted) {
-              setError(null)
-              setStatus('ready')
+              store.setState({ error: null, status: 'ready' })
               throw nextError
             }
 
@@ -280,32 +377,30 @@ export function useGeneration<
               continue
             }
 
-            setStatus('error')
-            setError(nextError)
+            store.setState({ status: 'error', error: nextError })
             currentOptions.onError?.(nextError)
             throw nextError
           }
         }
       } finally {
         abortControllerRef.current = null
-        setAbortController(null)
-        setIsLoading(false)
+        store.setState({ abortController: null, isLoading: false })
       }
     },
-    [requestInfo, setInput]
+    [requestInfo, setInput, store]
   )
 
   return {
     id,
-    input,
-    result,
-    progress,
-    chunks,
-    status,
-    isLoading,
-    error,
-    lastRequest,
-    lastResponse,
+    input: state.input,
+    result: state.result,
+    progress: state.progress,
+    chunks: state.chunks,
+    status: state.status,
+    isLoading: state.isLoading,
+    error: state.error,
+    lastRequest: state.lastRequest,
+    lastResponse: state.lastResponse,
     inspect,
     generate,
     stop,
@@ -315,6 +410,6 @@ export function useGeneration<
     clearTrace,
     clear,
     reset: clear,
-    abortController
+    abortController: state.abortController
   }
 }

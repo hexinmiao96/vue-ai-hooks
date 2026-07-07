@@ -46,6 +46,44 @@ describe('react parity hooks', () => {
     expect(onChunk).toHaveBeenCalledWith('half')
   })
 
+  it('shares generation state between hooks with the same id', async () => {
+    const fetcher = vi.fn(async (input: string) => ({ url: `/shared/${input}` }))
+    const { result } = renderHook(() => ({
+      first: useGeneration<string, { url: string }>({
+        id: 'shared-generation-parity',
+        initialInput: 'seed',
+        fetcher
+      }),
+      second: useGeneration<string, { url: string }>({
+        id: 'shared-generation-parity',
+        initialInput: 'ignored',
+        fetcher
+      })
+    }))
+
+    expect(result.current.first.input).toBe('seed')
+    expect(result.current.second.input).toBe('seed')
+
+    await act(async () => {
+      result.current.first.setInput('synced')
+    })
+
+    expect(result.current.first.input).toBe('synced')
+    expect(result.current.second.input).toBe('synced')
+
+    await act(async () => {
+      await expect(result.current.second.generate()).resolves.toEqual({
+        url: '/shared/synced'
+      })
+    })
+
+    expect(fetcher).toHaveBeenCalledWith('synced', expect.objectContaining({ attempt: 1 }))
+    expect(result.current.first.result).toEqual({ url: '/shared/synced' })
+    expect(result.current.second.lastResponse).toMatchObject({
+      result: { url: '/shared/synced' }
+    })
+  })
+
   it('posts transcription requests and exposes text aliases', async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse({ transcription: 'hello from audio', model: 'transcribe-model' })
