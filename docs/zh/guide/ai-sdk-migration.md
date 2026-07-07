@@ -17,6 +17,21 @@
 
 主要差异在封装方式：本库把这些能力放在 Vue refs 和 provider 对象里，而不是完整的全栈框架集成层。
 
+## 迁移顺序
+
+一次只迁移一个路由。不要把模型逻辑、UI 状态和持久化放在同一次改动里重写。
+
+1. 保留现有 `/api/chat` 响应协议，只把客户端 hook 替换为 `useChat({ api })`。
+2. 用一轮不含工具调用的对话确认 `messages`、`status`、`stop()`、`sendMessage()` 和
+   `inspect()`。
+3. 再迁移工具调用：先映射 `addToolOutput()` 和审批响应，再开启自动工具循环。
+4. 聊天行为一致后再迁移持久化。在存储边界使用 `serializeMessages()`、
+   `deserializeMessages()` 和 `safeValidateUIMessages()`。
+5. 最后迁移非聊天路由：`useObject`、`useEmbedding`、`useImage`、`useVideo`、
+   `useSpeech`、`useTranscription`、`useRerank` 都可以继续使用应用自有后端端点。
+
+React 应用可以把 `vue-ai-hooks/react` 作为已覆盖 hook 的迁移桥接层。新的 Vue 功能仍建议使用根入口，保持库的 Vue-first 定位。
+
 ## 快速映射
 
 | AI SDK UI 概念                                      | vue-ai-hooks 对应能力                                                                                                                                         |

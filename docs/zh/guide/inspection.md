@@ -90,6 +90,40 @@ Provider 响应体复制进 summary。
 `providerTrace`，以及设置 `curl: true` 后生成的脱敏 `curl` 命令。只需要复制请求命令时，
 也可以单独调用导出的 `createInspectionCurl(request)`。
 
+## 支持排查包
+
+生产支持场景不要直接导出原始应用状态，而是复制一个小型脱敏排查包。这样既能定位问题，
+也不会暴露 Provider key 或租户 payload：
+
+```ts
+import type { RequestInspectionSnapshot } from 'vue-ai-hooks'
+
+function createSupportBundle(
+  label: string,
+  hook: { inspect: () => RequestInspectionSnapshot<unknown, unknown> }
+) {
+  const inspection = hook.inspect()
+  return {
+    label,
+    generatedAt: new Date().toISOString(),
+    summary: inspection.summary,
+    status: inspection.status,
+    error: inspection.error,
+    providerTrace: inspection.providerTrace,
+    timeline: inspection.timeline,
+    retries: inspection.retries,
+    curl: inspection.curl
+  }
+}
+
+const bundle = createSupportBundle('checkout-chat', chat)
+await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2))
+```
+
+这个排查包适合分析 Provider 失败、proxy CORS 配置错误、超时预算或请求体问题。
+如果支持工单需要租户标识，只添加短的应用自有 id，例如 `tenantHash` 或 `traceId`；
+不要加入完整用户记录、authorization header 或原始消息归档。
+
 调试脱敏会覆盖敏感 header，以及请求 body 和事件 metadata 里的 `apiKey`、`accessToken`、
 `clientSecret`、`password`、`privateKey`、`sessionToken` 等常见凭据字段。非敏感 metadata
 仍会保留，原始请求对象不会被修改。

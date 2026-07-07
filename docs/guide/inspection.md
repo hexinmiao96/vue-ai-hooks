@@ -93,6 +93,42 @@ The same snapshot already includes a `timeline`, normalized `retries`, a compact
 `createInspectionCurl(request)` is exported separately when you only need the
 copyable request command.
 
+## Support bundle
+
+For production support, copy a small redacted bundle instead of dumping raw app
+state. This keeps the report useful while avoiding provider keys and tenant
+payloads:
+
+```ts
+import type { RequestInspectionSnapshot } from 'vue-ai-hooks'
+
+function createSupportBundle(
+  label: string,
+  hook: { inspect: () => RequestInspectionSnapshot<unknown, unknown> }
+) {
+  const inspection = hook.inspect()
+  return {
+    label,
+    generatedAt: new Date().toISOString(),
+    summary: inspection.summary,
+    status: inspection.status,
+    error: inspection.error,
+    providerTrace: inspection.providerTrace,
+    timeline: inspection.timeline,
+    retries: inspection.retries,
+    curl: inspection.curl
+  }
+}
+
+const bundle = createSupportBundle('checkout-chat', chat)
+await navigator.clipboard.writeText(JSON.stringify(bundle, null, 2))
+```
+
+Use the bundle when triaging provider failures, proxy CORS mistakes, timeout
+budgets, or bad request bodies. If your app needs tenant identifiers in support
+tickets, add a short app-owned id such as `tenantHash` or `traceId`; do not add
+full user records, authorization headers, or raw message archives.
+
 Inspection redaction covers sensitive headers plus common credential fields such
 as `apiKey`, `accessToken`, `clientSecret`, `password`, `privateKey`, and
 `sessionToken` inside request bodies and event metadata. Non-sensitive metadata

@@ -61,6 +61,14 @@ export {
 } from './react/useVideo'
 
 export {
+  useSpeech,
+  type ReactSpeechGenerationRequestInfo,
+  type ReactSpeechGenerationResponseInfo,
+  type UseReactSpeechOptions,
+  type UseReactSpeechReturn
+} from './react/useSpeech'
+
+export {
   createPromptSuggestionRecipes,
   promptSuggestionRecipeIds,
   usePromptSuggestions,
@@ -132,8 +140,11 @@ export type {
   CompletionRequest,
   EmbeddingRequest,
   EmbeddingResult,
+  GeneratedAudio,
   ResponseFormat,
   RetryContext,
   RetryOptions,
+  SpeechGenerationRequest,
+  SpeechGenerationResult,
   StreamThrottleOptions
 } from './types'

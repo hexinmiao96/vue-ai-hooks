@@ -14,6 +14,7 @@ npm install vue-ai-hooks
 
 | 你想做什么                   | 从这里开始                                             |
 | ---------------------------- | ------------------------------------------------------ |
+| 5 分钟内接入聊天             | 按 [5 分钟代理接入路径](#5-分钟代理接入路径)           |
 | 不配置 Provider key，先看 UI | 跑 [本地工具审批示例](#不需要-api-key-的-demo)         |
 | 按产品任务选择 demo          | 阅读 [任务型 Demo](/zh/guide/task-demos)               |
 | 增加持久工具审批             | 按 [工具审批配方](/zh/guide/tool-approvals)            |
@@ -32,6 +33,55 @@ npm install vue-ai-hooks
 | 增加 thread 侧边栏           | 使用 [useChatThreads](/zh/reference/use-chat-threads)  |
 | 选择模型 Provider            | 跳到 [使用不同 Provider](#使用不同-provider)           |
 | 检查生产上线准备             | 使用 [生产检查清单](/zh/guide/production-checklist)    |
+
+## 5 分钟代理接入路径
+
+已有 Vue 应用、只想先完成一个浏览器安全的聊天入口时，按这条路径走，不需要先读完整 API。
+
+1. 安装依赖：
+
+```bash
+pnpm add vue-ai-hooks
+```
+
+2. 在一个组件里接入组合式函数：
+
+```vue
+<script setup lang="ts">
+import { useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  api: '/api/chat',
+  credentials: 'include'
+})
+</script>
+
+<template>
+  <form @submit="chat.handleSubmit">
+    <div v-for="message in chat.messages.value" :key="message.id">
+      {{ message.role }}: {{ message.content }}
+    </div>
+    <textarea v-model="chat.input.value" />
+    <button :disabled="chat.isLoading.value || !chat.input.value.trim()">发送</button>
+  </form>
+</template>
+```
+
+3. 让你的 `/api/chat` 返回 AI SDK UI message stream parts 或 `ChatChunk` SSE。
+   上游 Provider key 留在这个后端路由里。
+
+4. 发起一次请求；失败时先看 `chat.inspect()`：
+
+```ts
+console.log(chat.inspect().summary)
+console.log(chat.inspect().curl)
+```
+
+5. 上生产前再补 [生产检查清单](/zh/guide/production-checklist) 里需要的部分：
+   proxy 凭据、超时预算、trace id 透传、脱敏支持面板，以及产品需要的持久化。
+
+如果暂时还没有后端路由，先跑下方本地 proxy 模板。之后同一个 `useChat({ baseURL })`
+可以指向真实后端。
 
 ## 不需要 API key 的 Demo
 

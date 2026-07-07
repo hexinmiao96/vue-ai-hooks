@@ -1,11 +1,12 @@
 # React hooks
 
 `vue-ai-hooks/react` is the optional React entry. It exposes `useChat`,
-`useCompletion`, and `useObject` for core React hooks, plus `useImage`, `useVideo`, `usePromptSuggestions`, and `useAgentRun`, so React consumers can use the same
+`useCompletion`, `useEmbedding`, and `useObject` for core React hooks, plus `useImage`, `useVideo`, `useSpeech`, `usePromptSuggestions`, and `useAgentRun`, so React consumers can use the same
 providers, proxy transport, request tracing, and stream formats as the Vue entry.
-Core React exports are `useChat`, `useCompletion`, and `useObject` for the most common workflow.
+Core migration exports still include `useChat`, `useCompletion`, and `useObject`.
+Core React exports are `useChat`, `useCompletion`, `useEmbedding`, and `useObject` for the most common workflow.
 
-For app-owned media flows, it also exposes `useImage` and `useVideo`.
+For app-owned media flows, it also exposes `useImage`, `useVideo`, and `useSpeech`.
 
 Install React in the consuming app only when you use this subpath:
 
@@ -23,6 +24,15 @@ pnpm example:react-video
 
 ```tsx
 import { useChat, useCompletion, useImage, useObject, useVideo } from 'vue-ai-hooks/react'
+import {
+  useChat,
+  useCompletion,
+  useEmbedding,
+  useImage,
+  useObject,
+  useSpeech,
+  useVideo
+} from 'vue-ai-hooks/react'
 ```
 
 The demo source is `examples/react-chat/App.tsx`. It uses
@@ -204,8 +214,10 @@ export function VideoBox() {
 import {
   useChat,
   useCompletion,
+  useEmbedding,
   useImage,
   useObject,
+  useSpeech,
   createPromptSuggestionRecipes,
   usePromptSuggestions,
   useVideo,
@@ -225,6 +237,8 @@ searchable:
   `ReactCompletionResponseInfo`, `ReactCompletionStatus`,
   `ReactCompletionStreamProtocol`, `ReactLegacyCompletionFinishCallback`,
   `UseReactCompletionOptions`, `UseReactCompletionReturn`.
+- Embedding: `ReactEmbeddingRequestInfo`, `ReactEmbeddingResponseInfo`,
+  `UseReactEmbeddingOptions`, `UseReactEmbeddingReturn`.
 - Object: `ReactAiSdkObjectFinishCallback`, `ReactLegacyObjectFinishCallback`,
   `ReactObjectDeepPartial`, `ReactObjectFinishCallback`,
   `ReactObjectFinishCallbackOptions`, `ReactObjectFinishInfo`,
@@ -233,12 +247,13 @@ searchable:
 - Media and agents: `ReactImageEditOptions`,
   `ReactImageGenerationRequestInfo`, `ReactImageGenerationResponseInfo`,
   `ReactVideoGenerationRequestInfo`, `ReactVideoGenerationResponseInfo`,
+  `ReactSpeechGenerationRequestInfo`, `ReactSpeechGenerationResponseInfo`,
   `ReactAgentRunFinishInfo`, `ReactAgentRunHandler`,
   `ReactAgentRunInspectionSnapshot`, `ReactAgentRunRequest`,
   `ReactAgentRunRequestInfo`, `ReactAgentRunResponseInfo`,
   `ReactAgentRunStatus`, `UseReactImageOptions`, `UseReactImageReturn`,
-  `UseReactVideoOptions`, `UseReactVideoReturn`, `UseReactAgentRunOptions`,
-  `UseReactAgentRunReturn`.
+  `UseReactVideoOptions`, `UseReactVideoReturn`, `UseReactSpeechOptions`,
+  `UseReactSpeechReturn`, `UseReactAgentRunOptions`, `UseReactAgentRunReturn`.
 - Prompt suggestions: `CreatePromptSuggestionRecipesOptions`,
   `PromptSuggestionRecipe`, `PromptSuggestionRecipeCategory`,
   `PromptSuggestionRecipeId`, `PromptSuggestionRecipeLocale`,
@@ -307,6 +322,28 @@ searchable:
 
 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })` is the AI SDK-style callback for `useChat`. `onFinishLegacy(message, info)` remains available for existing code.
 
+`useEmbedding(options)` accepts `UseReactEmbeddingOptions`:
+
+| Option                                                      | Description                                                                   |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `provider` / `transport`                                    | A `ChatProvider` that implements `embedding()`, or omit it to use proxy mode. |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | Proxy transport options used when no provider is passed.                      |
+| `initialInput`, `defaultRequest`                            | Initial input and defaults merged into each `EmbeddingRequest`.               |
+| `onRequest`, `onResponse`, `onSuccess`, `onError`           | Lifecycle callbacks for request traces, final embeddings, and errors.         |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | Retry controls for non-streaming embedding requests.                          |
+
+`UseReactEmbeddingReturn` exposes plain React state and actions:
+
+| Return                                                                         | Description                                                        |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `id`, `input`, `status`, `isLoading`, `error`, `embeddings`, `result`          | Current embedding state.                                           |
+| `lastRequest`, `lastResponse`                                                  | Last request and response trace snapshots.                         |
+| `inspect()`                                                                    | Build a production debug snapshot with timeline and retry records. |
+| `embed(input, options?)`                                                       | Compute embeddings for one string or a string array.               |
+| `stop()`                                                                       | Abort the active request.                                          |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                          |
+| `clearError()`, `clearTrace()`, `clear()`                                      | Reset error, trace, or the full embedding state.                   |
+
 `useImage(options)` accepts `UseReactImageOptions`:
 
 | Option                                                      | Description                                                               |
@@ -349,6 +386,27 @@ searchable:
 | `stop()`                                                                       | Abort the active request.                                          |
 | `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                          |
 | `clearError()`, `clearTrace()`, `clear()`                                      | Reset error, trace, or the full video state.                       |
+
+`useSpeech(options)` accepts `UseReactSpeechOptions`:
+
+| Option                                                      | Description                                                                |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | Proxy transport options used when posting to an app-owned speech endpoint. |
+| `initialInput`, `defaultRequest`, `timeoutMs`               | Defaults merged into each speech request and optional request timeout.     |
+| `onRequest`, `onResponse`, `onFinish`, `onError`            | Lifecycle callbacks for request and response traces.                       |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | Retry controls for non-streaming speech requests.                          |
+
+`UseReactSpeechReturn` exposes plain React state and actions:
+
+| Return                                                                         | Description                                                        |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `id`, `input`, `status`, `isLoading`, `error`, `audio`, `result`               | Current speech generation state.                                   |
+| `lastRequest`, `lastResponse`                                                  | Last request and response trace snapshots.                         |
+| `inspect()`                                                                    | Build a production debug snapshot with timeline and retry records. |
+| `generate(text?, options?)`, `generateSpeech(text?, options?)`, `speak()`      | Start speech generation from inline or form input.                 |
+| `stop()`                                                                       | Abort the active request.                                          |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | Form helpers for controlled React inputs.                          |
+| `clearError()`, `clearTrace()`, `clear()`                                      | Reset error, trace, or the full speech state.                      |
 
 `usePromptSuggestions(options)` accepts `UseReactPromptSuggestionsOptions`:
 

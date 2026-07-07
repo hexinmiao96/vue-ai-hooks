@@ -92,6 +92,7 @@ import {
   useObject as useReactObject,
   usePromptSuggestions as useReactPromptSuggestions,
   useAgentRun as useReactAgentRun,
+  useSpeech as useReactSpeech,
   useVideo as useReactVideo
 } from 'vue-ai-hooks/react'
 import type {
@@ -437,8 +438,12 @@ import type {
   UseReactPromptSuggestionsReturn,
   ReactVideoGenerationRequestInfo,
   ReactVideoGenerationResponseInfo,
+  ReactSpeechGenerationRequestInfo,
+  ReactSpeechGenerationResponseInfo,
   UseReactVideoOptions,
-  UseReactVideoReturn
+  UseReactVideoReturn,
+  UseReactSpeechOptions,
+  UseReactSpeechReturn
 } from 'vue-ai-hooks/react'
 
 const provider: ChatProvider = openaiCompatible({
@@ -472,6 +477,9 @@ describe('public API types', () => {
     const reactVideoOptions: UseReactVideoOptions = {
       api: '/api/react-video'
     }
+    const reactSpeechOptions: UseReactSpeechOptions = {
+      api: '/api/react-speech'
+    }
     const reactPromptSuggestionOptions: UseReactPromptSuggestionsOptions = {
       suggestions: ['Summarize this thread'],
       input: 'ask',
@@ -499,6 +507,7 @@ describe('public API types', () => {
     expect(typeof useReactPromptSuggestions).toBe('function')
     expect(typeof useReactAgentRun).toBe('function')
     expect(typeof useReactVideo).toBe('function')
+    expect(typeof useReactSpeech).toBe('function')
     expect(typeof createReactPromptSuggestionRecipes).toBe('function')
     expectTypeOf(reactOptions).toMatchTypeOf<UseReactChatOptions>()
     expectTypeOf<
@@ -626,6 +635,29 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactVideoReturn['lastResponse']
     >().toEqualTypeOf<ReactVideoGenerationResponseInfo | null>()
+    expectTypeOf(reactSpeechOptions).toMatchTypeOf<UseReactSpeechOptions>()
+    expectTypeOf<ReturnType<typeof useReactSpeech>>().toEqualTypeOf<UseReactSpeechReturn>()
+    expectTypeOf<UseReactSpeechReturn>().toMatchTypeOf<{
+      audio: GeneratedAudio | null
+      generate: (
+        text?: string,
+        options?: Partial<SpeechGenerationRequest>
+      ) => Promise<SpeechGenerationResult>
+      generateSpeech: (
+        text?: string,
+        options?: Partial<SpeechGenerationRequest>
+      ) => Promise<SpeechGenerationResult>
+      speak: (
+        text?: string,
+        options?: Partial<SpeechGenerationRequest>
+      ) => Promise<SpeechGenerationResult>
+    }>()
+    expectTypeOf<
+      UseReactSpeechReturn['lastRequest']
+    >().toEqualTypeOf<ReactSpeechGenerationRequestInfo | null>()
+    expectTypeOf<
+      UseReactSpeechReturn['lastResponse']
+    >().toEqualTypeOf<ReactSpeechGenerationResponseInfo | null>()
     expectTypeOf(reactPromptSuggestionOptions).toMatchTypeOf<UseReactPromptSuggestionsOptions>()
     expectTypeOf(createReactPromptSuggestionRecipes({ include: ['find-risks'] })).toMatchTypeOf<
       PromptSuggestion[]

@@ -14,6 +14,7 @@ npm install vue-ai-hooks
 
 | If you want to...                | Start here                                                          |
 | -------------------------------- | ------------------------------------------------------------------- |
+| Add chat in five minutes         | Follow the [five-minute proxy path](#five-minute-proxy-path)        |
 | See the UI without provider keys | Run the [local tool approval demo](#run-a-demo-without-api-keys)    |
 | Pick the right demo by job       | Read [Task-oriented demos](/guide/task-demos)                       |
 | Add durable tool approvals       | Follow the [Tool approval recipe](/guide/tool-approvals)            |
@@ -32,6 +33,57 @@ npm install vue-ai-hooks
 | Add a thread sidebar             | Use [useChatThreads](/reference/use-chat-threads)                   |
 | Choose a model provider          | Jump to [using a different provider](#using-a-different-provider)   |
 | Check production readiness       | Use the [Production checklist](/guide/production-checklist)         |
+
+## Five-minute proxy path
+
+Use this path when you already have a Vue app and want a browser-safe first
+chat without learning every API first.
+
+1. Install the package:
+
+```bash
+pnpm add vue-ai-hooks
+```
+
+2. Add the composable to one component:
+
+```vue
+<script setup lang="ts">
+import { useChat } from 'vue-ai-hooks'
+
+const chat = useChat({
+  api: '/api/chat',
+  credentials: 'include'
+})
+</script>
+
+<template>
+  <form @submit="chat.handleSubmit">
+    <div v-for="message in chat.messages.value" :key="message.id">
+      {{ message.role }}: {{ message.content }}
+    </div>
+    <textarea v-model="chat.input.value" />
+    <button :disabled="chat.isLoading.value || !chat.input.value.trim()">Send</button>
+  </form>
+</template>
+```
+
+3. Make your `/api/chat` route return either AI SDK UI message stream parts or
+   `ChatChunk` SSE. Keep the upstream provider key on that route.
+
+4. Run one request and check `chat.inspect()` if it fails:
+
+```ts
+console.log(chat.inspect().summary)
+console.log(chat.inspect().curl)
+```
+
+5. Before production, add the [production checklist](/guide/production-checklist)
+   items you need: proxy credentials, timeout budget, trace id propagation,
+   redacted support panels, and persistent storage if the product needs it.
+
+If you do not have a backend route yet, run the local proxy template below first.
+The same `useChat({ baseURL })` call can then point to your real backend.
 
 ## Run a demo without API keys
 

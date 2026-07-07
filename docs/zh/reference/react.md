@@ -1,7 +1,7 @@
 # React hooks
 
 `vue-ai-hooks/react` 是可选 React 入口。目前它提供 React 版 `useChat`、
-`useCompletion`、`useImage`、`useVideo`、`useObject`、`usePromptSuggestions` 与 `useAgentRun`，用于流式 React UI，并复用根入口里的
+`useCompletion`、`useObject`、`useImage`、`useVideo`、`usePromptSuggestions` 和 `useAgentRun`，也补充了 `useEmbedding` 与 `useSpeech`，用于流式 React UI，并复用根入口里的
 Provider、Proxy transport、请求追踪与 stream 格式。
 
 只有使用这个子路径时，消费侧应用才需要安装 React：
@@ -20,6 +20,15 @@ pnpm example:react-video
 
 ```tsx
 import { useChat, useCompletion, useImage, useObject, useVideo } from 'vue-ai-hooks/react'
+import {
+  useChat,
+  useCompletion,
+  useEmbedding,
+  useImage,
+  useObject,
+  useSpeech,
+  useVideo
+} from 'vue-ai-hooks/react'
 ```
 
 demo 源码在 `examples/react-chat/App.tsx`。它使用 `DirectChatTransport`
@@ -200,8 +209,10 @@ export function VideoBox() {
 import {
   useChat,
   useCompletion,
+  useEmbedding,
   useImage,
   useObject,
+  useSpeech,
   createPromptSuggestionRecipes,
   usePromptSuggestions,
   useVideo,
@@ -220,6 +231,8 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
   `ReactCompletionResponseInfo`、`ReactCompletionStatus`、
   `ReactCompletionStreamProtocol`、`ReactLegacyCompletionFinishCallback`、
   `UseReactCompletionOptions`、`UseReactCompletionReturn`。
+- Embedding：`ReactEmbeddingRequestInfo`、`ReactEmbeddingResponseInfo`、
+  `UseReactEmbeddingOptions`、`UseReactEmbeddingReturn`。
 - Object：`ReactAiSdkObjectFinishCallback`、`ReactLegacyObjectFinishCallback`、
   `ReactObjectDeepPartial`、`ReactObjectFinishCallback`、
   `ReactObjectFinishCallbackOptions`、`ReactObjectFinishInfo`、
@@ -228,12 +241,13 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
 - 媒体和 Agent：`ReactImageEditOptions`、
   `ReactImageGenerationRequestInfo`、`ReactImageGenerationResponseInfo`、
   `ReactVideoGenerationRequestInfo`、`ReactVideoGenerationResponseInfo`、
+  `ReactSpeechGenerationRequestInfo`、`ReactSpeechGenerationResponseInfo`、
   `ReactAgentRunFinishInfo`、`ReactAgentRunHandler`、
   `ReactAgentRunInspectionSnapshot`、`ReactAgentRunRequest`、
   `ReactAgentRunRequestInfo`、`ReactAgentRunResponseInfo`、
   `ReactAgentRunStatus`、`UseReactImageOptions`、`UseReactImageReturn`、
-  `UseReactVideoOptions`、`UseReactVideoReturn`、`UseReactAgentRunOptions`、
-  `UseReactAgentRunReturn`。
+  `UseReactVideoOptions`、`UseReactVideoReturn`、`UseReactSpeechOptions`、
+  `UseReactSpeechReturn`、`UseReactAgentRunOptions`、`UseReactAgentRunReturn`。
 - Prompt suggestions：`CreatePromptSuggestionRecipesOptions`、
   `PromptSuggestionRecipe`、`PromptSuggestionRecipeCategory`、
   `PromptSuggestionRecipeId`、`PromptSuggestionRecipeLocale`、
@@ -301,6 +315,28 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
 `useChat` 的 `onFinish({ message, messages, isAbort, isError, isDisconnect, finishReason })`
 使用 AI SDK 风格，新代码优先使用该回调；`onFinishLegacy(message, info)` 保留旧签名兼容。
 
+`useEmbedding(options)` 接收 `UseReactEmbeddingOptions`：
+
+| 选项                                                        | 说明                                                            |
+| ----------------------------------------------------------- | --------------------------------------------------------------- |
+| `provider` / `transport`                                    | 实现了 `embedding()` 的 `ChatProvider`；省略时使用 proxy 模式。 |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | 没有传 provider 时使用的 proxy transport 配置。                 |
+| `initialInput`, `defaultRequest`                            | 初始输入，以及合并到每次 `EmbeddingRequest` 的默认请求参数。    |
+| `onRequest`, `onResponse`, `onSuccess`, `onError`           | 请求 trace、最终 embeddings 和错误生命周期回调。                |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | embedding 请求重试策略（非流式场景）。                          |
+
+`UseReactEmbeddingReturn` 暴露普通 React state 和操作：
+
+| 返回值                                                                         | 说明                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------- |
+| `id`, `input`, `status`, `isLoading`, `error`, `embeddings`, `result`          | 当前 embedding 状态。                 |
+| `lastRequest`, `lastResponse`                                                  | 最近一次请求与响应追踪快照。          |
+| `inspect()`                                                                    | 生成带 timeline/retry 的调试快照。    |
+| `embed(input, options?)`                                                       | 为单个字符串或字符串数组计算向量。    |
+| `stop()`                                                                       | 中止进行中的请求。                    |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控表单输入与提交 helper。           |
+| `clearError()`, `clearTrace()`, `clear()`                                      | 重置错误、追踪或全部 embedding 状态。 |
+
 `useImage(options)` 接收 `UseReactImageOptions`：
 
 | 选项                                                        | 说明                                              |
@@ -343,6 +379,27 @@ React 专属导出类型按 hook 面向集中列出，方便 API 搜索和迁移
 | `stop()`                                                                       | 中止进行中的请求。                 |
 | `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控表单输入与提交 helper。        |
 | `clearError()`, `clearTrace()`, `clear()`                                      | 重置错误、追踪或全部视频状态。     |
+
+`useSpeech(options)` 接收 `UseReactSpeechOptions`：
+
+| 选项                                                        | 说明                                               |
+| ----------------------------------------------------------- | -------------------------------------------------- |
+| `api`, `baseURL`, `headers`, `body`, `credentials`, `fetch` | 请求 `/api/speech` 时使用的 proxy transport 配置。 |
+| `initialInput`, `defaultRequest`, `timeoutMs`               | 写入默认请求参数、初始输入与超时。                 |
+| `onRequest`, `onResponse`, `onFinish`, `onError`            | 请求生命周期回调。                                 |
+| `maxRetries`, `retryDelayMs`, `shouldRetry`, `onRetry`      | 语音生成请求重试策略（非流式场景）。               |
+
+`UseReactSpeechReturn` 暴露常规 React state 和操作：
+
+| 返回值                                                                         | 说明                               |
+| ------------------------------------------------------------------------------ | ---------------------------------- |
+| `id`, `input`, `status`, `isLoading`, `error`, `audio`, `result`               | 当前语音生成状态。                 |
+| `lastRequest`, `lastResponse`                                                  | 最近一次请求与响应追踪快照。       |
+| `inspect()`                                                                    | 生成带 timeline/retry 的调试快照。 |
+| `generate(text?, options?)`, `generateSpeech(text?, options?)`, `speak()`      | 从行内文本或 form 发起语音请求。   |
+| `stop()`                                                                       | 中止进行中的请求。                 |
+| `setInput(value)`, `handleInputChange(event)`, `handleSubmit(event, options?)` | 受控表单输入与提交 helper。        |
+| `clearError()`, `clearTrace()`, `clear()`                                      | 重置错误、追踪或全部语音状态。     |
 
 `usePromptSuggestions(options)` 接收 `UseReactPromptSuggestionsOptions`：
 

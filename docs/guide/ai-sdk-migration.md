@@ -19,6 +19,28 @@ when porting code.
 The main difference is packaging: this library keeps those ideas inside Vue
 refs and provider objects instead of a full-stack framework integration layer.
 
+## Migration order
+
+Port one route at a time. Do not rewrite model logic, UI state, and persistence
+in the same change.
+
+1. Keep your existing `/api/chat` response protocol and swap only the client
+   hook to `useChat({ api })`.
+2. Verify `messages`, `status`, `stop()`, `sendMessage()`, and `inspect()` with
+   one no-tool conversation.
+3. Move tool calls next: map `addToolOutput()` and approval responses before
+   enabling automatic tool loops.
+4. Move persistence only after chat behavior matches. Use
+   `serializeMessages()`, `deserializeMessages()`, and
+   `safeValidateUIMessages()` at the storage boundary.
+5. Move non-chat routes last: `useObject`, `useEmbedding`, `useImage`,
+   `useVideo`, `useSpeech`, `useTranscription`, and `useRerank` can keep
+   app-owned backend endpoints.
+
+For React apps, use `vue-ai-hooks/react` only as a migration bridge for the
+covered hooks. Keep new Vue work on the root entry so the package remains
+Vue-first.
+
 ## Quick mapping
 
 | AI SDK UI concept                                   | vue-ai-hooks equivalent                                                                                                                                         |

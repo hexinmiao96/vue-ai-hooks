@@ -92,6 +92,8 @@
     "dist/react/useObject.d.ts.map",
     "dist/react/usePromptSuggestions.d.ts",
     "dist/react/usePromptSuggestions.d.ts.map",
+    "dist/react/useSpeech.d.ts",
+    "dist/react/useSpeech.d.ts.map",
     "dist/react/useVideo.d.ts",
     "dist/react/useVideo.d.ts.map",
     "dist/types/index.d.ts",
