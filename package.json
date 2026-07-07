@@ -84,6 +84,8 @@
     "dist/react/useChat.d.ts",
     "dist/react/useCompletion.d.ts",
     "dist/react/useCompletion.d.ts.map",
+    "dist/react/useEmbedding.d.ts",
+    "dist/react/useEmbedding.d.ts.map",
     "dist/react/useImage.d.ts",
     "dist/react/useImage.d.ts.map",
     "dist/react/useObject.d.ts",

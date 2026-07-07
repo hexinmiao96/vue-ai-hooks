@@ -35,6 +35,15 @@ export {
 } from './react/useCompletion'
 
 export {
+  cosineSimilarity,
+  useEmbedding,
+  type ReactEmbeddingRequestInfo,
+  type ReactEmbeddingResponseInfo,
+  type UseReactEmbeddingOptions,
+  type UseReactEmbeddingReturn
+} from './react/useEmbedding'
+
+export {
   useImage,
   type ReactImageGenerationRequestInfo,
   type ReactImageGenerationResponseInfo,
@@ -121,6 +130,8 @@ export type {
   ChatChunk,
   ChatStreamProtocol,
   CompletionRequest,
+  EmbeddingRequest,
+  EmbeddingResult,
   ResponseFormat,
   RetryContext,
   RetryOptions,

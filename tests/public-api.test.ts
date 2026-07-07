@@ -87,6 +87,7 @@ import {
   createPromptSuggestionRecipes as createReactPromptSuggestionRecipes,
   useChat as useReactChat,
   useCompletion as useReactCompletion,
+  useEmbedding as useReactEmbedding,
   useImage as useReactImage,
   useObject as useReactObject,
   usePromptSuggestions as useReactPromptSuggestions,
@@ -408,6 +409,8 @@ import type {
   ReactCompletionFinishInfo,
   ReactCompletionRequestInfo,
   ReactCompletionResponseInfo,
+  ReactEmbeddingRequestInfo,
+  ReactEmbeddingResponseInfo,
   ReactAgentRunFinishInfo,
   ReactAgentRunInspectionSnapshot,
   ReactAgentRunRequest,
@@ -424,6 +427,8 @@ import type {
   ReactObjectRequestInfo,
   ReactObjectResponseInfo,
   ReactImageEditOptions,
+  UseReactEmbeddingOptions,
+  UseReactEmbeddingReturn,
   UseReactImageOptions,
   UseReactImageReturn,
   UseReactAgentRunOptions,
@@ -452,6 +457,7 @@ describe('public API types', () => {
   it('exports the React subpath without changing the Vue root entry', () => {
     const reactOptions: UseReactChatOptions = { provider }
     const reactCompletionOptions: UseReactCompletionOptions = { provider }
+    const reactEmbeddingOptions: UseReactEmbeddingOptions = { provider }
     const answerSchema = jsonSchema<{ answer: string }>({
       type: 'object',
       properties: { answer: { type: 'string' } }
@@ -487,6 +493,7 @@ describe('public API types', () => {
 
     expect(typeof useReactChat).toBe('function')
     expect(typeof useReactCompletion).toBe('function')
+    expect(typeof useReactEmbedding).toBe('function')
     expect(typeof useReactObject).toBe('function')
     expect(typeof useReactImage).toBe('function')
     expect(typeof useReactPromptSuggestions).toBe('function')
@@ -528,6 +535,22 @@ describe('public API types', () => {
     expectTypeOf<
       UseReactCompletionReturn['lastResponse']
     >().toEqualTypeOf<ReactCompletionResponseInfo | null>()
+    expectTypeOf(reactEmbeddingOptions).toMatchTypeOf<UseReactEmbeddingOptions>()
+    expectTypeOf<ReturnType<typeof useReactEmbedding>>().toEqualTypeOf<UseReactEmbeddingReturn>()
+    expectTypeOf<UseReactEmbeddingReturn>().toMatchTypeOf<{
+      embeddings: number[][]
+      input: string
+      embed: (
+        input: string | string[],
+        options?: Partial<EmbeddingRequest>
+      ) => Promise<EmbeddingResult>
+    }>()
+    expectTypeOf<
+      UseReactEmbeddingReturn['lastRequest']
+    >().toEqualTypeOf<ReactEmbeddingRequestInfo | null>()
+    expectTypeOf<
+      UseReactEmbeddingReturn['lastResponse']
+    >().toEqualTypeOf<ReactEmbeddingResponseInfo | null>()
     expectTypeOf<ReactObjectFinishInfo<{ answer: string }>>().toMatchTypeOf<{
       object: { answer: string }
       text: string
