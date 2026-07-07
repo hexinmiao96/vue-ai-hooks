@@ -87,6 +87,15 @@ describe('parseSSE', () => {
     expect(out).toEqual([{ a: 1 }])
   })
 
+  it('yields a final data line when the stream closes without a blank separator', async () => {
+    const response = makeResponse(['data: {"a":1}\n'])
+    const out: unknown[] = []
+    for await (const ev of parseSSE(response)) {
+      out.push(ev)
+    }
+    expect(out).toEqual([{ a: 1 }])
+  })
+
   it('handles CRLF event separators', async () => {
     const response = makeResponse(['data: {"a":1}\r\n\r\n', 'data: {"a":2}\r\n\r\n'])
     const out: unknown[] = []

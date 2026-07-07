@@ -24,6 +24,7 @@ try {
   await checkRerankRoute()
   await checkObjectRoute()
   await checkUIMessageStreamRoute()
+  await checkCorsPolicy()
   upstreamServer = await startFakeUpstream()
   baseURL = `http://127.0.0.1:${upstreamProxyPort}`
   upstreamProxyServer = await startProxyServer(upstreamProxyPort, {
@@ -587,6 +588,28 @@ async function checkUpstreamTimeout() {
   expect(String(body.traceId || '').startsWith('proxy-'), '/api/completion should trace timeouts')
 }
 
+async function checkCorsPolicy() {
+  const rejected = await preflight('/api/chat', 'https://evil.example')
+  expect(
+    !rejected.headers.get('access-control-allow-origin'),
+    '/api/chat should not reflect untrusted CORS origins'
+  )
+  expect(
+    !rejected.headers.get('access-control-allow-credentials'),
+    '/api/chat should not allow credentials for untrusted CORS origins'
+  )
+
+  const allowed = await preflight('/api/chat', 'http://localhost:5173')
+  expect(
+    allowed.headers.get('access-control-allow-origin') === 'http://localhost:5173',
+    '/api/chat should allow the default local development origin'
+  )
+  expect(
+    allowed.headers.get('access-control-allow-credentials') === 'true',
+    '/api/chat should allow credentials only for trusted CORS origins'
+  )
+}
+
 async function postJson(path, body) {
   const response = await fetch(`${baseURL}${path}`, {
     method: 'POST',
@@ -604,6 +627,16 @@ async function postJsonWithStatus(path, body) {
     body: JSON.stringify(body)
   })
   return { status: response.status, body: await response.json() }
+}
+
+async function preflight(path, origin) {
+  return await fetch(`${baseURL}${path}`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: origin,
+      'Access-Control-Request-Headers': 'authorization,content-type'
+    }
+  })
 }
 
 async function postSse(path, body) {

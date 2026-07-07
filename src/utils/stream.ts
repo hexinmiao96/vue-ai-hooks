@@ -91,29 +91,50 @@ export async function* parseSSE(
       if (done) break
       buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
-      let sepIndex: number
       // SSE events are separated by a blank line (\n\n).
+      let sepIndex: number
       while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
         const rawEvent = buffer.slice(0, sepIndex)
         buffer = buffer.slice(sepIndex + 2)
 
-        for (const line of rawEvent.split('\n')) {
-          if (!line.startsWith('data:')) continue
-          const data = line.slice(5).trim()
-          if (data === '[DONE]') return
-          if (!data) continue
-          try {
-            yield JSON.parse(data)
-          } catch {
-            // Skip malformed line. Provider can put garbage in the stream
-            // (e.g. comment lines, retries); we don't want to crash the hook.
-          }
+        const events = parseSSEEvent(rawEvent)
+        for (const event of events) {
+          if (event === '[DONE]') return
+          yield event
         }
+      }
+    }
+
+    const finalEvent = buffer.trim()
+    if (finalEvent) {
+      const events = parseSSEEvent(finalEvent)
+      for (const event of events) {
+        if (event === '[DONE]') return
+        yield event
       }
     }
   } finally {
     reader.releaseLock()
   }
+}
+
+function parseSSEEvent(rawEvent: string): Array<Record<string, unknown> | '[DONE]'> {
+  const events: Array<Record<string, unknown> | '[DONE]'> = []
+  for (const line of rawEvent.split('\n')) {
+    if (!line.startsWith('data:')) continue
+    const data = line.slice(5).trim()
+    if (data === '[DONE]') {
+      events.push('[DONE]')
+      continue
+    }
+    if (!data) continue
+    try {
+      events.push(JSON.parse(data) as Record<string, unknown>)
+    } catch {
+      // Skip malformed provider lines without crashing the hook.
+    }
+  }
+  return events
 }
 
 /** Create a stateful decoder for AI SDK UI message stream parts. */

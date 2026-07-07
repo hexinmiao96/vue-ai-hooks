@@ -3,6 +3,11 @@ import { createServer } from 'node:http'
 
 const port = Number(process.env.PORT || 8787)
 const chatStreams = new Map()
+const allowedOrigins = new Set([
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  ...splitList(process.env.PROXY_ALLOWED_ORIGINS)
+])
 const routes = {
   chat: new Set(['/api/chat', '/api/ai/chat']),
   completion: new Set(['/api/completion', '/api/ai/completion']),
@@ -509,8 +514,14 @@ async function handleUIMessageStream(request, response) {
 }
 
 function setCors(request, response) {
-  response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*')
-  response.setHeader('Access-Control-Allow-Credentials', 'true')
+  const origin = request.headers.origin
+  response.setHeader('Vary', 'Origin')
+  if (typeof origin === 'string' && allowedOrigins.has(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin)
+    response.setHeader('Access-Control-Allow-Credentials', 'true')
+  } else if (!origin) {
+    response.setHeader('Access-Control-Allow-Origin', '*')
+  }
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
   response.setHeader(
     'Access-Control-Allow-Headers',
@@ -726,6 +737,13 @@ function trimTrailingSlash(value) {
   let end = value.length
   while (end > 0 && value.charCodeAt(end - 1) === 47) end -= 1
   return value.slice(0, end)
+}
+
+function splitList(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function positiveInteger(value, fallback) {
