@@ -1,7 +1,7 @@
-# Competitive benchmark checkpoint
+# Competitive benchmark v2
 
-This page is not a ranking scoreboard. It records where `vue-ai-hooks` should be
-strictly stronger for this project and where it should stay intentionally smaller.
+This page is not a feature-count ranking. It defines measurable outcomes that show
+where `vue-ai-hooks` should be stronger and where it should stay intentionally smaller.
 
 ## Positioning contract
 
@@ -12,7 +12,7 @@ For this repository:
 - **LangChain.js** is mostly a backend orchestration layer, not a direct frontend competitor.
 - **VueUse** is a general Vue utility benchmark, not an AI protocol baseline.
 
-## What "catch up" means here
+## What "winning" means here
 
 Winning this benchmark means:
 
@@ -38,46 +38,43 @@ Winning this benchmark means:
 | Full copilot shell / built-in widgets           | ✅            | ✅         | ⚪           | ⚪     | ⚪ (starter only; shell stays app-owned) |
 | Retrieval/long-running planning runtime         | ⚪            | ⚪         | ✅           | ⚪     | ⚪ (app/backend scope)                   |
 
-## Competitive gaps to fix next (ordered by product impact)
+## Outcome benchmark
 
-1. **Observability parity**: keep `inspectRequestTrace`, `inspect()`, and stream event
-   contracts first-class in every route template and demo so parity work is testable without proprietary backend code.
-2. **Route template validation depth**: keep expanding framework-specific smoke
-   fixtures around copyable templates without adding those frameworks as dependencies.
-   Current coverage includes Nuxt/Nitro, Next.js, Hono, Express, Fastify, Cloudflare, Fetch, and LangGraph resume shapes.
-3. **Prompt startup rollout depth**: continue adding surface-filtered prompt-suggestion
-   recipes only where a demo or product surface has a real task-starting need.
+Feature coverage is supporting evidence, not the score. A competitive claim is complete only
+when the relevant outcome below is measured in a repeatable fixture or an existing host app.
 
-## 30-day acceptance gates
+| Dimension     | Current baseline                                                                 | Next target                                                                                             | Required evidence                                                        |
+| ------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| DX            | No-key starters and a documented 15-minute first-chat target                     | First local message within 10 minutes and production proxy setup within 30 minutes                      | Timed clean-host run with install, first message, and proxy checkpoints  |
+| Durability    | `resumeStream()`, thread persistence, replay-safe run ids, and client-side abort | Refresh/network recovery without duplicate output; explicit cancel stops the active upstream run once   | Browser smoke for refresh, reconnect, stale cancel, expiry, and two tabs |
+| Agent UX      | Messages, progress, tools, files, sources, interrupts, and finish events         | Typed state snapshot/delta, streamed tool output, steering, reasoning summary, and child-run projection | Event fixtures for ordering, replay, redaction, and Vue/React parity     |
+| Observability | Safe trace, timeline, retries, provider metadata, and redacted curl              | First failed proxy request diagnosable from one safe inspection snapshot                                | Failure fixture plus a host-app diagnosis record                         |
+| Adoption      | Clean Vite, Nuxt, business-proxy, and pinned OSS smoke evidence                  | One existing business application completes chat, proxy, persistence, recovery, and inspection          | Versioned host record with commands, timings, friction, and result       |
+
+## Delivery gates
 
 Do not close a competitor task unless it maps to one of these gates and its proof command passes.
 
-| Gate          | Target                                                                                    | Proof command                                                                                                |
-| ------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| COMP-OBS      | Route templates and task demos expose safe trace, timeline, retry, and redacted curl data | `pnpm demo-ux:check`, `pnpm completion-object:check`, `pnpm image:check`, `pnpm agent-route-templates:check` |
-| COMP-ROUTES   | Copyable backend templates reject bad payloads and preserve run/trace metadata            | `pnpm agent-route-templates:check`                                                                           |
-| COMP-STARTERS | Shell-ready task starters stay surface-filtered and free of provider secrets              | `pnpm threaded-chat:check`, `pnpm competitive-benchmark:check`                                               |
+| Gate          | Target                                                                                             | Proof command                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| COMP-DX       | Timed clean-host checkpoints prove first-message and proxy setup targets                           | `pnpm oss-adoption:check`, `pnpm competitive-benchmark:check`                                                |
+| COMP-DURABLE  | Refresh, reconnect, expiry, explicit cancel, and stale-run races are reproducible                  | Planned for 1.1: `pnpm durable-chat:check`                                                                   |
+| COMP-AGENT    | Headless agent events preserve ordering, replay safety, redaction, and framework projection        | Planned for 1.2: `pnpm agent-protocol:check`                                                                 |
+| COMP-OBS      | Route templates and task demos expose safe trace, timeline, retry, and redacted curl data          | `pnpm demo-ux:check`, `pnpm completion-object:check`, `pnpm image:check`, `pnpm agent-route-templates:check` |
+| COMP-ADOPTION | An existing business app completes the production path without storing provider secrets in browser | `pnpm oss-adoption:check` plus a versioned record in `docs/guide/adoption-evidence.md`                       |
 
-## Current execution score (snapshot: 2026-07-04)
+## P0 baseline (snapshot: 2026-07-22)
 
-- In-scope direct benchmark score: **8 / 8** (AI SDK UI migration parity,
-  observable contracts, and shell-ready starter coverage).
-  - ✅ Vue-native composition API
-  - ✅ Streaming + abort/retry
-  - ✅ Proxy-first production path
-  - ✅ Tool calling + approval workflows
-  - ✅ Thread-side primitives
-  - ✅ Agent runtime adapters
-  - ✅ Runtime capability discovery
-  - ✅ Message/task suggestion starters
+- The former **8 / 8** coverage inventory is retained above, but it is no longer
+  presented as a competitive score.
+- DX and adoption have repeatable smoke infrastructure, but not all target timings
+  have measured evidence.
+- Durable chat has client resume primitives, but not the full explicit-cancel,
+  expiry, stale-run, and multi-tab fixture required by `COMP-DURABLE`.
+- Agent adapters do not yet cover the complete `COMP-AGENT` event set.
 - Deliberate non-goal: full copilot shell widgets stay in the app or in products
   such as CopilotKit; `threaded-chat` is a copyable starter, not a packaged shell.
-- Next 30-day target: close the observability gap in all route templates and
-  demos, then expand route template fixtures for copy-safe backend integration.
-- Evidence source:
-  - `docs/guide/production-readiness-status.md`
-  - `CHANGELOG.md` entries in 0.14.x
-  - `pnpm production:readiness` and `pnpm release:check`
+- Next milestone: deliver `COMP-DURABLE` in 1.1 before widening the public agent event surface.
 
 ## Why this is still consistent with the objective
 

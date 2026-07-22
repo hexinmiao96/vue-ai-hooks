@@ -1,6 +1,6 @@
-# 竞品基准对齐清单
+# 竞品基准 v2
 
-本页不是排名页，不是“哪家功能更多”。它用于确认 `vue-ai-hooks` 在本项目里要“强于谁、强在何处、哪块先不做”。
+本页不按功能数量排名，而是定义可量化结果，用于证明 `vue-ai-hooks` 在哪里更强、哪里应保持克制。
 
 ## 定位约束
 
@@ -35,43 +35,39 @@
 | 开箱 copilot 外壳/内置组件      | ✅         | ✅         | ⚪           | ⚪     | ⚪（只提供 starter，shell 由应用拥有） |
 | 检索/长链规划/多 agent 后端规划 | ⚪         | ⚪         | ✅           | ⚪     | ⚪（后端边界）                         |
 
-## 下一步优先闭环
+## 结果基准
 
-1. **可观测化一致性**：确保每个 route 模板和 demo 都提供 trace、`inspect()`、重试和错误重建可复现验证。
-2. **路由模板验证深度**：继续围绕可复制模板补框架定向 smoke fixture，同时不把这些框架变成依赖。当前已覆盖
-   Nuxt/Nitro、Next.js、Hono、Express、Fastify、Cloudflare、Fetch 和 LangGraph resume 形态。
-3. **启动提示铺设深度**：只在 demo 或产品入口确实需要任务起手时，继续补按 surface 筛选的
-   prompt-suggestion recipes。
+功能覆盖只作为支撑证据，不再作为分数。只有相关结果在可重复 fixture 或现有宿主应用中被测量，竞品任务才算完成。
 
-## 30 天验收门禁
+| 维度     | 当前基线                                                  | 下一目标                                                                      | 必需证据                                                    |
+| -------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 开发体验 | no-key starter 和文档化的 15 分钟首次聊天目标             | 10 分钟内发出第一条本地消息，30 分钟内完成生产 proxy 接入                     | 记录安装、首次消息和 proxy 检查点的干净宿主计时结果         |
+| 耐久性   | `resumeStream()`、线程持久化、run id 重放安全和客户端中止 | 刷新或断网恢复不重复输出；显式取消只终止一次当前上游 run                      | 覆盖刷新、重连、过期、旧取消和双标签页的浏览器 smoke        |
+| Agent UX | 消息、进度、工具、文件、来源、interrupt 和 finish 事件    | 类型化 state snapshot/delta、工具输出流、steering、reasoning summary 和子 run | 覆盖顺序、重放、脱敏以及 Vue/React 投影一致性的事件 fixture |
+| 可观测性 | 安全 trace、timeline、重试、Provider metadata 和脱敏 curl | 仅凭一份安全 inspection snapshot 定位首次 proxy 失败                          | 故障 fixture 和宿主应用诊断记录                             |
+| 采用     | 干净 Vite、Nuxt、业务 proxy 和固定 OSS smoke 证据         | 一个现有业务应用完成 chat、proxy、持久化、恢复和 inspection                   | 包含命令、耗时、摩擦点和结果的版本化宿主记录                |
+
+## 交付门禁
 
 竞品相关任务不能只写方向；只有映射到下列表格并通过证明命令，才算闭环。
 
 | 门禁          | 目标                                                                     | 证明命令                                                                                                     |
 | ------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| COMP-DX       | 干净宿主计时检查点证明首次消息与 proxy 接入目标                          | `pnpm oss-adoption:check`、`pnpm competitive-benchmark:check`                                                |
+| COMP-DURABLE  | 刷新、重连、过期、显式取消和旧 run 竞态可以重复验证                      | 计划在 1.1 提供：`pnpm durable-chat:check`                                                                   |
+| COMP-AGENT    | Headless agent 事件保持顺序、重放安全、脱敏和框架投影                    | 计划在 1.2 提供：`pnpm agent-protocol:check`                                                                 |
 | COMP-OBS      | route 模板和任务 demo 都暴露安全 trace、timeline、retry 和脱敏 curl 数据 | `pnpm demo-ux:check`、`pnpm completion-object:check`、`pnpm image:check`、`pnpm agent-route-templates:check` |
-| COMP-ROUTES   | 可复制后端模板能拒绝错误载荷，并保留 run/trace metadata                  | `pnpm agent-route-templates:check`                                                                           |
-| COMP-STARTERS | shell-ready 任务起点保持按 surface 筛选，并且不携带 Provider secret      | `pnpm threaded-chat:check`、`pnpm competitive-benchmark:check`                                               |
+| COMP-ADOPTION | 现有业务应用完成生产路径，且浏览器不保存 Provider secret                 | `pnpm oss-adoption:check` 加 `docs/zh/guide/adoption-evidence.md` 中的版本化记录                             |
 
-## 当前执行进度（快照：2026-07-04）
+## P0 基线（快照：2026-07-22）
 
-- 范围内直对标基准分：**8 / 8**
-  - ✅ Vue 原生组合式 API
-  - ✅ 流式状态 + 终止/重试
-  - ✅ 面向生产的 proxy 路径
-  - ✅ 工具调用 + 审批流程
-  - ✅ Thread 侧边能力
-  - ✅ Agent 运行时适配能力
-  - ✅ 运行时能力发现
-  - ✅ 任务建议 / 快速提示词起点
+- 原有 **8 / 8** 功能覆盖清单保留在上方，但不再作为竞品分数。
+- 开发体验和采用已经有可重复 smoke 基础设施，但目标耗时尚未全部形成实测证据。
+- Durable chat 已有客户端 resume 原语，但还没有 `COMP-DURABLE` 要求的显式取消、过期、旧 run 和多标签页 fixture。
+- Agent adapter 尚未覆盖完整的 `COMP-AGENT` 事件集合。
 - 刻意不做：完整 copilot shell 组件属于应用层或 CopilotKit 这类产品层；
   `threaded-chat` 是可复制 starter，不是内置 shell。
-- 下 30 天目标：把可观测化覆盖收口到所有 route 模板与 demo 的第一优先级，并补齐可复制后端模板的
-  fixture 数量。
-- 证据源：
-  - `docs/guide/production-readiness-status.md`
-  - `CHANGELOG.md` 0.14.x 条目
-  - `pnpm production:readiness` 与 `pnpm release:check`
+- 下一里程碑：1.1 先交付 `COMP-DURABLE`，再扩大公共 AgentEvent 表面。
 
 ## 与目标的一致性
 

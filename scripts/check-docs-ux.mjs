@@ -943,14 +943,15 @@ for (const snippet of [
 }
 
 for (const snippet of [
-  '### 0.15.x to 1.0 readiness',
-  'at least\n  three real host apps',
-  'time-to-first-chat',
-  'redacted trace usefulness',
-  'documented stability levels',
-  'GitHub issues limited to reproducible bugs'
+  '### 1.3 - Adoption proof',
+  'existing business application',
+  'first-local-message',
+  'production-proxy setup checkpoints',
+  'targets\n  of 10 and 30 minutes respectively',
+  'versioned adoption record',
+  'pinned OSS adoption smoke'
 ]) {
-  expect(files.roadmap.includes(snippet), `Roadmap must include adoption readiness: ${snippet}`)
+  expect(files.roadmap.includes(snippet), `Roadmap must include adoption proof: ${snippet}`)
 }
 
 for (const snippet of [
@@ -1527,16 +1528,22 @@ for (const snippet of [
 }
 
 expect(
-  files.competitiveBenchmark.includes('## Current checkpoint against direct alternatives') &&
-    files.competitiveBenchmark.includes('In-scope direct benchmark score: **8 / 8**') &&
-    files.competitiveBenchmark.includes('Current execution score (snapshot: 2026-07-04)') &&
-    files.competitiveBenchmark.includes('Next 30-day target:') &&
+  files.competitiveBenchmark.includes('# Competitive benchmark v2') &&
+    files.competitiveBenchmark.includes('## Outcome benchmark') &&
+    files.competitiveBenchmark.includes('P0 baseline (snapshot: 2026-07-22)') &&
+    files.competitiveBenchmark.includes('COMP-DURABLE') &&
+    files.competitiveBenchmark.includes('COMP-AGENT') &&
+    files.competitiveBenchmark.includes('within 10 minutes') &&
     files.zhCompetitiveBenchmark.includes('## 与目标的一致性') &&
-    files.zhCompetitiveBenchmark.includes('范围内直对标基准分：**8 / 8**') &&
-    files.zhCompetitiveBenchmark.includes('当前执行进度（快照：2026-07-04）') &&
-    files.zhCompetitiveBenchmark.includes('下 30 天目标') &&
-    files.zhCompetitiveBenchmark.includes('可观测化'),
-  'Competitive benchmark docs must align score and snapshot wording between English and Chinese'
+    files.zhCompetitiveBenchmark.includes('# 竞品基准 v2') &&
+    files.zhCompetitiveBenchmark.includes('## 结果基准') &&
+    files.zhCompetitiveBenchmark.includes('P0 基线（快照：2026-07-22）') &&
+    files.zhCompetitiveBenchmark.includes('COMP-DURABLE') &&
+    files.zhCompetitiveBenchmark.includes('COMP-AGENT') &&
+    files.zhCompetitiveBenchmark.includes('10 分钟内') &&
+    !files.competitiveBenchmark.includes('In-scope direct benchmark score:') &&
+    !files.zhCompetitiveBenchmark.includes('范围内直对标基准分：'),
+  'Competitive benchmark v2 docs must align outcome dimensions, gates, and snapshot wording'
 )
 
 for (const snippet of [
@@ -1610,23 +1617,17 @@ for (const snippet of [
   '# Roadmap',
   'GitHub issues are reserved for',
   'reproducible bugs',
-  'Shipped through 0.9.x',
-  '0.10.x',
-  '0.11.x',
-  '0.12.x',
-  '0.13.x',
-  '0.14.x',
-  'AgentEvent',
-  'LangChain',
-  'LangGraph',
-  'useChatThreads',
-  'server storage',
-  'regenerate/branch',
-  'idempotent `runId`',
-  'safe approval renderer contracts',
-  'inspection',
-  'provider presets',
-  'React',
+  'Shipped through 1.0',
+  '### 1.1 - Durable chat contract',
+  'activeStreamId',
+  'durable-chat:check',
+  '### 1.2 - Headless agent protocol projection',
+  'state snapshot/delta',
+  'agent-protocol:check',
+  'AG-UI-style subset',
+  '### 1.3 - Adoption proof',
+  'existing business application',
+  '10 and 30 minutes',
   'Non-goals'
 ]) {
   expect(files.roadmap.includes(snippet), `Roadmap must include: ${snippet}`)

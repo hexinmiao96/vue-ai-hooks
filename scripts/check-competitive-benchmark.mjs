@@ -14,41 +14,52 @@ const files = {
   choosing: readFileSync('docs/guide/choosing.md', 'utf8'),
   zhChoosing: readFileSync('docs/zh/guide/choosing.md', 'utf8'),
   threadedChat: readFileSync('examples/threaded-chat/App.vue', 'utf8'),
-  routeTemplates: readFileSync('docs/guide/agent-route-templates.md', 'utf8')
+  routeTemplates: readFileSync('docs/guide/agent-route-templates.md', 'utf8'),
+  roadmap: readFileSync('ROADMAP.md', 'utf8')
 }
 
-const enScoreMatch = files.competitive.match(
-  /In-scope direct benchmark score: \*\*([0-9]+) \/ 8\*\*/
-)
-const zhScoreMatch = files.zhCompetitive.match(/范围内直对标基准分：\*\*([0-9]+) \/ 8\*\*/)
-expect(enScoreMatch?.[1] === '8', 'English competitive score should be 8 / 8')
-expect(zhScoreMatch?.[1] === '8', 'Chinese competitive score should be 8 / 8')
-
 const enDateMatch = files.competitive.match(
-  /Current execution score \(snapshot: ([0-9]{4}-[0-9]{2}-[0-9]{2})\)/
+  /P0 baseline \(snapshot: ([0-9]{4}-[0-9]{2}-[0-9]{2})\)/
 )
-const zhDateMatch = files.zhCompetitive.match(/当前执行进度（快照：([0-9]{4}-[0-9]{2}-[0-9]{2})）/)
+const zhDateMatch = files.zhCompetitive.match(/P0 基线（快照：([0-9]{4}-[0-9]{2}-[0-9]{2})）/)
 expect(Boolean(enDateMatch), 'English benchmark should include snapshot date')
 expect(Boolean(zhDateMatch), 'Chinese benchmark should include snapshot date')
 expect(enDateMatch[1] === zhDateMatch[1], 'English and Chinese snapshot dates should match')
 
 for (const snippet of [
-  'In-scope direct benchmark score: **8 / 8**',
+  '# Competitive benchmark v2',
   '## Current checkpoint against direct alternatives',
-  'Next 30-day target:',
-  '## 30-day acceptance gates',
+  '## Outcome benchmark',
+  'Feature coverage is supporting evidence, not the score.',
+  '| DX',
+  '| Durability',
+  '| Agent UX',
+  '| Observability',
+  '| Adoption',
+  'within 10 minutes',
+  'within 30 minutes',
+  'explicit cancel stops the active upstream run once',
+  'state snapshot/delta',
+  'One existing business application',
+  '## Delivery gates',
+  'COMP-DX',
+  'COMP-DURABLE',
+  'COMP-AGENT',
   'COMP-OBS',
-  'COMP-ROUTES',
-  'COMP-STARTERS',
+  'COMP-ADOPTION',
+  'pnpm durable-chat:check',
+  'pnpm agent-protocol:check',
   'pnpm completion-object:check',
   'pnpm image:check',
+  '## P0 baseline (snapshot:',
+  'it is no longer',
   'Vue-native composition API',
   'Streaming states + Abort/Retry',
   'Proxy-first production path',
   'Tool calling + approval workflows',
   'Thread side panel primitives',
   'Agent runtime adapters',
-  'Runtime capability discovery',
+  'Headless agent runtime discovery & capabilities',
   'Message/task suggestion starters',
   'Full copilot shell / built-in widgets',
   '⚪ (starter only; shell stays app-owned)',
@@ -62,16 +73,32 @@ for (const snippet of [
 }
 
 for (const snippet of [
-  '范围内直对标基准分：**8 / 8**',
-  '当前执行进度（快照：',
-  '## 30 天验收门禁',
+  '# 竞品基准 v2',
+  '## 结果基准',
+  '功能覆盖只作为支撑证据，不再作为分数。',
+  '| 开发体验',
+  '| 耐久性',
+  '| Agent UX',
+  '| 可观测性',
+  '| 采用',
+  '10 分钟内',
+  '30 分钟内',
+  '显式取消只终止一次当前上游 run',
+  'state snapshot/delta',
+  '一个现有业务应用',
+  '## 交付门禁',
+  'COMP-DX',
+  'COMP-DURABLE',
+  'COMP-AGENT',
   'COMP-OBS',
-  'COMP-ROUTES',
-  'COMP-STARTERS',
+  'COMP-ADOPTION',
+  'pnpm durable-chat:check',
+  'pnpm agent-protocol:check',
   'pnpm completion-object:check',
   'pnpm image:check',
-  '可观测化一致性',
-  'Vue 原生组合式 API',
+  '## P0 基线（快照：',
+  '不再作为竞品分数',
+  'Vue 优先的组合式 API',
   '流式状态 + 终止/重试',
   '面向生产的 proxy 默认路径',
   '工具调用 + 审批流程',
@@ -79,7 +106,6 @@ for (const snippet of [
   'Agent 适配能力',
   '能力发现与运行时上下文',
   '任务建议 / 快速提示词起点',
-  '启动提示铺设深度',
   '开箱 copilot 外壳/内置组件',
   '⚪（只提供 starter，shell 由应用拥有）',
   '刻意不做：完整 copilot shell 组件属于应用层或 CopilotKit 这类产品层',
@@ -88,6 +114,32 @@ for (const snippet of [
   expect(
     files.zhCompetitive.includes(snippet),
     `Chinese competitive benchmark should include: ${snippet}`
+  )
+}
+
+for (const snippet of [
+  '### 1.1 - Durable chat contract',
+  '### 1.2 - Headless agent protocol projection',
+  '### 1.3 - Adoption proof',
+  'durable-chat:check',
+  'agent-protocol:check',
+  'existing business application',
+  '10 and 30 minutes respectively'
+]) {
+  expect(files.roadmap.includes(snippet), `Post-1.0 roadmap should include: ${snippet}`)
+}
+
+for (const snippet of [
+  'In-scope direct benchmark score:',
+  '范围内直对标基准分：',
+  '### 0.15.x to 1.0 readiness'
+]) {
+  const content = snippet.startsWith('范围内')
+    ? files.zhCompetitive
+    : `${files.competitive}\n${files.roadmap}`
+  expect(
+    !content.includes(snippet),
+    `Benchmark v2 must not restore stale scoring or roadmap text: ${snippet}`
   )
 }
 

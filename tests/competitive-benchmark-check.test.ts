@@ -42,11 +42,29 @@ describe('competitive benchmark check script', () => {
 
     try {
       updateFile(fixture, 'docs/zh/guide/competitive-benchmark.md', (content) =>
-        content.split('当前执行进度（快照：2026-07-04）').join('当前执行进度（快照：2026-07-03）')
+        content.split('P0 基线（快照：2026-07-22）').join('P0 基线（快照：2026-07-21）')
       )
 
       expect(() => runCompetitiveBenchmarkCheck(fixture)).toThrow(
         /English and Chinese snapshot dates should match/
+      )
+    } finally {
+      rmSync(fixture, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects restoring the former feature-count score', () => {
+    const fixture = createFixture()
+
+    try {
+      updateFile(
+        fixture,
+        'docs/guide/competitive-benchmark.md',
+        (content) => `${content}\nIn-scope direct benchmark score: **8 / 8**\n`
+      )
+
+      expect(() => runCompetitiveBenchmarkCheck(fixture)).toThrow(
+        /must not restore stale scoring or roadmap text/
       )
     } finally {
       rmSync(fixture, { recursive: true, force: true })
@@ -78,6 +96,7 @@ function createFixture(): string {
     'docs/zh/guide/choosing.md',
     'docs/guide/agent-route-templates.md',
     'examples/threaded-chat/App.vue',
+    'ROADMAP.md',
     'scripts/check-competitive-benchmark.mjs'
   ]) {
     copyPath(fixture, path)

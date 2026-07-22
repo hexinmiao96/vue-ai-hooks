@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- No unreleased changes pending.
+### Changed
+
+- Replaced the feature-count competitive score with a five-dimension outcome
+  benchmark covering DX, durability, agent UX, observability, and adoption.
+- Realigned the post-1.0 roadmap around durable chat, headless agent protocol
+  projection, and existing-business adoption evidence.
 
 ## [1.0.0] - 2026-07-05
 
