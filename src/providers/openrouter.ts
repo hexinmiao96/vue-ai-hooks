@@ -2,46 +2,31 @@ import type { ChatProvider } from './types'
 import { openaiCompatible, type OpenAiLikeConfig } from './openai'
 import { mergeHeaders } from '../utils/headers'
 
-// OpenRouter's documented public API root for OpenAI-compatible requests.
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
-/**
- * Configuration for OpenRouter provider. In addition to standard OpenAI-style
- * fields, OpenRouter commonly requires these optional headers.
- * In practice it is used as a thin, opinionated wrapper around `openaiCompatible`.
- */
+/** Configures OpenRouter and its optional request-attribution headers. */
 export interface OpenRouterConfig extends Omit<OpenAiLikeConfig, 'baseURL'> {
   /**
-   * Optional override for proxies or self-hosted OpenRouter-compatible gateways.
+   * Overrides the base URL for proxies or self-hosted OpenRouter-compatible gateways.
    * Defaults to `https://openrouter.ai/api/v1`.
    */
   baseURL?: string
   /**
-   * Optional app site URL for provider analytics/restrictions.
-   * Sent as `HTTP-Referer`.
-   * Leave empty when routing through generic key-based auth only.
+   * Sets the app URL sent as `HTTP-Referer` for attribution and provider policy checks.
    */
   siteUrl?: string
   /**
-   * Optional app title for provider analytics/restrictions.
-   * Sent as `X-Title`.
-   * Use a stable app name for dashboards and provider policy attribution.
+   * Sets the app title sent as `X-Title` for attribution and provider policy checks.
    */
   appName?: string
 }
 
 /**
- * Build an OpenRouter provider.
+ * Creates an OpenRouter provider backed by the OpenAI-compatible transport.
  *
- * OpenRouter exposes an OpenAI-compatible API with a few extra headers:
- * `HTTP-Referer` and `X-Title`.
- *
- * @param config OpenRouter/OpenAI-compatible settings.
- * @returns A ChatProvider with OpenRouter base URL and provider id.
+ * Adds `HTTP-Referer` and `X-Title` when their corresponding options are provided.
  */
 export function openrouter(config: OpenRouterConfig): ChatProvider {
-  // Keep generic OpenAI-compatible options intact and peel out OpenRouter-only
-  // settings for later header composition.
   const {
     siteUrl,
     appName,
@@ -49,29 +34,19 @@ export function openrouter(config: OpenRouterConfig): ChatProvider {
     baseURL = OPENROUTER_BASE_URL,
     ...rest
   } = config
-  // Build the final request headers in one place so callers get a predictable
-  // composition model:
-  // - base custom headers are preserved,
-  // - OpenRouter-specific headers are injected only when configured,
-  // - and OpenRouter headers override same-name custom headers to ensure expected
-  //   request attribution on provider endpoints.
+  // Attribution headers intentionally override custom headers with the same names.
   const headers = mergeHeaders(
     extraHeaders,
     siteUrl ? { 'HTTP-Referer': siteUrl } : undefined,
     appName ? { 'X-Title': appName } : undefined
   )
 
-  // Reuse the mature OpenAI-compatible transport/path handling to avoid
-  // duplicating request-shape logic. Only endpoint/base URL and identity
-  // headers are specialized here.
   const baseProvider = openaiCompatible({
     ...rest,
     baseURL,
     headers
   })
 
-  // Keep provider id explicit so consumers can distinguish telemetry or behavior
-  // branches that depend on source provider.
   return {
     ...baseProvider,
     id: 'openrouter'

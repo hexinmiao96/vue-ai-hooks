@@ -1,5 +1,5 @@
 /**
- * vue-ai-hooks — Vue 3 Composable library for AI applications.
+ * The vue-ai-hooks package provides Vue 3 composables for AI applications.
  *
  * @packageDocumentation
  */
@@ -277,8 +277,6 @@ export {
 
 // Providers
 export { openai, openaiCompatible, type OpenAiLikeConfig } from './providers/openai'
-// OpenRouter is exposed as a first-class provider entry that keeps OpenAI-compatible
-// request behavior while injecting OpenRouter-specific headers automatically.
 export { openrouter, type OpenRouterConfig } from './providers/openrouter'
 export { moonshot, type MoonshotConfig } from './providers/moonshot'
 export { zhipu, type ZhipuConfig, type ZhipuEndpoint } from './providers/zhipu'
@@ -313,7 +311,7 @@ export {
 export { anthropic, type AnthropicConfig } from './providers/anthropic'
 export { type ChatProvider } from './providers/types'
 
-// Stream utilities
+// Streaming and inspection utilities
 export {
   createUIMessageStream,
   createUIMessageStreamParser,
@@ -365,7 +363,7 @@ export {
 // Persistence
 export { usePersist, type UsePersistOptions } from './composables/usePersist'
 
-// Types
+// Core types and errors
 export type {
   Message,
   ModelMessage,

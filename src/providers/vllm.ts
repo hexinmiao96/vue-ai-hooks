@@ -3,16 +3,16 @@ import type { ChatProvider } from './types'
 
 const VLLM_BASE_URL = 'http://localhost:8000/v1'
 
-/** Configuration for vLLM's OpenAI-compatible server. */
+/** Configures a vLLM OpenAI-compatible server. */
 export interface VllmConfig extends Omit<OpenAiLikeConfig, 'apiKey' | 'baseURL'> {
-  /** API key configured on the vLLM server, if any. */
+  /** Provides the API key configured on the vLLM server, if any. */
   apiKey?: string
-  /** Override when vLLM is exposed on another host, port, or proxy path. */
+  /** Overrides the base URL when vLLM uses another host, port, or proxy path. */
   baseURL?: string
 }
 
 /**
- * Build a vLLM provider through its OpenAI-compatible server.
+ * Creates a vLLM provider through its OpenAI-compatible server.
  *
  * Pass `defaultModel` or per-request `model` for the model served by the host.
  */

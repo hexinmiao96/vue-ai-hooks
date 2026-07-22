@@ -1,7 +1,7 @@
 /**
- * React entry for vue-ai-hooks.
+ * React entry point for `vue-ai-hooks`.
  *
- * Import from `vue-ai-hooks/react` to keep React code out of the Vue-first root entry.
+ * Import from `vue-ai-hooks/react` to avoid loading the Vue-first root entry.
  *
  * @packageDocumentation
  */

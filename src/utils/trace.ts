@@ -1,5 +1,6 @@
 import { shallowRef, type Ref } from 'vue'
 
+/** Exposes reactive request and response snapshots for a composable. */
 export interface RequestTrace<TRequest, TResponse> {
   lastRequest: Ref<TRequest | null>
   lastResponse: Ref<TResponse | null>
@@ -8,6 +9,7 @@ export interface RequestTrace<TRequest, TResponse> {
   recordResponse: (info: TResponse) => TResponse
 }
 
+/** Creates reactive request tracing state and its mutation helpers. */
 export function createRequestTrace<TRequest, TResponse>(): RequestTrace<TRequest, TResponse> {
   const lastRequest = shallowRef<TRequest | null>(null) as Ref<TRequest | null>
   const lastResponse = shallowRef<TResponse | null>(null) as Ref<TResponse | null>

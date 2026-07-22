@@ -32,26 +32,33 @@ import {
   type RequestInspectionSnapshot
 } from '../utils/inspection'
 
+/** Request lifecycle states exposed by `useCompletion`. */
 export type ReactCompletionStatus = AiRequestStatus
+
+/** Streaming protocols accepted by React completion requests. */
 export type ReactCompletionStreamProtocol = NonNullable<CompletionRequest['streamProtocol']>
 
+/** Describes the final completion delivered to finish callbacks. */
 export interface ReactCompletionFinishInfo {
   prompt: string
   completion: string
   isAbort: boolean
 }
 
+/** Receives the prompt and completion using the AI SDK-compatible argument order. */
 export type ReactAiSdkCompletionFinishCallback = (
   prompt: string,
   completion: string,
   info?: ReactCompletionFinishInfo
 ) => void
 
+/** Receives the completion followed by legacy finish details. */
 export type ReactLegacyCompletionFinishCallback = (
   completion: string,
   info: ReactCompletionFinishInfo
 ) => void
 
+/** Captures the normalized request passed to the configured completion provider. */
 export interface ReactCompletionRequestInfo {
   id: string
   providerId: string
@@ -64,10 +71,12 @@ export interface ReactCompletionRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Captures request metadata after the provider response is available. */
 export interface ReactCompletionResponseInfo extends ReactCompletionRequestInfo {
   hasStream: boolean
 }
 
+/** Configures completion transport, initial state, streaming, retries, and lifecycle callbacks. */
 export interface UseReactCompletionOptions extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -91,6 +100,7 @@ export interface UseReactCompletionOptions extends RetryOptions, StreamThrottleO
   onError?: (error: Error) => void
 }
 
+/** Exposes completion state, form bindings, request controls, and inspection data. */
 export interface UseReactCompletionReturn {
   id: string
   completion: string
@@ -133,6 +143,13 @@ function mergeRequestHeaders(
   return mergeHeaders(defaultHeaders, requestHeaders)
 }
 
+/**
+ * Runs single-prompt completions and exposes incremental output as React state.
+ *
+ * Streaming updates may be throttled, and `stop` or unmount aborts the active request.
+ *
+ * @returns Completion state, form helpers, lifecycle controls, and request inspection data.
+ */
 export function useCompletion(options: UseReactCompletionOptions = {}): UseReactCompletionReturn {
   const {
     provider: providedProvider,

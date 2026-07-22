@@ -42,10 +42,16 @@ import {
   type RequestInspectionSnapshot
 } from '../utils/inspection'
 
+/** Request lifecycle states exposed by `useChat`. */
 export type ReactChatStatus = AiRequestStatus
+
+/** Identifies the user action that initiated a chat request. */
 export type ReactSendChatTrigger = 'submit-message' | 'regenerate-message'
+
+/** Identifies the equivalent AI SDK chat action. */
 export type ReactAiSdkSendChatTrigger = 'submit-user-message' | 'regenerate-assistant-message'
 
+/** Describes the terminal assistant message delivered to finish callbacks. */
 export interface ReactChatFinishInfo {
   message: Message
   messages: Message[]
@@ -55,15 +61,19 @@ export interface ReactChatFinishInfo {
   finishReason?: ChatChunk['finishReason']
 }
 
+/** Receives AI SDK-style chat completion details. */
 export type ReactAiSdkChatFinishCallback = (info: ReactChatFinishInfo) => void | Promise<void>
 
+/** Receives the final message followed by legacy completion details. */
 export type ReactLegacyChatFinishCallback = (
   message: Message,
   info: ReactChatFinishInfo
 ) => void | Promise<void>
 
+/** Accepts either supported chat finish callback signature. */
 export type ReactChatFinishCallback = ReactAiSdkChatFinishCallback | ReactLegacyChatFinishCallback
 
+/** Captures the normalized request passed to the configured chat provider. */
 export interface ReactChatRequestInfo {
   kind: 'chat' | 'resume'
   id: string
@@ -82,10 +92,12 @@ export interface ReactChatRequestInfo {
   messageId?: string
 }
 
+/** Captures request metadata after the provider response is available. */
 export interface ReactChatResponseInfo extends ReactChatRequestInfo {
   hasStream: boolean
 }
 
+/** Applies request and message metadata overrides to one chat submission. */
 export interface ReactAppendChatOptions<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 > extends Partial<ChatRequest> {
@@ -93,6 +105,7 @@ export interface ReactAppendChatOptions<
   messageMetadata?: TMessageMetadata
 }
 
+/** Represents the object form accepted by `sendMessage`. */
 export interface ReactSendChatMessageInput<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -101,6 +114,7 @@ export interface ReactSendChatMessageInput<
   messageId?: string
 }
 
+/** Configures chat transport, initial state, streaming, retries, and lifecycle callbacks. */
 export interface UseReactChatOptions<TData = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -152,6 +166,7 @@ export interface UseReactChatOptions<TData = unknown> extends RetryOptions, Stre
   onError?: (error: Error) => void
 }
 
+/** Exposes chat state, form bindings, request controls, and inspection data. */
 export interface UseReactChatReturn<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -258,6 +273,14 @@ function isSendChatMessageInput<TMessageMetadata extends Record<string, unknown>
   return 'text' in value || 'metadata' in value || 'messageId' in value
 }
 
+/**
+ * Manages a streaming chat conversation as React state.
+ *
+ * Streamed deltas are merged into the active assistant message, while `stop` and unmount abort
+ * in-flight work.
+ *
+ * @returns Conversation state, form helpers, lifecycle controls, and request inspection data.
+ */
 export function useChat<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>

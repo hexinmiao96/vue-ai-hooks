@@ -17,27 +17,26 @@ import { requestJson } from '../utils/fetch'
 import { AiHooksError } from '../types'
 import { mergeHeaders } from '../utils/headers'
 
-/** Configuration for the Anthropic provider. */
+/** Configures the Anthropic Messages API provider. */
 export interface AnthropicConfig {
-  /** Your Anthropic API key. */
+  /** Provides the Anthropic API key. */
   apiKey: string
-  /** Base URL. Defaults to https://api.anthropic.com */
+  /** Sets the API base URL. Defaults to `https://api.anthropic.com`. */
   baseURL?: string
-  /** Default model when a request omits one. Defaults to claude-3-5-sonnet. */
+  /** Selects the default model. Defaults to `claude-3-5-sonnet-20241022`. */
   defaultModel?: string
-  /** Default max_tokens. Anthropic requires this. Defaults to 1024. */
+  /** Sets the required default `max_tokens` value. Defaults to `1024`. */
   maxTokens?: number
-  /** Anthropic API version header. Defaults to 2023-06-01. */
+  /** Sets the `anthropic-version` header. Defaults to `2023-06-01`. */
   anthropicVersion?: string
-  /** Additional headers. */
+  /** Adds headers to every request. */
   headers?: HeadersInit
-  /** Custom fetch implementation. */
+  /** Provides a fetch implementation for tests or runtimes without a global `fetch`. */
   fetch?: typeof fetch
-  /** Request timeout in milliseconds. */
+  /** Sets the request timeout in milliseconds. */
   timeoutMs?: number
 }
 
-/** Map Anthropic's stop_reason to our finishReason. */
 function mapStopReason(reason: string | null | undefined): ChatChunk['finishReason'] {
   switch (reason) {
     case 'end_turn':
@@ -67,24 +66,11 @@ function mapUsage(
 }
 
 /**
- * Build an Anthropic Claude provider. Compatible with the Claude 3 / 3.5 / 4
- * family on the official API and on proxies that follow the same wire format.
+ * Creates an Anthropic Claude provider for the Messages API wire format.
  *
- * ```ts
- * import { useChat, anthropic } from 'vue-ai-hooks'
- *
- * const { messages, append } = useChat({
- *   provider: anthropic({ apiKey: import.meta.env.VITE_ANTHROPIC_KEY })
- * })
- * ```
- *
- * Notes:
- * - Anthropic has no embeddings API. Calling `useEmbedding` with this provider
- *   throws a clear `AiHooksError`.
- * - Anthropic has no `/v1/completions` endpoint. `useCompletion` is implemented
- *   as a single-turn chat with a user message.
- * - The system prompt is a top-level field, not part of `messages[]`. The
- *   adapter extracts any `role: 'system'` messages and joins them.
+ * Completion requests are adapted to single-turn chats, while embedding requests reject because
+ * Anthropic does not expose an embedding API. System messages are joined into the top-level
+ * `system` field required by Anthropic.
  */
 export function anthropic(config: AnthropicConfig): ChatProvider {
   const {
@@ -129,10 +115,9 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
     if (part.type === 'text') {
       return { type: 'text', text: part.text }
     }
-    // ImageUrlPart
     const url = part.image_url.url
     if (url.startsWith('data:')) {
-      // data:<mediatype>;base64,<data>
+      // Anthropic requires data URLs to be split into media type and Base64 payload fields.
       const match = url.match(/^data:([^;]+);base64,(.*)$/s)
       if (match) {
         return {
@@ -367,7 +352,7 @@ export function anthropic(config: AnthropicConfig): ChatProvider {
             { cause: raw }
           )
         }
-        // Ignore: content_block_stop, message_stop, ping
+        // These protocol events carry no normalized content and are intentionally ignored.
       }
     })()
   }

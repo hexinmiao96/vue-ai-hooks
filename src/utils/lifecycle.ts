@@ -9,6 +9,7 @@ interface RequestSnapshot {
   messages?: ChatRequestMessage[]
 }
 
+/** Shallow-clones known mutable message containers for lifecycle and inspection snapshots. */
 export function cloneMessageSnapshot<T extends ChatRequestMessage>(message: T): T {
   return {
     ...message,
@@ -32,6 +33,7 @@ export function cloneMessageSnapshot<T extends ChatRequestMessage>(message: T): 
   } as T
 }
 
+/** Clones mutable request fields without copying opaque nested application data. */
 export function cloneRequestSnapshot<T extends RequestSnapshot>(request: T): T {
   return {
     ...request,

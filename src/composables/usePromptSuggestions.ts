@@ -10,6 +10,7 @@ import {
 } from 'vue'
 import type { Message } from '../types'
 
+/** Represents one normalized prompt suggestion rendered to a user. */
 export interface PromptSuggestion<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -20,6 +21,7 @@ export interface PromptSuggestion<
   metadata?: TMetadata
 }
 
+/** Accepts either prompt text or a partially specified suggestion object. */
 export type PromptSuggestionInput<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > =
@@ -32,6 +34,7 @@ export type PromptSuggestionInput<
       metadata?: TMetadata
     }
 
+/** Identifies a locale included in the built-in suggestion recipe catalog. */
 export type PromptSuggestionRecipeLocale = 'en' | 'zh'
 
 export type PromptSuggestionRecipeCategory =
@@ -40,6 +43,7 @@ export type PromptSuggestionRecipeCategory =
 export type PromptSuggestionRecipeSurface =
   'chat' | 'thread' | 'agent' | 'backend' | 'tool-approval' | 'release' | 'media' | 'code'
 
+/** Lists every stable ID in the built-in suggestion recipe catalog. */
 export const promptSuggestionRecipeIds = [
   'summarize-thread',
   'find-risks',
@@ -58,6 +62,7 @@ export const promptSuggestionRecipeIds = [
 
 export type PromptSuggestionRecipeId = (typeof promptSuggestionRecipeIds)[number]
 
+/** Describes an entry in the built-in recipe catalog. */
 export interface PromptSuggestionRecipe {
   id: PromptSuggestionRecipeId
   category: PromptSuggestionRecipeCategory
@@ -67,6 +72,7 @@ export interface PromptSuggestionRecipe {
   description: string
 }
 
+/** Identifies the built-in recipe that produced a normalized suggestion. */
 export interface PromptSuggestionRecipeMetadata extends Record<string, unknown> {
   kind: 'task-starter'
   recipe: PromptSuggestionRecipeId
@@ -75,6 +81,7 @@ export interface PromptSuggestionRecipeMetadata extends Record<string, unknown> 
   locale: PromptSuggestionRecipeLocale
 }
 
+/** Filters built-in recipes and augments their generated metadata. */
 export interface CreatePromptSuggestionRecipesOptions<
   TMetadata extends Record<string, unknown> = Record<string, never>
 > {
@@ -312,6 +319,7 @@ const promptSuggestionRecipeCatalog: Record<
   ]
 }
 
+/** Supplies current input, messages, and candidates to a suggestion filter. */
 export interface PromptSuggestionFilterContext<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -327,6 +335,7 @@ export type PromptSuggestionFilter<
   context: PromptSuggestionFilterContext<TMetadata>
 ) => boolean
 
+/** Supplies current chat state and cancellation to an asynchronous loader. */
 export interface PromptSuggestionLoaderContext {
   input: string
   messages: readonly Message[]
@@ -340,6 +349,7 @@ export type PromptSuggestionLoader<
 ) =>
   readonly PromptSuggestionInput<TMetadata>[] | Promise<readonly PromptSuggestionInput<TMetadata>[]>
 
+/** Configures reactive suggestions, filtering, result limits, and optional loading. */
 export interface UsePromptSuggestionsOptions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -352,6 +362,7 @@ export interface UsePromptSuggestionsOptions<
   loadOnInit?: boolean
 }
 
+/** Exposes normalized and visible suggestions together with selection and loading state. */
 export interface UsePromptSuggestionsReturn<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -368,6 +379,10 @@ export interface UsePromptSuggestionsReturn<
   clearSelection: () => void
 }
 
+/**
+ * Creates localized suggestions from the built-in catalog. Include, exclude,
+ * category, and surface filters are combined as intersections.
+ */
 export function createPromptSuggestionRecipes<
   TMetadata extends Record<string, unknown> = Record<string, never>
 >(
@@ -403,6 +418,11 @@ export function createPromptSuggestionRecipes<
     }))
 }
 
+/**
+ * Combines reactive and asynchronously loaded suggestions, normalizes them,
+ * and derives a filtered, bounded visible list. A later reload supersedes and
+ * aborts any earlier load.
+ */
 export function usePromptSuggestions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 >(options: UsePromptSuggestionsOptions<TMetadata> = {}): UsePromptSuggestionsReturn<TMetadata> {
@@ -438,6 +458,7 @@ export function usePromptSuggestions<
     const loader = options.loader
     if (!loader) return suggestions.value
 
+    // Only the newest load may publish results, even if an older loader ignores cancellation.
     const version = loadVersion + 1
     loadVersion = version
     activeController.value?.abort()

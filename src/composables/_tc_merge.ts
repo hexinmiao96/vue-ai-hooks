@@ -1,6 +1,7 @@
-// Tool-call delta merger. Stays in its own file so the useChat module stays small.
+// This merger stays separate because both chat and agent streams share its ordering invariant.
 import type { ToolCall } from '../types'
 
+/** Describes an OpenAI-style streamed tool-call fragment. */
 export interface ToolCallDelta {
   index?: number
   id?: string
@@ -15,7 +16,10 @@ function mergeName(current: string, next: string): string {
   return current + next
 }
 
-/** Merge streaming tool_call deltas (OpenAI format) into a stable array. */
+/**
+ * Merges OpenAI-style tool-call deltas by index while preserving accumulated
+ * names and JSON argument fragments.
+ */
 export function mergeDeltas(
   existing: ToolCall[] | undefined,
   delta: ToolCallDelta[] | undefined

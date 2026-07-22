@@ -30,7 +30,10 @@ import type {
   TranscriptionResponseInfo
 } from '../composables/useTranscription'
 
+/** Request inspection metadata emitted by the React transcription hook. */
 export type ReactTranscriptionRequestInfo = TranscriptionRequestInfo
+
+/** Response inspection metadata emitted by the React transcription hook. */
 export type ReactTranscriptionResponseInfo = TranscriptionResponseInfo
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -40,6 +43,7 @@ type BodySource =
       request: TranscriptionRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Configures the transcription endpoint, initial audio input, retries, and callbacks. */
 export interface UseReactTranscriptionOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -56,6 +60,7 @@ export interface UseReactTranscriptionOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes transcribed text, request state, form bindings, controls, and inspection data. */
 export interface UseReactTranscriptionReturn {
   input: string
   transcription: string
@@ -126,6 +131,14 @@ function normalizeTranscriptionResult(raw: unknown): TranscriptionResult {
   return { ...raw, text } as TranscriptionResult
 }
 
+/**
+ * Transcribes audio through an app-owned endpoint and exposes normalized text as React state.
+ *
+ * String responses and object responses with `text` or `transcription` fields share one result
+ * shape.
+ *
+ * @returns Transcription state, form helpers, lifecycle controls, and request inspection data.
+ */
 export function useTranscription(
   options: UseReactTranscriptionOptions = {}
 ): UseReactTranscriptionReturn {

@@ -9,6 +9,7 @@ import {
 } from 'vue'
 import type { ChatRequestMessage, Message } from '../types'
 
+/** Restricts agent context values to JSON-compatible primitives, arrays, and records. */
 export type AgentContextSerializable =
   | string
   | number
@@ -17,6 +18,7 @@ export type AgentContextSerializable =
   | readonly AgentContextSerializable[]
   | { readonly [key: string]: AgentContextSerializable | undefined }
 
+/** Describes a reactive context entry; disabled or unresolved entries are omitted. */
 export interface AgentContextInput<
   TValue extends AgentContextSerializable = AgentContextSerializable
 > {
@@ -26,6 +28,7 @@ export interface AgentContextInput<
   enabled?: MaybeRefOrGetter<boolean | null | undefined>
 }
 
+/** Represents a resolved, detached context entry ready for model input. */
 export interface AgentContextSnapshot<
   TValue extends AgentContextSerializable = AgentContextSerializable
 > {
@@ -34,12 +37,14 @@ export interface AgentContextSnapshot<
   value: TValue | null
 }
 
+/** Configures the synthetic system message used to carry application context. */
 export interface AgentContextMessageOptions {
   id?: string
   title?: string
   createdAt?: Date
 }
 
+/** Registers reactive context entries and converts their current snapshots for chat requests. */
 export interface AgentContextRegistry {
   contexts: ComputedRef<AgentContextSnapshot[]>
   register: <TValue extends AgentContextSerializable>(
@@ -55,6 +60,7 @@ export interface AgentContextRegistry {
   clear: () => void
 }
 
+/** Accepts either a registry or a reactive collection of resolved snapshots. */
 export type AgentContextSource =
   AgentContextRegistry | MaybeRefOrGetter<readonly AgentContextSnapshot[] | null | undefined>
 
@@ -63,6 +69,7 @@ interface RegisteredAgentContext {
   input: AgentContextInput
 }
 
+/** Creates an isolated registry whose computed snapshots track every registered input. */
 export function useAgentContextRegistry(): AgentContextRegistry {
   const entries = shallowRef<RegisteredAgentContext[]>([])
   let nextId = 0
@@ -126,6 +133,10 @@ export function useAgentContextRegistry(): AgentContextRegistry {
   }
 }
 
+/**
+ * Registers a context entry and automatically unregisters it when the current
+ * Vue effect scope is disposed. The returned function also permits early cleanup.
+ */
 export function useAgentContext<TValue extends AgentContextSerializable>(
   registry: AgentContextRegistry,
   input: AgentContextInput<TValue>
@@ -135,12 +146,14 @@ export function useAgentContext<TValue extends AgentContextSerializable>(
   return unregister
 }
 
+/** Resolves the current snapshots from a registry or reactive snapshot source. */
 export function resolveAgentContexts(source?: AgentContextSource | false): AgentContextSnapshot[] {
   if (!source) return []
   if (isAgentContextRegistry(source)) return source.contexts.value
   return [...(toValue(source) ?? [])]
 }
 
+/** Formats snapshots as a titled, line-oriented block for model consumption. */
 export function formatAgentContexts(
   contexts: readonly AgentContextSnapshot[],
   options: Pick<AgentContextMessageOptions, 'title'> = {}
@@ -153,6 +166,7 @@ export function formatAgentContexts(
   return [title, ...lines].join('\n')
 }
 
+/** Creates a system message for the snapshots, or returns `null` when none are present. */
 export function createAgentContextMessage(
   contexts: readonly AgentContextSnapshot[],
   options: AgentContextMessageOptions = {}
@@ -167,6 +181,11 @@ export function createAgentContextMessage(
   }
 }
 
+/**
+ * Returns cloned request messages with one current context message inserted
+ * after the leading system-message block. A prior context message with the same
+ * ID is replaced.
+ */
 export function withAgentContextMessage(
   messages: readonly ChatRequestMessage[],
   contexts: readonly AgentContextSnapshot[],
@@ -226,6 +245,7 @@ function normalizeDescription(value: unknown): string {
 function cloneSerializable<TValue extends AgentContextSerializable | null>(
   value: TValue
 ): TValue | undefined {
+  // Invalid or cyclic context must be omitted instead of breaking the reactive registry.
   try {
     const json = JSON.stringify(value)
     return json === undefined ? undefined : (JSON.parse(json) as TValue)

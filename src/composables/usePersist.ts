@@ -1,46 +1,45 @@
 import { watch, type Ref } from 'vue'
 
 /**
- * Options for `usePersist` — drop-in localStorage persistence for a single
- * reactive ref.
+ * Configures Web Storage persistence for a single Vue ref.
  */
 export interface UsePersistOptions<T> {
-  /** localStorage key. Required. */
+  /** Sets the base storage key; `version` appends an optional suffix. */
   key: string
   /**
-   * Bump this when the shape of `T` changes incompatibly. The persisted
-   * payload is stored under `${key}:v${version}` so old data is naturally
-   * ignored. Omit to skip versioning.
+   * Appends `:v${version}` to the key so incompatible payload versions remain
+   * isolated. Omit this option to use the key unchanged.
    */
   version?: number
   /**
-   * Custom serializer. Receives the current value, returns the JSON-safe
-   * representation. Default: identity.
+   * Converts the current value to a JSON-safe representation before storage.
+   * The source value is passed directly to `JSON.stringify` when omitted.
    */
   serialize?: (value: T) => unknown
   /**
-   * Custom deserializer. Receives the parsed JSON, returns the value (or null
-   * to discard it). Default: identity.
+   * Converts parsed JSON back to `T`; return `null` to discard the stored
+   * payload. The parsed value is used unchanged when omitted.
    */
   deserialize?: (raw: unknown) => T | null
   /**
-   * Override the storage. Default: `window.localStorage` when available.
-   * Pass an in-memory shim in tests.
+   * Overrides the storage backend. The default is `window.localStorage` when
+   * available; pass `null` to disable persistence or a shim for tests.
    */
   storage?: Storage | null
-  /**
-   * Receives save errors such as quota failures.
-   */
+  /** Receives write errors, including storage quota failures. */
   onError?: (err: Error) => void
-  /** Receives load errors such as malformed JSON. */
+  /** Receives load errors, including malformed JSON. */
   onLoadError?: (err: Error) => void
   /** Receives clear errors from the underlying storage. */
   onClearError?: (err: Error) => void
 }
 
 /**
- * Wire a ref up to localStorage. Hydrates on creation, writes on every
- * mutation. Returns a `clear()` function that removes the storage entry.
+ * Restores a ref from Web Storage, then watches deeply and persists subsequent
+ * changes.
+ *
+ * The returned `clear()` function removes only the stored entry; it does not
+ * reset the source ref.
  *
  * ```ts
  * const messages = ref<Message[]>([])
@@ -59,7 +58,7 @@ export function usePersist<T>(
   const effectiveStorage =
     storage !== undefined ? storage : typeof window !== 'undefined' ? window.localStorage : null
 
-  // Hydrate
+  // Restore before installing the watcher so the initial load is not written back immediately.
   if (effectiveStorage) {
     try {
       const raw = effectiveStorage.getItem(versionedKey)
@@ -75,7 +74,6 @@ export function usePersist<T>(
     }
   }
 
-  // Persist on change
   if (effectiveStorage) {
     watch(
       source,

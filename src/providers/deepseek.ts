@@ -1,17 +1,16 @@
 import { openaiCompatible, type OpenAiLikeConfig } from './openai'
 import type { ChatProvider } from './types'
 
-/** Configuration for DeepSeek's OpenAI-compatible API surface. */
+/** Configures the DeepSeek OpenAI-compatible API. */
 export interface DeepSeekConfig extends Omit<OpenAiLikeConfig, 'baseURL'> {
-  /** Override for proxies or compatible gateways. */
+  /** Overrides the base URL for proxies or compatible gateways. */
   baseURL?: string
 }
 
 /**
- * Build a DeepSeek provider through its OpenAI-compatible API.
+ * Creates a DeepSeek provider through its OpenAI-compatible API.
  *
- * DeepSeek uses the same chat/completions/embeddings request shape as
- * `openaiCompatible`, with provider-specific defaults for the base URL and model.
+ * Uses OpenAI-compatible request shapes with DeepSeek defaults for the base URL and model.
  */
 export function deepseek(config: DeepSeekConfig): ChatProvider {
   return {

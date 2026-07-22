@@ -3,6 +3,7 @@ type JsonSchemaValidationResult<T = unknown> =
 
 type JsonSchemaValidator<T = unknown> = (value: unknown) => boolean | JsonSchemaValidationResult<T>
 
+/** Wraps a JSON Schema and an optional runtime validator for typed structured output. */
 export interface JsonSchemaDefinition<T = unknown> {
   readonly kind: 'json-schema'
   readonly schema: Record<string, unknown>
@@ -11,6 +12,7 @@ export interface JsonSchemaDefinition<T = unknown> {
 
 type JsonSchemaInput<T = unknown> = Record<string, unknown> | JsonSchemaDefinition<T>
 
+/** Creates a typed JSON Schema definition with an optional custom validator. */
 export function jsonSchema<T = unknown>(
   schema: Record<string, unknown>,
   options: { validate?: JsonSchemaValidator<T> } = {}
@@ -22,14 +24,19 @@ export function jsonSchema<T = unknown>(
   }
 }
 
+/** Unwraps a JSON Schema definition to its raw schema object. */
 export function schemaToJsonSchema(schema: JsonSchemaInput): Record<string, unknown> {
   return isJsonSchemaDefinition(schema) ? schema.schema : schema
 }
 
+/** Returns whether a value is a wrapped JSON Schema definition. */
 export function isJsonSchemaDefinition(value: unknown): value is JsonSchemaDefinition {
   return isJsonObject(value) && value.kind === 'json-schema' && isJsonObject(value.schema)
 }
 
+/**
+ * Validates the supported JSON Schema subset and returns the first error message, or `null`.
+ */
 export function validateJsonSchema(
   value: unknown,
   schema: JsonSchemaInput,

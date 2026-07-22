@@ -3,18 +3,16 @@ import { openaiCompatible, type OpenAiLikeConfig } from './openai'
 
 const GEMINI_OPENAI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai'
 
-/** Configuration for Gemini's OpenAI-compatible API surface. */
+/** Configures the Gemini OpenAI-compatible API. */
 export interface GeminiConfig extends Omit<OpenAiLikeConfig, 'baseURL'> {
-  /** Override for proxies or compatible gateways. */
+  /** Overrides the base URL for proxies or compatible gateways. */
   baseURL?: string
 }
 
 /**
- * Build a Gemini provider through Google's OpenAI-compatible API.
+ * Creates a Gemini provider through Google's OpenAI-compatible API.
  *
- * Gemini keeps the OpenAI chat/completions/embeddings shape at a different base
- * URL, so this wrapper only supplies provider defaults and leaves transport
- * behavior to `openaiCompatible`.
+ * Uses OpenAI-compatible request shapes with Gemini defaults for the base URL and model.
  */
 export function gemini(config: GeminiConfig): ChatProvider {
   const { baseURL = GEMINI_OPENAI_BASE_URL, defaultModel = 'gemini-3.5-flash', ...rest } = config

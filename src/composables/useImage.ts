@@ -36,6 +36,7 @@ type BodySource =
       request: ImageGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Captures the normalized proxy request exposed to lifecycle callbacks and inspection. */
 export interface ImageGenerationRequestInfo {
   providerId: 'proxy'
   attempt: number
@@ -48,10 +49,12 @@ export interface ImageGenerationRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized image result. */
 export interface ImageGenerationResponseInfo extends ImageGenerationRequestInfo {
   result: ImageGenerationResult
 }
 
+/** Configures the image proxy endpoint, request defaults, retries, and lifecycle callbacks. */
 export interface UseImageOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -68,6 +71,7 @@ export interface UseImageOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Supplies the required source image or images for an edit operation. */
 export interface ImageEditOptions extends Omit<
   Partial<ImageGenerationRequest>,
   'prompt' | 'operation' | 'image'
@@ -75,6 +79,7 @@ export interface ImageEditOptions extends Omit<
   image: ImageEditInput | ImageEditInput[]
 }
 
+/** Exposes the latest normalized image result together with request controls and trace state. */
 export interface UseImageReturn {
   input: Ref<string>
   image: Ref<GeneratedImage | null>
@@ -112,7 +117,10 @@ export interface UseImageReturn {
 }
 
 /**
- * Vue 3 composable for image generation through an app-owned backend.
+ * Generates or edits images through an app-owned JSON endpoint.
+ *
+ * `image` contains the first normalized output, while `images` contains every
+ * output. Generation methods resolve with the complete normalized result.
  */
 export function useImage(options: UseImageOptions = {}): UseImageReturn {
   const {

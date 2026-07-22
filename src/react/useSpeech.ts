@@ -32,7 +32,10 @@ import type {
   SpeechGenerationResponseInfo
 } from '../composables/useSpeech'
 
+/** Request inspection metadata emitted by the React speech hook. */
 export type ReactSpeechGenerationRequestInfo = SpeechGenerationRequestInfo
+
+/** Response inspection metadata emitted by the React speech hook. */
 export type ReactSpeechGenerationResponseInfo = SpeechGenerationResponseInfo
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -42,6 +45,7 @@ type BodySource =
       request: SpeechGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Configures the speech endpoint, initial text, retries, and lifecycle callbacks. */
 export interface UseReactSpeechOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -58,6 +62,7 @@ export interface UseReactSpeechOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes generated audio, request state, form bindings, controls, and inspection data. */
 export interface UseReactSpeechReturn {
   id: string
   input: string
@@ -147,6 +152,13 @@ function normalizeSpeechResult(raw: unknown): SpeechGenerationResult {
   } as SpeechGenerationResult
 }
 
+/**
+ * Generates speech through an app-owned endpoint and exposes the audio as React state.
+ *
+ * String and object response variants are normalized into one generated-audio representation.
+ *
+ * @returns Speech state, form helpers, generation controls, and request inspection data.
+ */
 export function useSpeech(options: UseReactSpeechOptions = {}): UseReactSpeechReturn {
   const {
     api = '/api/speech',

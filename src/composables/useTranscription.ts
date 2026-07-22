@@ -33,6 +33,7 @@ type BodySource =
       request: TranscriptionRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Captures the normalized proxy request exposed to lifecycle callbacks and inspection. */
 export interface TranscriptionRequestInfo {
   providerId: 'proxy'
   attempt: number
@@ -44,10 +45,12 @@ export interface TranscriptionRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized transcription result. */
 export interface TranscriptionResponseInfo extends TranscriptionRequestInfo {
   result: TranscriptionResult
 }
 
+/** Configures the transcription proxy endpoint, request defaults, retries, and callbacks. */
 export interface UseTranscriptionOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -64,6 +67,7 @@ export interface UseTranscriptionOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes normalized transcription text together with request controls and trace state. */
 export interface UseTranscriptionReturn {
   input: Ref<string>
   transcription: Ref<string>
@@ -97,7 +101,10 @@ export interface UseTranscriptionReturn {
 }
 
 /**
- * Vue 3 composable for audio transcription through an app-owned backend.
+ * Transcribes audio through an app-owned JSON endpoint.
+ *
+ * `transcribe` and `transcribeAudio` are aliases. The `text` and
+ * `transcription` refs also point to the same normalized output.
  */
 export function useTranscription(options: UseTranscriptionOptions = {}): UseTranscriptionReturn {
   const {

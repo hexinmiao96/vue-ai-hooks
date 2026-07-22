@@ -24,6 +24,7 @@ type BodySource =
       request: ProxyRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Identifies the operation being prepared for an app-owned proxy endpoint. */
 export type ProxyRequestKind = 'chat' | 'completion' | 'embedding' | 'resume'
 
 interface BaseProxyRequestContext {
@@ -33,6 +34,7 @@ interface BaseProxyRequestContext {
   credentials?: RequestCredentials
 }
 
+/** Describes a resolved proxy request passed to the final preparation hook. */
 export type ProxyRequestContext =
   | (BaseProxyRequestContext & {
       kind: 'chat'
@@ -54,6 +56,7 @@ export type ProxyRequestContext =
       request: ChatResumeRequest
     })
 
+/** Describes selective changes returned for a prepared proxy request. */
 export interface ProxyRequestOverride {
   url?: string
   headers?: HeadersInit
@@ -61,77 +64,97 @@ export interface ProxyRequestOverride {
   credentials?: RequestCredentials
 }
 
+/** Configures provider-agnostic requests to app-owned backend or edge endpoints. */
 export interface ProxyProviderConfig {
-  /** Stable provider id, useful when multiple app backends are wired in tests. */
+  /** Sets a stable provider ID, useful when multiple app backends are wired in tests. */
   id?: string
-  /** Optional base URL, e.g. `https://app.example.com`; relative URLs work by default. */
+  /** Sets an optional base URL, such as `https://app.example.com`; relative URLs work by default. */
   baseURL?: string
-  /** Chat endpoint. Defaults to `/api/ai/chat`. */
+  /** Sets the chat endpoint. Defaults to `/api/ai/chat`. */
   chatUrl?: string
-  /** Resume endpoint. Defaults to `/api/ai/chat/:id/stream`. */
+  /** Sets the resume endpoint. Defaults to `/api/ai/chat/:id/stream`. */
   resumeUrl?: string | ((id: string) => string)
-  /** Completion endpoint. Defaults to `/api/ai/completion`. */
+  /** Sets the completion endpoint. Defaults to `/api/ai/completion`. */
   completionUrl?: string
-  /** Embedding endpoint. Defaults to `/api/ai/embedding`. */
+  /** Sets the embedding endpoint. Defaults to `/api/ai/embedding`. */
   embeddingUrl?: string
-  /** Static or dynamic headers sent to your backend, not to upstream model APIs. */
+  /** Provides static or dynamic headers for the app backend, not upstream model APIs. */
   headers?: HeaderSource
-  /** Extra app-defined JSON body fields merged into proxy POST requests. */
+  /** Adds application-defined JSON body fields to proxy POST requests. */
   body?: BodySource
-  /** Last-mile hook for app-specific URL, header, body, or credentials changes. */
+  /** Provides a final hook for application-specific request changes. */
   prepareRequest?: (
     context: ProxyRequestContext
   ) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>
-  /** Browser credentials mode for same-origin session cookies. */
+  /** Sets the browser credentials mode for session cookies. */
   credentials?: RequestCredentials
-  /** Request timeout passed to the shared fetch wrapper. */
+  /** Sets the request timeout passed to the shared fetch wrapper. */
   timeoutMs?: number
-  /** Custom fetch implementation for tests or non-browser runtimes. */
+  /** Provides a fetch implementation for tests or non-browser runtimes. */
   fetch?: typeof fetch
 }
 
+/** Describes a chat request passed to the AI SDK-compatible preparation hook. */
 export interface DefaultChatTransportPrepareSendMessagesRequestOptions {
+  /** Provides the client chat/request ID when supplied by the request. */
   id?: string
+  /** Provides the resolved chat endpoint URL. */
   api: string
+  /** Provides the resolved browser credentials mode. */
   credentials?: RequestCredentials
+  /** Provides the resolved request headers. */
   headers: Record<string, string>
+  /** Provides the resolved JSON request body. */
   body: Record<string, unknown>
+  /** Provides the messages included in the request. */
   messages: ChatRequestMessage[]
+  /** Provides application-defined request metadata. */
   requestMetadata: unknown
+  /** Provides the original provider-agnostic request. */
   request: ChatRequest
 }
 
+/** Describes a resume request passed to the AI SDK-compatible preparation hook. */
 export interface DefaultChatTransportPrepareReconnectToStreamRequestOptions {
+  /** Identifies the chat stream to resume. */
   id: string
+  /** Provides the resolved resume endpoint URL. */
   api: string
+  /** Provides the resolved browser credentials mode. */
   credentials?: RequestCredentials
+  /** Provides the resolved request headers. */
   headers: Record<string, string>
+  /** Provides application-defined request metadata. */
   requestMetadata: unknown
+  /** Provides the original provider-agnostic resume request. */
   request: ChatResumeRequest
 }
 
+/** Prepares the final request used to send chat messages. */
 export type DefaultChatTransportPrepareSendMessagesRequest = (
   options: DefaultChatTransportPrepareSendMessagesRequestOptions
 ) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>
 
+/** Prepares the final request used to reconnect to a chat stream. */
 export type DefaultChatTransportPrepareReconnectToStreamRequest = (
   options: DefaultChatTransportPrepareReconnectToStreamRequestOptions
 ) => ProxyRequestOverride | void | Promise<ProxyRequestOverride | void>
 
+/** Configures the AI SDK-compatible `DefaultChatTransport` adapter. */
 export interface DefaultChatTransportOptions extends ProxyProviderConfig {
-  /** AI SDK-compatible chat endpoint alias. Defaults to `/api/chat`. */
+  /** Sets the AI SDK-compatible chat endpoint alias. Defaults to `/api/chat`. */
   api?: string
-  /** AI SDK-style hook for final chat request headers, body, credentials, or URL. */
+  /** Provides an AI SDK-compatible hook for final chat request changes. */
   prepareSendMessagesRequest?: DefaultChatTransportPrepareSendMessagesRequest
-  /** AI SDK-style hook for resumable stream request headers, credentials, or URL. */
+  /** Provides an AI SDK-compatible hook for final resume request changes. */
   prepareReconnectToStreamRequest?: DefaultChatTransportPrepareReconnectToStreamRequest
 }
 
 /**
- * AI SDK-style proxy transport for app-owned backend or edge routes.
+ * Adapts AI SDK-compatible chat transport configuration to app-owned backend or edge routes.
  *
- * This is a class wrapper around `proxyProvider()` so migrated chat UIs can keep
- * a `transport: new DefaultChatTransport(...)` shape.
+ * Wraps `proxyProvider()` so migrated chat UIs can retain a
+ * `transport: new DefaultChatTransport(...)` shape.
  */
 export class DefaultChatTransport implements ChatProvider {
   declare readonly id: string
@@ -229,7 +252,7 @@ function mergeProxyOverrides(
 }
 
 /**
- * Provider for app-owned backend or edge proxy endpoints.
+ * Creates a provider for app-owned backend or edge proxy endpoints.
  *
  * The browser sends provider-agnostic request JSON to your backend. Your backend
  * keeps model credentials server-side and returns either SSE chunks or JSON.

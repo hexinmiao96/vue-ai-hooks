@@ -27,6 +27,7 @@ import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
+/** Recursively makes structured-output fields optional while preserving function types. */
 export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
   ? T
   : T extends readonly (infer U)[]
@@ -35,6 +36,7 @@ export type DeepPartial<T> = T extends (...args: unknown[]) => unknown
       ? { [K in keyof T]?: DeepPartial<T[K]> }
       : T
 
+/** Captures the normalized structured-output request exposed to callbacks and inspection. */
 export interface ObjectRequestInfo {
   id: string
   providerId: string
@@ -48,10 +50,12 @@ export interface ObjectRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with whether the provider returned a stream. */
 export interface ObjectResponseInfo extends ObjectRequestInfo {
   hasStream: boolean
 }
 
+/** Describes a successfully parsed object and the stream state that produced it. */
 export interface ObjectFinishInfo<T = unknown> {
   object: T
   text: string
@@ -59,6 +63,7 @@ export interface ObjectFinishInfo<T = unknown> {
   error: Error | undefined
 }
 
+/** Describes the final structured-output state, including parse or validation failures. */
 export interface ObjectFinishCallbackOptions<T = unknown> {
   object: T | undefined
   text: string
@@ -78,6 +83,7 @@ export type LegacyObjectFinishCallback<T = unknown> = (
 export type ObjectFinishCallback<T = unknown> =
   AiSdkObjectFinishCallback<T> | LegacyObjectFinishCallback<T>
 
+/** Configures the structured-output schema, transport, shared state ID, and callbacks. */
 export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -105,6 +111,7 @@ export interface UseObjectOptions<T = unknown> extends RetryOptions, StreamThrot
   onError?: (err: Error) => void
 }
 
+/** Exposes validated output, best-effort partial output, and request controls. */
 export interface UseObjectReturn<T = unknown> {
   id: Ref<string>
   object: Ref<T | null>
@@ -144,6 +151,7 @@ interface ObjectState<T> extends RequestTrace<ObjectRequestInfo, ObjectResponseI
   abortController: Ref<AbortController | null>
 }
 
+// A stable ID intentionally lets multiple consumers observe the same structured-output state.
 const objectStates = new Map<string, ObjectState<unknown>>()
 
 function getObjectState<T>(
@@ -173,7 +181,9 @@ function getObjectState<T>(
 }
 
 /**
- * Vue 3 composable for JSON Schema-backed structured chat output.
+ * Streams JSON Schema-backed output and validates the complete object before
+ * resolving `submit()`. `partialObject` is best-effort and retains its previous
+ * value while an incoming JSON fragment cannot yet be repaired and parsed.
  */
 export function useObject<T = unknown>(options: UseObjectOptions<T>): UseObjectReturn<T> {
   const {

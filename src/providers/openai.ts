@@ -44,37 +44,36 @@ function normalizeToolCalls(
   }))
 }
 
-/** Configuration shared by OpenAI-family providers. */
+/** Configures an OpenAI-compatible provider. */
 export interface OpenAiLikeConfig {
+  /** Provides the API key sent as a bearer token. */
   apiKey: string
+  /** Sets the base URL containing any required API version or deployment path. */
   baseURL: string
   /**
-   * Additional headers to send on every request. Use for org-id, project-id,
+   * Adds headers to every request. Use for organization IDs, project IDs,
    * or self-hosted gateways that require custom auth.
    */
   headers?: HeadersInit
-  /** Default model when a request omits one. */
+  /** Selects the default model when a request omits one. */
   defaultModel?: string
-  /** Path for chat completions endpoint, defaults to '/chat/completions'. */
+  /** Sets the chat completions path. Defaults to `/chat/completions`. */
   chatPath?: string
-  /** Path for completions endpoint, defaults to '/completions'. */
+  /** Sets the completions path. Defaults to `/completions`. */
   completionPath?: string
-  /** Path for embeddings endpoint, defaults to '/embeddings'. */
+  /** Sets the embeddings path. Defaults to `/embeddings`. */
   embeddingPath?: string
   /**
-   * Optional fetcher override. Useful for testing or environments without
-   * a global `fetch` (e.g. older Node, polyfills).
+   * Provides a fetch implementation for tests or runtimes without a global `fetch`.
    */
   fetch?: typeof fetch
-  /** Request timeout in milliseconds. */
+  /** Sets the request timeout in milliseconds. */
   timeoutMs?: number
 }
 
 /**
- * Build an OpenAI-compatible provider. Works with OpenAI, Azure OpenAI
- * (with the right baseURL), DeepSeek, Moonshot, Zhipu, Ollama (with
- * the OpenAI shim), vLLM, and any other service that follows the
- * OpenAI REST conventions.
+ * Creates a provider for services that implement OpenAI-compatible chat, completion, and
+ * embedding endpoints.
  */
 export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
   const {
@@ -111,7 +110,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 
   function serializeMessages(messages: ChatRequestMessage[]) {
     return messages.map((m) => {
-      // Pass through ContentPart[] as-is; OpenAI's wire format is the same shape.
+      // Multimodal content parts already match the OpenAI wire format.
       const out: Record<string, unknown> = { role: m.role, content: m.content }
       if (m.name) out.name = m.name
       if (m.toolCallId) out.tool_call_id = m.toolCallId
@@ -301,8 +300,7 @@ export function openaiCompatible(config: OpenAiLikeConfig): ChatProvider {
 }
 
 /**
- * Convenience factory for the canonical OpenAI endpoint. Equivalent to
- * `openaiCompatible({ apiKey, baseURL: 'https://api.openai.com/v1', ... })`.
+ * Creates a provider for the canonical OpenAI API with `gpt-4o-mini` as its default model.
  */
 export function openai(config: Omit<OpenAiLikeConfig, 'baseURL'> & { baseURL?: string }) {
   return openaiCompatible({

@@ -32,7 +32,10 @@ import type {
   VideoGenerationResponseInfo
 } from '../composables/useVideo'
 
+/** Request inspection metadata emitted by the React video hook. */
 export type ReactVideoGenerationRequestInfo = VideoGenerationRequestInfo
+
+/** Response inspection metadata emitted by the React video hook. */
 export type ReactVideoGenerationResponseInfo = VideoGenerationResponseInfo
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -42,6 +45,7 @@ type BodySource =
       request: VideoGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Configures the video endpoint, initial prompt, retries, and lifecycle callbacks. */
 export interface UseReactVideoOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -58,6 +62,7 @@ export interface UseReactVideoOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes generated videos, request state, form bindings, controls, and inspection data. */
 export interface UseReactVideoReturn {
   id: string
   input: string
@@ -160,6 +165,13 @@ function normalizeVideoResult(raw: unknown): VideoGenerationResult {
   } as VideoGenerationResult
 }
 
+/**
+ * Generates videos through an app-owned endpoint and exposes the result as React state.
+ *
+ * Provider response variants are normalized into a primary video and a video collection.
+ *
+ * @returns Video state, form helpers, generation controls, and request inspection data.
+ */
 export function useVideo(options: UseReactVideoOptions = {}): UseReactVideoReturn {
   const {
     api = '/api/video',

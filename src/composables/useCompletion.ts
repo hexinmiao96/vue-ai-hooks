@@ -23,8 +23,10 @@ import {
 } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
+/** Selects the wire protocol used to decode streamed completion text. */
 export type CompletionStreamProtocol = NonNullable<CompletionRequest['streamProtocol']>
 
+/** Describes the final text and whether completion ended because of an abort. */
 export interface CompletionFinishInfo {
   prompt: string
   completion: string
@@ -42,6 +44,7 @@ export type LegacyCompletionFinishCallback = (
   info: CompletionFinishInfo
 ) => void
 
+/** Captures the normalized request exposed to lifecycle callbacks and inspection. */
 export interface CompletionRequestInfo {
   id: string
   providerId: string
@@ -54,10 +57,12 @@ export interface CompletionRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with whether the provider returned a stream. */
 export interface CompletionResponseInfo extends CompletionRequestInfo {
   hasStream: boolean
 }
 
+/** Configures the completion transport, shared state ID, retries, throttling, and callbacks. */
 export interface UseCompletionOptions extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -81,6 +86,7 @@ export interface UseCompletionOptions extends RetryOptions, StreamThrottleOption
   onError?: (err: Error) => void
 }
 
+/** Exposes accumulated completion text together with request controls and trace state. */
 export interface UseCompletionReturn {
   id: Ref<string>
   completion: Ref<string>
@@ -117,6 +123,7 @@ interface CompletionState extends RequestTrace<CompletionRequestInfo, Completion
   abortController: Ref<AbortController | null>
 }
 
+// A stable ID intentionally lets multiple consumers observe the same completion state.
 const completionStates = new Map<string, CompletionState>()
 
 function getCompletionState(
@@ -143,7 +150,9 @@ function getCompletionState(
 }
 
 /**
- * Vue 3 composable for single-shot streaming completions.
+ * Streams a single prompt completion and exposes its accumulated text as Vue
+ * state. `complete()` resolves with the final text and `stop()` aborts the
+ * active request without clearing the accumulated value.
  *
  * ```ts
  * const { completion, input, complete } = useCompletion({

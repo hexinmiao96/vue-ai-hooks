@@ -22,6 +22,7 @@ import type {
   TokenUsage
 } from '../types'
 
+/** Describes one start or resume invocation passed to the application-owned agent runner. */
 export interface ReactAgentRunRequest<TInput = unknown, TResume = unknown> {
   id: string
   input?: TInput
@@ -30,10 +31,12 @@ export interface ReactAgentRunRequest<TInput = unknown, TResume = unknown> {
   signal: AbortSignal
 }
 
+/** Produces the event source consumed by `useAgentRun`. */
 export type ReactAgentRunHandler<TInput = unknown, TResume = unknown> = (
   request: ReactAgentRunRequest<TInput, TResume>
 ) => AgentEventSource | Promise<AgentEventSource>
 
+/** Summarizes the completed or interrupted agent run delivered to `onFinish`. */
 export interface ReactAgentRunFinishInfo {
   id: string
   status: 'completed' | 'interrupted'
@@ -43,6 +46,7 @@ export interface ReactAgentRunFinishInfo {
   usage: TokenUsage | null
 }
 
+/** Captures inspection metadata for an agent start or resume request. */
 export interface ReactAgentRunRequestInfo<TInput = unknown, TResume = unknown> {
   id: string
   providerId: 'agent-run'
@@ -56,6 +60,7 @@ export interface ReactAgentRunRequestInfo<TInput = unknown, TResume = unknown> {
   interrupt?: AgentInterruptEvent | null
 }
 
+/** Summarizes the latest observable state of an agent event stream. */
 export interface ReactAgentRunResponseInfo {
   id: string
   providerId: 'agent-run'
@@ -71,14 +76,17 @@ export interface ReactAgentRunResponseInfo {
   usage: TokenUsage | null
 }
 
+/** Request inspection snapshot produced by a React agent run. */
 export type ReactAgentRunInspectionSnapshot<
   TInput = unknown,
   TResume = unknown
 > = RequestInspectionSnapshot<ReactAgentRunRequestInfo<TInput, TResume>, ReactAgentRunResponseInfo>
 
+/** Lifecycle states exposed by `useAgentRun`. */
 export type ReactAgentRunStatus =
   'idle' | 'running' | 'streaming' | 'interrupted' | 'completed' | 'error' | 'aborted'
 
+/** Configures the agent event source, event adaptation, identity, and lifecycle callbacks. */
 export interface UseReactAgentRunOptions<
   TInput = unknown,
   TResume = unknown
@@ -92,6 +100,7 @@ export interface UseReactAgentRunOptions<
   onError?: (error: Error) => void
 }
 
+/** Exposes the normalized event stream, derived chat state, interrupts, and run controls. */
 export interface UseReactAgentRunReturn<TInput = unknown, TResume = unknown> {
   id: string
   currentRunId: string | null
@@ -116,10 +125,12 @@ export interface UseReactAgentRunReturn<TInput = unknown, TResume = unknown> {
   abortController: AbortController | null
 }
 
+/** Overrides the run ID used for a single start or resume operation. */
 export interface StartAgentRunOptions {
   id?: string
 }
 
+/** Overrides the run ID used for a single resume operation. */
 export type ResumeAgentRunOptions = StartAgentRunOptions
 
 interface RunControls {
@@ -147,6 +158,15 @@ const initialRunState: RunStateRef = {
   assistantId: null
 }
 
+/**
+ * Consumes an application-owned agent event stream and exposes normalized React state.
+ *
+ * Starting a new run aborts the active run. Reusing the current run ID returns the active promise
+ * or preserves an already interrupted or completed result instead of replaying side effects.
+ *
+ * @returns Agent events, derived chat state, interrupt details, lifecycle controls, and inspection
+ * data.
+ */
 export function useAgentRun<TInput = unknown, TResume = unknown>(
   options: UseReactAgentRunOptions<TInput, TResume>
 ): UseReactAgentRunReturn<TInput, TResume> {
@@ -431,6 +451,7 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
       stop()
 
       const controller = new AbortController()
+      // Sequence checks prevent an obsolete stream from publishing after a newer run starts.
       const runSequence = ++sequenceRef.current
       controlsRef.current = { controller, sequence: runSequence }
       setAbortController(controller)

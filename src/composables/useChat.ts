@@ -56,6 +56,7 @@ import {
 } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
+/** Supplies the current tool call, parsed input, and chat snapshot to tool hooks. */
 export interface ToolCallHandlerContext {
   toolCall: ToolCall
   messages: Message[]
@@ -63,6 +64,7 @@ export interface ToolCallHandlerContext {
   context?: unknown
 }
 
+/** Provides the normalized tool-call shape used by AI SDK-compatible callbacks. */
 export interface UIToolCall {
   toolCallId: string
   toolName: string
@@ -118,6 +120,10 @@ export interface ToolModelOutputContext {
 
 export type ToolModelOutput = string | ContentPart | ContentPart[] | null | undefined
 
+/**
+ * Defines a typed tool, its input schema, optional executor, and optional
+ * model-facing output conversion.
+ */
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   description?: string
   inputSchema?: ToolInputSchema<TInput>
@@ -159,6 +165,7 @@ export type ToolHandlersFor<TTools extends ToolSet> = {
   [K in keyof TTools]?: ToolHandlerFor<TTools[K]>
 }
 
+/** Marks a typed tool definition as static. */
 export function tool<TInput = unknown, TOutput = unknown>(
   definition: ToolDefinition<TInput, TOutput>
 ): ToolDefinition<TInput, TOutput> {
@@ -168,6 +175,7 @@ export function tool<TInput = unknown, TOutput = unknown>(
   }
 }
 
+/** Marks a typed tool as dynamic for UI and callback classification. */
 export function dynamicTool<TInput = unknown, TOutput = unknown>(
   definition: ToolDefinition<TInput, TOutput>
 ): ToolDefinition<TInput, TOutput> {
@@ -177,6 +185,7 @@ export function dynamicTool<TInput = unknown, TOutput = unknown>(
   }
 }
 
+/** Type-checks a handler map against a tool set without changing it at runtime. */
 export function defineToolHandlers<TTools extends ToolSet>(
   _tools: TTools,
   handlers: ToolHandlersFor<TTools>
@@ -199,6 +208,7 @@ export interface StopWhenOptions {
 
 export type StopWhen = (options: StopWhenOptions) => boolean | PromiseLike<boolean>
 
+/** Describes the final assistant message and how its request ended. */
 export interface ChatFinishInfo {
   message: Message
   messages: Message[]
@@ -219,6 +229,7 @@ export type ChatFinishCallback = AiSdkChatFinishCallback | LegacyChatFinishCallb
 
 export type ChatRequestLifecycleKind = 'chat' | 'resume'
 
+/** Captures a normalized chat or resume request for callbacks and inspection. */
 export interface ChatRequestInfo {
   kind: ChatRequestLifecycleKind
   id: string
@@ -238,6 +249,7 @@ export interface ChatRequestInfo {
   stepNumber?: number
 }
 
+/** Extends the request snapshot with whether the provider returned a stream. */
 export interface ChatResponseInfo extends ChatRequestInfo {
   hasStream: boolean
 }
@@ -270,6 +282,7 @@ export interface SendChatMessageInput<
 export type SendChatTrigger = 'submit-message' | 'regenerate-message'
 export type AiSdkSendChatTrigger = 'submit-user-message' | 'regenerate-assistant-message'
 
+/** Supplies an outgoing chat request snapshot to a request-preparation hook. */
 export interface PrepareSendMessagesRequestOptions {
   id: string
   api?: string
@@ -297,6 +310,7 @@ export type PrepareStep = (
   options: PrepareStepOptions
 ) => Partial<ChatRequest> | void | Promise<Partial<ChatRequest> | void>
 
+/** Supplies a resume request snapshot to a reconnection-preparation hook. */
 export interface PrepareReconnectToStreamRequestOptions {
   id: string
   api?: string
@@ -348,6 +362,7 @@ export type PruneToolCallsOption = PruneToolCallsStrategy | readonly PruneToolCa
 
 export type PruneReasoningStrategy = PruneToolCallsStrategy
 
+/** Configures non-mutating history pruning before a model or proxy request. */
 export interface PruneMessagesOptions {
   messages: Message[]
   maxMessages?: number
@@ -359,6 +374,7 @@ export interface PruneMessagesOptions {
 
 export type ToolRenderStatus = 'inProgress' | 'executing' | 'awaitingAction' | 'complete' | 'error'
 
+/** Represents the latest UI-facing state of one tool call. */
 export interface ToolRenderPart {
   key: string
   toolCallId: string
@@ -380,6 +396,7 @@ export interface GetToolRenderPartsOptions {
 
 export type SerializedMessage = Omit<Message, 'createdAt'> & { createdAt?: string }
 
+/** Configures the metadata and incomplete content retained for model messages. */
 export interface ConvertToModelMessagesOptions {
   preserveIds?: boolean
   preserveCreatedAt?: boolean
@@ -392,6 +409,7 @@ export interface ConvertToModelMessagesOptions {
   ) => string | ContentPart | ContentPart[] | null | undefined
 }
 
+/** Configures Web Storage persistence for the chat message array. */
 export interface ChatPersistOptions {
   key: string
   version?: number
@@ -417,6 +435,7 @@ export type MessageMetadataSchema<
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
 > = Record<string, unknown> | MessageMetadataValidator<TMessageMetadata>
 
+/** Configures optional data-part and message-metadata schema validation. */
 export interface ValidateMessagesOptions<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -425,6 +444,7 @@ export interface ValidateMessagesOptions<
   messageMetadataSchema?: MessageMetadataSchema<TMessageMetadata>
 }
 
+/** Adds AI SDK-compatible aliases and optional tool validation to message validation. */
 export interface ValidateUIMessagesOptions<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -463,6 +483,10 @@ export type SafeValidateUIMessagesResult =
       error: Error
     }
 
+/**
+ * Configures chat transport, shared state, tools, persistence, request hooks,
+ * retries, stream throttling, agent context, and lifecycle callbacks.
+ */
 export interface UseChatOptions<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -515,6 +539,7 @@ export interface UseChatOptions<
   onError?: (e: Error) => void
 }
 
+/** Exposes chat state, tool workflows, request controls, and inspection data. */
 export interface UseChatReturn<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -574,6 +599,7 @@ export type ChatOptions<
 
 const empty = [] as Message[]
 
+/** Returns whether every tool call on the latest assistant message has a later result. */
 export function lastAssistantMessageIsCompleteWithToolCalls({
   messages
 }: SendAutomaticallyWhenOptions): boolean {
@@ -607,6 +633,7 @@ function latestAssistantToolCalls(messages: Message[]): ToolCall[] {
   return []
 }
 
+/** Creates a stop predicate that counts assistant turns containing tool calls. */
 export function isStepCount(count: number): StopWhen {
   return ({ messages }) =>
     messages.filter((message) => message.role === 'assistant' && message.toolCalls?.length)
@@ -615,6 +642,7 @@ export function isStepCount(count: number): StopWhen {
 
 export const stepCountIs = isStepCount
 
+/** Creates a stop predicate that matches any tool call or one of the supplied names. */
 export function hasToolCall(...toolNames: string[]): StopWhen {
   return ({ toolCalls }) =>
     toolNames.length
@@ -947,7 +975,8 @@ function toolCallsToMessageParts(calls: ToolCall[]): MessagePart[] {
 }
 
 /**
- * Convert chat messages into a JSON-safe persistence payload.
+ * Clones supported message fields and encodes `createdAt` values as ISO 8601
+ * strings. Caller-owned metadata and data payloads must remain JSON-compatible.
  */
 export function serializeMessages(messages: Message[]): SerializedMessage[] {
   return messages.map((message) => {
@@ -958,7 +987,8 @@ export function serializeMessages(messages: Message[]): SerializedMessage[] {
 }
 
 /**
- * Restore and validate messages previously produced by `serializeMessages()`.
+ * Restores messages produced by `serializeMessages()`, including `Date`
+ * instances, or returns `null` when the payload shape is invalid.
  */
 export function deserializeMessages(raw: unknown): Message[] | null {
   if (!Array.isArray(raw)) return null
@@ -1000,14 +1030,16 @@ export function deserializeMessages(raw: unknown): Message[] | null {
 }
 
 /**
- * Check whether an unknown payload can be restored by `deserializeMessages()`.
+ * Returns whether an unknown payload can be restored and passes all configured
+ * data-part and message-metadata validation.
  */
 export function validateMessages(raw: unknown, options: ValidateMessagesOptions = {}): boolean {
   return safeValidateMessages(raw, options).success
 }
 
 /**
- * Restore messages and return either the validated payload or the validation error.
+ * Restores and validates messages without throwing, returning either the
+ * validated payload or a normalized validation error.
  */
 export function safeValidateMessages(
   raw: unknown,
@@ -1030,7 +1062,8 @@ export function safeValidateMessages(
 }
 
 /**
- * AI SDK-style helper that returns validated UI messages or throws.
+ * Validates AI SDK-compatible UI messages and throws when restoration or
+ * configured schema validation fails.
  */
 export function validateUIMessages<
   TData = unknown,
@@ -1046,7 +1079,8 @@ export function validateUIMessages<
 }
 
 /**
- * AI SDK-style helper that returns a discriminated result instead of throwing.
+ * Validates AI SDK-compatible UI messages and returns a discriminated result
+ * instead of throwing.
  */
 export function safeValidateUIMessages<
   TData = unknown,
@@ -1219,7 +1253,8 @@ function toAiSdkTrigger(trigger: SendChatTrigger): AiSdkSendChatTrigger {
 }
 
 /**
- * Convert UI chat messages into provider/model-facing messages.
+ * Converts UI chat messages into new provider-facing message objects, removing
+ * UI-only fields unless the corresponding preservation option is enabled.
  */
 export function convertToModelMessages(
   messages: Message[],
@@ -1333,7 +1368,8 @@ function isEmptyMessage(message: Message): boolean {
 }
 
 /**
- * Derive UI-safe tool render rows from chat messages and pending tool calls.
+ * Derives one current UI row per tool-call ID by reconciling message parts,
+ * wire tool calls, tool results, and locally pending calls.
  */
 export function getToolRenderParts(options: GetToolRenderPartsOptions): ToolRenderPart[] {
   const pendingIds = new Set(options.pendingToolCalls?.map((call) => call.id) ?? [])
@@ -1468,7 +1504,8 @@ function isPruneToolCallsRules(
 }
 
 /**
- * Trim chat history before sending it to a provider or proxy.
+ * Returns a cloned, pruned chat history suitable for a provider or proxy.
+ * System messages may be retained independently of `maxMessages`.
  */
 export function pruneMessages(options: PruneMessagesOptions): Message[] {
   const {
@@ -1570,6 +1607,7 @@ interface ChatState<TData = unknown> extends RequestTrace<ChatRequestInfo, ChatR
   abortController: Ref<AbortController | null>
 }
 
+// A stable ID intentionally lets multiple consumers observe the same chat state.
 const chatStates = new Map<string, ChatState<unknown>>()
 
 function getChatState<TData = unknown>(
@@ -1603,6 +1641,11 @@ function getChatState<TData = unknown>(
   return state
 }
 
+/**
+ * Runs streaming chat requests and exposes messages, tool workflows, stream
+ * data, usage, errors, and trace state. Supplying `chat` returns that existing
+ * instance; otherwise consumers with the same initial ID share chat state.
+ */
 export function useChat<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>
@@ -3023,6 +3066,7 @@ export function useChat<
   }
 }
 
+/** Provides the `useChat()` contract as a reusable class instance. */
 export class Chat<
   TData = unknown,
   TMessageMetadata extends Record<string, unknown> = Record<string, unknown>

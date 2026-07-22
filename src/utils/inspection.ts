@@ -1,8 +1,10 @@
 import { AiHooksError, type AiRequestStatus, type RetryContext, type RetryOptions } from '../types'
 
+/** Identifies the lifecycle status represented in an inspection snapshot. */
 export type InspectionStatus =
   AiRequestStatus | 'idle' | 'running' | 'interrupted' | 'completed' | 'aborted'
 
+/** Identifies the normalized category assigned to a captured request error. */
 export type InspectionErrorCategory =
   | 'abort'
   | 'authentication'
@@ -14,6 +16,7 @@ export type InspectionErrorCategory =
   | 'validation'
   | 'unknown'
 
+/** Describes serializable error details used by inspection snapshots and retry records. */
 export interface InspectionErrorSummary {
   category: InspectionErrorCategory
   message: string
@@ -23,9 +26,11 @@ export interface InspectionErrorSummary {
   hasCause: boolean
 }
 
+/** Identifies the kind of event recorded on an inspection timeline. */
 export type InspectionTimelineEventKind =
   'request' | 'response' | 'stream' | 'retry' | 'error' | 'status'
 
+/** Describes a timeline event before its timestamp is normalized. */
 export interface InspectionTimelineEventInput {
   kind: InspectionTimelineEventKind
   label?: string
@@ -37,10 +42,12 @@ export interface InspectionTimelineEventInput {
   metadata?: Record<string, unknown>
 }
 
+/** Represents an inspection timeline event with an ISO 8601 timestamp. */
 export interface InspectionTimelineEvent extends Omit<InspectionTimelineEventInput, 'timestamp'> {
   timestamp: string
 }
 
+/** Describes a retry record before its error and timestamp are normalized. */
 export interface InspectionRetryRecordInput {
   attempt: number
   maxRetries?: number
@@ -49,6 +56,7 @@ export interface InspectionRetryRecordInput {
   timestamp?: Date | string | number
 }
 
+/** Represents a normalized retry attempt captured for request inspection. */
 export interface InspectionRetryRecord {
   attempt: number
   maxRetries?: number
@@ -57,6 +65,7 @@ export interface InspectionRetryRecord {
   timestamp: string
 }
 
+/** Summarizes provider and request metadata derived from lifecycle snapshots. */
 export interface InspectionProviderTrace {
   providerId?: string
   api?: string
@@ -69,6 +78,7 @@ export interface InspectionProviderTrace {
   responseKeys: string[]
 }
 
+/** Configures cURL generation and sensitive-header redaction. */
 export interface InspectionCurlOptions {
   command?: string
   api?: string
@@ -78,6 +88,7 @@ export interface InspectionCurlOptions {
   redactHeaders?: readonly string[]
 }
 
+/** Configures the inputs used to assemble a sanitized inspection snapshot. */
 export interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unknown> {
   status?: InspectionStatus
   error?: unknown
@@ -89,6 +100,7 @@ export interface InspectRequestTraceOptions<TRequest = unknown, TResponse = unkn
   now?: Date | string | number
 }
 
+/** Represents a diagnostic snapshot with recognized sensitive fields redacted. */
 export interface RequestInspectionSnapshot<TRequest = unknown, TResponse = unknown> {
   status: InspectionStatus
   request: TRequest | null
@@ -162,16 +174,19 @@ const DEFAULT_REDACTED_FIELDS = [
   'upstreamApiKey'
 ]
 
+/** Clears inspection events and retries stored in mutable refs. */
 export function clearInspectionRecords(records: InspectionRecordRefs) {
   records.events.value = []
   records.retries.value = []
 }
 
+/** Clears inspection events and retries through state setters. */
 export function clearInspectionState(records: InspectionRecordSetters) {
   records.setEvents(() => [])
   records.setRetries(() => [])
 }
 
+/** Appends a timestamped inspection event to mutable refs. */
 export function recordInspectionEvent(
   records: InspectionRecordRefs,
   event: InspectionTimelineEventInput
@@ -182,6 +197,7 @@ export function recordInspectionEvent(
   ]
 }
 
+/** Appends a timestamped inspection event through a state setter. */
 export function recordInspectionStateEvent(
   records: InspectionRecordSetters,
   event: InspectionTimelineEventInput
@@ -192,6 +208,7 @@ export function recordInspectionStateEvent(
   ])
 }
 
+/** Appends a retry input to mutable refs for later normalization during inspection. */
 export function recordInspectionRetry(
   records: InspectionRecordRefs,
   errorToRecord: unknown,
@@ -211,6 +228,7 @@ export function recordInspectionRetry(
   ]
 }
 
+/** Appends a retry input through a state setter for later normalization during inspection. */
 export function recordInspectionStateRetry(
   records: InspectionRecordSetters,
   errorToRecord: unknown,
@@ -230,6 +248,7 @@ export function recordInspectionStateRetry(
   ])
 }
 
+/** Records both the retry timeline event and retry details in mutable refs. */
 export function recordInspectionRetryAttempt(
   records: InspectionRecordRefs,
   errorToRecord: unknown,
@@ -249,6 +268,7 @@ export function recordInspectionRetryAttempt(
   recordInspectionRetry(records, errorToRecord, context, options.retryDelayMs)
 }
 
+/** Records both the retry timeline event and retry details through state setters. */
 export function recordInspectionStateRetryAttempt(
   records: InspectionRecordSetters,
   errorToRecord: unknown,
@@ -268,6 +288,7 @@ export function recordInspectionStateRetryAttempt(
   recordInspectionStateRetry(records, errorToRecord, context, options.retryDelayMs)
 }
 
+/** Classifies an unknown error for inspection, or returns `null` when no error exists. */
 export function classifyInspectionError(error: unknown): InspectionErrorSummary | null {
   if (error == null) return null
 
@@ -289,6 +310,9 @@ export function classifyInspectionError(error: unknown): InspectionErrorSummary 
   }
 }
 
+/**
+ * Builds a diagnostic snapshot and redacts recognized sensitive request and response fields.
+ */
 export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
   options: InspectRequestTraceOptions<TRequest, TResponse>
 ): RequestInspectionSnapshot<TRequest, TResponse> {
@@ -346,6 +370,13 @@ export function inspectRequestTrace<TRequest = unknown, TResponse = unknown>(
   }
 }
 
+/**
+ * Creates a cURL command whose generated arguments are shell-quoted and whose
+ * recognized sensitive headers and JSON body fields are redacted. A custom
+ * `command` value is used verbatim.
+ *
+ * Returns `null` when no request URL can be resolved.
+ */
 export function createInspectionCurl(
   request: unknown,
   options: InspectionCurlOptions = {}

@@ -7,10 +7,12 @@ import { createStreamUpdateThrottler, getThrottleMs } from '../utils/throttle'
 import { inspectRequestTrace, type RequestInspectionSnapshot } from '../utils/inspection'
 import { createRequestTrace, type RequestTrace } from '../utils/trace'
 
+/** Supplies per-run request body fields that override configured defaults. */
 export interface GenerateOptions {
   body?: Record<string, unknown>
 }
 
+/** Captures one generic generation attempt for callbacks and inspection. */
 export interface GenerationRequestInfo<TInput = unknown> {
   id: string
   attempt: number
@@ -18,6 +20,7 @@ export interface GenerationRequestInfo<TInput = unknown> {
   body?: Record<string, unknown>
 }
 
+/** Extends a generic generation request snapshot with its resolved result. */
 export interface GenerationResponseInfo<
   TInput = unknown,
   TResult = unknown
@@ -25,6 +28,7 @@ export interface GenerationResponseInfo<
   result: TResult
 }
 
+/** Gives a generation fetcher cancellation and incremental reporting controls. */
 export interface GenerationRunContext<
   TInput = unknown,
   TProgress = unknown,
@@ -35,6 +39,7 @@ export interface GenerationRunContext<
   reportChunk: (chunk: TChunk) => void
 }
 
+/** Produces a generation result and may report progress or chunks before resolving. */
 export type GenerationFetcher<
   TInput = unknown,
   TResult = unknown,
@@ -45,6 +50,7 @@ export type GenerationFetcher<
   context: GenerationRunContext<TInput, TProgress, TChunk>
 ) => TResult | Promise<TResult>
 
+/** Configures a generic generation fetcher, shared state ID, retries, and callbacks. */
 export interface UseGenerationOptions<
   TInput = string,
   TResult = unknown,
@@ -67,6 +73,7 @@ export interface UseGenerationOptions<
   onError?: (err: Error) => void
 }
 
+/** Exposes the latest generic generation result, incremental updates, and request controls. */
 export interface UseGenerationReturn<
   TInput = string,
   TResult = unknown,
@@ -115,6 +122,7 @@ interface GenerationState<TInput, TResult, TProgress, TChunk> extends RequestTra
   abortController: Ref<AbortController | null>
 }
 
+// A stable ID intentionally lets multiple consumers observe the same generation state.
 const generationStates = new Map<string, GenerationState<unknown, unknown, unknown, unknown>>()
 
 function getGenerationState<TInput, TResult, TProgress, TChunk>(
@@ -144,6 +152,11 @@ function getGenerationState<TInput, TResult, TProgress, TChunk>(
   return state
 }
 
+/**
+ * Runs an application-provided generation fetcher with cancellation, retries,
+ * progress, and chunk reporting. `generate()` resolves with the fetcher's
+ * result, while reported progress and chunks remain available as Vue state.
+ */
 export function useGeneration<
   TInput = string,
   TResult = unknown,

@@ -1,6 +1,7 @@
 import type { ChatChunk, MessagePart, TokenUsage } from '../types'
 import type { UIMessageStreamPart } from './stream'
 
+/** Requests application intervention while an agent run is in progress. */
 export interface AgentInterruptEvent {
   type: 'interrupt'
   id?: string
@@ -9,6 +10,7 @@ export interface AgentInterruptEvent {
   transient?: boolean
 }
 
+/** Defines the lightweight event protocol accepted by the agent stream adapters. */
 export type AgentEvent =
   | {
       type: 'message-delta'
@@ -69,20 +71,25 @@ export type AgentEvent =
     }
   | AgentInterruptEvent
 
+/** Accepts iterable or readable sources of lightweight agent events. */
 export type AgentEventSource =
   Iterable<AgentEvent> | AsyncIterable<AgentEvent> | ReadableStream<AgentEvent>
 
+/** Configures data-part type names emitted by the agent event adapters. */
 export interface AgentEventAdapterOptions {
-  /** Data part type for progress events. */
+  /** Sets the data-part type for progress events. */
   progressDataType?: `data-${string}`
-  /** Data part type for interrupt events. */
+  /** Sets the data-part type for interrupt events. */
   interruptDataType?: `data-${string}`
-  /** Data part type for non-throwing agent error events. */
+  /** Sets the data-part type for non-throwing agent error events. */
   errorDataType?: `data-${string}`
 }
 
+/** Configures reading agent events as normalized chat chunks. */
 export interface ReadAgentEventStreamOptions extends AgentEventAdapterOptions {
+  /** Provides the event source to consume. */
   events: AgentEventSource
+  /** Signals cancellation of event consumption. */
   signal?: AbortSignal
 }
 
@@ -90,7 +97,7 @@ const defaultProgressDataType = 'data-agent-progress'
 const defaultInterruptDataType = 'data-agent-interrupt'
 const defaultErrorDataType = 'data-agent-error'
 
-/** Convert one lightweight agent event into a normalized chat chunk. */
+/** Converts one lightweight agent event into a normalized chat chunk. */
 export function agentEventToChatChunk(
   event: AgentEvent,
   options: AgentEventAdapterOptions = {}
@@ -237,7 +244,7 @@ export function agentEventToChatChunk(
   }
 }
 
-/** Convert one lightweight agent event into an AI SDK UI message stream part. */
+/** Converts one lightweight agent event into an AI SDK UI message stream part. */
 export function agentEventToUIMessageStreamPart(
   event: AgentEvent,
   options: AgentEventAdapterOptions = {}
@@ -333,7 +340,7 @@ export function agentEventToUIMessageStreamPart(
   }
 }
 
-/** Read raw lightweight agent events from an iterable, async iterable, or stream. */
+/** Reads raw lightweight agent events until the source ends or the signal aborts. */
 export async function* readAgentEvents(
   events: AgentEventSource,
   signal?: AbortSignal
@@ -341,7 +348,7 @@ export async function* readAgentEvents(
   yield* agentEvents(events, signal)
 }
 
-/** Read an iterable or stream of lightweight agent events as normalized chat chunks. */
+/** Reads lightweight agent events as normalized chat chunks. */
 export async function* readAgentEventStream({
   events,
   signal,

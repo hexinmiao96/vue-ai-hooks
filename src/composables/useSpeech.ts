@@ -34,6 +34,7 @@ type BodySource =
       request: SpeechGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Captures the normalized proxy request exposed to lifecycle callbacks and inspection. */
 export interface SpeechGenerationRequestInfo {
   providerId: 'proxy'
   attempt: number
@@ -45,10 +46,12 @@ export interface SpeechGenerationRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized speech result. */
 export interface SpeechGenerationResponseInfo extends SpeechGenerationRequestInfo {
   result: SpeechGenerationResult
 }
 
+/** Configures the speech proxy endpoint, request defaults, retries, and lifecycle callbacks. */
 export interface UseSpeechOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -65,6 +68,7 @@ export interface UseSpeechOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes the latest normalized audio result together with request controls and trace state. */
 export interface UseSpeechReturn {
   input: Ref<string>
   audio: Ref<GeneratedAudio | null>
@@ -104,7 +108,10 @@ export interface UseSpeechReturn {
 }
 
 /**
- * Vue 3 composable for text-to-speech generation through an app-owned backend.
+ * Generates speech through an app-owned JSON endpoint.
+ *
+ * `generate`, `generateSpeech`, and `speak` are aliases that resolve with the
+ * complete normalized result; `audio` contains its primary audio output.
  */
 export function useSpeech(options: UseSpeechOptions = {}): UseSpeechReturn {
   const {

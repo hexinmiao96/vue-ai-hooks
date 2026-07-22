@@ -7,42 +7,63 @@ interface UiStreamState {
   reasoningDeltas: Map<string, string>
 }
 
+/** Represents an opaque AI SDK UI message stream part. */
 export type UIMessageStreamPart = Record<string, unknown>
 
+/** Accepts iterable or readable sources of AI SDK UI message stream parts. */
 export type UIMessageStreamSource =
   | Iterable<UIMessageStreamPart>
   | AsyncIterable<UIMessageStreamPart>
   | ReadableStream<UIMessageStreamPart>
 
+/** Exposes imperative operations for producing a UI message stream. */
 export interface UIMessageStreamWriter {
+  /** Enqueues one stream part unless the stream has closed or aborted. */
   write(part: UIMessageStreamPart): void
+  /** Consumes another source and enqueues parts while this stream remains open. */
   merge(stream: UIMessageStreamSource): Promise<void>
+  /** Maps an error through the configured handler and emits the resulting error part. */
   error(error: unknown): void
 }
 
+/** Configures an imperatively produced AI SDK UI message stream. */
 export interface CreateUIMessageStreamOptions {
+  /** Produces parts through the provided writer. */
   execute: (writer: UIMessageStreamWriter) => void | Promise<void>
+  /** Maps producer errors to a stream part or suppresses them with `null` or `undefined`. */
   onError?: (error: unknown) => UIMessageStreamPart | string | null | undefined
+  /** Closes the stream when aborted. */
   signal?: AbortSignal
 }
 
+/** Decodes stream parts while preserving tool and reasoning delta state. */
 export interface UIMessageStreamParser {
   toChatChunks(raw: Record<string, unknown>): ChatChunk[]
 }
 
+/** Configures decoding an AI SDK UI message stream response. */
 export interface ReadUIMessageStreamOptions {
+  /** Stops response consumption when aborted. */
   signal?: AbortSignal
+  /** Provides the parser used to preserve state across response parts. */
   parser?: UIMessageStreamParser
 }
 
+/** Configures a Fetch API response backed by UI message stream parts. */
 export interface CreateUIMessageStreamResponseOptions {
+  /** Provides the stream parts to encode as SSE events. */
   stream: UIMessageStreamSource
+  /** Sets the HTTP response status. Defaults to `200`. */
   status?: number
+  /** Sets optional HTTP response status text. */
   statusText?: string
+  /** Adds response headers alongside the required stream headers. */
   headers?: HeadersInit
+  /** Appends the `[DONE]` sentinel when `true`. Defaults to `true`. */
   includeDone?: boolean
 }
 
+/** Defines the minimal Node-like HTTP response contract accepted by the stream pipe. */
 export interface ServerResponseLike {
   statusCode?: number
   statusMessage?: string
@@ -57,17 +78,18 @@ export interface ServerResponseLike {
   once?: (event: 'drain', listener: () => void) => unknown
 }
 
+/** Configures piping UI message stream parts to a Node-like HTTP response. */
 export interface PipeUIMessageStreamToResponseOptions extends CreateUIMessageStreamResponseOptions {
+  /** Provides the destination HTTP response. */
   response: ServerResponseLike
+  /** Receives a tee of the encoded SSE stream for logging or inspection. */
   consumeSseStream?: (options: { stream: ReadableStream<string> }) => void | Promise<void>
 }
 
 /**
- * Server-Sent Events (SSE) parser.
+ * Parses JSON payloads from Server-Sent Events (SSE).
  *
- * Yields the parsed JSON payload of each `data: ...` line. Stops on
- * the canonical `[DONE]` sentinel. Skips malformed lines silently
- * (we surface errors through the chunk type, not exceptions).
+ * Stops on the canonical `[DONE]` sentinel and skips malformed provider lines.
  */
 export async function* parseSSE(
   response: Response,
@@ -137,7 +159,7 @@ function parseSSEEvent(rawEvent: string): Array<Record<string, unknown> | '[DONE
   return events
 }
 
-/** Create a stateful decoder for AI SDK UI message stream parts. */
+/** Creates a stateful decoder for AI SDK UI message stream parts. */
 export function createUIMessageStreamParser(): UIMessageStreamParser {
   const state: UiStreamState = {
     toolIndexes: new Map(),
@@ -153,7 +175,7 @@ export function createUIMessageStreamParser(): UIMessageStreamParser {
 }
 
 /**
- * Read an AI SDK UI message stream response as provider-agnostic chat chunks.
+ * Reads an AI SDK UI message stream response as provider-agnostic chat chunks.
  */
 export async function* readUIMessageStream({
   response,
@@ -167,7 +189,7 @@ export async function* readUIMessageStream({
 }
 
 /**
- * Create an AI SDK UI message stream from imperative writer callbacks.
+ * Creates an AI SDK UI message stream from imperative writer callbacks.
  */
 export function createUIMessageStream({
   execute,
@@ -219,7 +241,7 @@ export function createUIMessageStream({
 }
 
 /**
- * Format one value as an SSE `data:` event.
+ * Formats one JSON-serializable value as an SSE `data:` event.
  */
 export function formatSSEData(value: unknown): string {
   if (value === '[DONE]') return 'data: [DONE]\n\n'
@@ -231,7 +253,7 @@ export function formatSSEData(value: unknown): string {
 }
 
 /**
- * Create a Fetch API response that streams AI SDK UI message stream parts.
+ * Creates a Fetch API response that streams AI SDK UI message stream parts.
  */
 export function createUIMessageStreamResponse({
   stream,
@@ -248,7 +270,7 @@ export function createUIMessageStreamResponse({
 }
 
 /**
- * Pipe AI SDK UI message stream parts to a Node-like HTTP response.
+ * Pipes AI SDK UI message stream parts to a Node-like HTTP response with backpressure handling.
  */
 export async function pipeUIMessageStreamToResponse({
   response,
@@ -284,7 +306,7 @@ export async function pipeUIMessageStreamToResponse({
 }
 
 /**
- * Convert one AI SDK UI message stream part to chat chunks.
+ * Converts one AI SDK UI message stream part to normalized chat chunks.
  *
  * Pass a parser from `createUIMessageStreamParser()` when decoding a multi-part
  * stream so tool-call and reasoning deltas share state across parts.

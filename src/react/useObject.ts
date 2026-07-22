@@ -42,8 +42,10 @@ import {
   type RequestInspectionSnapshot
 } from '../utils/inspection'
 
+/** Request lifecycle states exposed by `useObject`. */
 export type ReactObjectStatus = AiRequestStatus
 
+/** Recursively makes structured output fields optional while streaming. */
 export type ReactObjectDeepPartial<T> = T extends (...args: unknown[]) => unknown
   ? T
   : T extends readonly (infer U)[]
@@ -52,6 +54,7 @@ export type ReactObjectDeepPartial<T> = T extends (...args: unknown[]) => unknow
       ? { [K in keyof T]?: ReactObjectDeepPartial<T[K]> }
       : T
 
+/** Captures the normalized request used to generate structured output. */
 export interface ReactObjectRequestInfo {
   id: string
   providerId: string
@@ -65,10 +68,12 @@ export interface ReactObjectRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Captures request metadata after the provider response is available. */
 export interface ReactObjectResponseInfo extends ReactObjectRequestInfo {
   hasStream: boolean
 }
 
+/** Describes validated structured output delivered to legacy finish callbacks. */
 export interface ReactObjectFinishInfo<T = unknown> {
   object: T
   text: string
@@ -76,6 +81,7 @@ export interface ReactObjectFinishInfo<T = unknown> {
   error: Error | undefined
 }
 
+/** Describes the terminal structured output delivered to AI SDK-style callbacks. */
 export interface ReactObjectFinishCallbackOptions<T = unknown> {
   object: T | undefined
   text: string
@@ -83,18 +89,22 @@ export interface ReactObjectFinishCallbackOptions<T = unknown> {
   error: Error | undefined
 }
 
+/** Receives terminal structured output using the AI SDK-compatible object signature. */
 export type ReactAiSdkObjectFinishCallback<T = unknown> = (
   options: ReactObjectFinishCallbackOptions<T>
 ) => void | Promise<void>
 
+/** Receives validated structured output followed by legacy finish details. */
 export type ReactLegacyObjectFinishCallback<T = unknown> = (
   object: T,
   info: ReactObjectFinishInfo<T>
 ) => void | Promise<void>
 
+/** Accepts either supported structured output finish callback signature. */
 export type ReactObjectFinishCallback<T = unknown> =
   ReactAiSdkObjectFinishCallback<T> | ReactLegacyObjectFinishCallback<T>
 
+/** Configures structured output generation, JSON Schema validation, retries, and callbacks. */
 export interface UseReactObjectOptions<T = unknown> extends RetryOptions, StreamThrottleOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -123,6 +133,7 @@ export interface UseReactObjectOptions<T = unknown> extends RetryOptions, Stream
   onError?: (error: Error) => void
 }
 
+/** Exposes validated and partial output, form bindings, request controls, and inspection data. */
 export interface UseReactObjectReturn<T = unknown> {
   id: string
   object: T | null
@@ -174,6 +185,14 @@ function createAbortError(): Error {
   return error
 }
 
+/**
+ * Generates JSON Schema-constrained output and exposes partial stream state to React.
+ *
+ * The final value is returned only after JSON parsing and schema validation succeed; partial
+ * values remain best-effort snapshots while the response is streaming.
+ *
+ * @returns Structured output state, form helpers, lifecycle controls, and inspection data.
+ */
 export function useObject<T = unknown>(options: UseReactObjectOptions<T>): UseReactObjectReturn<T> {
   const {
     provider: providedProvider,

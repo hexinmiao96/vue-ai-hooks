@@ -1,9 +1,9 @@
 import { AiHooksError } from '../types'
 
 /**
- * Wraps the global fetch (or a user-supplied one) with timeout, AbortSignal,
- * and consistent error shaping. Providers should call this instead of using
- * fetch directly so behavior is uniform.
+ * Sends a fetch request with timeout and abort propagation, returning only successful responses.
+ *
+ * Network, abort, and non-success HTTP responses are normalized to `AiHooksError`.
  */
 export async function requestJson(
   url: string,

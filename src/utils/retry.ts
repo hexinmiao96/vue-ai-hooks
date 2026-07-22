@@ -1,9 +1,11 @@
 import type { RetryContext, RetryOptions } from '../types'
 
+/** Normalizes the configured retry count to a non-negative integer. */
 export function getMaxRetries(options: RetryOptions) {
   return Math.max(0, Math.floor(options.maxRetries ?? 0))
 }
 
+/** Creates the context passed to retry policy and lifecycle callbacks. */
 export function createRetryContext(
   error: Error,
   attempt: number,
@@ -12,12 +14,14 @@ export function createRetryContext(
   return { attempt, maxRetries, error }
 }
 
+/** Returns whether the current failure may consume the configured retry attempt. */
 export async function canRetry(options: RetryOptions, context: RetryContext) {
   if (context.attempt > context.maxRetries) return false
   if (options.shouldRetry) return await options.shouldRetry(context.error, context)
   return isDefaultRetryable(context.error)
 }
 
+/** Runs the retry callback and waits for the configured delay, respecting abort signals. */
 export async function waitForRetry(
   options: RetryOptions,
   context: RetryContext,
@@ -57,6 +61,7 @@ function isDefaultRetryable(error: Error) {
   return status === 408 || status === 409 || status === 425 || status === 429 || status >= 500
 }
 
+/** Creates an `AbortError` used when a retry wait is cancelled. */
 export function createAbortError() {
   const error = new Error('Request aborted')
   error.name = 'AbortError'

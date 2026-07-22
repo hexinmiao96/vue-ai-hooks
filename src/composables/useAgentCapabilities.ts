@@ -21,6 +21,7 @@ import { createRequestTrace } from '../utils/trace'
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
 
+/** Describes the agent identity and optional documentation metadata. */
 export interface AgentIdentityCapabilities {
   name?: string
   type?: string
@@ -31,6 +32,7 @@ export interface AgentIdentityCapabilities {
   metadata?: Record<string, unknown>
 }
 
+/** Describes the transport and stream lifecycle features an agent supports. */
 export interface AgentTransportCapabilities {
   streaming?: boolean
   websocket?: boolean
@@ -39,6 +41,7 @@ export interface AgentTransportCapabilities {
   resumable?: boolean
 }
 
+/** Accepts either a wire-ready tool or a lightweight advertised tool descriptor. */
 export type AgentCapabilityTool =
   | Tool
   | {
@@ -48,6 +51,7 @@ export type AgentCapabilityTool =
       [key: string]: unknown
     }
 
+/** Describes tool-calling support advertised by an agent. */
 export interface AgentToolsCapabilities {
   supported?: boolean
   items?: AgentCapabilityTool[]
@@ -55,11 +59,13 @@ export interface AgentToolsCapabilities {
   clientProvided?: boolean
 }
 
+/** Describes structured and MIME-typed output support. */
 export interface AgentOutputCapabilities {
   structuredOutput?: boolean
   supportedMimeTypes?: string[]
 }
 
+/** Describes snapshot, delta, memory, and persistent-state support. */
 export interface AgentStateCapabilities {
   snapshots?: boolean
   deltas?: boolean
@@ -67,6 +73,7 @@ export interface AgentStateCapabilities {
   persistentState?: boolean
 }
 
+/** Describes delegation, handoff, and subordinate-agent support. */
 export interface AgentMultiAgentCapabilities {
   supported?: boolean
   delegation?: boolean
@@ -74,12 +81,14 @@ export interface AgentMultiAgentCapabilities {
   subAgents?: Array<{ name: string; description?: string }>
 }
 
+/** Describes support for reasoning, streamed reasoning, and encrypted reasoning. */
 export interface AgentReasoningCapabilities {
   supported?: boolean
   streaming?: boolean
   encrypted?: boolean
 }
 
+/** Describes accepted non-text input modalities. */
 export interface AgentMultimodalInputCapabilities {
   image?: boolean
   audio?: boolean
@@ -88,16 +97,19 @@ export interface AgentMultimodalInputCapabilities {
   file?: boolean
 }
 
+/** Describes supported non-text output modalities. */
 export interface AgentMultimodalOutputCapabilities {
   image?: boolean
   audio?: boolean
 }
 
+/** Groups multimodal input and output capabilities. */
 export interface AgentMultimodalCapabilities {
   input?: AgentMultimodalInputCapabilities
   output?: AgentMultimodalOutputCapabilities
 }
 
+/** Describes code-execution limits and sandbox support. */
 export interface AgentExecutionCapabilities {
   codeExecution?: boolean
   sandboxed?: boolean
@@ -105,6 +117,7 @@ export interface AgentExecutionCapabilities {
   maxExecutionTime?: number
 }
 
+/** Describes approvals, interventions, feedback, and interrupt support. */
 export interface AgentHumanInTheLoopCapabilities {
   supported?: boolean
   approvals?: boolean
@@ -114,6 +127,7 @@ export interface AgentHumanInTheLoopCapabilities {
   approveWithEdits?: boolean
 }
 
+/** Represents the capability shape recognized by this library. */
 export interface AgentCapabilities {
   identity?: AgentIdentityCapabilities
   transport?: AgentTransportCapabilities
@@ -128,6 +142,7 @@ export interface AgentCapabilities {
   custom?: Record<string, unknown>
 }
 
+/** Represents one agent entry in a multi-agent info response. */
 export interface AgentInfoAgent<TCapabilities extends AgentCapabilities = AgentCapabilities> {
   id?: string
   agentId?: string
@@ -136,6 +151,7 @@ export interface AgentInfoAgent<TCapabilities extends AgentCapabilities = AgentC
   [key: string]: unknown
 }
 
+/** Represents supported top-level or multi-agent responses from an agent-info endpoint. */
 export interface AgentInfoResponse<TCapabilities extends AgentCapabilities = AgentCapabilities> {
   id?: string
   agentId?: string
@@ -145,6 +161,7 @@ export interface AgentInfoResponse<TCapabilities extends AgentCapabilities = Age
   [key: string]: unknown
 }
 
+/** Provides boolean feature flags derived from a capability document. */
 export interface AgentCapabilitiesSupportSummary {
   streaming: boolean
   resumable: boolean
@@ -165,6 +182,7 @@ export interface AgentCapabilitiesSupportSummary {
   interrupts: boolean
 }
 
+/** Captures the resolved agent-info request exposed to callbacks and inspection. */
 export interface AgentCapabilitiesRequestInfo {
   providerId: 'agent-capabilities'
   attempt: number
@@ -176,6 +194,7 @@ export interface AgentCapabilitiesRequestInfo {
   credentials?: RequestCredentials
 }
 
+/** Extends the request snapshot with raw and extracted capability payloads. */
 export interface AgentCapabilitiesResponseInfo<
   TCapabilities extends AgentCapabilities = AgentCapabilities
 > extends AgentCapabilitiesRequestInfo {
@@ -183,6 +202,7 @@ export interface AgentCapabilitiesResponseInfo<
   rawInfo: unknown
 }
 
+/** Overrides endpoint and cancellation settings for one capability load. */
 export interface LoadAgentCapabilitiesOptions {
   api?: string
   baseURL?: string
@@ -192,6 +212,7 @@ export interface LoadAgentCapabilitiesOptions {
   signal?: AbortSignal
 }
 
+/** Configures capability discovery, extraction, retries, initial state, and callbacks. */
 export interface UseAgentCapabilitiesOptions<
   TCapabilities extends AgentCapabilities = AgentCapabilities
 > extends RetryOptions {
@@ -214,6 +235,7 @@ export interface UseAgentCapabilitiesOptions<
   onError?: (error: Error) => void
 }
 
+/** Exposes raw and extracted capability state together with load and inspection controls. */
 export interface UseAgentCapabilitiesReturn<
   TCapabilities extends AgentCapabilities = AgentCapabilities
 > {
@@ -242,6 +264,11 @@ export interface UseAgentCapabilitiesReturn<
 
 const defaultApi = '/api/agent/info'
 
+/**
+ * Loads an agent-info endpoint and exposes both its raw payload and extracted
+ * capabilities as Vue state. `supports` is a normalized boolean summary of the
+ * currently extracted document.
+ */
 export function useAgentCapabilities<TCapabilities extends AgentCapabilities = AgentCapabilities>(
   options: UseAgentCapabilitiesOptions<TCapabilities> = {}
 ): UseAgentCapabilitiesReturn<TCapabilities> {
@@ -427,6 +454,7 @@ export function useAgentCapabilities<TCapabilities extends AgentCapabilities = A
   }
 }
 
+/** Converts an optional capability document into a complete boolean support summary. */
 export function summarizeAgentCapabilities(
   capabilities: AgentCapabilities | null | undefined
 ): AgentCapabilitiesSupportSummary {
@@ -459,6 +487,10 @@ export function summarizeAgentCapabilities(
   }
 }
 
+/**
+ * Extracts capabilities from a top-level document, a matching agent entry, or
+ * a payload that already resembles a capability document.
+ */
 export function extractAgentCapabilities<
   TCapabilities extends AgentCapabilities = AgentCapabilities
 >(rawInfo: unknown, agentId?: string): TCapabilities | null {

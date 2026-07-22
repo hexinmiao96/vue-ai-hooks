@@ -28,7 +28,10 @@ import type {
 } from '../types'
 import type { RerankRequestInfo, RerankResponseInfo } from '../composables/useRerank'
 
+/** Request inspection metadata emitted by the React reranking hook. */
 export type ReactRerankRequestInfo<TDocument = RerankDocument> = RerankRequestInfo<TDocument>
+
+/** Response inspection metadata emitted by the React reranking hook. */
 export type ReactRerankResponseInfo<TDocument = RerankDocument> = RerankResponseInfo<TDocument>
 
 type HeaderSource = HeadersInit | (() => HeadersInit | Promise<HeadersInit>)
@@ -38,6 +41,7 @@ type BodySource<TDocument> =
       request: RerankRequest<TDocument>
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Configures the reranking endpoint, initial documents, retries, and lifecycle callbacks. */
 export interface UseReactRerankOptions<TDocument = RerankDocument> extends RetryOptions {
   api?: string
   baseURL?: string
@@ -55,6 +59,7 @@ export interface UseReactRerankOptions<TDocument = RerankDocument> extends Retry
   onError?: (err: Error) => void
 }
 
+/** Exposes source and ranked documents, request controls, form bindings, and inspection data. */
 export interface UseReactRerankReturn<TDocument = RerankDocument> {
   input: string
   query: string
@@ -214,6 +219,13 @@ function cloneRerankRequestSnapshot<TDocument>(
   }
 }
 
+/**
+ * Reranks an application-provided document set against a query through an app-owned endpoint.
+ *
+ * Response shapes are normalized into stable original-document, ranked-document, and score views.
+ *
+ * @returns Reranking state, document controls, form helpers, and request inspection data.
+ */
 export function useRerank<TDocument = RerankDocument>(
   options: UseReactRerankOptions<TDocument> = {}
 ): UseReactRerankReturn<TDocument> {

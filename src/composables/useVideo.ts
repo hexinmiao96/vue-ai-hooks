@@ -34,6 +34,7 @@ type BodySource =
       request: VideoGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Captures the normalized proxy request exposed to lifecycle callbacks and inspection. */
 export interface VideoGenerationRequestInfo {
   providerId: 'proxy'
   attempt: number
@@ -45,10 +46,12 @@ export interface VideoGenerationRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized video result. */
 export interface VideoGenerationResponseInfo extends VideoGenerationRequestInfo {
   result: VideoGenerationResult
 }
 
+/** Configures the video proxy endpoint, request defaults, retries, and lifecycle callbacks. */
 export interface UseVideoOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -65,6 +68,7 @@ export interface UseVideoOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes the latest normalized video result together with request controls and trace state. */
 export interface UseVideoReturn {
   input: Ref<string>
   video: Ref<GeneratedVideo | null>
@@ -98,7 +102,10 @@ export interface UseVideoReturn {
 }
 
 /**
- * Vue 3 composable for video generation through an app-owned backend.
+ * Generates videos through an app-owned JSON endpoint.
+ *
+ * `video` contains the first normalized output, while `videos` contains every
+ * output. Generation methods resolve with the complete normalized result.
  */
 export function useVideo(options: UseVideoOptions = {}): UseVideoReturn {
   const {

@@ -1,3 +1,6 @@
+/**
+ * Merges header sources case-insensitively, with later sources overriding earlier values.
+ */
 export function mergeHeaders(...sources: Array<HeadersInit | undefined>): Record<string, string> {
   const merged: Record<string, string> = {}
   const names: Record<string, string> = {}
@@ -15,6 +18,7 @@ export function mergeHeaders(...sources: Array<HeadersInit | undefined>): Record
   return merged
 }
 
+/** Converts a header source to a plain record, preserving `undefined` inputs. */
 export function headersToRecord(
   source: HeadersInit | undefined
 ): Record<string, string> | undefined {

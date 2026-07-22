@@ -8,26 +8,21 @@ import type {
 } from '../types'
 
 /**
- * A Provider translates framework-agnostic request types into the
- * specific wire format of an upstream LLM service, and translates
- * the wire format back into framework-agnostic chunks.
- *
- * This is the only seam that knows about a vendor's quirks, so adding
- * a new provider is a single file.
+ * Adapts provider-agnostic requests to an upstream AI service and normalizes its responses.
  */
 export interface ChatProvider {
-  /** Provider identifier, e.g. 'openai'. */
+  /** Exposes a stable provider ID, such as `openai`. */
   readonly id: string
 
-  /** Send a chat completion request. If `stream` is true, the returned async iterable yields deltas. */
+  /** Sends a chat request and returns normalized response chunks. */
   chat(request: ChatRequest): Promise<AsyncIterable<ChatChunk>>
 
-  /** Resume an existing chat stream when the provider/backend supports resumable streams. */
+  /** Resumes a chat stream, or returns `null` when no resumable stream exists. */
   resumeChat?(request: ChatResumeRequest): Promise<AsyncIterable<ChatChunk> | null>
 
-  /** Send a single-shot completion request. */
+  /** Sends a completion request and returns its text chunks. */
   completion(request: CompletionRequest): Promise<AsyncIterable<string>>
 
-  /** Compute embeddings for the given input. */
+  /** Computes embeddings and returns normalized vectors and usage. */
   embedding(request: EmbeddingRequest): Promise<EmbeddingResult>
 }

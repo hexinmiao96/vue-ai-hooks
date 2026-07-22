@@ -16,6 +16,7 @@ import {
 } from '../utils/stream'
 import type { ChatProvider } from './types'
 
+/** Selects the wire format returned by an in-process chat handler. */
 export type DirectChatStreamProtocol = 'ui-message' | 'chat-chunk'
 
 type DirectChatChunkSource = Iterable<ChatChunk> | AsyncIterable<ChatChunk>
@@ -30,21 +31,24 @@ type DirectChatResumeHandler = (
   request: ChatResumeRequest
 ) => DirectChatStreamSource | null | Promise<DirectChatStreamSource | null>
 
+/** Configures an in-process chat transport. */
 export interface DirectChatTransportOptions {
-  /** Stable provider id shown in request traces. */
+  /** Sets the stable provider ID shown in request traces. */
   id?: string
-  /** In-process chat handler. Return AI SDK UI message parts by default. */
+  /** Provides an in-process handler that returns AI SDK UI message parts by default. */
   stream: DirectChatStreamHandler
-  /** Optional resumable stream handler used by `useChat().resumeStream()`. */
+  /** Provides an optional stream handler used by `useChat().resumeStream()`. */
   resumeStream?: DirectChatResumeHandler
-  /** Map thrown UI-message stream errors into an AI SDK UI error part. */
+  /** Maps thrown UI-message stream errors into an AI SDK UI error part. */
   onError?: CreateUIMessageStreamOptions['onError']
-  /** Use `chat-chunk` when the handler already returns vue-ai-hooks ChatChunk values. */
+  /** Uses `chat-chunk` when the handler already returns `ChatChunk` values. */
   streamProtocol?: DirectChatStreamProtocol
 }
 
 /**
- * In-process chat transport for local agents, tests, and demo-only providers.
+ * Runs chat handlers in-process for local agents, tests, and demo-only providers.
+ *
+ * Completion and embedding operations are unsupported and reject with `AiHooksError`.
  */
 export class DirectChatTransport implements ChatProvider {
   declare readonly id: string

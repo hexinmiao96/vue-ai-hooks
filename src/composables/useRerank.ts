@@ -34,6 +34,7 @@ type BodySource<TDocument> =
       request: RerankRequest<TDocument>
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Captures the normalized proxy request exposed to lifecycle callbacks and inspection. */
 export interface RerankRequestInfo<TDocument = RerankDocument> {
   providerId: 'proxy'
   attempt: number
@@ -46,12 +47,14 @@ export interface RerankRequestInfo<TDocument = RerankDocument> {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized ranking result. */
 export interface RerankResponseInfo<
   TDocument = RerankDocument
 > extends RerankRequestInfo<TDocument> {
   result: RerankResult<TDocument>
 }
 
+/** Configures the rerank proxy endpoint, request defaults, retries, and lifecycle callbacks. */
 export interface UseRerankOptions<TDocument = RerankDocument> extends RetryOptions {
   api?: string
   baseURL?: string
@@ -69,6 +72,7 @@ export interface UseRerankOptions<TDocument = RerankDocument> extends RetryOptio
   onError?: (err: Error) => void
 }
 
+/** Exposes normalized ranking outputs together with request controls and trace state. */
 export interface UseRerankReturn<TDocument = RerankDocument> {
   input: Ref<string>
   query: Ref<string>
@@ -112,7 +116,10 @@ export interface UseRerankReturn<TDocument = RerankDocument> {
 }
 
 /**
- * Vue 3 composable for document reranking through an app-owned backend.
+ * Reranks documents against a query through an app-owned JSON endpoint.
+ *
+ * The original order remains available in `originalDocuments`, while
+ * `rerankedDocuments` and `ranking` expose the normalized response order.
  */
 export function useRerank<TDocument = RerankDocument>(
   options: UseRerankOptions<TDocument> = {}

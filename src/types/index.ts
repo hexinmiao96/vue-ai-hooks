@@ -1,43 +1,45 @@
 /**
- * Public types for vue-ai-hooks.
+ * This module defines provider-agnostic public contracts for vue-ai-hooks.
  *
- * Designed to be provider-agnostic. Provider-specific types live in
- * `src/providers/*` and are mapped to these by the provider adapters.
+ * Provider adapters map vendor-specific wire formats to these shared types.
  */
 
-/** Role of a message participant. */
+/** Identifies a message participant's role. */
 export type MessageRole = 'system' | 'user' | 'assistant' | 'tool'
 
-/** A text part of a multimodal message. */
+/** Represents text in a multimodal message. */
 export interface TextPart {
   type: 'text'
   text: string
 }
 
-/** An image part of a multimodal message. `url` may be an https URL or a data: URL. */
+/** Represents an image whose URL may use HTTPS or the `data:` scheme. */
 export interface ImageUrlPart {
   type: 'image_url'
   image_url: { url: string; detail?: 'low' | 'high' | 'auto' }
 }
 
-/** One piece of a multimodal message. */
+/** Represents a supported multimodal message content part. */
 export type ContentPart = TextPart | ImageUrlPart
 
-/** Content can be plain text (the common case) or a list of content parts. */
+/** Represents plain text or an ordered list of multimodal content parts. */
 export type MessageContent = string | ContentPart[]
 
+/** Represents renderable text in a structured UI message. */
 export interface MessageTextPart {
   type: 'text'
   text: string
   id?: string
 }
 
+/** Represents renderable model reasoning in a structured UI message. */
 export interface MessageReasoningPart {
   type: 'reasoning'
   text: string
   id?: string
 }
 
+/** Represents a source citation attached to a structured UI message. */
 export interface MessageSourcePart {
   type: 'source'
   id?: string
@@ -48,6 +50,7 @@ export interface MessageSourcePart {
   data?: unknown
 }
 
+/** Represents a file reference attached to a structured UI message. */
 export interface MessageFilePart {
   type: 'file'
   id?: string
@@ -57,6 +60,7 @@ export interface MessageFilePart {
   data?: unknown
 }
 
+/** Represents application-defined data attached to a structured UI message. */
 export interface MessageDataPart {
   type: 'data' | `data-${string}`
   id?: string
@@ -64,6 +68,7 @@ export interface MessageDataPart {
   transient?: boolean
 }
 
+/** Represents tool lifecycle state attached to a structured UI message. */
 export interface MessageToolPart {
   type: `tool-${string}`
   toolCallId: string
@@ -75,8 +80,10 @@ export interface MessageToolPart {
   errorText?: string
 }
 
+/** Maps application data names to payload types used by UI message parts. */
 export type UIDataTypes = Record<string, unknown>
 
+/** Maps tool names to input and output contracts used by UI message parts. */
 export type UITools = Record<string, { input: unknown; output: unknown }>
 
 type UIStringKey<T> = Extract<keyof T, string>
@@ -94,6 +101,7 @@ type UIToolOutput<
   TName extends UIStringKey<TTools>
 > = TTools[TName] extends { output: infer TOutput } ? TOutput : unknown
 
+/** Represents a typed application-data part in an AI SDK-compatible UI message. */
 export type UIMessageDataPart<TDataTypes extends UIDataTypes = UIDataTypes> =
   | {
       type: 'data'
@@ -110,6 +118,7 @@ export type UIMessageDataPart<TDataTypes extends UIDataTypes = UIDataTypes> =
       }
     }[UIStringKey<TDataTypes>]
 
+/** Represents a typed tool lifecycle part in an AI SDK-compatible UI message. */
 export type UIMessageToolPart<TTools extends UITools = UITools> = {
   [TName in UIStringKey<TTools>]: {
     type: `tool-${TName}`
@@ -123,7 +132,7 @@ export type UIMessageToolPart<TTools extends UITools = UITools> = {
   }
 }[UIStringKey<TTools>]
 
-/** Structured UI part for rendering modern chat messages. */
+/** Represents a structured part for rendering modern chat messages. */
 export type MessagePart =
   | MessageTextPart
   | MessageReasoningPart
@@ -132,6 +141,7 @@ export type MessagePart =
   | MessageDataPart
   | MessageToolPart
 
+/** Represents a structured UI message part parameterized by data and tool contracts. */
 export type UIMessagePart<
   TDataTypes extends UIDataTypes = UIDataTypes,
   TTools extends UITools = UITools
@@ -143,36 +153,37 @@ export type UIMessagePart<
   | UIMessageDataPart<TDataTypes>
   | UIMessageToolPart<TTools>
 
-/** A preloaded file attachment that `useChat().append()` can convert into message content. */
+/** Describes a preloaded attachment that `useChat().append()` can convert into message content. */
 export interface ChatFileAttachment {
-  /** File display name, used as a label for text attachments. */
+  /** Provides the display name used to label a text attachment. */
   name?: string
-  /** MIME type such as `image/png` or `text/plain`. */
+  /** Specifies a MIME type such as `image/png` or `text/plain`. */
   type: string
-  /** Remote, blob, or data URL for image attachments. */
+  /** Provides a remote, blob, or data URL for an image attachment. */
   url?: string
-  /** Already-read text content for text attachments. */
+  /** Provides already-read content for a text attachment. */
   text?: string
 }
 
-/** Browser or preloaded file input that `useChat().append()` can convert. */
+/** Accepts a browser file or preloaded attachment for `useChat().append()`. */
 export type ChatAttachmentInput = File | ChatFileAttachment
 
-/** File input accepted by `append(..., { attachments })`. */
+/** Accepts file inputs supported by `append(..., { attachments })`. */
 export type ChatAttachmentsInput = FileList | readonly ChatAttachmentInput[]
 
-/** A function/tool the model may call. OpenAI-compatible schema. */
+/** Defines an OpenAI-compatible function tool exposed to a model. */
 export interface Tool {
   type: 'function'
   function: {
     name: string
     description?: string
-    parameters: Record<string, unknown> // JSON Schema
+    /** Provides the JSON Schema describing accepted function arguments. */
+    parameters: Record<string, unknown>
     strict?: boolean
   }
 }
 
-/** A tool call emitted by the model. */
+/** Describes a tool call emitted by the model. */
 export interface ToolCall {
   id: string
   type: 'function'
@@ -182,7 +193,7 @@ export interface ToolCall {
   }
 }
 
-/** A single chat message. */
+/** Represents a single chat message. */
 export interface Message {
   id: string
   role: MessageRole
@@ -192,10 +203,11 @@ export interface Message {
   toolCalls?: ToolCall[]
   parts?: MessagePart[]
   createdAt?: Date
-  /** Provider-specific metadata. Useful for OpenAI's `logprobs` etc. */
+  /** Stores provider-specific metadata, such as OpenAI `logprobs`. */
   metadata?: Record<string, unknown>
 }
 
+/** Represents a chat message with typed metadata, data, and tool parts for UI rendering. */
 export interface UIMessage<
   TMetadata extends Record<string, unknown> | never = Record<string, unknown>,
   TDataTypes extends UIDataTypes = UIDataTypes,
@@ -205,7 +217,7 @@ export interface UIMessage<
   metadata?: TMetadata
 }
 
-/** A provider/model-facing message without UI-only rendering parts. */
+/** Represents a provider-facing message without UI-only rendering parts. */
 export interface ModelMessage {
   role: MessageRole
   content: MessageContent
@@ -217,10 +229,10 @@ export interface ModelMessage {
   createdAt?: Date
 }
 
-/** Message shape accepted by provider and proxy chat requests. */
+/** Accepts either UI-facing or provider-facing messages in chat requests. */
 export type ChatRequestMessage = Message | ModelMessage
 
-/** JSON response format controls for providers that support structured output. */
+/** Configures JSON response formats for providers that support structured output. */
 export type ResponseFormat =
   | { type: 'json_object' }
   | {
@@ -233,29 +245,39 @@ export type ResponseFormat =
       }
     }
 
-/** Token usage normalized across provider adapters. */
+/** Reports token usage normalized across provider adapters. */
 export interface TokenUsage {
   promptTokens: number
   completionTokens: number
   totalTokens: number
 }
 
+/** Identifies lifecycle states shared by asynchronous AI request composables. */
 export type AiRequestStatus = 'ready' | 'submitted' | 'streaming' | 'error'
 
-/** Override automatic chat, message, tool, and stream data id generation. */
+/** Overrides automatic chat, message, tool, and stream data ID generation. */
 export type IdGenerator = (prefix?: string) => string
 
+/** Configures the format and entropy of IDs produced by `createIdGenerator`. */
 export interface CreateIdGeneratorOptions {
+  /** Specifies a fixed prefix that takes precedence over any per-call prefix. */
   prefix?: string
+  /** Specifies the separator inserted between a prefix and random value. Defaults to `-`. */
   separator?: string
+  /** Sets the number of random characters. Defaults to `16`. */
   size?: number
+  /** Specifies the non-empty alphabet used for random characters. */
   alphabet?: string
 }
 
 const defaultIdAlphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 
 /**
- * Create a dependency-free ID generator for SSR, persistence, tests, and trace fields.
+ * Creates a dependency-free ID generator for SSR, persistence, tests, and trace fields.
+ *
+ * The returned generator prefers the configured prefix to a per-call prefix. It
+ * requires a positive integer size and a non-empty alphabet; when a fixed prefix
+ * is configured, the separator must not appear in that alphabet.
  */
 export function createIdGenerator({
   prefix,
@@ -288,10 +310,10 @@ export function createIdGenerator({
   }
 }
 
-/** Generate a random ID. Pass a prefix to namespace the generated value. */
+/** Generates a random ID, optionally namespaced by a prefix. */
 export const generateId = createIdGenerator()
 
-/** A custom data item emitted alongside a streaming assistant response. */
+/** Describes a custom data item emitted alongside a streaming assistant response. */
 export interface StreamDataPart<TData = unknown> {
   id: string
   data: TData
@@ -300,19 +322,20 @@ export interface StreamDataPart<TData = unknown> {
   createdAt?: Date
 }
 
+/** Selects the stream protocol expected from an app-owned chat endpoint. */
 export type ChatStreamProtocol = 'ui-message' | 'data' | 'text'
 
-/** Request payload for a chat completion. */
+/** Describes a chat completion request. */
 export interface ChatRequest {
   id?: string
-  /** Backend thread/session identifier that can differ from client-side shared state id. */
+  /** Identifies a backend thread or session independently of client-side shared state. */
   threadId?: string
-  /** Idempotency key for one assistant attempt; used by proxy backends and inspection traces. */
+  /** Provides the idempotency key for one assistant attempt. */
   runId?: string
   messages: ChatRequestMessage[]
-  /** App-defined props forwarded to proxy/agent backends. */
+  /** Forwards application-defined props to proxy or agent backends. */
   forwardedProps?: Record<string, unknown>
-  /** Extra JSON body fields for provider/proxy-specific request options. */
+  /** Adds provider- or proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   temperature?: number
@@ -322,12 +345,12 @@ export interface ChatRequest {
   presencePenalty?: number
   stop?: string | string[]
   tools?: Tool[]
-  /** Filter the resolved tool list by function name before sending the provider request. */
+  /** Filters the resolved tool list by function name before sending the provider request. */
   activeTools?: string[]
   toolChoice?: 'auto' | 'none' | 'required' | { type: 'function'; function: { name: string } }
   responseFormat?: ResponseFormat
   metadata?: unknown
-  /** AI SDK-compatible chat stream protocol hint for app-owned proxy endpoints. */
+  /** Selects the AI SDK-compatible stream protocol expected from an app-owned endpoint. */
   streamProtocol?: ChatStreamProtocol
   user?: string
   stream?: boolean
@@ -335,31 +358,31 @@ export interface ChatRequest {
   headers?: HeadersInit
 }
 
-/** Request payload for resuming an active chat stream. */
+/** Describes a request to resume an active chat stream. */
 export interface ChatResumeRequest {
   id: string
-  /** Backend thread/session identifier that can differ from client-side shared state id. */
+  /** Identifies a backend thread or session independently of client-side shared state. */
   threadId?: string
-  /** Idempotency key for the resume attempt when supported by the provider backend. */
+  /** Provides the resume attempt's idempotency key when supported by the backend. */
   runId?: string
-  /** App-defined props forwarded to proxy/agent backends. */
+  /** Forwards application-defined props to proxy or agent backends. */
   forwardedProps?: Record<string, unknown>
-  /** Extra JSON body fields for provider/proxy-specific resume options. */
+  /** Adds provider- or proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   metadata?: unknown
-  /** Protocol hint used when resuming app-owned proxy streams. */
+  /** Selects the protocol expected when resuming an app-owned proxy stream. */
   streamProtocol?: ChatStreamProtocol
   signal?: AbortSignal
   headers?: HeadersInit
 }
 
-/** A single delta in a streaming chat response. */
+/** Represents a single delta in a streaming chat response. */
 export interface ChatChunk {
-  /** Server-provided id for the current assistant message. */
+  /** Identifies the current assistant message using the server-provided ID. */
   messageId?: string
-  /** Text delta for the assistant message. */
+  /** Contains a text delta for the assistant message. */
   content?: string
-  /** Tool call deltas. */
+  /** Contains tool call deltas. */
   toolCalls?: Array<{
     index: number
     id?: string
@@ -369,30 +392,30 @@ export interface ChatChunk {
       arguments?: string
     }
   }>
-  /** Why the model stopped, if this is the final chunk. */
+  /** Indicates why the model stopped when this is the final chunk. */
   finishReason?: 'stop' | 'length' | 'tool_calls' | 'content_filter' | null
-  /** Token usage, typically only present on the final chunk. */
+  /** Reports token usage, typically only on the final chunk. */
   usage?: TokenUsage
-  /** Extra metadata merged into the current assistant message. */
+  /** Provides metadata to merge into the current assistant message. */
   metadata?: Record<string, unknown>
-  /** Custom stream data such as sources, progress, or citations. */
+  /** Carries custom stream data such as sources, progress, or citations. */
   data?: unknown
-  /** Structured message parts to merge into the assistant message. */
+  /** Carries structured parts to merge into the assistant message. */
   parts?: MessagePart[]
-  /** Stable id used to replace a previous custom data part. */
+  /** Identifies a custom data part that may replace an earlier value. */
   dataId?: string
-  /** Optional custom data kind, for example `source` or `progress`. */
+  /** Labels the custom data kind, such as `source` or `progress`. */
   dataType?: string
-  /** Fire `onData` without storing the part in `streamData`. */
+  /** Fires `onData` without storing the part in `streamData`. */
   transient?: boolean
 }
 
-/** Request payload for a single-shot completion. */
+/** Describes a single-shot completion request. */
 export interface CompletionRequest {
   prompt: string
-  /** Extra JSON body fields for provider/proxy-specific request options. */
+  /** Adds provider- or proxy-specific JSON body fields. */
   body?: Record<string, unknown>
-  /** AI SDK-compatible completion stream protocol hint for app-owned proxy endpoints. */
+  /** Selects the completion stream protocol expected from an app-owned endpoint. */
   streamProtocol?: 'text' | 'data'
   model?: string
   temperature?: number
@@ -406,10 +429,10 @@ export interface CompletionRequest {
   headers?: HeadersInit
 }
 
-/** Request payload for embedding. */
+/** Describes an embedding request. */
 export interface EmbeddingRequest {
   input: string | string[]
-  /** Extra JSON body fields for provider/proxy-specific request options. */
+  /** Adds provider- or proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   user?: string
@@ -417,6 +440,7 @@ export interface EmbeddingRequest {
   headers?: HeadersInit
 }
 
+/** Contains normalized embedding vectors and provider usage metadata. */
 export interface EmbeddingResult {
   embeddings: number[][]
   model: string
@@ -426,33 +450,36 @@ export interface EmbeddingResult {
   }
 }
 
+/** Represents a normalized image returned by an app-owned generation backend. */
 export interface GeneratedImage {
-  /** Public URL, blob URL, or data URL for the generated image. */
+  /** Provides a public, blob, or data URL for the generated image. */
   url?: string
-  /** Base64-encoded image payload when your backend returns inline image data. */
+  /** Provides a Base64-encoded payload when the backend returns inline image data. */
   base64?: string
-  /** MIME type such as `image/png` or `image/webp`. */
+  /** Specifies a MIME type such as `image/png` or `image/webp`. */
   mediaType?: string
-  /** Provider-revised prompt when the upstream model returns one. */
+  /** Provides the provider-revised prompt when the upstream model returns one. */
   revisedPrompt?: string
-  /** Provider-specific metadata for this image. */
+  /** Stores provider-specific metadata for this image. */
   metadata?: Record<string, unknown>
 }
 
+/** Selects whether an image request creates or edits media. */
 export type ImageOperation = 'generate' | 'edit'
 
+/** Accepts an image edit input as a raw payload or normalized generated image. */
 export type ImageEditInput = string | GeneratedImage
 
-/** Request payload for image generation through an app-owned backend. */
+/** Describes an image generation or edit request to an app-owned backend. */
 export interface ImageGenerationRequest {
   prompt: string
-  /** Task kind for backends that share one image route for generation and editing. */
+  /** Selects the task for backends that share one route for generation and editing. */
   operation?: ImageOperation
-  /** Source image URL, data URL, base64 payload, or normalized image object for edits. */
+  /** Provides source images as URLs, Base64 payloads, or normalized image objects. */
   image?: ImageEditInput | ImageEditInput[]
-  /** Optional mask URL, data URL, base64 payload, or normalized image object for edits. */
+  /** Provides an optional edit mask as a URL, Base64 payload, or normalized image object. */
   mask?: ImageEditInput
-  /** Extra JSON body fields for proxy-specific request options. */
+  /** Adds proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   n?: number
@@ -465,6 +492,7 @@ export interface ImageGenerationRequest {
   headers?: HeadersInit
 }
 
+/** Contains the normalized result of an image generation or edit request. */
 export interface ImageGenerationResult {
   image?: GeneratedImage
   images: GeneratedImage[]
@@ -474,32 +502,34 @@ export interface ImageGenerationResult {
   response?: unknown
 }
 
+/** Assigns an image to a semantic position in an image-to-video request. */
 export interface VideoFrameImage {
-  /** Image URL, data URL, or base64 payload understood by your backend. */
+  /** Provides an image URL, data URL, or Base64 payload understood by the backend. */
   image: string
-  /** Frame role used by image-to-video providers, such as `first_frame` or `last_frame`. */
+  /** Identifies the frame role, such as `first_frame` or `last_frame`. */
   frameType: string
 }
 
+/** Represents a normalized video returned by an app-owned generation backend. */
 export interface GeneratedVideo {
-  /** Public URL, blob URL, or data URL for the generated video. */
+  /** Provides a public, blob, or data URL for the generated video. */
   url?: string
-  /** Base64-encoded video payload when your backend returns inline video data. */
+  /** Provides a Base64-encoded payload when the backend returns inline video data. */
   base64?: string
-  /** Binary video payload for advanced runtimes that pass files directly. */
+  /** Provides a binary payload for runtimes that pass files directly. */
   uint8Array?: Uint8Array
-  /** MIME type such as `video/mp4` or `video/webm`. */
+  /** Specifies a MIME type such as `video/mp4` or `video/webm`. */
   mediaType?: string
-  /** Video duration in seconds when the backend can report it. */
+  /** Reports the video duration in seconds when available. */
   durationInSeconds?: number
-  /** Provider-specific metadata for this video. */
+  /** Stores provider-specific metadata for this video. */
   metadata?: Record<string, unknown>
 }
 
-/** Request payload for video generation through an app-owned backend. */
+/** Describes a video generation request to an app-owned backend. */
 export interface VideoGenerationRequest {
   prompt: string
-  /** Extra JSON body fields for proxy-specific request options. */
+  /** Adds proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   n?: number
@@ -519,6 +549,7 @@ export interface VideoGenerationRequest {
   headers?: HeadersInit
 }
 
+/** Contains the normalized result of a video generation request. */
 export interface VideoGenerationResult {
   video?: GeneratedVideo
   videos: GeneratedVideo[]
@@ -529,25 +560,26 @@ export interface VideoGenerationResult {
   response?: unknown
 }
 
+/** Represents normalized audio returned by an app-owned speech backend. */
 export interface GeneratedAudio {
-  /** Public URL, blob URL, or data URL for the generated audio. */
+  /** Provides a public, blob, or data URL for the generated audio. */
   url?: string
-  /** Base64-encoded audio payload when your backend returns inline audio data. */
+  /** Provides a Base64-encoded payload when the backend returns inline audio data. */
   base64?: string
-  /** MIME type such as `audio/mpeg`, `audio/wav`, or `audio/ogg`. */
+  /** Specifies a MIME type such as `audio/mpeg`, `audio/wav`, or `audio/ogg`. */
   mediaType?: string
-  /** Provider-revised text when the upstream model returns one. */
+  /** Provides provider-revised text when the upstream model returns one. */
   revisedText?: string
-  /** Audio duration in seconds when the backend can report it. */
+  /** Reports the audio duration in seconds when available. */
   durationInSeconds?: number
-  /** Provider-specific metadata for this audio output. */
+  /** Stores provider-specific metadata for this audio output. */
   metadata?: Record<string, unknown>
 }
 
-/** Request payload for speech generation through an app-owned backend. */
+/** Describes a speech generation request to an app-owned backend. */
 export interface SpeechGenerationRequest {
   text: string
-  /** Extra JSON body fields for proxy-specific request options. */
+  /** Adds proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   voice?: string
@@ -561,6 +593,7 @@ export interface SpeechGenerationRequest {
   headers?: HeadersInit
 }
 
+/** Contains the normalized result of a speech generation request. */
 export interface SpeechGenerationResult {
   audio?: GeneratedAudio
   model?: string
@@ -569,17 +602,18 @@ export interface SpeechGenerationResult {
   response?: unknown
 }
 
+/** Represents a text segment with an optional time range from a transcription backend. */
 export interface TranscriptionSegment {
   text: string
   start?: number
   end?: number
 }
 
-/** Request payload for transcription through an app-owned backend. */
+/** Describes a transcription request to an app-owned backend. */
 export interface TranscriptionRequest {
-  /** Audio URL, data URL, or base64 payload understood by your backend. */
+  /** Provides an audio URL, data URL, or Base64 payload understood by the backend. */
   audio: string
-  /** Extra JSON body fields for proxy-specific request options. */
+  /** Adds proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   language?: string
@@ -592,6 +626,7 @@ export interface TranscriptionRequest {
   headers?: HeadersInit
 }
 
+/** Contains the normalized result of a transcription request. */
 export interface TranscriptionResult {
   text: string
   segments?: TranscriptionSegment[]
@@ -603,19 +638,21 @@ export interface TranscriptionResult {
   response?: unknown
 }
 
+/** Represents a document accepted by a reranking backend. */
 export type RerankDocument = string | Record<string, unknown>
 
+/** Reports one document's position, relevance score, and value after reranking. */
 export interface RerankRankingItem<TDocument = RerankDocument> {
   index: number
   score: number
   document: TDocument
 }
 
-/** Request payload for document reranking through an app-owned backend. */
+/** Describes a document reranking request to an app-owned backend. */
 export interface RerankRequest<TDocument = RerankDocument> {
   query: string
   documents: TDocument[]
-  /** Extra JSON body fields for proxy-specific request options. */
+  /** Adds proxy-specific JSON body fields. */
   body?: Record<string, unknown>
   model?: string
   topN?: number
@@ -625,6 +662,7 @@ export interface RerankRequest<TDocument = RerankDocument> {
   headers?: HeadersInit
 }
 
+/** Contains the normalized result of a document reranking request. */
 export interface RerankResult<TDocument = RerankDocument> {
   originalDocuments: TDocument[]
   rerankedDocuments: TDocument[]
@@ -635,34 +673,37 @@ export interface RerankResult<TDocument = RerankDocument> {
   response?: unknown
 }
 
+/** Provides retry attempt details to policy and lifecycle callbacks. */
 export interface RetryContext {
-  /** 1-based retry attempt number. */
+  /** Reports the one-based retry attempt number. */
   attempt: number
-  /** Maximum retry attempts configured for this call. */
+  /** Reports the maximum retry attempts configured for this call. */
   maxRetries: number
-  /** Error that caused this retry attempt. */
+  /** Provides the error that caused this retry attempt. */
   error: Error
 }
 
+/** Configures retry count, delay, filtering, and lifecycle callbacks. */
 export interface RetryOptions {
-  /** Number of retry attempts after the initial provider call fails. Defaults to 0. */
+  /** Sets the retry attempts after the initial provider call fails. Defaults to `0`. */
   maxRetries?: number
-  /** Delay before each retry in milliseconds. Defaults to 0. */
+  /** Sets the delay before each retry in milliseconds. Defaults to `0`. */
   retryDelayMs?: number | ((context: RetryContext) => number)
-  /** Return false to stop retrying a specific error. */
+  /** Returns `false` to stop retrying a specific error. */
   shouldRetry?: (error: Error, context: RetryContext) => boolean | Promise<boolean>
-  /** Called immediately before waiting and retrying. */
+  /** Runs immediately before waiting and retrying. */
   onRetry?: (error: Error, context: RetryContext) => void
 }
 
+/** Configures the minimum interval between reactive streaming updates. */
 export interface StreamThrottleOptions {
-  /** Minimum wait in milliseconds between reactive stream updates. Defaults to no throttling. */
+  /** Sets the minimum interval between reactive stream updates. Defaults to no throttling. */
   throttleMs?: number
-  /** Compatibility alias for AI SDK style throttling. Prefer throttleMs in new code. */
+  /** Provides an AI SDK-compatible alias. Prefer `throttleMs` in new code. */
   experimental_throttle?: number
 }
 
-/** Common error thrown by composables. */
+/** Represents errors raised by composables, providers, and shared transport utilities. */
 export class AiHooksError extends Error {
   readonly cause?: unknown
   readonly status?: number

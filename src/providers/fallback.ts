@@ -1,8 +1,10 @@
 import { AiHooksError } from '../types'
 import type { ChatProvider } from './types'
 
+/** Identifies the provider operation attempted through a fallback chain. */
 export type FallbackProviderKind = 'chat' | 'completion' | 'embedding'
 
+/** Describes a failed provider and the next available fallback. */
 export interface FallbackProviderContext {
   kind: FallbackProviderKind
   provider: ChatProvider
@@ -13,13 +15,24 @@ export interface FallbackProviderContext {
   nextProviderId?: string
 }
 
+/** Configures an ordered provider fallback chain. */
 export interface FallbackProviderConfig {
+  /** Sets the stable provider ID. */
   id?: string
+  /** Lists providers to try in order. At least one provider is required. */
   providers: readonly ChatProvider[]
+  /** Decides whether a failed operation may advance to the next provider. */
   shouldFallback?: (context: FallbackProviderContext) => boolean | Promise<boolean>
+  /** Runs before an operation advances to the next provider. */
   onFallback?: (context: FallbackProviderContext) => void | Promise<void>
 }
 
+/**
+ * Creates a provider that advances through an ordered fallback chain.
+ *
+ * Streaming operations fall back only before the current provider yields a chunk.
+ * Requests with an aborted signal, and errors named `AbortError`, do not fall back.
+ */
 export function fallbackProvider(config: FallbackProviderConfig): ChatProvider {
   const { id = 'fallback', providers, shouldFallback, onFallback } = config
   if (!providers.length) {

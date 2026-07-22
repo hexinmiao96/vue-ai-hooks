@@ -34,9 +34,13 @@ import type {
   ImageGenerationResponseInfo
 } from '../composables/useImage'
 
+/** Request inspection metadata emitted by the React image hook. */
 export type ReactImageGenerationRequestInfo = ImageGenerationRequestInfo
+
+/** Response inspection metadata emitted by the React image hook. */
 export type ReactImageGenerationResponseInfo = ImageGenerationResponseInfo
 
+/** Supplies the source image and optional mask for one image-edit request. */
 export interface ReactImageEditOptions extends Omit<
   Partial<ImageGenerationRequest>,
   'prompt' | 'operation' | 'signal' | 'image' | 'mask'
@@ -52,6 +56,7 @@ type BodySource =
       request: ImageGenerationRequest
     }) => Record<string, unknown> | Promise<Record<string, unknown>>)
 
+/** Configures the image endpoint, initial prompt, retries, and lifecycle callbacks. */
 export interface UseReactImageOptions extends RetryOptions {
   api?: string
   baseURL?: string
@@ -68,6 +73,7 @@ export interface UseReactImageOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes generated images, request state, form bindings, controls, and inspection data. */
 export interface UseReactImageReturn {
   id: string
   input: string
@@ -181,6 +187,13 @@ function hasImageEditInput(value: unknown): value is ImageEditInput | ImageEditI
   return typeof value.url === 'string' || typeof value.base64 === 'string'
 }
 
+/**
+ * Generates or edits images through an app-owned endpoint and exposes the result as React state.
+ *
+ * Provider response variants are normalized into a primary image and an image collection.
+ *
+ * @returns Image state, form helpers, generation controls, and request inspection data.
+ */
 export function useImage(options: UseReactImageOptions = {}): UseReactImageReturn {
   const {
     api = '/api/image',

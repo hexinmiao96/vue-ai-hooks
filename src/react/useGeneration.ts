@@ -21,6 +21,7 @@ export type {
   GenerationRunContext
 } from '../composables/useGeneration'
 
+/** Configures a custom generation fetcher, shared state, retries, and progress callbacks. */
 export interface UseReactGenerationOptions<
   TInput = string,
   TResult = unknown,
@@ -43,6 +44,7 @@ export interface UseReactGenerationOptions<
   onError?: (err: Error) => void
 }
 
+/** Exposes typed generation state, accumulated chunks, lifecycle controls, and inspection data. */
 export interface UseReactGenerationReturn<
   TInput = string,
   TResult = unknown,
@@ -108,6 +110,7 @@ interface ReactGenerationStore<TInput, TResult, TProgress, TChunk> {
   release: () => number
 }
 
+// A stable ID intentionally shares one external store across React component instances.
 const generationStores = new Map<
   string,
   ReactGenerationStore<unknown, unknown, unknown, unknown>
@@ -174,6 +177,14 @@ function getGenerationStore<TInput, TResult, TProgress, TChunk>(
   return store
 }
 
+/**
+ * Runs an application-defined generation workflow and exposes typed progress as React state.
+ *
+ * Component instances with the same ID observe one shared store, and retries stop once progress
+ * or chunks have been reported to avoid replaying a partially delivered result.
+ *
+ * @returns Shared generation state, accumulated chunks, lifecycle controls, and inspection data.
+ */
 export function useGeneration<
   TInput = string,
   TResult = unknown,

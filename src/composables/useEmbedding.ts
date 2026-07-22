@@ -17,6 +17,7 @@ import { createRequestTrace } from '../utils/trace'
 
 export { cosineSimilarity } from '../utils/embedding'
 
+/** Captures the normalized embedding request exposed to lifecycle callbacks and inspection. */
 export interface EmbeddingRequestInfo {
   providerId: string
   attempt: number
@@ -26,10 +27,12 @@ export interface EmbeddingRequestInfo {
   headers?: Record<string, string>
 }
 
+/** Extends the request snapshot with the normalized embedding result. */
 export interface EmbeddingResponseInfo extends EmbeddingRequestInfo {
   result: EmbeddingResult
 }
 
+/** Configures the embedding transport, request defaults, retries, and lifecycle callbacks. */
 export interface UseEmbeddingOptions extends RetryOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -47,6 +50,7 @@ export interface UseEmbeddingOptions extends RetryOptions {
   onError?: (err: Error) => void
 }
 
+/** Exposes the latest embedding vectors together with request controls and trace state. */
 export interface UseEmbeddingReturn {
   embeddings: Ref<number[][]>
   input: Ref<string>
@@ -72,7 +76,10 @@ export interface UseEmbeddingReturn {
 }
 
 /**
- * Vue 3 composable for generating text embeddings.
+ * Generates embeddings for one string or a batch of strings.
+ *
+ * The `embeddings` ref contains only the normalized vectors, while `result`
+ * retains the complete provider response. `embed()` resolves with that result.
  *
  * ```ts
  * const { embed, embeddings, isLoading } = useEmbedding({

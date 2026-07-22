@@ -1,5 +1,7 @@
 /**
- * Calculate cosine similarity between two embedding vectors.
+ * Calculates cosine similarity in the range `[-1, 1]` for two finite, non-zero vectors.
+ *
+ * Throws when vector lengths differ or either vector is empty, non-finite, or zero magnitude.
  */
 export function cosineSimilarity(vectorA: readonly number[], vectorB: readonly number[]): number {
   if (vectorA.length !== vectorB.length) {

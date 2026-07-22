@@ -25,9 +25,13 @@ import type { EmbeddingRequestInfo, EmbeddingResponseInfo } from '../composables
 
 export { cosineSimilarity } from '../utils/embedding'
 
+/** Request inspection metadata emitted by the React embedding hook. */
 export type ReactEmbeddingRequestInfo = EmbeddingRequestInfo
+
+/** Response inspection metadata emitted by the React embedding hook. */
 export type ReactEmbeddingResponseInfo = EmbeddingResponseInfo
 
+/** Configures embedding transport, initial input, retries, and lifecycle callbacks. */
 export interface UseReactEmbeddingOptions extends RetryOptions {
   provider?: ChatProvider
   transport?: ChatProvider
@@ -45,6 +49,7 @@ export interface UseReactEmbeddingOptions extends RetryOptions {
   onError?: (error: Error) => void
 }
 
+/** Exposes embedding vectors, request state, form bindings, controls, and inspection data. */
 export interface UseReactEmbeddingReturn {
   id: string
   embeddings: number[][]
@@ -79,6 +84,14 @@ function normalizeError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error))
 }
 
+/**
+ * Generates embeddings for one or more strings and exposes the result as React state.
+ *
+ * The hook retains both the provider result and its vector matrix, while `stop` and unmount abort
+ * the active request.
+ *
+ * @returns Embedding state, form helpers, lifecycle controls, and request inspection data.
+ */
 export function useEmbedding(options: UseReactEmbeddingOptions = {}): UseReactEmbeddingReturn {
   const {
     provider: providedProvider,

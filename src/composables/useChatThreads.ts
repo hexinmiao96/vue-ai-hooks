@@ -5,6 +5,7 @@ import type { IdGenerator } from '../types'
 
 type ThreadMetadata = Record<string, unknown>
 
+/** Represents an in-memory chat thread with live `Date` values. */
 export interface ChatThread<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id: string
   title: string
@@ -16,6 +17,7 @@ export interface ChatThread<TMetadata extends ThreadMetadata = ThreadMetadata> {
   lastMessagePreview?: string
 }
 
+/** Represents a thread with dates encoded for persistence. Metadata must be JSON-compatible. */
 export interface SerializedChatThread<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id: string
   title: string
@@ -27,16 +29,19 @@ export interface SerializedChatThread<TMetadata extends ThreadMetadata = ThreadM
   lastMessagePreview?: string
 }
 
+/** Contains the normalized thread collection and its active thread ID. */
 export interface ChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: ChatThread<TMetadata>[]
   activeThreadId: string | null
 }
 
+/** Represents complete thread state with dates encoded for persistence. */
 export interface SerializedChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: SerializedChatThread<TMetadata>[]
   activeThreadId: string | null
 }
 
+/** Supplies optional values for a newly created thread. */
 export interface CreateChatThreadInput<TMetadata extends ThreadMetadata = ThreadMetadata> {
   id?: string
   title?: string
@@ -49,6 +54,7 @@ export interface CreateChatThreadInput<TMetadata extends ThreadMetadata = Thread
   active?: boolean
 }
 
+/** Supplies a partial thread update; `null` removes nullable optional fields. */
 export interface UpdateChatThreadInput<TMetadata extends ThreadMetadata = ThreadMetadata> {
   title?: string
   updatedAt?: Date
@@ -58,6 +64,7 @@ export interface UpdateChatThreadInput<TMetadata extends ThreadMetadata = Thread
   lastMessagePreview?: string | null
 }
 
+/** Configures optional Web Storage persistence for the complete thread state. */
 export interface ChatThreadsPersistOptions<TMetadata extends ThreadMetadata = ThreadMetadata> {
   key: string
   version?: number
@@ -69,8 +76,10 @@ export interface ChatThreadsPersistOptions<TMetadata extends ThreadMetadata = Th
   onClearError?: UsePersistOptions<ChatThreadsState<TMetadata>>['onClearError']
 }
 
+/** Identifies the Web Storage operation that failed. */
 export type ChatThreadsPersistenceErrorPhase = 'load' | 'save' | 'clear'
 
+/** Records the most recent persistence failure without interrupting thread operations. */
 export interface ChatThreadsPersistenceErrorInfo {
   phase: ChatThreadsPersistenceErrorPhase
   key: string
@@ -80,6 +89,7 @@ export interface ChatThreadsPersistenceErrorInfo {
   timestamp: Date
 }
 
+/** Configures initial thread state, optional persistence, and deterministic ID and time sources. */
 export interface UseChatThreadsOptions<TMetadata extends ThreadMetadata = ThreadMetadata> {
   initialThreads?: ChatThread<TMetadata>[]
   initialActiveThreadId?: string | null
@@ -88,6 +98,7 @@ export interface UseChatThreadsOptions<TMetadata extends ThreadMetadata = Thread
   now?: () => Date
 }
 
+/** Exposes sorted thread views and mutation actions over one normalized state. */
 export interface UseChatThreadsReturn<TMetadata extends ThreadMetadata = ThreadMetadata> {
   threads: ComputedRef<ChatThread<TMetadata>[]>
   visibleThreads: ComputedRef<ChatThread<TMetadata>[]>
@@ -119,6 +130,12 @@ interface MutableChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetad
   activeThreadId: string | null
 }
 
+/**
+ * Manages active, visible, and archived chat threads with optional persistence.
+ * When non-null, `activeThreadId` references an existing unarchived thread.
+ * Invalid or duplicate IDs are removed during normalization, and clearing
+ * persisted data leaves memory intact.
+ */
 export function useChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
   options: UseChatThreadsOptions<TMetadata> = {}
 ): UseChatThreadsReturn<TMetadata> {
@@ -324,6 +341,7 @@ export function useChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata
   }
 }
 
+/** Encodes live thread dates as ISO 8601 strings; metadata remains caller-owned. */
 export function serializeChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
   threads: ChatThread<TMetadata>[]
 ): SerializedChatThread<TMetadata>[] {
@@ -341,6 +359,7 @@ export function serializeChatThreads<TMetadata extends ThreadMetadata = ThreadMe
   }))
 }
 
+/** Restores a complete thread array, or returns `null` when any entry is invalid. */
 export function deserializeChatThreads<TMetadata extends ThreadMetadata = ThreadMetadata>(
   raw: unknown
 ): ChatThread<TMetadata>[] | null {
@@ -354,6 +373,7 @@ export function deserializeChatThreads<TMetadata extends ThreadMetadata = Thread
   return threads
 }
 
+/** Converts complete thread state to its date-encoded persisted representation. */
 export function serializeChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata>(
   state: ChatThreadsState<TMetadata>
 ): SerializedChatThreadsState<TMetadata> {
@@ -363,6 +383,7 @@ export function serializeChatThreadsState<TMetadata extends ThreadMetadata = Thr
   }
 }
 
+/** Restores and normalizes persisted thread state, or returns `null` when invalid. */
 export function deserializeChatThreadsState<TMetadata extends ThreadMetadata = ThreadMetadata>(
   raw: unknown
 ): ChatThreadsState<TMetadata> | null {
@@ -383,6 +404,7 @@ function normalizeThreadsState<TMetadata extends ThreadMetadata>(
   state: ChatThreadsState<TMetadata>,
   now: () => Date
 ): MutableChatThreadsState<TMetadata> {
+  // State replacement re-establishes unique IDs and validates any non-null active-thread ID.
   const seen = new Set<string>()
   const fallbackDate = now()
   const threads = state.threads

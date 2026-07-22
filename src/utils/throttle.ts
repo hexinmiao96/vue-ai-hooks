@@ -1,10 +1,15 @@
 import type { StreamThrottleOptions } from '../types'
 
+/** Resolves the effective positive stream throttle interval, or `0` when disabled. */
 export function getThrottleMs(options: StreamThrottleOptions): number {
   const value = options.throttleMs ?? options.experimental_throttle
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
 }
 
+/**
+ * Creates a throttled stream-update scheduler with trailing coalescing, explicit
+ * immediate flush, and cancellation.
+ */
 export function createStreamUpdateThrottler(waitMs: number, flush: () => void) {
   let timeout: ReturnType<typeof setTimeout> | null = null
   let pending = false

@@ -20,6 +20,7 @@ export {
   type PromptSuggestionRecipeSurface
 } from '../composables/usePromptSuggestions'
 
+/** Configures static and loaded suggestions, filtering context, and visible-result limits. */
 export interface UsePromptSuggestionsOptions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -32,12 +33,14 @@ export interface UsePromptSuggestionsOptions<
   loadOnInit?: boolean
 }
 
+/** React-specific prompt suggestion options. */
 export interface UseReactPromptSuggestionsOptions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > extends UsePromptSuggestionsOptions<TMetadata> {
   max?: number | null | undefined | (() => number | null | undefined)
 }
 
+/** Exposes normalized suggestions, selection state, and asynchronous loading controls. */
 export interface UsePromptSuggestionsReturn<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > {
@@ -54,10 +57,19 @@ export interface UsePromptSuggestionsReturn<
   clearSelection: () => void
 }
 
+/** React-specific prompt suggestion return type. */
 export type UseReactPromptSuggestionsReturn<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 > = UsePromptSuggestionsReturn<TMetadata>
 
+/**
+ * Combines static and asynchronously loaded prompt suggestions for a React interface.
+ *
+ * Suggestions are normalized before filtering, and only the latest loader invocation may publish
+ * state after overlapping reloads.
+ *
+ * @returns Normalized and visible suggestions, selection state, and loading controls.
+ */
 export function usePromptSuggestions<
   TMetadata extends Record<string, unknown> = Record<string, unknown>
 >(
@@ -119,6 +131,8 @@ export function usePromptSuggestions<
       ])
     }
 
+    // The version gate makes the most recent reload authoritative even if an older loader settles
+    // later.
     const version = loadVersionRef.current + 1
     loadVersionRef.current = version
     activeControllerRef.current?.abort()

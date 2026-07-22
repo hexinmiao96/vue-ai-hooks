@@ -30,9 +30,11 @@ import {
   type TokenUsage
 } from '../types'
 
+/** Enumerates the observable lifecycle states of an agent run. */
 export type AgentRunStatus =
   'idle' | 'running' | 'streaming' | 'interrupted' | 'completed' | 'error' | 'aborted'
 
+/** Supplies start or resume input and a cancellation signal to the run handler. */
 export interface AgentRunRequest<TInput = unknown, TResume = unknown> {
   id: string
   input?: TInput
@@ -41,10 +43,12 @@ export interface AgentRunRequest<TInput = unknown, TResume = unknown> {
   signal: AbortSignal
 }
 
+/** Handles a start or resume request and returns an asynchronously consumable event source. */
 export type AgentRunHandler<TInput = unknown, TResume = unknown> = (
   request: AgentRunRequest<TInput, TResume>
 ) => AgentEventSource | Promise<AgentEventSource>
 
+/** Provides copied event, chunk, message, and usage snapshots for a finished run. */
 export interface AgentRunFinishInfo {
   id: string
   status: 'completed' | 'interrupted'
@@ -54,6 +58,7 @@ export interface AgentRunFinishInfo {
   usage: TokenUsage | null
 }
 
+/** Captures a start or resume attempt for callbacks and inspection. */
 export interface AgentRunRequestInfo<TInput = unknown, TResume = unknown> {
   id: string
   providerId: 'agent-run'
@@ -67,6 +72,7 @@ export interface AgentRunRequestInfo<TInput = unknown, TResume = unknown> {
   interrupt?: AgentInterruptEvent | null
 }
 
+/** Summarizes the accumulated output and current lifecycle state of an inspected run. */
 export interface AgentRunResponseInfo {
   id: string
   providerId: 'agent-run'
@@ -87,6 +93,7 @@ export type AgentRunInspectionSnapshot<
   TResume = unknown
 > = RequestInspectionSnapshot<AgentRunRequestInfo<TInput, TResume>, AgentRunResponseInfo>
 
+/** Configures the run handler, event adaptation, ID generation, and lifecycle callbacks. */
 export interface UseAgentRunOptions<
   TInput = unknown,
   TResume = unknown
@@ -100,12 +107,14 @@ export interface UseAgentRunOptions<
   onError?: (error: Error) => void
 }
 
+/** Allows one start or resume operation to supply a stable run ID. */
 export interface StartAgentRunOptions {
   id?: string
 }
 
 export type ResumeAgentRunOptions = StartAgentRunOptions
 
+/** Exposes the accumulated event stream, derived chat state, interrupt, and run controls. */
 export interface UseAgentRunReturn<TInput = unknown, TResume = unknown> {
   id: Ref<string>
   currentRunId: Ref<string | null>
@@ -135,7 +144,10 @@ interface RunControls {
 }
 
 /**
- * Run an app-owned agent event stream and expose it as Vue state.
+ * Consumes an app-owned agent event stream and derives chunks, messages, data,
+ * usage, and interrupts as Vue state. `resume()` invokes the handler only while
+ * an interrupt is pending. Calling `start()` with the current active,
+ * interrupted, or completed run ID reuses that run instead of restarting it.
  */
 export function useAgentRun<TInput = unknown, TResume = unknown>(
   options: UseAgentRunOptions<TInput, TResume>
@@ -220,6 +232,7 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
   }) {
     stop()
     const controller = new AbortController()
+    // Sequence ownership prevents a superseded run from mutating the current run's state.
     const runSequence = ++sequence
     controls = { controller, sequence: runSequence }
     currentRunId.value = request.id
@@ -436,6 +449,7 @@ export function useAgentRun<TInput = unknown, TResume = unknown>(
   }
 }
 
+/** Creates request inspection metadata for a start or resume attempt. */
 export function createAgentRunRequestInfo<TInput = unknown, TResume = unknown>(
   request: {
     id: string
@@ -461,6 +475,7 @@ export function createAgentRunRequestInfo<TInput = unknown, TResume = unknown>(
   }
 }
 
+/** Summarizes accumulated run output without retaining mutable array references. */
 export function createAgentRunResponseInfo(
   id: string,
   status: AgentRunStatus,
@@ -489,6 +504,7 @@ export function createAgentRunResponseInfo(
   }
 }
 
+/** Converts agent events into the generic inspection timeline representation. */
 export function agentEventsToInspectionTimeline(
   events: readonly AgentEvent[]
 ): InspectionTimelineEventInput[] {
